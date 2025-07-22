@@ -7,148 +7,148 @@ import "dataplane/proto/sai/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
+
 enum BfdSessionAttr {
-  BFD_SESSION_ATTR_UNSPECIFIED = 0;
-  BFD_SESSION_ATTR_TYPE = 1;
-  BFD_SESSION_ATTR_HW_LOOKUP_VALID = 2;
-  BFD_SESSION_ATTR_VIRTUAL_ROUTER = 3;
-  BFD_SESSION_ATTR_PORT = 4;
-  BFD_SESSION_ATTR_LOCAL_DISCRIMINATOR = 5;
-  BFD_SESSION_ATTR_REMOTE_DISCRIMINATOR = 6;
-  BFD_SESSION_ATTR_UDP_SRC_PORT = 7;
-  BFD_SESSION_ATTR_TC = 8;
-  BFD_SESSION_ATTR_VLAN_TPID = 9;
-  BFD_SESSION_ATTR_VLAN_ID = 10;
-  BFD_SESSION_ATTR_VLAN_PRI = 11;
-  BFD_SESSION_ATTR_VLAN_CFI = 12;
-  BFD_SESSION_ATTR_VLAN_HEADER_VALID = 13;
-  BFD_SESSION_ATTR_BFD_ENCAPSULATION_TYPE = 14;
-  BFD_SESSION_ATTR_IPHDR_VERSION = 15;
-  BFD_SESSION_ATTR_TOS = 16;
-  BFD_SESSION_ATTR_TTL = 17;
-  BFD_SESSION_ATTR_SRC_IP_ADDRESS = 18;
-  BFD_SESSION_ATTR_DST_IP_ADDRESS = 19;
-  BFD_SESSION_ATTR_TUNNEL_TOS = 20;
-  BFD_SESSION_ATTR_TUNNEL_TTL = 21;
-  BFD_SESSION_ATTR_TUNNEL_SRC_IP_ADDRESS = 22;
-  BFD_SESSION_ATTR_TUNNEL_DST_IP_ADDRESS = 23;
-  BFD_SESSION_ATTR_SRC_MAC_ADDRESS = 24;
-  BFD_SESSION_ATTR_DST_MAC_ADDRESS = 25;
-  BFD_SESSION_ATTR_ECHO_ENABLE = 26;
-  BFD_SESSION_ATTR_MULTIHOP = 27;
-  BFD_SESSION_ATTR_CBIT = 28;
-  BFD_SESSION_ATTR_MIN_TX = 29;
-  BFD_SESSION_ATTR_MIN_RX = 30;
-  BFD_SESSION_ATTR_MULTIPLIER = 31;
-  BFD_SESSION_ATTR_REMOTE_MIN_TX = 32;
-  BFD_SESSION_ATTR_REMOTE_MIN_RX = 33;
-  BFD_SESSION_ATTR_STATE = 34;
-  BFD_SESSION_ATTR_OFFLOAD_TYPE = 35;
-  BFD_SESSION_ATTR_NEGOTIATED_TX = 36;
-  BFD_SESSION_ATTR_NEGOTIATED_RX = 37;
-  BFD_SESSION_ATTR_LOCAL_DIAG = 38;
-  BFD_SESSION_ATTR_REMOTE_DIAG = 39;
-  BFD_SESSION_ATTR_REMOTE_MULTIPLIER = 40;
+	BFD_SESSION_ATTR_UNSPECIFIED = 0;
+	BFD_SESSION_ATTR_TYPE = 1;
+	BFD_SESSION_ATTR_HW_LOOKUP_VALID = 2;
+	BFD_SESSION_ATTR_VIRTUAL_ROUTER = 3;
+	BFD_SESSION_ATTR_PORT = 4;
+	BFD_SESSION_ATTR_LOCAL_DISCRIMINATOR = 5;
+	BFD_SESSION_ATTR_REMOTE_DISCRIMINATOR = 6;
+	BFD_SESSION_ATTR_UDP_SRC_PORT = 7;
+	BFD_SESSION_ATTR_TC = 8;
+	BFD_SESSION_ATTR_VLAN_TPID = 9;
+	BFD_SESSION_ATTR_VLAN_ID = 10;
+	BFD_SESSION_ATTR_VLAN_PRI = 11;
+	BFD_SESSION_ATTR_VLAN_CFI = 12;
+	BFD_SESSION_ATTR_VLAN_HEADER_VALID = 13;
+	BFD_SESSION_ATTR_BFD_ENCAPSULATION_TYPE = 14;
+	BFD_SESSION_ATTR_IPHDR_VERSION = 15;
+	BFD_SESSION_ATTR_TOS = 16;
+	BFD_SESSION_ATTR_TTL = 17;
+	BFD_SESSION_ATTR_SRC_IP_ADDRESS = 18;
+	BFD_SESSION_ATTR_DST_IP_ADDRESS = 19;
+	BFD_SESSION_ATTR_TUNNEL_TOS = 20;
+	BFD_SESSION_ATTR_TUNNEL_TTL = 21;
+	BFD_SESSION_ATTR_TUNNEL_SRC_IP_ADDRESS = 22;
+	BFD_SESSION_ATTR_TUNNEL_DST_IP_ADDRESS = 23;
+	BFD_SESSION_ATTR_SRC_MAC_ADDRESS = 24;
+	BFD_SESSION_ATTR_DST_MAC_ADDRESS = 25;
+	BFD_SESSION_ATTR_ECHO_ENABLE = 26;
+	BFD_SESSION_ATTR_MULTIHOP = 27;
+	BFD_SESSION_ATTR_CBIT = 28;
+	BFD_SESSION_ATTR_MIN_TX = 29;
+	BFD_SESSION_ATTR_MIN_RX = 30;
+	BFD_SESSION_ATTR_MULTIPLIER = 31;
+	BFD_SESSION_ATTR_REMOTE_MIN_TX = 32;
+	BFD_SESSION_ATTR_REMOTE_MIN_RX = 33;
+	BFD_SESSION_ATTR_STATE = 34;
+	BFD_SESSION_ATTR_OFFLOAD_TYPE = 35;
+	BFD_SESSION_ATTR_NEGOTIATED_TX = 36;
+	BFD_SESSION_ATTR_NEGOTIATED_RX = 37;
+	BFD_SESSION_ATTR_LOCAL_DIAG = 38;
+	BFD_SESSION_ATTR_REMOTE_DIAG = 39;
+	BFD_SESSION_ATTR_REMOTE_MULTIPLIER = 40;
+	BFD_SESSION_ATTR_SRV6_SIDLIST_ID = 41;
 }
 
 message CreateBfdSessionRequest {
-  option (sai_type) = OBJECT_TYPE_BFD_SESSION;
-  uint64 switch = 1;
-  optional BfdSessionType type = 2 [(attr_enum_value) = 1];
-  optional bool hw_lookup_valid = 3 [(attr_enum_value) = 2];
-  optional uint64 virtual_router = 4 [(attr_enum_value) = 3];
-  optional uint64 port = 5 [(attr_enum_value) = 4];
-  optional uint32 local_discriminator = 6 [(attr_enum_value) = 5];
-  optional uint32 remote_discriminator = 7 [(attr_enum_value) = 6];
-  optional uint32 udp_src_port = 8 [(attr_enum_value) = 7];
-  optional uint32 tc = 9 [(attr_enum_value) = 8];
-  optional uint32 vlan_tpid = 10 [(attr_enum_value) = 9];
-  optional uint32 vlan_id = 11 [(attr_enum_value) = 10];
-  optional uint32 vlan_pri = 12 [(attr_enum_value) = 11];
-  optional uint32 vlan_cfi = 13 [(attr_enum_value) = 12];
-  optional bool vlan_header_valid = 14 [(attr_enum_value) = 13];
-  optional BfdEncapsulationType bfd_encapsulation_type = 15
-      [(attr_enum_value) = 14];
-  optional uint32 iphdr_version = 16 [(attr_enum_value) = 15];
-  optional uint32 tos = 17 [(attr_enum_value) = 16];
-  optional uint32 ttl = 18 [(attr_enum_value) = 17];
-  optional bytes src_ip_address = 19 [(attr_enum_value) = 18];
-  optional bytes dst_ip_address = 20 [(attr_enum_value) = 19];
-  optional uint32 tunnel_tos = 21 [(attr_enum_value) = 20];
-  optional uint32 tunnel_ttl = 22 [(attr_enum_value) = 21];
-  optional bytes tunnel_src_ip_address = 23 [(attr_enum_value) = 22];
-  optional bytes tunnel_dst_ip_address = 24 [(attr_enum_value) = 23];
-  optional bytes src_mac_address = 25 [(attr_enum_value) = 24];
-  optional bytes dst_mac_address = 26 [(attr_enum_value) = 25];
-  optional bool echo_enable = 27 [(attr_enum_value) = 26];
-  optional bool multihop = 28 [(attr_enum_value) = 27];
-  optional bool cbit = 29 [(attr_enum_value) = 28];
-  optional uint32 min_tx = 30 [(attr_enum_value) = 29];
-  optional uint32 min_rx = 31 [(attr_enum_value) = 30];
-  optional uint32 multiplier = 32 [(attr_enum_value) = 31];
-  optional BfdSessionOffloadType offload_type = 33 [(attr_enum_value) = 35];
+	option (sai_type) = OBJECT_TYPE_BFD_SESSION;
+	uint64 switch = 1;
+	optional BfdSessionType type = 2[(attr_enum_value) = 1];
+	optional bool hw_lookup_valid = 3[(attr_enum_value) = 2];
+	optional uint64 virtual_router = 4[(attr_enum_value) = 3];
+	optional uint64 port = 5[(attr_enum_value) = 4];
+	optional uint32 local_discriminator = 6[(attr_enum_value) = 5];
+	optional uint32 remote_discriminator = 7[(attr_enum_value) = 6];
+	optional uint32 udp_src_port = 8[(attr_enum_value) = 7];
+	optional uint32 tc = 9[(attr_enum_value) = 8];
+	optional uint32 vlan_tpid = 10[(attr_enum_value) = 9];
+	optional uint32 vlan_id = 11[(attr_enum_value) = 10];
+	optional uint32 vlan_pri = 12[(attr_enum_value) = 11];
+	optional uint32 vlan_cfi = 13[(attr_enum_value) = 12];
+	optional bool vlan_header_valid = 14[(attr_enum_value) = 13];
+	optional BfdEncapsulationType bfd_encapsulation_type = 15[(attr_enum_value) = 14];
+	optional uint32 iphdr_version = 16[(attr_enum_value) = 15];
+	optional uint32 tos = 17[(attr_enum_value) = 16];
+	optional uint32 ttl = 18[(attr_enum_value) = 17];
+	optional bytes src_ip_address = 19[(attr_enum_value) = 18];
+	optional bytes dst_ip_address = 20[(attr_enum_value) = 19];
+	optional uint32 tunnel_tos = 21[(attr_enum_value) = 20];
+	optional uint32 tunnel_ttl = 22[(attr_enum_value) = 21];
+	optional bytes tunnel_src_ip_address = 23[(attr_enum_value) = 22];
+	optional bytes tunnel_dst_ip_address = 24[(attr_enum_value) = 23];
+	optional bytes src_mac_address = 25[(attr_enum_value) = 24];
+	optional bytes dst_mac_address = 26[(attr_enum_value) = 25];
+	optional bool echo_enable = 27[(attr_enum_value) = 26];
+	optional bool multihop = 28[(attr_enum_value) = 27];
+	optional bool cbit = 29[(attr_enum_value) = 28];
+	optional uint32 min_tx = 30[(attr_enum_value) = 29];
+	optional uint32 min_rx = 31[(attr_enum_value) = 30];
+	optional uint32 multiplier = 32[(attr_enum_value) = 31];
+	optional BfdSessionOffloadType offload_type = 33[(attr_enum_value) = 35];
+	optional uint64 srv6_sidlist_id = 34[(attr_enum_value) = 41];
 }
 
 message CreateBfdSessionResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveBfdSessionRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveBfdSessionResponse {}
+message RemoveBfdSessionResponse {
+}
 
 message SetBfdSessionAttributeRequest {
-  uint64 oid = 1;
-  optional uint64 virtual_router = 2 [(attr_enum_value) = 3];
-  optional uint64 port = 3 [(attr_enum_value) = 4];
-  optional uint32 tc = 4 [(attr_enum_value) = 8];
-  optional uint32 vlan_tpid = 5 [(attr_enum_value) = 9];
-  optional uint32 vlan_pri = 6 [(attr_enum_value) = 11];
-  optional uint32 vlan_cfi = 7 [(attr_enum_value) = 12];
-  optional uint32 iphdr_version = 8 [(attr_enum_value) = 15];
-  optional uint32 tos = 9 [(attr_enum_value) = 16];
-  optional uint32 ttl = 10 [(attr_enum_value) = 17];
-  optional uint32 tunnel_tos = 11 [(attr_enum_value) = 20];
-  optional uint32 tunnel_ttl = 12 [(attr_enum_value) = 21];
-  optional bytes src_mac_address = 13 [(attr_enum_value) = 24];
-  optional bytes dst_mac_address = 14 [(attr_enum_value) = 25];
-  optional bool echo_enable = 15 [(attr_enum_value) = 26];
-  optional uint32 min_tx = 16 [(attr_enum_value) = 29];
-  optional uint32 min_rx = 17 [(attr_enum_value) = 30];
-  optional uint32 multiplier = 18 [(attr_enum_value) = 31];
+	uint64 oid = 1;
+	optional uint64 virtual_router = 2[(attr_enum_value) = 3];
+	optional uint64 port = 3[(attr_enum_value) = 4];
+	optional uint32 tc = 4[(attr_enum_value) = 8];
+	optional uint32 vlan_tpid = 5[(attr_enum_value) = 9];
+	optional uint32 vlan_pri = 6[(attr_enum_value) = 11];
+	optional uint32 vlan_cfi = 7[(attr_enum_value) = 12];
+	optional uint32 iphdr_version = 8[(attr_enum_value) = 15];
+	optional uint32 tos = 9[(attr_enum_value) = 16];
+	optional uint32 ttl = 10[(attr_enum_value) = 17];
+	optional uint32 tunnel_tos = 11[(attr_enum_value) = 20];
+	optional uint32 tunnel_ttl = 12[(attr_enum_value) = 21];
+	optional bytes src_mac_address = 13[(attr_enum_value) = 24];
+	optional bytes dst_mac_address = 14[(attr_enum_value) = 25];
+	optional bool echo_enable = 15[(attr_enum_value) = 26];
+	optional uint32 min_tx = 16[(attr_enum_value) = 29];
+	optional uint32 min_rx = 17[(attr_enum_value) = 30];
+	optional uint32 multiplier = 18[(attr_enum_value) = 31];
 }
 
-message SetBfdSessionAttributeResponse {}
+message SetBfdSessionAttributeResponse {
+}
 
 message GetBfdSessionAttributeRequest {
-  uint64 oid = 1;
-  repeated BfdSessionAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated BfdSessionAttr attr_type = 2;
 }
 
 message GetBfdSessionAttributeResponse {
-  BfdSessionAttribute attr = 1;
+	BfdSessionAttribute attr = 1;
 }
 
 message GetBfdSessionStatsRequest {
-  uint64 oid = 1;
-  repeated BfdSessionStat counter_ids = 2;
+	uint64 oid = 1;
+	repeated BfdSessionStat counter_ids = 2;
 }
 
 message GetBfdSessionStatsResponse {
-  repeated uint64 values = 1;
+	repeated uint64 values = 1;
 }
 
+
 service Bfd {
-  rpc CreateBfdSession(CreateBfdSessionRequest)
-      returns (CreateBfdSessionResponse) {}
-  rpc RemoveBfdSession(RemoveBfdSessionRequest)
-      returns (RemoveBfdSessionResponse) {}
-  rpc SetBfdSessionAttribute(SetBfdSessionAttributeRequest)
-      returns (SetBfdSessionAttributeResponse) {}
-  rpc GetBfdSessionAttribute(GetBfdSessionAttributeRequest)
-      returns (GetBfdSessionAttributeResponse) {}
-  rpc GetBfdSessionStats(GetBfdSessionStatsRequest)
-      returns (GetBfdSessionStatsResponse) {}
+	rpc CreateBfdSession (CreateBfdSessionRequest) returns (CreateBfdSessionResponse) {}
+	rpc RemoveBfdSession (RemoveBfdSessionRequest) returns (RemoveBfdSessionResponse) {}
+	rpc SetBfdSessionAttribute (SetBfdSessionAttributeRequest) returns (SetBfdSessionAttributeResponse) {}
+	rpc GetBfdSessionAttribute (GetBfdSessionAttributeRequest) returns (GetBfdSessionAttributeResponse) {}
+	rpc GetBfdSessionStats (GetBfdSessionStatsRequest) returns (GetBfdSessionStatsResponse) {}
 }

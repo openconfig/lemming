@@ -1,0 +1,28 @@
+# Arista-style configuration for lemming fakedevice
+# This configuration demonstrates Arista EOS-like naming conventions and structure
+
+vendor {
+  name: "Arista"
+  model: "DCS-7050QX-32"
+  os_version: "4.28.3M"
+}
+
+components {
+  supervisor1_name: "SUP1"
+  supervisor2_name: "SUP2"
+  chassis_name: "Chassis"
+  linecard_prefix: ""
+  fabric_prefix: "FC"
+  
+  linecard {
+    count: 2
+    start_index: 3  # Start from Linecard3
+    step: 1
+  }
+  
+  fabric {
+    count: 4
+    start_index: 0
+    step: 1
+  }
+}

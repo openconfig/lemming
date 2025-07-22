@@ -25,97 +25,52 @@ extern "C" {
 
 extern const sai_tunnel_api_t l_tunnel;
 
-sai_status_t l_create_tunnel_map(sai_object_id_t *tunnel_map_id,
-                                 sai_object_id_t switch_id, uint32_t attr_count,
-                                 const sai_attribute_t *attr_list);
+
+sai_status_t l_create_tunnel_map(sai_object_id_t *tunnel_map_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_tunnel_map(sai_object_id_t tunnel_map_id);
 
-sai_status_t l_set_tunnel_map_attribute(sai_object_id_t tunnel_map_id,
-                                        const sai_attribute_t *attr);
+sai_status_t l_set_tunnel_map_attribute(sai_object_id_t tunnel_map_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_tunnel_map_attribute(sai_object_id_t tunnel_map_id,
-                                        uint32_t attr_count,
-                                        sai_attribute_t *attr_list);
+sai_status_t l_get_tunnel_map_attribute(sai_object_id_t tunnel_map_id, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_create_tunnel(sai_object_id_t *tunnel_id,
-                             sai_object_id_t switch_id, uint32_t attr_count,
-                             const sai_attribute_t *attr_list);
+sai_status_t l_create_tunnel(sai_object_id_t *tunnel_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_tunnel(sai_object_id_t tunnel_id);
 
-sai_status_t l_set_tunnel_attribute(sai_object_id_t tunnel_id,
-                                    const sai_attribute_t *attr);
+sai_status_t l_set_tunnel_attribute(sai_object_id_t tunnel_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
-                                    uint32_t attr_count,
-                                    sai_attribute_t *attr_list);
+sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_get_tunnel_stats(sai_object_id_t tunnel_id,
-                                uint32_t number_of_counters,
-                                const sai_stat_id_t *counter_ids,
-                                uint64_t *counters);
+sai_status_t l_get_tunnel_stats(sai_object_id_t tunnel_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters);
 
-sai_status_t l_get_tunnel_stats_ext(sai_object_id_t tunnel_id,
-                                    uint32_t number_of_counters,
-                                    const sai_stat_id_t *counter_ids,
-                                    sai_stats_mode_t mode, uint64_t *counters);
+sai_status_t l_get_tunnel_stats_ext(sai_object_id_t tunnel_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters);
 
-sai_status_t l_clear_tunnel_stats(sai_object_id_t tunnel_id,
-                                  uint32_t number_of_counters,
-                                  const sai_stat_id_t *counter_ids);
+sai_status_t l_clear_tunnel_stats(sai_object_id_t tunnel_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids);
 
-sai_status_t l_create_tunnel_term_table_entry(
-    sai_object_id_t *tunnel_term_table_entry_id, sai_object_id_t switch_id,
-    uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_tunnel_term_table_entry(sai_object_id_t *tunnel_term_table_entry_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
-sai_status_t l_remove_tunnel_term_table_entry(
-    sai_object_id_t tunnel_term_table_entry_id);
+sai_status_t l_remove_tunnel_term_table_entry(sai_object_id_t tunnel_term_table_entry_id);
 
-sai_status_t l_set_tunnel_term_table_entry_attribute(
-    sai_object_id_t tunnel_term_table_entry_id, const sai_attribute_t *attr);
+sai_status_t l_set_tunnel_term_table_entry_attribute(sai_object_id_t tunnel_term_table_entry_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_tunnel_term_table_entry_attribute(
-    sai_object_id_t tunnel_term_table_entry_id, uint32_t attr_count,
-    sai_attribute_t *attr_list);
+sai_status_t l_get_tunnel_term_table_entry_attribute(sai_object_id_t tunnel_term_table_entry_id, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_create_tunnel_map_entry(sai_object_id_t *tunnel_map_entry_id,
-                                       sai_object_id_t switch_id,
-                                       uint32_t attr_count,
-                                       const sai_attribute_t *attr_list);
+sai_status_t l_create_tunnel_map_entry(sai_object_id_t *tunnel_map_entry_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_tunnel_map_entry(sai_object_id_t tunnel_map_entry_id);
 
-sai_status_t l_set_tunnel_map_entry_attribute(
-    sai_object_id_t tunnel_map_entry_id, const sai_attribute_t *attr);
+sai_status_t l_set_tunnel_map_entry_attribute(sai_object_id_t tunnel_map_entry_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_tunnel_map_entry_attribute(
-    sai_object_id_t tunnel_map_entry_id, uint32_t attr_count,
-    sai_attribute_t *attr_list);
+sai_status_t l_get_tunnel_map_entry_attribute(sai_object_id_t tunnel_map_entry_id, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_create_tunnels(sai_object_id_t switch_id, uint32_t object_count,
-                              const uint32_t *attr_count,
-                              const sai_attribute_t **attr_list,
-                              sai_bulk_op_error_mode_t mode,
-                              sai_object_id_t *object_id,
-                              sai_status_t *object_statuses);
+sai_status_t l_create_tunnels(sai_object_id_t switch_id, uint32_t object_count, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_object_id_t *object_id, sai_status_t *object_statuses);
 
-sai_status_t l_remove_tunnels(uint32_t object_count,
-                              const sai_object_id_t *object_id,
-                              sai_bulk_op_error_mode_t mode,
-                              sai_status_t *object_statuses);
+sai_status_t l_remove_tunnels(uint32_t object_count, const sai_object_id_t *object_id, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_set_tunnels_attribute(uint32_t object_count,
-                                     const sai_object_id_t *object_id,
-                                     const sai_attribute_t *attr_list,
-                                     sai_bulk_op_error_mode_t mode,
-                                     sai_status_t *object_statuses);
+sai_status_t l_set_tunnels_attribute(uint32_t object_count, const sai_object_id_t *object_id, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_get_tunnels_attribute(uint32_t object_count,
-                                     const sai_object_id_t *object_id,
-                                     const uint32_t *attr_count,
-                                     sai_attribute_t **attr_list,
-                                     sai_bulk_op_error_mode_t mode,
-                                     sai_status_t *object_statuses);
+sai_status_t l_get_tunnels_attribute(uint32_t object_count, const sai_object_id_t *object_id, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+
 
 #endif  // DATAPLANE_STANDALONE_SAI_TUNNEL_H_

@@ -41,7 +41,9 @@ import (
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
 	fgribi "github.com/openconfig/lemming/gribi"
+	"github.com/openconfig/lemming/internal/config"
 	fp4rt "github.com/openconfig/lemming/p4rt"
+	configpb "github.com/openconfig/lemming/proto/config"
 	faultpb "github.com/openconfig/lemming/proto/fault"
 	"github.com/openconfig/lemming/sysrib"
 
@@ -69,6 +71,9 @@ type Device struct {
 	p4rtServer   *fp4rt.Server
 	dplaneServer *dataplane.Dataplane
 
+	// Configuration
+	config *configpb.Config
+
 	// Stores the errors if the server fails will be returned on call to stop.
 	errsMu sync.Mutex
 	errs   []error
@@ -94,6 +99,7 @@ type opt struct {
 	faultInject    bool
 	dataplaneOpts  []dplaneopts.Option
 	gribiOpts      []gribis.ServerOpt
+	configFile     string
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -207,12 +213,26 @@ func WithFaultAddr(addr string) Option {
 	}
 }
 
+// WithConfigFile specifies a configuration file path for lemming device settings.
+// The file has to be in protobuf text (.textproto/.pb.txt) format.
+func WithConfigFile(configFile string) Option {
+	return func(o *opt) {
+		o.configFile = configFile
+	}
+}
+
 // New returns a new initialized device.
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
 	resolvedOpts := resolveOpts(opts)
+
+	// Load configuration in startup
+	lemmingConfig, err := config.Load(resolvedOpts.configFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %v", err)
+	}
 
 	if resolvedOpts.dataplane {
 		if runtime.GOOS != "linux" {
@@ -276,10 +296,10 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
-		fakedevice.NewBootTimeTask(),
+		fakedevice.NewBootTimeTask(lemmingConfig),
 		fakedevice.NewCurrentTimeTask(),
-		fakedevice.NewChassisComponentsTask(),
-		fakedevice.NewProcessMonitoringTask(),
+		fakedevice.NewChassisComponentsTask(lemmingConfig),
+		fakedevice.NewProcessMonitoringTask(lemmingConfig),
 		bgp.NewGoBGPTask(targetName, zapiURL, resolvedOpts.bgpPort),
 	)
 
@@ -329,7 +349,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 		return nil, fmt.Errorf("cannot create gRPC server for P4RT, %v", err)
 	}
 
-	gnoiServer, err := fgnoi.New(s, cacheClient, targetName)
+	gnoiServer, err := fgnoi.New(s, cacheClient, targetName, lemmingConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -358,6 +378,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 		gnsiServer:   gnsiServer,
 		p4rtServer:   fp4rt.New(P4RTs),
 		dplaneServer: dplane,
+		config:       lemmingConfig,
 	}
 	reflection.Register(s)
 	d.startServer()
@@ -442,6 +463,11 @@ func (d *Device) GNSI() *fgnsi.Server {
 // Dataplane returns the dataplane server implementation.
 func (d *Device) Dataplane() *dataplane.Dataplane {
 	return d.dplaneServer
+}
+
+// Config returns the lemming configuration.
+func (d *Device) Config() *configpb.Config {
+	return d.config
 }
 
 func (d *Device) startServer() {

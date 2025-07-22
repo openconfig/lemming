@@ -28,6 +28,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	configpb "github.com/openconfig/lemming/proto/config"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	bpb "github.com/openconfig/gnoi/bgp"
@@ -46,9 +47,6 @@ import (
 )
 
 const (
-	supervisor1Name = "Supervisor1"
-	supervisor2Name = "Supervisor2"
-
 	// Kill process default
 	defaultRestart = true
 )
@@ -96,7 +94,8 @@ type otdr struct {
 type system struct {
 	spb.UnimplementedSystemServer
 
-	c *ygnmi.Client
+	c      *ygnmi.Client
+	config *configpb.Config
 
 	// rebootMu has the following roles:
 	// * ensures that writes to hasPendingReboot are free from race
@@ -123,9 +122,10 @@ type system struct {
 	processMu sync.Mutex
 }
 
-func newSystem(c *ygnmi.Client) *system {
+func newSystem(c *ygnmi.Client, config *configpb.Config) *system {
 	return &system{
 		c:                  c,
+		config:             config,
 		cancelReboot:       make(chan struct{}, 1),
 		cancelRebootFinish: make(chan struct{}),
 		componentReboots:   make(map[string]chan struct{}),
@@ -199,7 +199,7 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 			}
 			s.componentRebootsMu.Unlock()
 			// Immediate reboot
-			if err := fakedevice.RebootComponent(context.Background(), s.c, componentName, time.Now().UnixNano()); err != nil {
+			if err := fakedevice.RebootComponent(context.Background(), s.c, componentName, time.Now().UnixNano(), s.config); err != nil {
 				return nil, status.Errorf(codes.Internal, "failed to reboot component %q: %v", componentName, err)
 			}
 			log.Infof("Component %q immediate reboot completed", componentName)
@@ -236,7 +236,7 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 				log.Infof("delayed component reboot for %q cancelled due to context", compName)
 			case <-time.After(time.Duration(delay) * time.Nanosecond):
 				now := time.Now().UnixNano()
-				if err := fakedevice.RebootComponent(rebootCtx, s.c, compName, now); err != nil {
+				if err := fakedevice.RebootComponent(rebootCtx, s.c, compName, now, s.config); err != nil {
 					log.Errorf("delayed component reboot for %q failed: %v", compName, err)
 					return
 				}
@@ -429,7 +429,7 @@ func (s *system) SwitchControlProcessor(ctx context.Context, r *spb.SwitchContro
 		time.Sleep(100 * time.Millisecond)
 
 		switchoverTime := time.Now().UnixNano()
-		err := fakedevice.SwitchoverSupervisor(backgroundctx, s.c, targetSupervisor, activeSupervisor, switchoverTime)
+		err := fakedevice.SwitchoverSupervisor(backgroundctx, s.c, targetSupervisor, activeSupervisor, switchoverTime, s.config)
 		if err != nil {
 			log.Errorf("Background supervisor switchover failed: %v", err)
 		}
@@ -466,7 +466,7 @@ func (s *system) KillProcess(ctx context.Context, r *spb.KillProcessRequest) (*s
 	s.processMu.Lock()
 	defer s.processMu.Unlock()
 
-	if err := fakedevice.KillProcess(context.Background(), s.c, targetPID, processName, signal, restart); err != nil {
+	if err := fakedevice.KillProcess(context.Background(), s.c, targetPID, processName, signal, restart, s.config); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to kill process: %v", err)
 	}
 
@@ -546,13 +546,16 @@ func (s *system) isActiveSupervisor(ctx context.Context, componentName string) (
 
 // getSupervisorRole validates and returns the active and standby supervisors
 func (s *system) getSupervisorRole(ctx context.Context) (activeSupervisor, standbySupervisor string, err error) {
-	// Check if Supervisor1 is active
+	supervisor1Name := s.config.GetComponents().GetSupervisor1Name()
+	supervisor2Name := s.config.GetComponents().GetSupervisor2Name()
+
+	// Check if supervisor1 is active
 	supervisor1Active, err := s.isActiveSupervisor(ctx, supervisor1Name)
 	if err != nil {
 		return "", "", status.Errorf(codes.Internal, "failed to check supervisor %q state: %v", supervisor1Name, err)
 	}
 
-	// Check if Supervisor2 is active
+	// Check if supervisor2 is active
 	supervisor2Active, err := s.isActiveSupervisor(ctx, supervisor2Name)
 	if err != nil {
 		return "", "", status.Errorf(codes.Internal, "failed to check supervisor %q state: %v", supervisor2Name, err)
@@ -591,7 +594,7 @@ type Server struct {
 	wavelengthRouterServer *wavelengthRouter
 }
 
-func New(s *grpc.Server, gClient gpb.GNMIClient, target string) (*Server, error) {
+func New(s *grpc.Server, gClient gpb.GNMIClient, target string, config *configpb.Config) (*Server, error) {
 	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target), ygnmi.WithRequestLogLevel(2))
 	if err != nil {
 		return nil, err
@@ -609,7 +612,7 @@ func New(s *grpc.Server, gClient gpb.GNMIClient, target string) (*Server, error)
 		mplsServer:             &mpls{},
 		osServer:               &os{},
 		otdrServer:             &otdr{},
-		systemServer:           newSystem(yclient),
+		systemServer:           newSystem(yclient, config),
 		wavelengthRouterServer: &wavelengthRouter{},
 	}
 	bpb.RegisterBGPServer(s, srv.bgpServer)

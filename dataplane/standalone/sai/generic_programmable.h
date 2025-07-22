@@ -25,18 +25,14 @@ extern "C" {
 
 extern const sai_generic_programmable_api_t l_generic_programmable;
 
-sai_status_t l_create_generic_programmable(
-    sai_object_id_t *generic_programmable_id, sai_object_id_t switch_id,
-    uint32_t attr_count, const sai_attribute_t *attr_list);
 
-sai_status_t l_remove_generic_programmable(
-    sai_object_id_t generic_programmable_id);
+sai_status_t l_create_generic_programmable(sai_object_id_t *generic_programmable_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
-sai_status_t l_set_generic_programmable_attribute(
-    sai_object_id_t generic_programmable_id, const sai_attribute_t *attr);
+sai_status_t l_remove_generic_programmable(sai_object_id_t generic_programmable_id);
 
-sai_status_t l_get_generic_programmable_attribute(
-    sai_object_id_t generic_programmable_id, uint32_t attr_count,
-    sai_attribute_t *attr_list);
+sai_status_t l_set_generic_programmable_attribute(sai_object_id_t generic_programmable_id, const sai_attribute_t *attr);
+
+sai_status_t l_get_generic_programmable_attribute(sai_object_id_t generic_programmable_id, uint32_t attr_count, sai_attribute_t *attr_list);
+
 
 #endif  // DATAPLANE_STANDALONE_SAI_GENERIC_PROGRAMMABLE_H_

@@ -30,39 +30,14 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/gnmi/reconciler"
+	"github.com/openconfig/lemming/internal/config"
+	configpb "github.com/openconfig/lemming/proto/config"
 )
 
 const (
 	DefaultNetworkInstance = "DEFAULT"
 	StaticRoutingProtocol  = "DEFAULT"
 	BGPRoutingProtocol     = "BGP"
-
-	// Component names
-	chassisComponentName     = "chassis"
-	linecardComponentName    = "Linecard"
-	fabricComponentName      = "Fabric"
-	controlcardComponentName = "Supervisor"
-
-	// TODO: Make lemming chassis configurable
-	// Number of each component type
-	numLineCard       = 8
-	numFabricCard     = 6
-	numSupervisorCard = 2
-
-	// Simulation duration
-	switchoverDuration = 2 * time.Second
-	rebootDuration     = 2 * time.Second
-
-	// Process configuration constants
-	basePID    = 1000
-	ceilingPID = 1100
-
-	// Default mock process configurations
-	defaultCpuUsageUser      = 1000000  // 1ms in nanoseconds
-	defaultCpuUsageSystem    = 500000   // 0.5ms in nanoseconds
-	defaultCpuUtilization    = 1        // 1% CPU
-	defaultMemoryUsage       = 10485760 // 10MB
-	defaultMemoryUtilization = 2        // 2% memory
 )
 
 // Reboot updates the system boot time to the provided Unix time.
@@ -72,7 +47,7 @@ func Reboot(ctx context.Context, c *ygnmi.Client, rebootTime int64) error {
 }
 
 // RebootComponent updates the component's last reboot time and reason.
-func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string, rebootTime int64) error {
+func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string, rebootTime int64, cfg *configpb.Config) error {
 	log.Infof("Performing component reboot for %s at time %d", componentName, rebootTime)
 	timestampedCtx := gnmi.AddTimestampMetadata(ctx, rebootTime)
 
@@ -91,8 +66,8 @@ func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string,
 		return fmt.Errorf("failed to update component %s reboot reason: %v", componentName, err)
 	}
 
-	// Simulate a brief reboot period
-	time.Sleep(rebootDuration)
+	// Simulate a configurable reboot period
+	time.Sleep(time.Duration(cfg.GetTiming().GetRebootDurationMs()) * time.Millisecond)
 
 	// Now restore the component OperStatus (reboot completed)
 	finalState := oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE
@@ -105,14 +80,14 @@ func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string,
 }
 
 // SwitchoverSupervisor performs supervisor switchover by swapping the redundant roles and updating related state
-func SwitchoverSupervisor(ctx context.Context, c *ygnmi.Client, targetSupervisor string, currentActiveSupervisor string, switchoverTime int64) error {
+func SwitchoverSupervisor(ctx context.Context, c *ygnmi.Client, targetSupervisor string, currentActiveSupervisor string, switchoverTime int64, cfg *configpb.Config) error {
 	log.Infof("Performing supervisor switchover from %s to %s at time %d", currentActiveSupervisor, targetSupervisor, switchoverTime)
 
 	timestampedCtx := gnmi.AddTimestampMetadata(ctx, switchoverTime)
 	targetPath := ocpath.Root().Component(targetSupervisor)
 	currentPath := ocpath.Root().Component(currentActiveSupervisor)
 
-	time.Sleep(switchoverDuration)
+	time.Sleep(time.Duration(cfg.GetTiming().GetSwitchoverDurationMs()) * time.Millisecond)
 
 	batch := &ygnmi.SetBatch{}
 
@@ -141,7 +116,7 @@ func SwitchoverSupervisor(ctx context.Context, c *ygnmi.Client, targetSupervisor
 }
 
 // KillProcess simulates process termination and restart functionality
-func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName string, signal spb.KillProcessRequest_Signal, restart bool) error {
+func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName string, signal spb.KillProcessRequest_Signal, restart bool, cfg *configpb.Config) error {
 	log.Infof("KillProcess called with pid=%d, name=%s, signal=%v, restart=%v", pid, processName, signal, restart)
 
 	processPath := ocpath.Root().System().Process(uint64(pid))
@@ -182,18 +157,23 @@ func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName s
 			restartTime := time.Now().UnixNano()
 			restartCtx := gnmi.AddTimestampMetadata(ctx, restartTime)
 
-			newProcess := &oc.System_Process{
-				Name:      ygot.String(processName),
-				Pid:       ygot.Uint64(uint64(newPID)),
-				StartTime: ygot.Uint64(uint64(restartTime)),
-				// Simulate realistic resource usage
-				CpuUsageUser:      ygot.Uint64(defaultCpuUsageUser),
-				CpuUsageSystem:    ygot.Uint64(defaultCpuUsageSystem),
-				CpuUtilization:    ygot.Uint8(defaultCpuUtilization),
-				MemoryUsage:       ygot.Uint64(defaultMemoryUsage),
-				MemoryUtilization: ygot.Uint8(defaultMemoryUtilization),
+			var newProcess *oc.System_Process
+			procConfig := config.GetProcessByName(cfg, processName)
+			if procConfig != nil {
+				newProcess = &oc.System_Process{
+					Name:              ygot.String(procConfig.GetName()),
+					Pid:               ygot.Uint64(uint64(newPID)),
+					StartTime:         ygot.Uint64(uint64(restartTime)),
+					CpuUsageUser:      ygot.Uint64(procConfig.GetCpuUsageUser()),
+					CpuUsageSystem:    ygot.Uint64(procConfig.GetCpuUsageSystem()),
+					CpuUtilization:    ygot.Uint8(uint8(procConfig.GetCpuUtilization())),
+					MemoryUsage:       ygot.Uint64(procConfig.GetMemoryUsage()),
+					MemoryUtilization: ygot.Uint8(uint8(procConfig.GetMemoryUtilization())),
+				}
+			} else {
+				log.Errorf("Could not find configuration for process %s, skipping restart", processName)
+				return
 			}
-
 			newProcessPath := ocpath.Root().System().Process(uint64(newPID))
 			if _, err := gnmiclient.Replace(restartCtx, c, newProcessPath.State(), newProcess); err != nil {
 				log.Errorf("Failed to restart process %s with new PID %d: %v", processName, newPID, err)
@@ -207,15 +187,17 @@ func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName s
 }
 
 // NewBootTimeTask initializes boot-related paths.
-func NewBootTimeTask() *reconciler.BuiltReconciler {
+func NewBootTimeTask(cfg *configpb.Config) *reconciler.BuiltReconciler {
+	chassisName := cfg.GetComponents().GetChassisName()
+
 	rec := reconciler.NewBuilder("boot time").
 		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
 			now := time.Now().UnixNano()
 			if err := Reboot(ctx, c, now); err != nil {
 				return err
 			}
-			if _, err := gnmiclient.Replace(gnmi.AddTimestampMetadata(ctx, now), c, ocpath.Root().Component(chassisComponentName).State(), &oc.Component{
-				Name:            ygot.String(chassisComponentName),
+			if _, err := gnmiclient.Replace(gnmi.AddTimestampMetadata(ctx, now), c, ocpath.Root().Component(chassisName).State(), &oc.Component{
+				Name:            ygot.String(chassisName),
 				Type:            oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_CHASSIS,
 				OperStatus:      oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
 				SoftwareVersion: ygot.String("current"),
@@ -229,18 +211,28 @@ func NewBootTimeTask() *reconciler.BuiltReconciler {
 }
 
 // NewChassisComponentsTask initializes subcomponents for the chassis
-func NewChassisComponentsTask() *reconciler.BuiltReconciler {
+func NewChassisComponentsTask(cfg *configpb.Config) *reconciler.BuiltReconciler {
 	rec := reconciler.NewBuilder("chassis components").
 		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
 			now := time.Now().UnixNano()
 			timestampedCtx := gnmi.AddTimestampMetadata(ctx, now)
 			batch := &ygnmi.SetBatch{}
 
-			// Initialize supervisors
-			for i := 1; i <= numSupervisorCard; i++ {
-				componentName := fmt.Sprintf("%s%d", controlcardComponentName, i)
+			chassisName := cfg.GetComponents().GetChassisName()
+			supervisor1Name := cfg.GetComponents().GetSupervisor1Name()
+			supervisor2Name := cfg.GetComponents().GetSupervisor2Name()
+
+			// Initialize supervisors using explicit names
+			var supervisorNames []string
+			if supervisor2Name != "" {
+				supervisorNames = []string{supervisor1Name, supervisor2Name}
+			} else {
+				supervisorNames = []string{supervisor1Name}
+			}
+
+			for i, componentName := range supervisorNames {
 				redundantRole := oc.PlatformTypes_ComponentRedundantRole_PRIMARY
-				if i == 2 {
+				if i == 1 {
 					redundantRole = oc.PlatformTypes_ComponentRedundantRole_SECONDARY
 				}
 				component := &oc.Component{
@@ -248,7 +240,7 @@ func NewChassisComponentsTask() *reconciler.BuiltReconciler {
 					Type:               oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_CONTROLLER_CARD,
 					OperStatus:         oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
 					RedundantRole:      redundantRole,
-					Parent:             ygot.String(chassisComponentName),
+					Parent:             ygot.String(chassisName),
 					SoftwareVersion:    ygot.String("current"),
 					LastRebootTime:     ygot.Uint64(uint64(now)),
 					LastRebootReason:   oc.PlatformTypes_COMPONENT_REBOOT_REASON_UNSET,
@@ -264,13 +256,13 @@ func NewChassisComponentsTask() *reconciler.BuiltReconciler {
 			}
 
 			// Initialize line cards
-			for i := 0; i < numLineCard; i++ {
-				componentName := fmt.Sprintf("%s%d", linecardComponentName, i)
+			linecardNames := config.GetAllLinecardNames(cfg)
+			for _, componentName := range linecardNames {
 				component := &oc.Component{
 					Name:             ygot.String(componentName),
 					Type:             oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_LINECARD,
 					OperStatus:       oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
-					Parent:           ygot.String(chassisComponentName),
+					Parent:           ygot.String(chassisName),
 					SoftwareVersion:  ygot.String("current"),
 					LastRebootTime:   ygot.Uint64(uint64(now)),
 					LastRebootReason: oc.PlatformTypes_COMPONENT_REBOOT_REASON_UNSET,
@@ -280,13 +272,13 @@ func NewChassisComponentsTask() *reconciler.BuiltReconciler {
 			}
 
 			// Initialize fabric cards
-			for i := 0; i < numFabricCard; i++ {
-				componentName := fmt.Sprintf("%s%d", fabricComponentName, i)
+			fabricNames := config.GetAllFabricNames(cfg)
+			for _, componentName := range fabricNames {
 				component := &oc.Component{
 					Name:             ygot.String(componentName),
 					Type:             oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_FABRIC,
 					OperStatus:       oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
-					Parent:           ygot.String(chassisComponentName),
+					Parent:           ygot.String(chassisName),
 					SoftwareVersion:  ygot.String("current"),
 					LastRebootTime:   ygot.Uint64(uint64(now)),
 					LastRebootReason: oc.PlatformTypes_COMPONENT_REBOOT_REASON_UNSET,
@@ -306,6 +298,7 @@ func NewChassisComponentsTask() *reconciler.BuiltReconciler {
 	return rec
 }
 
+// NewCurrentTimeTask initializes boot-related paths.
 func NewCurrentTimeTask() *reconciler.BuiltReconciler {
 	rec := reconciler.NewBuilder("current time").
 		WithStart(func(ctx context.Context, c *ygnmi.Client) error { // TODO: consider WithPeriodic if this a common pattern.
@@ -393,42 +386,36 @@ func NewSystemBaseTask() *reconciler.BuiltReconciler {
 	return rec
 }
 
-// NewProcessMonitoringTask initializes mock system processes for monitoring.
-func NewProcessMonitoringTask() *reconciler.BuiltReconciler {
+// NewProcessMonitoringTask initializes system processes for monitoring.
+func NewProcessMonitoringTask(cfg *configpb.Config) *reconciler.BuiltReconciler {
 	rec := reconciler.NewBuilder("process monitoring").
 		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
 			now := time.Now().UnixNano()
 			timestampedCtx := gnmi.AddTimestampMetadata(ctx, now)
 			batch := &ygnmi.SetBatch{}
 
-			// Mock daemon processes with their PIDs
-			processes := map[string]uint64{
-				"Octa":        basePID + 1,
-				"Gribi":       basePID + 2,
-				"emsd":        basePID + 3,
-				"kim":         basePID + 4,
-				"grpc_server": basePID + 5,
-				"fibd":        basePID + 6,
-				"rpd":         basePID + 7,
+			// Get processes from configuration
+			processConfig := cfg.GetProcesses()
+			if processConfig == nil {
+				log.Warning("No processes configuration found")
 			}
+			processes := processConfig.GetProcess()
+			log.Infof("Initializing %d system processes from configuration", len(processes))
 
-			log.Infof("Initializing %d mock system processes", len(processes))
-
-			for processName, pid := range processes {
+			for _, procConfig := range processes {
 				process := &oc.System_Process{
-					Name:      ygot.String(processName),
-					Pid:       ygot.Uint64(pid),
-					StartTime: ygot.Uint64(uint64(now)),
-					// Simulate realistic resource usage
-					CpuUsageUser:      ygot.Uint64(defaultCpuUsageUser),
-					CpuUsageSystem:    ygot.Uint64(defaultCpuUsageSystem),
-					CpuUtilization:    ygot.Uint8(defaultCpuUtilization),
-					MemoryUsage:       ygot.Uint64(defaultMemoryUsage),
-					MemoryUtilization: ygot.Uint8(defaultMemoryUtilization),
+					Name:              ygot.String(procConfig.GetName()),
+					Pid:               ygot.Uint64(uint64(procConfig.GetPid())),
+					StartTime:         ygot.Uint64(uint64(now)),
+					CpuUsageUser:      ygot.Uint64(procConfig.GetCpuUsageUser()),
+					CpuUsageSystem:    ygot.Uint64(procConfig.GetCpuUsageSystem()),
+					CpuUtilization:    ygot.Uint8(uint8(procConfig.GetCpuUtilization())),
+					MemoryUsage:       ygot.Uint64(procConfig.GetMemoryUsage()),
+					MemoryUtilization: ygot.Uint8(uint8(procConfig.GetMemoryUtilization())),
 				}
 
-				gnmiclient.BatchReplace(batch, ocpath.Root().System().Process(pid).State(), process)
-				log.Infof("Batching initialization for process %s (PID: %d)", processName, pid)
+				gnmiclient.BatchReplace(batch, ocpath.Root().System().Process(uint64(procConfig.GetPid())).State(), process)
+				log.Infof("Batching initialization for process %s (PID: %d)", procConfig.GetName(), procConfig.GetPid())
 			}
 
 			if _, err := batch.Set(timestampedCtx, c); err != nil {
@@ -436,7 +423,7 @@ func NewProcessMonitoringTask() *reconciler.BuiltReconciler {
 				return err
 			}
 
-			log.Infof("Successfully initialized %d mock system processes", len(processes))
+			log.Infof("Successfully initialized %d system processes", len(processes))
 			return nil
 		}).Build()
 
@@ -449,7 +436,8 @@ func generateNewPID(ctx context.Context, c *ygnmi.Client, excludePID uint32) (ui
 	if err != nil {
 		return 0, fmt.Errorf("failed to get existing processes: %v", err)
 	}
-	// Build set of used PIDs with the current (excluded) PID
+
+	// Build set of used PIDs
 	used := make(map[uint32]bool)
 	for _, p := range processes {
 		if p.Pid != nil {
@@ -457,10 +445,12 @@ func generateNewPID(ctx context.Context, c *ygnmi.Client, excludePID uint32) (ui
 		}
 	}
 	used[excludePID] = true
-	for pid := uint32(1008); pid <= ceilingPID; pid++ {
+
+	// Use a reasonable PID range
+	for pid := uint32(1); pid <= 65535; pid++ {
 		if !used[pid] {
 			return pid, nil
 		}
 	}
-	return 0, fmt.Errorf("no PID available")
+	return 0, fmt.Errorf("no PID available in range 1-65535")
 }

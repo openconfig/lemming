@@ -1,0 +1,28 @@
+# Nokia-style configuration for lemming fakedevice
+# This configuration demonstrates Nokia naming conventions and structure
+
+vendor {
+  name: "Nokia"
+  model: "7750 SR-7s"
+  os_version: "4.28.3M"
+}
+
+components {
+  supervisor1_name: "ControlA"
+  supervisor2_name: "ControlB"
+  chassis_name: "chassis"
+  linecard_prefix: "Linecard"
+  fabric_prefix: "Fabric"
+  
+  linecard {
+    count: 8
+    start_index: 1
+    step: 1
+  }
+  
+  fabric {
+    count: 8
+    start_index: 1
+    step: 1
+  }
+}

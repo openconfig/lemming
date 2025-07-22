@@ -7,698 +7,726 @@ import "dataplane/proto/sai/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
+
 enum TamAttr {
-  TAM_ATTR_UNSPECIFIED = 0;
-  TAM_ATTR_TELEMETRY_OBJECTS_LIST = 1;
-  TAM_ATTR_EVENT_OBJECTS_LIST = 2;
-  TAM_ATTR_INT_OBJECTS_LIST = 3;
-  TAM_ATTR_TAM_BIND_POINT_TYPE_LIST = 4;
+	TAM_ATTR_UNSPECIFIED = 0;
+	TAM_ATTR_TELEMETRY_OBJECTS_LIST = 1;
+	TAM_ATTR_EVENT_OBJECTS_LIST = 2;
+	TAM_ATTR_INT_OBJECTS_LIST = 3;
+	TAM_ATTR_TAM_BIND_POINT_TYPE_LIST = 4;
 }
 
 enum TamMathFuncAttr {
-  TAM_MATH_FUNC_ATTR_UNSPECIFIED = 0;
-  TAM_MATH_FUNC_ATTR_TAM_TEL_MATH_FUNC_TYPE = 1;
+	TAM_MATH_FUNC_ATTR_UNSPECIFIED = 0;
+	TAM_MATH_FUNC_ATTR_TAM_TEL_MATH_FUNC_TYPE = 1;
 }
 
 enum TamReportAttr {
-  TAM_REPORT_ATTR_UNSPECIFIED = 0;
-  TAM_REPORT_ATTR_TYPE = 1;
-  TAM_REPORT_ATTR_HISTOGRAM_NUMBER_OF_BINS = 2;
-  TAM_REPORT_ATTR_HISTOGRAM_BIN_BOUNDARY = 3;
-  TAM_REPORT_ATTR_QUOTA = 4;
-  TAM_REPORT_ATTR_REPORT_MODE = 5;
-  TAM_REPORT_ATTR_REPORT_INTERVAL = 6;
-  TAM_REPORT_ATTR_ENTERPRISE_NUMBER = 7;
-  TAM_REPORT_ATTR_TEMPLATE_REPORT_INTERVAL = 8;
+	TAM_REPORT_ATTR_UNSPECIFIED = 0;
+	TAM_REPORT_ATTR_TYPE = 1;
+	TAM_REPORT_ATTR_HISTOGRAM_NUMBER_OF_BINS = 2;
+	TAM_REPORT_ATTR_HISTOGRAM_BIN_BOUNDARY = 3;
+	TAM_REPORT_ATTR_QUOTA = 4;
+	TAM_REPORT_ATTR_REPORT_MODE = 5;
+	TAM_REPORT_ATTR_REPORT_INTERVAL = 6;
+	TAM_REPORT_ATTR_ENTERPRISE_NUMBER = 7;
+	TAM_REPORT_ATTR_TEMPLATE_REPORT_INTERVAL = 8;
+	TAM_REPORT_ATTR_REPORT_INTERVAL_UNIT = 9;
 }
 
 enum TamEventThresholdAttr {
-  TAM_EVENT_THRESHOLD_ATTR_UNSPECIFIED = 0;
-  TAM_EVENT_THRESHOLD_ATTR_HIGH_WATERMARK = 1;
-  TAM_EVENT_THRESHOLD_ATTR_LOW_WATERMARK = 2;
-  TAM_EVENT_THRESHOLD_ATTR_LATENCY = 3;
-  TAM_EVENT_THRESHOLD_ATTR_RATE = 4;
-  TAM_EVENT_THRESHOLD_ATTR_ABS_VALUE = 5;
-  TAM_EVENT_THRESHOLD_ATTR_UNIT = 6;
+	TAM_EVENT_THRESHOLD_ATTR_UNSPECIFIED = 0;
+	TAM_EVENT_THRESHOLD_ATTR_HIGH_WATERMARK = 1;
+	TAM_EVENT_THRESHOLD_ATTR_LOW_WATERMARK = 2;
+	TAM_EVENT_THRESHOLD_ATTR_LATENCY = 3;
+	TAM_EVENT_THRESHOLD_ATTR_RATE = 4;
+	TAM_EVENT_THRESHOLD_ATTR_ABS_VALUE = 5;
+	TAM_EVENT_THRESHOLD_ATTR_UNIT = 6;
 }
 
 enum TamIntAttr {
-  TAM_INT_ATTR_UNSPECIFIED = 0;
-  TAM_INT_ATTR_TYPE = 1;
-  TAM_INT_ATTR_DEVICE_ID = 2;
-  TAM_INT_ATTR_IOAM_TRACE_TYPE = 3;
-  TAM_INT_ATTR_INT_PRESENCE_TYPE = 4;
-  TAM_INT_ATTR_INT_PRESENCE_PB1 = 5;
-  TAM_INT_ATTR_INT_PRESENCE_PB2 = 6;
-  TAM_INT_ATTR_INT_PRESENCE_DSCP_VALUE = 7;
-  TAM_INT_ATTR_INLINE = 8;
-  TAM_INT_ATTR_INT_PRESENCE_L3_PROTOCOL = 9;
-  TAM_INT_ATTR_TRACE_VECTOR = 10;
-  TAM_INT_ATTR_ACTION_VECTOR = 11;
-  TAM_INT_ATTR_P4_INT_INSTRUCTION_BITMAP = 12;
-  TAM_INT_ATTR_METADATA_FRAGMENT_ENABLE = 13;
-  TAM_INT_ATTR_METADATA_CHECKSUM_ENABLE = 14;
-  TAM_INT_ATTR_REPORT_ALL_PACKETS = 15;
-  TAM_INT_ATTR_FLOW_LIVENESS_PERIOD = 16;
-  TAM_INT_ATTR_LATENCY_SENSITIVITY = 17;
-  TAM_INT_ATTR_ACL_GROUP = 18;
-  TAM_INT_ATTR_MAX_HOP_COUNT = 19;
-  TAM_INT_ATTR_MAX_LENGTH = 20;
-  TAM_INT_ATTR_NAME_SPACE_ID = 21;
-  TAM_INT_ATTR_NAME_SPACE_ID_GLOBAL = 22;
-  TAM_INT_ATTR_INGRESS_SAMPLEPACKET_ENABLE = 23;
-  TAM_INT_ATTR_COLLECTOR_LIST = 24;
-  TAM_INT_ATTR_MATH_FUNC = 25;
-  TAM_INT_ATTR_REPORT_ID = 26;
+	TAM_INT_ATTR_UNSPECIFIED = 0;
+	TAM_INT_ATTR_TYPE = 1;
+	TAM_INT_ATTR_DEVICE_ID = 2;
+	TAM_INT_ATTR_IOAM_TRACE_TYPE = 3;
+	TAM_INT_ATTR_INT_PRESENCE_TYPE = 4;
+	TAM_INT_ATTR_INT_PRESENCE_PB1 = 5;
+	TAM_INT_ATTR_INT_PRESENCE_PB2 = 6;
+	TAM_INT_ATTR_INT_PRESENCE_DSCP_VALUE = 7;
+	TAM_INT_ATTR_INLINE = 8;
+	TAM_INT_ATTR_INT_PRESENCE_L3_PROTOCOL = 9;
+	TAM_INT_ATTR_TRACE_VECTOR = 10;
+	TAM_INT_ATTR_ACTION_VECTOR = 11;
+	TAM_INT_ATTR_P4_INT_INSTRUCTION_BITMAP = 12;
+	TAM_INT_ATTR_METADATA_FRAGMENT_ENABLE = 13;
+	TAM_INT_ATTR_METADATA_CHECKSUM_ENABLE = 14;
+	TAM_INT_ATTR_REPORT_ALL_PACKETS = 15;
+	TAM_INT_ATTR_FLOW_LIVENESS_PERIOD = 16;
+	TAM_INT_ATTR_LATENCY_SENSITIVITY = 17;
+	TAM_INT_ATTR_ACL_GROUP = 18;
+	TAM_INT_ATTR_MAX_HOP_COUNT = 19;
+	TAM_INT_ATTR_MAX_LENGTH = 20;
+	TAM_INT_ATTR_NAME_SPACE_ID = 21;
+	TAM_INT_ATTR_NAME_SPACE_ID_GLOBAL = 22;
+	TAM_INT_ATTR_INGRESS_SAMPLEPACKET_ENABLE = 23;
+	TAM_INT_ATTR_COLLECTOR_LIST = 24;
+	TAM_INT_ATTR_MATH_FUNC = 25;
+	TAM_INT_ATTR_REPORT_ID = 26;
 }
 
 enum TamTelTypeAttr {
-  TAM_TEL_TYPE_ATTR_UNSPECIFIED = 0;
-  TAM_TEL_TYPE_ATTR_TAM_TELEMETRY_TYPE = 1;
-  TAM_TEL_TYPE_ATTR_INT_SWITCH_IDENTIFIER = 2;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS = 3;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS_INGRESS = 4;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS_EGRESS = 5;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_VIRTUAL_QUEUE_STATS = 6;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_OUTPUT_QUEUE_STATS = 7;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_MMU_STATS = 8;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_FABRIC_STATS = 9;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_FILTER_STATS = 10;
-  TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_RESOURCE_UTILIZATION_STATS = 11;
-  TAM_TEL_TYPE_ATTR_FABRIC_Q = 12;
-  TAM_TEL_TYPE_ATTR_NE_ENABLE = 13;
-  TAM_TEL_TYPE_ATTR_DSCP_VALUE = 14;
-  TAM_TEL_TYPE_ATTR_MATH_FUNC = 15;
-  TAM_TEL_TYPE_ATTR_REPORT_ID = 16;
+	TAM_TEL_TYPE_ATTR_UNSPECIFIED = 0;
+	TAM_TEL_TYPE_ATTR_TAM_TELEMETRY_TYPE = 1;
+	TAM_TEL_TYPE_ATTR_INT_SWITCH_IDENTIFIER = 2;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS = 3;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS_INGRESS = 4;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS_EGRESS = 5;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_VIRTUAL_QUEUE_STATS = 6;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_OUTPUT_QUEUE_STATS = 7;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_MMU_STATS = 8;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_FABRIC_STATS = 9;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_FILTER_STATS = 10;
+	TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_RESOURCE_UTILIZATION_STATS = 11;
+	TAM_TEL_TYPE_ATTR_FABRIC_Q = 12;
+	TAM_TEL_TYPE_ATTR_NE_ENABLE = 13;
+	TAM_TEL_TYPE_ATTR_DSCP_VALUE = 14;
+	TAM_TEL_TYPE_ATTR_MATH_FUNC = 15;
+	TAM_TEL_TYPE_ATTR_REPORT_ID = 16;
+	TAM_TEL_TYPE_ATTR_COUNTER_SUBSCRIPTION_LIST = 17;
 }
 
 enum TamTransportAttr {
-  TAM_TRANSPORT_ATTR_UNSPECIFIED = 0;
-  TAM_TRANSPORT_ATTR_TRANSPORT_TYPE = 1;
-  TAM_TRANSPORT_ATTR_SRC_PORT = 2;
-  TAM_TRANSPORT_ATTR_DST_PORT = 3;
-  TAM_TRANSPORT_ATTR_TRANSPORT_AUTH_TYPE = 4;
-  TAM_TRANSPORT_ATTR_MTU = 5;
+	TAM_TRANSPORT_ATTR_UNSPECIFIED = 0;
+	TAM_TRANSPORT_ATTR_TRANSPORT_TYPE = 1;
+	TAM_TRANSPORT_ATTR_SRC_PORT = 2;
+	TAM_TRANSPORT_ATTR_DST_PORT = 3;
+	TAM_TRANSPORT_ATTR_TRANSPORT_AUTH_TYPE = 4;
+	TAM_TRANSPORT_ATTR_MTU = 5;
 }
 
 enum TamTelemetryAttr {
-  TAM_TELEMETRY_ATTR_UNSPECIFIED = 0;
-  TAM_TELEMETRY_ATTR_TAM_TYPE_LIST = 1;
-  TAM_TELEMETRY_ATTR_COLLECTOR_LIST = 2;
-  TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT = 3;
-  TAM_TELEMETRY_ATTR_REPORTING_INTERVAL = 4;
+	TAM_TELEMETRY_ATTR_UNSPECIFIED = 0;
+	TAM_TELEMETRY_ATTR_TAM_TYPE_LIST = 1;
+	TAM_TELEMETRY_ATTR_COLLECTOR_LIST = 2;
+	TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT = 3;
+	TAM_TELEMETRY_ATTR_REPORTING_INTERVAL = 4;
 }
 
 enum TamCollectorAttr {
-  TAM_COLLECTOR_ATTR_UNSPECIFIED = 0;
-  TAM_COLLECTOR_ATTR_SRC_IP = 1;
-  TAM_COLLECTOR_ATTR_DST_IP = 2;
-  TAM_COLLECTOR_ATTR_LOCALHOST = 3;
-  TAM_COLLECTOR_ATTR_VIRTUAL_ROUTER_ID = 4;
-  TAM_COLLECTOR_ATTR_TRUNCATE_SIZE = 5;
-  TAM_COLLECTOR_ATTR_TRANSPORT = 6;
-  TAM_COLLECTOR_ATTR_DSCP_VALUE = 7;
+	TAM_COLLECTOR_ATTR_UNSPECIFIED = 0;
+	TAM_COLLECTOR_ATTR_SRC_IP = 1;
+	TAM_COLLECTOR_ATTR_DST_IP = 2;
+	TAM_COLLECTOR_ATTR_LOCALHOST = 3;
+	TAM_COLLECTOR_ATTR_VIRTUAL_ROUTER_ID = 4;
+	TAM_COLLECTOR_ATTR_TRUNCATE_SIZE = 5;
+	TAM_COLLECTOR_ATTR_TRANSPORT = 6;
+	TAM_COLLECTOR_ATTR_DSCP_VALUE = 7;
+	TAM_COLLECTOR_ATTR_HOSTIF_TRAP = 8;
 }
 
 enum TamEventActionAttr {
-  TAM_EVENT_ACTION_ATTR_UNSPECIFIED = 0;
-  TAM_EVENT_ACTION_ATTR_REPORT_TYPE = 1;
-  TAM_EVENT_ACTION_ATTR_QOS_ACTION_TYPE = 2;
+	TAM_EVENT_ACTION_ATTR_UNSPECIFIED = 0;
+	TAM_EVENT_ACTION_ATTR_REPORT_TYPE = 1;
+	TAM_EVENT_ACTION_ATTR_QOS_ACTION_TYPE = 2;
 }
 
 enum TamEventAttr {
-  TAM_EVENT_ATTR_UNSPECIFIED = 0;
-  TAM_EVENT_ATTR_TYPE = 1;
-  TAM_EVENT_ATTR_ACTION_LIST = 2;
-  TAM_EVENT_ATTR_COLLECTOR_LIST = 3;
-  TAM_EVENT_ATTR_THRESHOLD = 4;
-  TAM_EVENT_ATTR_DSCP_VALUE = 5;
+	TAM_EVENT_ATTR_UNSPECIFIED = 0;
+	TAM_EVENT_ATTR_TYPE = 1;
+	TAM_EVENT_ATTR_ACTION_LIST = 2;
+	TAM_EVENT_ATTR_COLLECTOR_LIST = 3;
+	TAM_EVENT_ATTR_THRESHOLD = 4;
+	TAM_EVENT_ATTR_DSCP_VALUE = 5;
+}
+
+enum TamCounterSubscriptionAttr {
+	TAM_COUNTER_SUBSCRIPTION_ATTR_UNSPECIFIED = 0;
+	TAM_COUNTER_SUBSCRIPTION_ATTR_TEL_TYPE = 1;
+	TAM_COUNTER_SUBSCRIPTION_ATTR_OBJECT_ID = 2;
+	TAM_COUNTER_SUBSCRIPTION_ATTR_STAT_ID = 3;
+	TAM_COUNTER_SUBSCRIPTION_ATTR_LABEL = 4;
 }
 
 message CreateTamRequest {
-  option (sai_type) = OBJECT_TYPE_TAM;
-  uint64 switch = 1;
-  repeated uint64 telemetry_objects_list = 2 [(attr_enum_value) = 1];
-  repeated uint64 event_objects_list = 3 [(attr_enum_value) = 2];
-  repeated uint64 int_objects_list = 4 [(attr_enum_value) = 3];
-  repeated TamBindPointType tam_bind_point_type_list = 5
-      [(attr_enum_value) = 4];
+	option (sai_type) = OBJECT_TYPE_TAM;
+	uint64 switch = 1;
+	repeated uint64 telemetry_objects_list = 2[(attr_enum_value) = 1];
+	repeated uint64 event_objects_list = 3[(attr_enum_value) = 2];
+	repeated uint64 int_objects_list = 4[(attr_enum_value) = 3];
+	repeated TamBindPointType tam_bind_point_type_list = 5[(attr_enum_value) = 4];
 }
 
 message CreateTamResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamResponse {}
+message RemoveTamResponse {
+}
 
 message SetTamAttributeRequest {
-  uint64 oid = 1;
-  repeated uint64 telemetry_objects_list = 2 [(attr_enum_value) = 1];
-  repeated uint64 event_objects_list = 3 [(attr_enum_value) = 2];
-  repeated uint64 int_objects_list = 4 [(attr_enum_value) = 3];
+	uint64 oid = 1;
+	repeated uint64 telemetry_objects_list = 2[(attr_enum_value) = 1];
+	repeated uint64 event_objects_list = 3[(attr_enum_value) = 2];
+	repeated uint64 int_objects_list = 4[(attr_enum_value) = 3];
 }
 
-message SetTamAttributeResponse {}
+message SetTamAttributeResponse {
+}
 
 message GetTamAttributeRequest {
-  uint64 oid = 1;
-  repeated TamAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamAttr attr_type = 2;
 }
 
 message GetTamAttributeResponse {
-  TamAttribute attr = 1;
+	TamAttribute attr = 1;
 }
 
 message CreateTamMathFuncRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_MATH_FUNC;
-  uint64 switch = 1;
-  optional TamTelMathFuncType tam_tel_math_func_type = 2
-      [(attr_enum_value) = 1];
+	option (sai_type) = OBJECT_TYPE_TAM_MATH_FUNC;
+	uint64 switch = 1;
+	optional TamTelMathFuncType tam_tel_math_func_type = 2[(attr_enum_value) = 1];
 }
 
 message CreateTamMathFuncResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamMathFuncRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamMathFuncResponse {}
+message RemoveTamMathFuncResponse {
+}
 
 message SetTamMathFuncAttributeRequest {
-  uint64 oid = 1;
-  optional TamTelMathFuncType tam_tel_math_func_type = 2
-      [(attr_enum_value) = 1];
+	uint64 oid = 1;
+	optional TamTelMathFuncType tam_tel_math_func_type = 2[(attr_enum_value) = 1];
 }
 
-message SetTamMathFuncAttributeResponse {}
+message SetTamMathFuncAttributeResponse {
+}
 
 message GetTamMathFuncAttributeRequest {
-  uint64 oid = 1;
-  repeated TamMathFuncAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamMathFuncAttr attr_type = 2;
 }
 
 message GetTamMathFuncAttributeResponse {
-  TamMathFuncAttribute attr = 1;
+	TamMathFuncAttribute attr = 1;
 }
 
 message CreateTamReportRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_REPORT;
-  uint64 switch = 1;
-  optional TamReportType type = 2 [(attr_enum_value) = 1];
-  optional uint32 histogram_number_of_bins = 3 [(attr_enum_value) = 2];
-  repeated uint32 histogram_bin_boundary = 4 [(attr_enum_value) = 3];
-  optional uint32 quota = 5 [(attr_enum_value) = 4];
-  optional TamReportMode report_mode = 6 [(attr_enum_value) = 5];
-  optional uint32 report_interval = 7 [(attr_enum_value) = 6];
-  optional uint32 enterprise_number = 8 [(attr_enum_value) = 7];
-  optional uint32 template_report_interval = 9 [(attr_enum_value) = 8];
+	option (sai_type) = OBJECT_TYPE_TAM_REPORT;
+	uint64 switch = 1;
+	optional TamReportType type = 2[(attr_enum_value) = 1];
+	optional uint32 histogram_number_of_bins = 3[(attr_enum_value) = 2];
+	repeated uint32 histogram_bin_boundary = 4[(attr_enum_value) = 3];
+	optional uint32 quota = 5[(attr_enum_value) = 4];
+	optional TamReportMode report_mode = 6[(attr_enum_value) = 5];
+	optional uint32 report_interval = 7[(attr_enum_value) = 6];
+	optional uint32 enterprise_number = 8[(attr_enum_value) = 7];
+	optional uint32 template_report_interval = 9[(attr_enum_value) = 8];
+	optional TamReportIntervalUnit report_interval_unit = 10[(attr_enum_value) = 9];
 }
 
 message CreateTamReportResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamReportRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamReportResponse {}
+message RemoveTamReportResponse {
+}
 
 message SetTamReportAttributeRequest {
-  uint64 oid = 1;
-  optional TamReportType type = 2 [(attr_enum_value) = 1];
-  optional uint32 quota = 3 [(attr_enum_value) = 4];
-  optional uint32 report_interval = 4 [(attr_enum_value) = 6];
-  optional uint32 enterprise_number = 5 [(attr_enum_value) = 7];
-  optional uint32 template_report_interval = 6 [(attr_enum_value) = 8];
+	uint64 oid = 1;
+	optional TamReportType type = 2[(attr_enum_value) = 1];
+	optional uint32 quota = 3[(attr_enum_value) = 4];
+	optional uint32 report_interval = 4[(attr_enum_value) = 6];
+	optional uint32 enterprise_number = 5[(attr_enum_value) = 7];
+	optional uint32 template_report_interval = 6[(attr_enum_value) = 8];
+	optional TamReportIntervalUnit report_interval_unit = 7[(attr_enum_value) = 9];
 }
 
-message SetTamReportAttributeResponse {}
+message SetTamReportAttributeResponse {
+}
 
 message GetTamReportAttributeRequest {
-  uint64 oid = 1;
-  repeated TamReportAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamReportAttr attr_type = 2;
 }
 
 message GetTamReportAttributeResponse {
-  TamReportAttribute attr = 1;
+	TamReportAttribute attr = 1;
 }
 
 message CreateTamEventThresholdRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_EVENT_THRESHOLD;
-  uint64 switch = 1;
-  optional uint32 high_watermark = 2 [(attr_enum_value) = 1];
-  optional uint32 low_watermark = 3 [(attr_enum_value) = 2];
-  optional uint32 latency = 4 [(attr_enum_value) = 3];
-  optional uint32 rate = 5 [(attr_enum_value) = 4];
-  optional uint32 abs_value = 6 [(attr_enum_value) = 5];
-  optional TamEventThresholdUnit unit = 7 [(attr_enum_value) = 6];
+	option (sai_type) = OBJECT_TYPE_TAM_EVENT_THRESHOLD;
+	uint64 switch = 1;
+	optional uint32 high_watermark = 2[(attr_enum_value) = 1];
+	optional uint32 low_watermark = 3[(attr_enum_value) = 2];
+	optional uint32 latency = 4[(attr_enum_value) = 3];
+	optional uint32 rate = 5[(attr_enum_value) = 4];
+	optional uint32 abs_value = 6[(attr_enum_value) = 5];
+	optional TamEventThresholdUnit unit = 7[(attr_enum_value) = 6];
 }
 
 message CreateTamEventThresholdResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamEventThresholdRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamEventThresholdResponse {}
+message RemoveTamEventThresholdResponse {
+}
 
 message SetTamEventThresholdAttributeRequest {
-  uint64 oid = 1;
-  optional uint32 high_watermark = 2 [(attr_enum_value) = 1];
-  optional uint32 low_watermark = 3 [(attr_enum_value) = 2];
-  optional uint32 latency = 4 [(attr_enum_value) = 3];
-  optional uint32 rate = 5 [(attr_enum_value) = 4];
-  optional uint32 abs_value = 6 [(attr_enum_value) = 5];
-  optional TamEventThresholdUnit unit = 7 [(attr_enum_value) = 6];
+	uint64 oid = 1;
+	optional uint32 high_watermark = 2[(attr_enum_value) = 1];
+	optional uint32 low_watermark = 3[(attr_enum_value) = 2];
+	optional uint32 latency = 4[(attr_enum_value) = 3];
+	optional uint32 rate = 5[(attr_enum_value) = 4];
+	optional uint32 abs_value = 6[(attr_enum_value) = 5];
+	optional TamEventThresholdUnit unit = 7[(attr_enum_value) = 6];
 }
 
-message SetTamEventThresholdAttributeResponse {}
+message SetTamEventThresholdAttributeResponse {
+}
 
 message GetTamEventThresholdAttributeRequest {
-  uint64 oid = 1;
-  repeated TamEventThresholdAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamEventThresholdAttr attr_type = 2;
 }
 
 message GetTamEventThresholdAttributeResponse {
-  TamEventThresholdAttribute attr = 1;
+	TamEventThresholdAttribute attr = 1;
 }
 
 message CreateTamIntRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_INT;
-  uint64 switch = 1;
-  optional TamIntType type = 2 [(attr_enum_value) = 1];
-  optional uint32 device_id = 3 [(attr_enum_value) = 2];
-  optional uint32 ioam_trace_type = 4 [(attr_enum_value) = 3];
-  optional TamIntPresenceType int_presence_type = 5 [(attr_enum_value) = 4];
-  optional uint32 int_presence_pb1 = 6 [(attr_enum_value) = 5];
-  optional uint32 int_presence_pb2 = 7 [(attr_enum_value) = 6];
-  optional uint32 int_presence_dscp_value = 8 [(attr_enum_value) = 7];
-  optional bool inline = 9 [(attr_enum_value) = 8];
-  optional uint32 int_presence_l3_protocol = 10 [(attr_enum_value) = 9];
-  optional uint32 trace_vector = 11 [(attr_enum_value) = 10];
-  optional uint32 action_vector = 12 [(attr_enum_value) = 11];
-  optional uint32 p4_int_instruction_bitmap = 13 [(attr_enum_value) = 12];
-  optional bool metadata_fragment_enable = 14 [(attr_enum_value) = 13];
-  optional bool metadata_checksum_enable = 15 [(attr_enum_value) = 14];
-  optional bool report_all_packets = 16 [(attr_enum_value) = 15];
-  optional uint32 flow_liveness_period = 17 [(attr_enum_value) = 16];
-  optional uint32 latency_sensitivity = 18 [(attr_enum_value) = 17];
-  optional uint64 acl_group = 19 [(attr_enum_value) = 18];
-  optional uint32 max_hop_count = 20 [(attr_enum_value) = 19];
-  optional uint32 max_length = 21 [(attr_enum_value) = 20];
-  optional uint32 name_space_id = 22 [(attr_enum_value) = 21];
-  optional bool name_space_id_global = 23 [(attr_enum_value) = 22];
-  optional uint64 ingress_samplepacket_enable = 24 [(attr_enum_value) = 23];
-  repeated uint64 collector_list = 25 [(attr_enum_value) = 24];
-  optional uint64 math_func = 26 [(attr_enum_value) = 25];
-  optional uint64 report_id = 27 [(attr_enum_value) = 26];
+	option (sai_type) = OBJECT_TYPE_TAM_INT;
+	uint64 switch = 1;
+	optional TamIntType type = 2[(attr_enum_value) = 1];
+	optional uint32 device_id = 3[(attr_enum_value) = 2];
+	optional uint32 ioam_trace_type = 4[(attr_enum_value) = 3];
+	optional TamIntPresenceType int_presence_type = 5[(attr_enum_value) = 4];
+	optional uint32 int_presence_pb1 = 6[(attr_enum_value) = 5];
+	optional uint32 int_presence_pb2 = 7[(attr_enum_value) = 6];
+	optional uint32 int_presence_dscp_value = 8[(attr_enum_value) = 7];
+	optional bool inline = 9[(attr_enum_value) = 8];
+	optional uint32 int_presence_l3_protocol = 10[(attr_enum_value) = 9];
+	optional uint32 trace_vector = 11[(attr_enum_value) = 10];
+	optional uint32 action_vector = 12[(attr_enum_value) = 11];
+	optional uint32 p4_int_instruction_bitmap = 13[(attr_enum_value) = 12];
+	optional bool metadata_fragment_enable = 14[(attr_enum_value) = 13];
+	optional bool metadata_checksum_enable = 15[(attr_enum_value) = 14];
+	optional bool report_all_packets = 16[(attr_enum_value) = 15];
+	optional uint32 flow_liveness_period = 17[(attr_enum_value) = 16];
+	optional uint32 latency_sensitivity = 18[(attr_enum_value) = 17];
+	optional uint64 acl_group = 19[(attr_enum_value) = 18];
+	optional uint32 max_hop_count = 20[(attr_enum_value) = 19];
+	optional uint32 max_length = 21[(attr_enum_value) = 20];
+	optional uint32 name_space_id = 22[(attr_enum_value) = 21];
+	optional bool name_space_id_global = 23[(attr_enum_value) = 22];
+	optional uint64 ingress_samplepacket_enable = 24[(attr_enum_value) = 23];
+	repeated uint64 collector_list = 25[(attr_enum_value) = 24];
+	optional uint64 math_func = 26[(attr_enum_value) = 25];
+	optional uint64 report_id = 27[(attr_enum_value) = 26];
 }
 
 message CreateTamIntResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamIntRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamIntResponse {}
+message RemoveTamIntResponse {
+}
 
 message SetTamIntAttributeRequest {
-  uint64 oid = 1;
-  optional uint32 ioam_trace_type = 2 [(attr_enum_value) = 3];
-  optional uint32 trace_vector = 3 [(attr_enum_value) = 10];
-  optional uint32 action_vector = 4 [(attr_enum_value) = 11];
-  optional uint32 p4_int_instruction_bitmap = 5 [(attr_enum_value) = 12];
-  optional bool metadata_fragment_enable = 6 [(attr_enum_value) = 13];
-  optional bool metadata_checksum_enable = 7 [(attr_enum_value) = 14];
-  optional bool report_all_packets = 8 [(attr_enum_value) = 15];
-  optional uint32 flow_liveness_period = 9 [(attr_enum_value) = 16];
-  optional uint32 latency_sensitivity = 10 [(attr_enum_value) = 17];
-  optional uint64 acl_group = 11 [(attr_enum_value) = 18];
-  optional uint32 max_hop_count = 12 [(attr_enum_value) = 19];
-  optional uint32 max_length = 13 [(attr_enum_value) = 20];
-  optional uint32 name_space_id = 14 [(attr_enum_value) = 21];
-  optional bool name_space_id_global = 15 [(attr_enum_value) = 22];
-  optional uint64 ingress_samplepacket_enable = 16 [(attr_enum_value) = 23];
-  repeated uint64 collector_list = 17 [(attr_enum_value) = 24];
-  optional uint64 math_func = 18 [(attr_enum_value) = 25];
+	uint64 oid = 1;
+	optional uint32 ioam_trace_type = 2[(attr_enum_value) = 3];
+	optional uint32 trace_vector = 3[(attr_enum_value) = 10];
+	optional uint32 action_vector = 4[(attr_enum_value) = 11];
+	optional uint32 p4_int_instruction_bitmap = 5[(attr_enum_value) = 12];
+	optional bool metadata_fragment_enable = 6[(attr_enum_value) = 13];
+	optional bool metadata_checksum_enable = 7[(attr_enum_value) = 14];
+	optional bool report_all_packets = 8[(attr_enum_value) = 15];
+	optional uint32 flow_liveness_period = 9[(attr_enum_value) = 16];
+	optional uint32 latency_sensitivity = 10[(attr_enum_value) = 17];
+	optional uint64 acl_group = 11[(attr_enum_value) = 18];
+	optional uint32 max_hop_count = 12[(attr_enum_value) = 19];
+	optional uint32 max_length = 13[(attr_enum_value) = 20];
+	optional uint32 name_space_id = 14[(attr_enum_value) = 21];
+	optional bool name_space_id_global = 15[(attr_enum_value) = 22];
+	optional uint64 ingress_samplepacket_enable = 16[(attr_enum_value) = 23];
+	repeated uint64 collector_list = 17[(attr_enum_value) = 24];
+	optional uint64 math_func = 18[(attr_enum_value) = 25];
 }
 
-message SetTamIntAttributeResponse {}
+message SetTamIntAttributeResponse {
+}
 
 message GetTamIntAttributeRequest {
-  uint64 oid = 1;
-  repeated TamIntAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamIntAttr attr_type = 2;
 }
 
 message GetTamIntAttributeResponse {
-  TamIntAttribute attr = 1;
+	TamIntAttribute attr = 1;
 }
 
 message CreateTamTelTypeRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_TEL_TYPE;
-  uint64 switch = 1;
-  optional TamTelemetryType tam_telemetry_type = 2 [(attr_enum_value) = 1];
-  optional uint32 int_switch_identifier = 3 [(attr_enum_value) = 2];
-  optional bool switch_enable_port_stats = 4 [(attr_enum_value) = 3];
-  optional bool switch_enable_port_stats_ingress = 5 [(attr_enum_value) = 4];
-  optional bool switch_enable_port_stats_egress = 6 [(attr_enum_value) = 5];
-  optional bool switch_enable_virtual_queue_stats = 7 [(attr_enum_value) = 6];
-  optional bool switch_enable_output_queue_stats = 8 [(attr_enum_value) = 7];
-  optional bool switch_enable_mmu_stats = 9 [(attr_enum_value) = 8];
-  optional bool switch_enable_fabric_stats = 10 [(attr_enum_value) = 9];
-  optional bool switch_enable_filter_stats = 11 [(attr_enum_value) = 10];
-  optional bool switch_enable_resource_utilization_stats = 12
-      [(attr_enum_value) = 11];
-  optional bool fabric_q = 13 [(attr_enum_value) = 12];
-  optional bool ne_enable = 14 [(attr_enum_value) = 13];
-  optional uint32 dscp_value = 15 [(attr_enum_value) = 14];
-  optional uint64 math_func = 16 [(attr_enum_value) = 15];
-  optional uint64 report_id = 17 [(attr_enum_value) = 16];
+	option (sai_type) = OBJECT_TYPE_TAM_TEL_TYPE;
+	uint64 switch = 1;
+	optional TamTelemetryType tam_telemetry_type = 2[(attr_enum_value) = 1];
+	optional uint32 int_switch_identifier = 3[(attr_enum_value) = 2];
+	optional bool switch_enable_port_stats = 4[(attr_enum_value) = 3];
+	optional bool switch_enable_port_stats_ingress = 5[(attr_enum_value) = 4];
+	optional bool switch_enable_port_stats_egress = 6[(attr_enum_value) = 5];
+	optional bool switch_enable_virtual_queue_stats = 7[(attr_enum_value) = 6];
+	optional bool switch_enable_output_queue_stats = 8[(attr_enum_value) = 7];
+	optional bool switch_enable_mmu_stats = 9[(attr_enum_value) = 8];
+	optional bool switch_enable_fabric_stats = 10[(attr_enum_value) = 9];
+	optional bool switch_enable_filter_stats = 11[(attr_enum_value) = 10];
+	optional bool switch_enable_resource_utilization_stats = 12[(attr_enum_value) = 11];
+	optional bool fabric_q = 13[(attr_enum_value) = 12];
+	optional bool ne_enable = 14[(attr_enum_value) = 13];
+	optional uint32 dscp_value = 15[(attr_enum_value) = 14];
+	optional uint64 math_func = 16[(attr_enum_value) = 15];
+	optional uint64 report_id = 17[(attr_enum_value) = 16];
 }
 
 message CreateTamTelTypeResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamTelTypeRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamTelTypeResponse {}
+message RemoveTamTelTypeResponse {
+}
 
 message SetTamTelTypeAttributeRequest {
-  uint64 oid = 1;
-  optional uint32 int_switch_identifier = 2 [(attr_enum_value) = 2];
-  optional bool switch_enable_port_stats = 3 [(attr_enum_value) = 3];
-  optional bool switch_enable_port_stats_ingress = 4 [(attr_enum_value) = 4];
-  optional bool switch_enable_port_stats_egress = 5 [(attr_enum_value) = 5];
-  optional bool switch_enable_virtual_queue_stats = 6 [(attr_enum_value) = 6];
-  optional bool switch_enable_output_queue_stats = 7 [(attr_enum_value) = 7];
-  optional bool switch_enable_mmu_stats = 8 [(attr_enum_value) = 8];
-  optional bool switch_enable_fabric_stats = 9 [(attr_enum_value) = 9];
-  optional bool switch_enable_filter_stats = 10 [(attr_enum_value) = 10];
-  optional bool switch_enable_resource_utilization_stats = 11
-      [(attr_enum_value) = 11];
-  optional bool fabric_q = 12 [(attr_enum_value) = 12];
-  optional bool ne_enable = 13 [(attr_enum_value) = 13];
-  optional uint32 dscp_value = 14 [(attr_enum_value) = 14];
-  optional uint64 math_func = 15 [(attr_enum_value) = 15];
+	uint64 oid = 1;
+	optional uint32 int_switch_identifier = 2[(attr_enum_value) = 2];
+	optional bool switch_enable_port_stats = 3[(attr_enum_value) = 3];
+	optional bool switch_enable_port_stats_ingress = 4[(attr_enum_value) = 4];
+	optional bool switch_enable_port_stats_egress = 5[(attr_enum_value) = 5];
+	optional bool switch_enable_virtual_queue_stats = 6[(attr_enum_value) = 6];
+	optional bool switch_enable_output_queue_stats = 7[(attr_enum_value) = 7];
+	optional bool switch_enable_mmu_stats = 8[(attr_enum_value) = 8];
+	optional bool switch_enable_fabric_stats = 9[(attr_enum_value) = 9];
+	optional bool switch_enable_filter_stats = 10[(attr_enum_value) = 10];
+	optional bool switch_enable_resource_utilization_stats = 11[(attr_enum_value) = 11];
+	optional bool fabric_q = 12[(attr_enum_value) = 12];
+	optional bool ne_enable = 13[(attr_enum_value) = 13];
+	optional uint32 dscp_value = 14[(attr_enum_value) = 14];
+	optional uint64 math_func = 15[(attr_enum_value) = 15];
 }
 
-message SetTamTelTypeAttributeResponse {}
+message SetTamTelTypeAttributeResponse {
+}
 
 message GetTamTelTypeAttributeRequest {
-  uint64 oid = 1;
-  repeated TamTelTypeAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamTelTypeAttr attr_type = 2;
 }
 
 message GetTamTelTypeAttributeResponse {
-  TamTelTypeAttribute attr = 1;
+	TamTelTypeAttribute attr = 1;
 }
 
 message CreateTamTransportRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_TRANSPORT;
-  uint64 switch = 1;
-  optional TamTransportType transport_type = 2 [(attr_enum_value) = 1];
-  optional uint32 src_port = 3 [(attr_enum_value) = 2];
-  optional uint32 dst_port = 4 [(attr_enum_value) = 3];
-  optional TamTransportAuthType transport_auth_type = 5 [(attr_enum_value) = 4];
-  optional uint32 mtu = 6 [(attr_enum_value) = 5];
+	option (sai_type) = OBJECT_TYPE_TAM_TRANSPORT;
+	uint64 switch = 1;
+	optional TamTransportType transport_type = 2[(attr_enum_value) = 1];
+	optional uint32 src_port = 3[(attr_enum_value) = 2];
+	optional uint32 dst_port = 4[(attr_enum_value) = 3];
+	optional TamTransportAuthType transport_auth_type = 5[(attr_enum_value) = 4];
+	optional uint32 mtu = 6[(attr_enum_value) = 5];
 }
 
 message CreateTamTransportResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamTransportRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamTransportResponse {}
+message RemoveTamTransportResponse {
+}
 
 message SetTamTransportAttributeRequest {
-  uint64 oid = 1;
-  optional uint32 src_port = 2 [(attr_enum_value) = 2];
-  optional uint32 dst_port = 3 [(attr_enum_value) = 3];
-  optional TamTransportAuthType transport_auth_type = 4 [(attr_enum_value) = 4];
-  optional uint32 mtu = 5 [(attr_enum_value) = 5];
+	uint64 oid = 1;
+	optional uint32 src_port = 2[(attr_enum_value) = 2];
+	optional uint32 dst_port = 3[(attr_enum_value) = 3];
+	optional TamTransportAuthType transport_auth_type = 4[(attr_enum_value) = 4];
+	optional uint32 mtu = 5[(attr_enum_value) = 5];
 }
 
-message SetTamTransportAttributeResponse {}
+message SetTamTransportAttributeResponse {
+}
 
 message GetTamTransportAttributeRequest {
-  uint64 oid = 1;
-  repeated TamTransportAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamTransportAttr attr_type = 2;
 }
 
 message GetTamTransportAttributeResponse {
-  TamTransportAttribute attr = 1;
+	TamTransportAttribute attr = 1;
 }
 
 message CreateTamTelemetryRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_TELEMETRY;
-  uint64 switch = 1;
-  repeated uint64 tam_type_list = 2 [(attr_enum_value) = 1];
-  repeated uint64 collector_list = 3 [(attr_enum_value) = 2];
-  optional TamReportingUnit tam_reporting_unit = 4 [(attr_enum_value) = 3];
-  optional uint32 reporting_interval = 5 [(attr_enum_value) = 4];
+	option (sai_type) = OBJECT_TYPE_TAM_TELEMETRY;
+	uint64 switch = 1;
+	repeated uint64 tam_type_list = 2[(attr_enum_value) = 1];
+	repeated uint64 collector_list = 3[(attr_enum_value) = 2];
+	optional TamReportingUnit tam_reporting_unit = 4[(attr_enum_value) = 3];
+	optional uint32 reporting_interval = 5[(attr_enum_value) = 4];
 }
 
 message CreateTamTelemetryResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamTelemetryRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamTelemetryResponse {}
+message RemoveTamTelemetryResponse {
+}
 
 message SetTamTelemetryAttributeRequest {
-  uint64 oid = 1;
-  repeated uint64 tam_type_list = 2 [(attr_enum_value) = 1];
-  optional TamReportingUnit tam_reporting_unit = 3 [(attr_enum_value) = 3];
-  optional uint32 reporting_interval = 4 [(attr_enum_value) = 4];
+	uint64 oid = 1;
+	repeated uint64 tam_type_list = 2[(attr_enum_value) = 1];
+	optional TamReportingUnit tam_reporting_unit = 3[(attr_enum_value) = 3];
+	optional uint32 reporting_interval = 4[(attr_enum_value) = 4];
 }
 
-message SetTamTelemetryAttributeResponse {}
+message SetTamTelemetryAttributeResponse {
+}
 
 message GetTamTelemetryAttributeRequest {
-  uint64 oid = 1;
-  repeated TamTelemetryAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamTelemetryAttr attr_type = 2;
 }
 
 message GetTamTelemetryAttributeResponse {
-  TamTelemetryAttribute attr = 1;
+	TamTelemetryAttribute attr = 1;
 }
 
 message CreateTamCollectorRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_COLLECTOR;
-  uint64 switch = 1;
-  optional bytes src_ip = 2 [(attr_enum_value) = 1];
-  optional bytes dst_ip = 3 [(attr_enum_value) = 2];
-  optional bool localhost = 4 [(attr_enum_value) = 3];
-  optional uint64 virtual_router_id = 5 [(attr_enum_value) = 4];
-  optional uint32 truncate_size = 6 [(attr_enum_value) = 5];
-  optional uint64 transport = 7 [(attr_enum_value) = 6];
-  optional uint32 dscp_value = 8 [(attr_enum_value) = 7];
+	option (sai_type) = OBJECT_TYPE_TAM_COLLECTOR;
+	uint64 switch = 1;
+	optional bytes src_ip = 2[(attr_enum_value) = 1];
+	optional bytes dst_ip = 3[(attr_enum_value) = 2];
+	optional bool localhost = 4[(attr_enum_value) = 3];
+	optional uint64 virtual_router_id = 5[(attr_enum_value) = 4];
+	optional uint32 truncate_size = 6[(attr_enum_value) = 5];
+	optional uint64 transport = 7[(attr_enum_value) = 6];
+	optional uint32 dscp_value = 8[(attr_enum_value) = 7];
+	optional uint64 hostif_trap = 9[(attr_enum_value) = 8];
 }
 
 message CreateTamCollectorResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamCollectorRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamCollectorResponse {}
+message RemoveTamCollectorResponse {
+}
 
 message SetTamCollectorAttributeRequest {
-  uint64 oid = 1;
-  optional bytes src_ip = 2 [(attr_enum_value) = 1];
-  optional bytes dst_ip = 3 [(attr_enum_value) = 2];
-  optional bool localhost = 4 [(attr_enum_value) = 3];
-  optional uint64 virtual_router_id = 5 [(attr_enum_value) = 4];
-  optional uint32 truncate_size = 6 [(attr_enum_value) = 5];
-  optional uint64 transport = 7 [(attr_enum_value) = 6];
-  optional uint32 dscp_value = 8 [(attr_enum_value) = 7];
+	uint64 oid = 1;
+	optional bytes src_ip = 2[(attr_enum_value) = 1];
+	optional bytes dst_ip = 3[(attr_enum_value) = 2];
+	optional bool localhost = 4[(attr_enum_value) = 3];
+	optional uint64 virtual_router_id = 5[(attr_enum_value) = 4];
+	optional uint32 truncate_size = 6[(attr_enum_value) = 5];
+	optional uint64 transport = 7[(attr_enum_value) = 6];
+	optional uint32 dscp_value = 8[(attr_enum_value) = 7];
+	optional uint64 hostif_trap = 9[(attr_enum_value) = 8];
 }
 
-message SetTamCollectorAttributeResponse {}
+message SetTamCollectorAttributeResponse {
+}
 
 message GetTamCollectorAttributeRequest {
-  uint64 oid = 1;
-  repeated TamCollectorAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamCollectorAttr attr_type = 2;
 }
 
 message GetTamCollectorAttributeResponse {
-  TamCollectorAttribute attr = 1;
+	TamCollectorAttribute attr = 1;
 }
 
 message CreateTamEventActionRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_EVENT_ACTION;
-  uint64 switch = 1;
-  optional uint64 report_type = 2 [(attr_enum_value) = 1];
-  optional uint32 qos_action_type = 3 [(attr_enum_value) = 2];
+	option (sai_type) = OBJECT_TYPE_TAM_EVENT_ACTION;
+	uint64 switch = 1;
+	optional uint64 report_type = 2[(attr_enum_value) = 1];
+	optional uint32 qos_action_type = 3[(attr_enum_value) = 2];
 }
 
 message CreateTamEventActionResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamEventActionRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamEventActionResponse {}
+message RemoveTamEventActionResponse {
+}
 
 message SetTamEventActionAttributeRequest {
-  uint64 oid = 1;
-  optional uint64 report_type = 2 [(attr_enum_value) = 1];
-  optional uint32 qos_action_type = 3 [(attr_enum_value) = 2];
+	uint64 oid = 1;
+	optional uint64 report_type = 2[(attr_enum_value) = 1];
+	optional uint32 qos_action_type = 3[(attr_enum_value) = 2];
 }
 
-message SetTamEventActionAttributeResponse {}
+message SetTamEventActionAttributeResponse {
+}
 
 message GetTamEventActionAttributeRequest {
-  uint64 oid = 1;
-  repeated TamEventActionAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamEventActionAttr attr_type = 2;
 }
 
 message GetTamEventActionAttributeResponse {
-  TamEventActionAttribute attr = 1;
+	TamEventActionAttribute attr = 1;
 }
 
 message CreateTamEventRequest {
-  option (sai_type) = OBJECT_TYPE_TAM_EVENT;
-  uint64 switch = 1;
-  optional TamEventType type = 2 [(attr_enum_value) = 1];
-  repeated uint64 action_list = 3 [(attr_enum_value) = 2];
-  repeated uint64 collector_list = 4 [(attr_enum_value) = 3];
-  optional uint64 threshold = 5 [(attr_enum_value) = 4];
-  optional uint32 dscp_value = 6 [(attr_enum_value) = 5];
+	option (sai_type) = OBJECT_TYPE_TAM_EVENT;
+	uint64 switch = 1;
+	optional TamEventType type = 2[(attr_enum_value) = 1];
+	repeated uint64 action_list = 3[(attr_enum_value) = 2];
+	repeated uint64 collector_list = 4[(attr_enum_value) = 3];
+	optional uint64 threshold = 5[(attr_enum_value) = 4];
+	optional uint32 dscp_value = 6[(attr_enum_value) = 5];
 }
 
 message CreateTamEventResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveTamEventRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveTamEventResponse {}
+message RemoveTamEventResponse {
+}
 
 message SetTamEventAttributeRequest {
-  uint64 oid = 1;
-  optional uint64 threshold = 2 [(attr_enum_value) = 4];
-  optional uint32 dscp_value = 3 [(attr_enum_value) = 5];
+	uint64 oid = 1;
+	optional uint64 threshold = 2[(attr_enum_value) = 4];
+	optional uint32 dscp_value = 3[(attr_enum_value) = 5];
 }
 
-message SetTamEventAttributeResponse {}
+message SetTamEventAttributeResponse {
+}
 
 message GetTamEventAttributeRequest {
-  uint64 oid = 1;
-  repeated TamEventAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated TamEventAttr attr_type = 2;
 }
 
 message GetTamEventAttributeResponse {
-  TamEventAttribute attr = 1;
+	TamEventAttribute attr = 1;
 }
 
+message CreateTamCounterSubscriptionRequest {
+	option (sai_type) = OBJECT_TYPE_TAM_COUNTER_SUBSCRIPTION;
+	uint64 switch = 1;
+	optional uint64 tel_type = 2[(attr_enum_value) = 1];
+	optional uint64 object_id = 3[(attr_enum_value) = 2];
+	optional uint32 stat_id = 4[(attr_enum_value) = 3];
+	optional uint64 label = 5[(attr_enum_value) = 4];
+}
+
+message CreateTamCounterSubscriptionResponse {
+	uint64 oid = 1;
+}
+
+message RemoveTamCounterSubscriptionRequest {
+	uint64 oid = 1;
+}
+
+message RemoveTamCounterSubscriptionResponse {
+}
+
+message GetTamCounterSubscriptionAttributeRequest {
+	uint64 oid = 1;
+	repeated TamCounterSubscriptionAttr attr_type = 2;
+}
+
+message GetTamCounterSubscriptionAttributeResponse {
+	TamCounterSubscriptionAttribute attr = 1;
+}
+
+
 service Tam {
-  rpc CreateTam(CreateTamRequest) returns (CreateTamResponse) {}
-  rpc RemoveTam(RemoveTamRequest) returns (RemoveTamResponse) {}
-  rpc SetTamAttribute(SetTamAttributeRequest)
-      returns (SetTamAttributeResponse) {}
-  rpc GetTamAttribute(GetTamAttributeRequest)
-      returns (GetTamAttributeResponse) {}
-  rpc CreateTamMathFunc(CreateTamMathFuncRequest)
-      returns (CreateTamMathFuncResponse) {}
-  rpc RemoveTamMathFunc(RemoveTamMathFuncRequest)
-      returns (RemoveTamMathFuncResponse) {}
-  rpc SetTamMathFuncAttribute(SetTamMathFuncAttributeRequest)
-      returns (SetTamMathFuncAttributeResponse) {}
-  rpc GetTamMathFuncAttribute(GetTamMathFuncAttributeRequest)
-      returns (GetTamMathFuncAttributeResponse) {}
-  rpc CreateTamReport(CreateTamReportRequest)
-      returns (CreateTamReportResponse) {}
-  rpc RemoveTamReport(RemoveTamReportRequest)
-      returns (RemoveTamReportResponse) {}
-  rpc SetTamReportAttribute(SetTamReportAttributeRequest)
-      returns (SetTamReportAttributeResponse) {}
-  rpc GetTamReportAttribute(GetTamReportAttributeRequest)
-      returns (GetTamReportAttributeResponse) {}
-  rpc CreateTamEventThreshold(CreateTamEventThresholdRequest)
-      returns (CreateTamEventThresholdResponse) {}
-  rpc RemoveTamEventThreshold(RemoveTamEventThresholdRequest)
-      returns (RemoveTamEventThresholdResponse) {}
-  rpc SetTamEventThresholdAttribute(SetTamEventThresholdAttributeRequest)
-      returns (SetTamEventThresholdAttributeResponse) {}
-  rpc GetTamEventThresholdAttribute(GetTamEventThresholdAttributeRequest)
-      returns (GetTamEventThresholdAttributeResponse) {}
-  rpc CreateTamInt(CreateTamIntRequest) returns (CreateTamIntResponse) {}
-  rpc RemoveTamInt(RemoveTamIntRequest) returns (RemoveTamIntResponse) {}
-  rpc SetTamIntAttribute(SetTamIntAttributeRequest)
-      returns (SetTamIntAttributeResponse) {}
-  rpc GetTamIntAttribute(GetTamIntAttributeRequest)
-      returns (GetTamIntAttributeResponse) {}
-  rpc CreateTamTelType(CreateTamTelTypeRequest)
-      returns (CreateTamTelTypeResponse) {}
-  rpc RemoveTamTelType(RemoveTamTelTypeRequest)
-      returns (RemoveTamTelTypeResponse) {}
-  rpc SetTamTelTypeAttribute(SetTamTelTypeAttributeRequest)
-      returns (SetTamTelTypeAttributeResponse) {}
-  rpc GetTamTelTypeAttribute(GetTamTelTypeAttributeRequest)
-      returns (GetTamTelTypeAttributeResponse) {}
-  rpc CreateTamTransport(CreateTamTransportRequest)
-      returns (CreateTamTransportResponse) {}
-  rpc RemoveTamTransport(RemoveTamTransportRequest)
-      returns (RemoveTamTransportResponse) {}
-  rpc SetTamTransportAttribute(SetTamTransportAttributeRequest)
-      returns (SetTamTransportAttributeResponse) {}
-  rpc GetTamTransportAttribute(GetTamTransportAttributeRequest)
-      returns (GetTamTransportAttributeResponse) {}
-  rpc CreateTamTelemetry(CreateTamTelemetryRequest)
-      returns (CreateTamTelemetryResponse) {}
-  rpc RemoveTamTelemetry(RemoveTamTelemetryRequest)
-      returns (RemoveTamTelemetryResponse) {}
-  rpc SetTamTelemetryAttribute(SetTamTelemetryAttributeRequest)
-      returns (SetTamTelemetryAttributeResponse) {}
-  rpc GetTamTelemetryAttribute(GetTamTelemetryAttributeRequest)
-      returns (GetTamTelemetryAttributeResponse) {}
-  rpc CreateTamCollector(CreateTamCollectorRequest)
-      returns (CreateTamCollectorResponse) {}
-  rpc RemoveTamCollector(RemoveTamCollectorRequest)
-      returns (RemoveTamCollectorResponse) {}
-  rpc SetTamCollectorAttribute(SetTamCollectorAttributeRequest)
-      returns (SetTamCollectorAttributeResponse) {}
-  rpc GetTamCollectorAttribute(GetTamCollectorAttributeRequest)
-      returns (GetTamCollectorAttributeResponse) {}
-  rpc CreateTamEventAction(CreateTamEventActionRequest)
-      returns (CreateTamEventActionResponse) {}
-  rpc RemoveTamEventAction(RemoveTamEventActionRequest)
-      returns (RemoveTamEventActionResponse) {}
-  rpc SetTamEventActionAttribute(SetTamEventActionAttributeRequest)
-      returns (SetTamEventActionAttributeResponse) {}
-  rpc GetTamEventActionAttribute(GetTamEventActionAttributeRequest)
-      returns (GetTamEventActionAttributeResponse) {}
-  rpc CreateTamEvent(CreateTamEventRequest) returns (CreateTamEventResponse) {}
-  rpc RemoveTamEvent(RemoveTamEventRequest) returns (RemoveTamEventResponse) {}
-  rpc SetTamEventAttribute(SetTamEventAttributeRequest)
-      returns (SetTamEventAttributeResponse) {}
-  rpc GetTamEventAttribute(GetTamEventAttributeRequest)
-      returns (GetTamEventAttributeResponse) {}
+	rpc CreateTam (CreateTamRequest) returns (CreateTamResponse) {}
+	rpc RemoveTam (RemoveTamRequest) returns (RemoveTamResponse) {}
+	rpc SetTamAttribute (SetTamAttributeRequest) returns (SetTamAttributeResponse) {}
+	rpc GetTamAttribute (GetTamAttributeRequest) returns (GetTamAttributeResponse) {}
+	rpc CreateTamMathFunc (CreateTamMathFuncRequest) returns (CreateTamMathFuncResponse) {}
+	rpc RemoveTamMathFunc (RemoveTamMathFuncRequest) returns (RemoveTamMathFuncResponse) {}
+	rpc SetTamMathFuncAttribute (SetTamMathFuncAttributeRequest) returns (SetTamMathFuncAttributeResponse) {}
+	rpc GetTamMathFuncAttribute (GetTamMathFuncAttributeRequest) returns (GetTamMathFuncAttributeResponse) {}
+	rpc CreateTamReport (CreateTamReportRequest) returns (CreateTamReportResponse) {}
+	rpc RemoveTamReport (RemoveTamReportRequest) returns (RemoveTamReportResponse) {}
+	rpc SetTamReportAttribute (SetTamReportAttributeRequest) returns (SetTamReportAttributeResponse) {}
+	rpc GetTamReportAttribute (GetTamReportAttributeRequest) returns (GetTamReportAttributeResponse) {}
+	rpc CreateTamEventThreshold (CreateTamEventThresholdRequest) returns (CreateTamEventThresholdResponse) {}
+	rpc RemoveTamEventThreshold (RemoveTamEventThresholdRequest) returns (RemoveTamEventThresholdResponse) {}
+	rpc SetTamEventThresholdAttribute (SetTamEventThresholdAttributeRequest) returns (SetTamEventThresholdAttributeResponse) {}
+	rpc GetTamEventThresholdAttribute (GetTamEventThresholdAttributeRequest) returns (GetTamEventThresholdAttributeResponse) {}
+	rpc CreateTamInt (CreateTamIntRequest) returns (CreateTamIntResponse) {}
+	rpc RemoveTamInt (RemoveTamIntRequest) returns (RemoveTamIntResponse) {}
+	rpc SetTamIntAttribute (SetTamIntAttributeRequest) returns (SetTamIntAttributeResponse) {}
+	rpc GetTamIntAttribute (GetTamIntAttributeRequest) returns (GetTamIntAttributeResponse) {}
+	rpc CreateTamTelType (CreateTamTelTypeRequest) returns (CreateTamTelTypeResponse) {}
+	rpc RemoveTamTelType (RemoveTamTelTypeRequest) returns (RemoveTamTelTypeResponse) {}
+	rpc SetTamTelTypeAttribute (SetTamTelTypeAttributeRequest) returns (SetTamTelTypeAttributeResponse) {}
+	rpc GetTamTelTypeAttribute (GetTamTelTypeAttributeRequest) returns (GetTamTelTypeAttributeResponse) {}
+	rpc CreateTamTransport (CreateTamTransportRequest) returns (CreateTamTransportResponse) {}
+	rpc RemoveTamTransport (RemoveTamTransportRequest) returns (RemoveTamTransportResponse) {}
+	rpc SetTamTransportAttribute (SetTamTransportAttributeRequest) returns (SetTamTransportAttributeResponse) {}
+	rpc GetTamTransportAttribute (GetTamTransportAttributeRequest) returns (GetTamTransportAttributeResponse) {}
+	rpc CreateTamTelemetry (CreateTamTelemetryRequest) returns (CreateTamTelemetryResponse) {}
+	rpc RemoveTamTelemetry (RemoveTamTelemetryRequest) returns (RemoveTamTelemetryResponse) {}
+	rpc SetTamTelemetryAttribute (SetTamTelemetryAttributeRequest) returns (SetTamTelemetryAttributeResponse) {}
+	rpc GetTamTelemetryAttribute (GetTamTelemetryAttributeRequest) returns (GetTamTelemetryAttributeResponse) {}
+	rpc CreateTamCollector (CreateTamCollectorRequest) returns (CreateTamCollectorResponse) {}
+	rpc RemoveTamCollector (RemoveTamCollectorRequest) returns (RemoveTamCollectorResponse) {}
+	rpc SetTamCollectorAttribute (SetTamCollectorAttributeRequest) returns (SetTamCollectorAttributeResponse) {}
+	rpc GetTamCollectorAttribute (GetTamCollectorAttributeRequest) returns (GetTamCollectorAttributeResponse) {}
+	rpc CreateTamEventAction (CreateTamEventActionRequest) returns (CreateTamEventActionResponse) {}
+	rpc RemoveTamEventAction (RemoveTamEventActionRequest) returns (RemoveTamEventActionResponse) {}
+	rpc SetTamEventActionAttribute (SetTamEventActionAttributeRequest) returns (SetTamEventActionAttributeResponse) {}
+	rpc GetTamEventActionAttribute (GetTamEventActionAttributeRequest) returns (GetTamEventActionAttributeResponse) {}
+	rpc CreateTamEvent (CreateTamEventRequest) returns (CreateTamEventResponse) {}
+	rpc RemoveTamEvent (RemoveTamEventRequest) returns (RemoveTamEventResponse) {}
+	rpc SetTamEventAttribute (SetTamEventAttributeRequest) returns (SetTamEventAttributeResponse) {}
+	rpc GetTamEventAttribute (GetTamEventAttributeRequest) returns (GetTamEventAttributeResponse) {}
+	rpc CreateTamCounterSubscription (CreateTamCounterSubscriptionRequest) returns (CreateTamCounterSubscriptionResponse) {}
+	rpc RemoveTamCounterSubscription (RemoveTamCounterSubscriptionRequest) returns (RemoveTamCounterSubscriptionResponse) {}
+	rpc GetTamCounterSubscriptionAttribute (GetTamCounterSubscriptionAttributeRequest) returns (GetTamCounterSubscriptionAttributeResponse) {}
 }

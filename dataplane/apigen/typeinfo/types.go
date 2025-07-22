@@ -113,6 +113,15 @@ var (
 			Repeated:  true,
 			ProtoType: "PortErrStatus",
 		},
+		"sai_port_frequency_offset_ppm_list_t": {
+			ProtoType: "bytes",
+		},
+		"sai_port_snr_list_t": {
+			ProtoType: "bytes",
+		},
+		"sai_acl_chain_list_t": {
+			ProtoType: "bytes",
+		},
 		"sai_vlan_list_t": {
 			Repeated:  true,
 			ProtoType: "uint32",
@@ -549,6 +558,9 @@ message FdbEventNotificationData {
 			return "repeated " + saiast.TrimSAIName(subType, true, false), true
 		},
 		"sai_acl_field_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
+			return "AclFieldData", false
+		},
+		"sai_acl_field_data_mask_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
 			return "AclFieldData", false
 		},
 		"map_sai_acl_field_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {

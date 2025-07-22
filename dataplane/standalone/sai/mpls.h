@@ -25,42 +25,22 @@ extern "C" {
 
 extern const sai_mpls_api_t l_mpls;
 
-sai_status_t l_create_inseg_entry(const sai_inseg_entry_t *inseg_entry,
-                                  uint32_t attr_count,
-                                  const sai_attribute_t *attr_list);
+
+sai_status_t l_create_inseg_entry(const sai_inseg_entry_t *inseg_entry, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_inseg_entry(const sai_inseg_entry_t *inseg_entry);
 
-sai_status_t l_set_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
-                                         const sai_attribute_t *attr);
+sai_status_t l_set_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry, const sai_attribute_t *attr);
 
-sai_status_t l_get_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
-                                         uint32_t attr_count,
-                                         sai_attribute_t *attr_list);
+sai_status_t l_get_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_create_inseg_entries(uint32_t object_count,
-                                    const sai_inseg_entry_t *inseg_entry,
-                                    const uint32_t *attr_count,
-                                    const sai_attribute_t **attr_list,
-                                    sai_bulk_op_error_mode_t mode,
-                                    sai_status_t *object_statuses);
+sai_status_t l_create_inseg_entries(uint32_t object_count, const sai_inseg_entry_t *inseg_entry, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_remove_inseg_entries(uint32_t object_count,
-                                    const sai_inseg_entry_t *inseg_entry,
-                                    sai_bulk_op_error_mode_t mode,
-                                    sai_status_t *object_statuses);
+sai_status_t l_remove_inseg_entries(uint32_t object_count, const sai_inseg_entry_t *inseg_entry, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_set_inseg_entries_attribute(uint32_t object_count,
-                                           const sai_inseg_entry_t *inseg_entry,
-                                           const sai_attribute_t *attr_list,
-                                           sai_bulk_op_error_mode_t mode,
-                                           sai_status_t *object_statuses);
+sai_status_t l_set_inseg_entries_attribute(uint32_t object_count, const sai_inseg_entry_t *inseg_entry, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_get_inseg_entries_attribute(uint32_t object_count,
-                                           const sai_inseg_entry_t *inseg_entry,
-                                           const uint32_t *attr_count,
-                                           sai_attribute_t **attr_list,
-                                           sai_bulk_op_error_mode_t mode,
-                                           sai_status_t *object_statuses);
+sai_status_t l_get_inseg_entries_attribute(uint32_t object_count, const sai_inseg_entry_t *inseg_entry, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+
 
 #endif  // DATAPLANE_STANDALONE_SAI_MPLS_H_

@@ -1,0 +1,113 @@
+# Built-in default configuration for lemming
+# This file contains the current hardcoded behavior as configurable defaults
+# If no config file is provided, these defaults will be used
+
+vendor {
+  name: "OpenConfig"
+  model: "Lemming"
+  os_version: "1.0.0"
+}
+
+components {
+  supervisor1_name: "Supervisor1"
+  supervisor2_name: "Supervisor2"
+  chassis_name: "chassis"
+  linecard_prefix: "Linecard"
+  fabric_prefix: "Fabric"
+  
+  linecard {
+    count: 8
+    start_index: 0
+    step: 1
+  }
+  
+  fabric {
+    count: 6
+    start_index: 0
+    step: 1
+  }
+}
+
+processes {
+  process {
+    name: "Octa"
+    pid: 1001
+    cpu_usage_user: 1000000
+    cpu_usage_system: 500000
+    cpu_utilization: 1
+    memory_usage: 10485760
+    memory_utilization: 2
+  } 
+
+  process {
+    name: "Gribi"
+    pid: 1002
+    cpu_usage_user: 1000000
+    cpu_usage_system: 500000
+    cpu_utilization: 1
+    memory_usage: 10485760
+    memory_utilization: 2
+  }
+
+  process {
+    name: "emsd"
+    pid: 1003
+    cpu_usage_user: 1000000
+    cpu_usage_system: 500000
+    cpu_utilization: 1
+    memory_usage: 10485760
+    memory_utilization: 2
+  }
+
+  process {
+    name: "kim"
+    pid: 1004
+    cpu_usage_user: 1000000
+    cpu_usage_system: 500000
+    cpu_utilization: 1
+    memory_usage: 10485760
+    memory_utilization: 2
+  }
+
+  process {
+    name: "grpc_server"
+    pid: 1005
+    cpu_usage_user: 1000000
+    cpu_usage_system: 500000
+    cpu_utilization: 1
+    memory_usage: 10485760
+    memory_utilization: 2
+  }
+
+  process {
+    name: "fibd"
+    pid: 1006
+    cpu_usage_user: 1000000
+    cpu_usage_system: 500000
+    cpu_utilization: 1
+    memory_usage: 10485760
+    memory_utilization: 2
+  }
+
+  process {
+    name: "rpd"
+    pid: 1007
+    cpu_usage_user: 1000000
+    cpu_usage_system: 500000
+    cpu_utilization: 1
+    memory_usage: 10485760
+    memory_utilization: 2
+  }
+}
+
+timing {
+  switchover_duration_ms: 2000
+  reboot_duration_ms: 2000
+}
+
+network_simulation {
+  base_latency_ms: 50
+  latency_jitter_ms: 20
+  packet_loss_rate: 0.0
+  default_ttl: 64
+}

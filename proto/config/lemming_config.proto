@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package lemming.config;
+
+option go_package = "github.com/openconfig/lemming/proto/config";
+
+// Main configuration message for lemming fake device
+message Config {
+  // Component naming and structure configuration
+  ComponentConfig components = 1;
+  // Mock process definitions
+  ProcessesConfig processes = 2;
+  // System timing behaviors
+  TimingConfig timing = 3;
+  // Network simulation parameters
+  NetworkSimConfig network_simulation = 4;
+  // Vendor-specific behavior settings
+  VendorConfig vendor = 5;
+}
+
+// Container for process configuration
+message ProcessesConfig{
+  repeated ProcessConfig process = 1;
+}
+
+// Configuration for device component names and structure
+message ComponentConfig {
+  string supervisor1_name = 1;  // Name for primary supervisor
+  string supervisor2_name = 2;  // Name for secondary supervisor
+  string chassis_name = 3;      // Chassis component name
+  string linecard_prefix = 4;   // Prefix for linecard component names
+  string fabric_prefix = 5;     // Prefix for fabric component names
+
+  // Component counts and indexing
+  ComponentTypeConfig linecard = 7;
+  ComponentTypeConfig fabric = 8;
+}
+
+// Configuration for a specific component type
+message ComponentTypeConfig {
+  int32 count = 1;        // How many of this component type to create
+  int32 start_index = 2;  // Starting index for component numbering
+  int32 step = 3;         // Index increment between components
+}
+
+// Configuration for mock system processes
+message ProcessConfig {
+  string name = 1;              // Process name
+  uint32 pid = 2;               // Process ID
+  uint64 cpu_usage_user = 3;    // CPU usage in user space (nanoseconds)
+  uint64 cpu_usage_system = 4;  // CPU usage in system space (nanoseconds)
+  uint32 cpu_utilization = 5;   // Overall CPU utilization percentage
+  uint64 memory_usage = 6;      // Memory usage in bytes
+  uint32 memory_utilization = 7;  // Memory utilization percentage
+}
+
+// Configuration for system operation timing
+message TimingConfig {
+  // Duration for supervisor switchover simulation (ms)
+  int64 switchover_duration_ms = 1;
+  // Duration for system reboot simulation (ms)
+  int64 reboot_duration_ms = 2;
+}
+
+// Configuration for ping network simulation behavior
+message NetworkSimConfig {
+  // Base latency for ping responses (ms)
+  int64 base_latency_ms = 1;
+  // Random jitter variation for latency (ms)
+  int64 latency_jitter_ms = 2;
+  // Packet loss rate for ping simulation (0.0-1.0)
+  float packet_loss_rate = 3;
+  // Default TTL value for ping responses (0-255)
+  int32 default_ttl = 4;
+}
+
+// Configuration for vendor-specific behavior (future use)
+message VendorConfig {
+  string name = 1;      // Vendor name identifier
+  string model = 2;     // Device model identifier
+  string os_version = 3;  // Operating system version
+}
