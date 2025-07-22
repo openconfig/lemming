@@ -16,6 +16,7 @@ package gnoi
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 
@@ -49,6 +50,12 @@ import (
 const (
 	// Kill process default
 	defaultRestart = true
+
+	// Ping simulation default values
+	defaultPingCount    = 5
+	defaultPingInterval = 1000000000
+	defaultPingWait     = 2000000000
+	defaultPingSize     = 56
 )
 
 type bgp struct {
@@ -471,6 +478,170 @@ func (s *system) KillProcess(ctx context.Context, r *spb.KillProcessRequest) (*s
 	}
 
 	return &spb.KillProcessResponse{}, nil
+}
+
+// Ping simulates ICMP ping operations with configurable network conditions
+func (s *system) Ping(r *spb.PingRequest, stream spb.System_PingServer) error {
+	log.Infof("Received ping request: %v", r)
+
+	if r.GetDestination() == "" {
+		return status.Errorf(codes.InvalidArgument, "destination address is required")
+	}
+
+	ctx := stream.Context()
+	destination := r.GetDestination()
+
+	count := r.GetCount()
+	if count == 0 {
+		count = defaultPingCount
+	} else if count < -1 {
+		return status.Errorf(codes.InvalidArgument, "count must be >= -1, got %d", count)
+	}
+
+	interval := r.GetInterval()
+	switch {
+	case interval == 0:
+		interval = defaultPingInterval
+	case interval == -1:
+		// Flood ping - 1ms minimum interval for safety
+		interval = 1000000
+	case interval < -1:
+		return status.Errorf(codes.InvalidArgument, "interval must be >= -1, got %d", interval)
+	}
+
+	wait := r.GetWait()
+	if wait == 0 {
+		wait = defaultPingWait
+	} else if wait < 0 {
+		return status.Errorf(codes.InvalidArgument, "wait must be >= 0, got %d", wait)
+	}
+
+	size := r.GetSize()
+	if size == 0 {
+		size = defaultPingSize
+	} else if size < 8 || size > 65507 {
+		return status.Errorf(codes.InvalidArgument, "packet size must be between 8 and 65507 bytes, got %d", size)
+	}
+
+	// TODO: Add support for do_not_fragment, do_not_resolve, l3protocol, network_instance parameters
+
+	// Calculate appropriate buffer size based on interval and count
+	bufferSize := 100
+	if count > 0 && count < 1000 {
+		bufferSize = int(count) + 10
+	} else if interval < 10000000 {
+		bufferSize = 1000 // Larger buffer for flood ping
+	}
+
+	responseChan := make(chan *fakedevice.PingPacketResult, bufferSize)
+	errorChan := make(chan error, 1)
+
+	go func() {
+		defer close(responseChan)
+		if err := fakedevice.PingSimulation(ctx, destination, count, time.Duration(interval), time.Duration(wait), uint32(size), responseChan, s.config); err != nil {
+			log.Errorf("Ping simulation error: %v", err)
+			select {
+			case errorChan <- err:
+			default:
+			}
+		}
+		close(errorChan)
+	}()
+
+	startTime := time.Now()
+	var totalSent, totalReceived int32
+	var minTime, maxTime, totalTime time.Duration
+	var rtts []time.Duration
+	firstPacket := true
+	const maxRTTSamples = 10000
+
+	// Process results and stream responses
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case err := <-errorChan:
+			if err != nil {
+				return status.Errorf(codes.Internal, "ping simulation failed: %v", err)
+			}
+		case result, ok := <-responseChan:
+			if !ok {
+				// Channel closed - check for any remaining errors
+				select {
+				case err := <-errorChan:
+					if err != nil {
+						return status.Errorf(codes.Internal, "ping simulation failed: %v", err)
+					}
+				default:
+				}
+
+				// Send summary and finish
+				summary := &spb.PingResponse{
+					Source:   destination,
+					Time:     time.Since(startTime).Nanoseconds(),
+					Sent:     totalSent,
+					Received: totalReceived,
+				}
+				if totalReceived > 0 {
+					summary.MinTime = minTime.Nanoseconds()
+					summary.AvgTime = (totalTime / time.Duration(totalReceived)).Nanoseconds()
+					summary.MaxTime = maxTime.Nanoseconds()
+
+					// Calculate standard deviation from collected RTTs
+					if len(rtts) < 2 {
+						summary.StdDev = 0
+					} else {
+						var sumSquaredDiff float64
+						avgTime := float64(summary.AvgTime)
+						for _, rtt := range rtts {
+							diff := float64(rtt.Nanoseconds()) - avgTime
+							sumSquaredDiff += diff * diff
+						}
+						variance := sumSquaredDiff / float64(len(rtts)-1)
+						summary.StdDev = int64(math.Round(math.Sqrt(variance)))
+					}
+				}
+				return stream.Send(summary)
+			}
+
+			// Update stats
+			totalSent++
+			if result.Success {
+				totalReceived++
+				totalTime += result.RTT
+				if firstPacket {
+					minTime = result.RTT
+					maxTime = result.RTT
+					firstPacket = false
+				} else {
+					if result.RTT < minTime {
+						minTime = result.RTT
+					}
+					if result.RTT > maxTime {
+						maxTime = result.RTT
+					}
+				}
+				// Only collect RTT samples up to the limit
+				if len(rtts) < maxRTTSamples {
+					rtts = append(rtts, result.RTT)
+				}
+			}
+
+			// Send individual response
+			response := &spb.PingResponse{
+				Source:   destination,
+				Time:     result.RTT.Nanoseconds(),
+				Bytes:    int32(result.Bytes),
+				Sequence: result.Sequence,
+				Ttl:      result.TTL,
+			}
+
+			if err := stream.Send(response); err != nil {
+				log.Errorf("Failed to send ping response: %v", err)
+				return err
+			}
+		}
+	}
 }
 
 // resolvePIDAndName resolves either PID or name to a validated PID and process name that exists in the system
