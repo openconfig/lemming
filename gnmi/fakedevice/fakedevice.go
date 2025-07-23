@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"math"
 	"math/rand/v2"
+	"sync"
 	"time"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
+	plqpb "github.com/openconfig/gnoi/packet_link_qualification"
 	spb "github.com/openconfig/gnoi/system"
 
 	"github.com/openconfig/lemming/gnmi"
@@ -592,4 +594,391 @@ func generateNewPID(ctx context.Context, c *ygnmi.Client, excludePID uint32) (ui
 		}
 	}
 	return 0, fmt.Errorf("no PID available in range 1-65535")
+}
+
+// NewInterfaceInitializationTask initializes base network interfaces for link qualification simulation.
+func NewInterfaceInitializationTask(cfg *configpb.Config) *reconciler.BuiltReconciler {
+	rec := reconciler.NewBuilder("interface initialization").
+		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
+			now := time.Now().UnixNano()
+			timestampedCtx := gnmi.AddTimestampMetadata(ctx, now)
+			batch := &ygnmi.SetBatch{}
+
+			// Get interfaces from configuration
+			interfaceSpecs := cfg.GetInterfaces().GetInterface()
+			if len(interfaceSpecs) == 0 {
+				log.Warning("No interfaces found in configuration")
+				return nil
+			}
+
+			log.Infof("Initializing %d network interfaces from configuration", len(interfaceSpecs))
+
+			for _, intfConfig := range interfaceSpecs {
+				// Check if the interface already exists
+				existing, err := ygnmi.Get(ctx, c, ocpath.Root().Interface(intfConfig.GetName()).State())
+				if err == nil && existing != nil {
+					log.Warningf("Interface %s already exists, skipping initialization", intfConfig.GetName())
+					continue
+				}
+				intf := &oc.Interface{
+					Name:        ygot.String(intfConfig.GetName()),
+					OperStatus:  oc.Interface_OperStatus_UP,
+					Enabled:     ygot.Bool(true),
+					Description: ygot.String(intfConfig.GetDescription()),
+					Ifindex:     ygot.Uint32(intfConfig.GetIfIndex()),
+				}
+
+				gnmiclient.BatchReplace(batch, ocpath.Root().Interface(intfConfig.GetName()).State(), intf)
+				log.Infof("Batching initialization for interface %s (ifindex: %d)", intfConfig.GetName(), intfConfig.GetIfIndex())
+			}
+
+			if _, err := batch.Set(timestampedCtx, c); err != nil {
+				log.Errorf("Error applying batched interface initializations: %v", err)
+				return err
+			}
+
+			log.Infof("Successfully initialized %d network interfaces", len(interfaceSpecs))
+			return nil
+		}).Build()
+
+	return rec
+}
+
+// LinkQualificationResult represents the complete state of a link qualification operation.
+type LinkQualificationResult struct {
+	mu              sync.Mutex
+	State           plqpb.QualificationState
+	PacketsSent     uint64
+	PacketsReceived uint64
+	PacketsDropped  uint64
+	PacketsError    uint64
+	StartTime       time.Time
+	EndTime         time.Time
+}
+
+// RunPacketLinkQualification performs a complete packet-based link qualification simulation.
+func RunPacketLinkQualification(ctx context.Context, c *ygnmi.Client, config *plqpb.QualificationConfiguration, updateCallback func(*LinkQualificationResult), cfg *configpb.Config) error {
+	qualID := config.GetId()
+	interfaceName := config.GetInterfaceName()
+	interfacePath := ocpath.Root().Interface(interfaceName)
+	originalInterface, err := ygnmi.Get(ctx, c, interfacePath.State())
+	if err != nil {
+		return fmt.Errorf("failed to get interface %s: %w", interfaceName, err)
+	}
+	originalOperStatus := originalInterface.GetOperStatus()
+
+	// Extract configuration parameters
+	packetConfig := extractPacketConfiguration(config, cfg)
+	timing := extractQualificationTiming(config, cfg)
+
+	log.Infof("Qualification %s: packet_rate=%d PPS, packet_size=%d bytes, duration=%v",
+		qualID, packetConfig.PacketRate, packetConfig.PacketSize, timing.TestDuration)
+
+	result := &LinkQualificationResult{
+		State:     plqpb.QualificationState_QUALIFICATION_STATE_IDLE,
+		StartTime: time.Now(),
+	}
+
+	// Send initial state
+	if updateCallback != nil {
+		updateCallback(result)
+	}
+
+	// Always ensure interface is restored on exit
+	defer func() {
+		if err := restoreInterfaceOperStatus(context.Background(), c, interfaceName, originalOperStatus); err != nil {
+			log.Errorf("Failed to restore interface %s status: %v", interfaceName, err)
+		}
+	}()
+
+	// Execute the qualification state machine
+	if err := executeQualificationStateMachine(ctx, c, interfaceName, result, packetConfig, timing, updateCallback, cfg); err != nil {
+		result.mu.Lock()
+		result.State = plqpb.QualificationState_QUALIFICATION_STATE_ERROR
+		result.EndTime = time.Now()
+		result.mu.Unlock()
+
+		if updateCallback != nil {
+			updateCallback(result)
+		}
+
+		return fmt.Errorf("qualification %s failed: %w", qualID, err)
+	}
+
+	log.Infof("Packet link qualification %s completed successfully", qualID)
+	return nil
+}
+
+// PacketConfiguration holds extracted packet generation parameters.
+type PacketConfiguration struct {
+	PacketRate  uint64
+	PacketSize  uint64
+	IsGenerator bool
+	IsReflector bool
+}
+
+// extractPacketConfiguration extracts packet generation settings from config.
+func extractPacketConfiguration(config *plqpb.QualificationConfiguration, cfg *configpb.Config) *PacketConfiguration {
+	linkQualConfig := cfg.GetLinkQualification()
+
+	pc := &PacketConfiguration{
+		PacketRate: linkQualConfig.GetDefaultPacketRate(),
+		PacketSize: uint64(linkQualConfig.GetDefaultPacketSize()),
+	}
+
+	// Check for packet generator configuration and override config defaults
+	if packetGen := config.GetPacketGenerator(); packetGen != nil {
+		pc.IsGenerator = true
+		if packetGen.GetPacketRate() > 0 {
+			pc.PacketRate = packetGen.GetPacketRate()
+		}
+		if packetGen.GetPacketSize() > 0 {
+			pc.PacketSize = uint64(packetGen.GetPacketSize())
+		}
+	}
+
+	// Check for reflector configuration
+	if config.GetAsicLoopback() != nil || config.GetPmdLoopback() != nil {
+		pc.IsReflector = true
+	}
+
+	return pc
+}
+
+// QualificationTiming holds all timing parameters for a qualification.
+type QualificationTiming struct {
+	SetupDuration    time.Duration
+	TestDuration     time.Duration
+	TeardownDuration time.Duration
+	PreSyncDelay     time.Duration
+	PostSyncDelay    time.Duration
+}
+
+// extractQualificationTiming extracts all timing parameters from config.
+func extractQualificationTiming(config *plqpb.QualificationConfiguration, cfg *configpb.Config) *QualificationTiming {
+	// Get defaults from configuration
+	linkQualConfig := cfg.GetLinkQualification()
+
+	timing := &QualificationTiming{
+		SetupDuration:    time.Duration(linkQualConfig.GetMinSetupDurationMs()) * time.Millisecond,
+		TestDuration:     time.Duration(linkQualConfig.GetDefaultTestDurationMs()) * time.Millisecond,
+		TeardownDuration: time.Duration(linkQualConfig.GetMinTeardownDurationMs()) * time.Millisecond,
+	}
+
+	// Extract timing from RPC synchronization
+	if rpcTiming := config.GetRpc(); rpcTiming != nil {
+		if rpcTiming.GetSetupDuration() != nil {
+			timing.SetupDuration = rpcTiming.GetSetupDuration().AsDuration()
+		}
+		if rpcTiming.GetDuration() != nil {
+			timing.TestDuration = rpcTiming.GetDuration().AsDuration()
+		}
+		if rpcTiming.GetTeardownDuration() != nil {
+			timing.TeardownDuration = rpcTiming.GetTeardownDuration().AsDuration()
+		}
+		if rpcTiming.GetPreSyncDuration() != nil {
+			timing.PreSyncDelay = rpcTiming.GetPreSyncDuration().AsDuration()
+		}
+		if rpcTiming.GetPostSyncDuration() != nil {
+			timing.PostSyncDelay = rpcTiming.GetPostSyncDuration().AsDuration()
+		}
+	}
+	return timing
+}
+
+// executeQualificationStateMachine runs a complete link qualification test through multiple phases:
+// pre-sync delay (optional), SETUP (initialize test), RUNNING (execute packet generation and measurement),
+// post-sync delay (optional), and TEARDOWN (cleanup resources).
+// It manages state transitions, context cancellation, and result updates throughout the qualification process.
+func executeQualificationStateMachine(ctx context.Context, c *ygnmi.Client, interfaceName string, result *LinkQualificationResult, packetConfig *PacketConfiguration, timing *QualificationTiming, updateCallback func(*LinkQualificationResult), cfg *configpb.Config) error {
+	// Helper function to check context and send updates
+	checkContextAndUpdate := func(state plqpb.QualificationState) error {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		result.mu.Lock()
+		result.State = state
+		result.mu.Unlock()
+		if updateCallback != nil {
+			updateCallback(result)
+		}
+		return nil
+	}
+
+	// Pre-sync delay
+	if timing.PreSyncDelay > 0 {
+		log.Infof("Waiting pre-sync delay: %v", timing.PreSyncDelay)
+		if err := sleep(ctx, timing.PreSyncDelay); err != nil {
+			return err
+		}
+	}
+
+	// SETUP phase
+	if err := checkContextAndUpdate(plqpb.QualificationState_QUALIFICATION_STATE_SETUP); err != nil {
+		return err
+	}
+	if err := executeSetupPhase(ctx, c, interfaceName, timing.SetupDuration); err != nil {
+		return fmt.Errorf("setup phase failed: %w", err)
+	}
+
+	// RUNNING phase
+	if err := checkContextAndUpdate(plqpb.QualificationState_QUALIFICATION_STATE_RUNNING); err != nil {
+		return err
+	}
+	if err := executeRunningPhase(ctx, result, packetConfig, timing, updateCallback, cfg); err != nil {
+		return fmt.Errorf("running phase failed: %w", err)
+	}
+
+	// Post-sync delay
+	if timing.PostSyncDelay > 0 {
+		log.Infof("Waiting post-sync delay: %v", timing.PostSyncDelay)
+		if err := sleep(ctx, timing.PostSyncDelay); err != nil {
+			return err
+		}
+	}
+
+	// TEARDOWN phase
+	if err := checkContextAndUpdate(plqpb.QualificationState_QUALIFICATION_STATE_TEARDOWN); err != nil {
+		return err
+	}
+	if err := executeTeardownPhase(ctx, timing.TeardownDuration); err != nil {
+		return fmt.Errorf("teardown phase failed: %w", err)
+	}
+
+	// COMPLETED phase
+	result.mu.Lock()
+	result.State = plqpb.QualificationState_QUALIFICATION_STATE_COMPLETED
+	result.EndTime = time.Now()
+	result.mu.Unlock()
+	if updateCallback != nil {
+		updateCallback(result)
+	}
+
+	return nil
+}
+
+// sleep is a context-aware sleep function.
+func sleep(ctx context.Context, duration time.Duration) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(duration):
+		return nil
+	}
+}
+
+// executeSetupPhase handles the SETUP state of qualification.
+func executeSetupPhase(ctx context.Context, c *ygnmi.Client, interfaceName string, setupDuration time.Duration) error {
+	log.Infof("Entering SETUP phase for %v", setupDuration)
+
+	// Set interface to TESTING state
+	timestampedCtx := gnmi.AddTimestampMetadata(ctx, time.Now().UnixNano())
+	if _, err := gnmiclient.Replace(timestampedCtx, c, ocpath.Root().Interface(interfaceName).OperStatus().State(), oc.Interface_OperStatus_TESTING); err != nil {
+		return fmt.Errorf("failed to set interface to TESTING state: %w", err)
+	}
+
+	// Wait for setup duration
+	if err := sleep(ctx, setupDuration); err != nil {
+		return err
+	}
+
+	log.Infof("SETUP phase completed")
+	return nil
+}
+
+// executeRunningPhase handles the RUNNING state with packet simulation.
+func executeRunningPhase(ctx context.Context, result *LinkQualificationResult, packetConfig *PacketConfiguration, timing *QualificationTiming, updateCallback func(*LinkQualificationResult), cfg *configpb.Config) error {
+	log.Infof("Entering RUNNING phase for %v", timing.TestDuration)
+
+	// Start packet simulation
+	startTime := time.Now()
+	sampleInterval := time.Duration(cfg.GetLinkQualification().GetMinSampleIntervalMs()) * time.Millisecond
+	updateTicker := time.NewTicker(sampleInterval)
+	defer updateTicker.Stop()
+	testEndTime := startTime.Add(timing.TestDuration)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case now := <-updateTicker.C:
+			elapsed := now.Sub(startTime)
+
+			// Update packet statistics based on endpoint type
+			updatePacketStatistics(result, packetConfig, elapsed, cfg)
+
+			if updateCallback != nil {
+				updateCallback(result)
+			}
+
+			// Check if test duration completed
+			if now.After(testEndTime) || now.Equal(testEndTime) {
+				log.Infof("RUNNING phase completed after %v", elapsed)
+				return nil
+			}
+		}
+	}
+}
+
+// executeTeardownPhase handles the TEARDOWN state.
+func executeTeardownPhase(ctx context.Context, teardownDuration time.Duration) error {
+	log.Infof("Entering TEARDOWN phase for %v", teardownDuration)
+
+	// Wait for teardown duration
+	if err := sleep(ctx, teardownDuration); err != nil {
+		return err
+	}
+
+	log.Infof("TEARDOWN phase completed")
+	return nil
+}
+
+// updatePacketStatistics calculates realistic packet statistics for both generators and reflectors.
+func updatePacketStatistics(result *LinkQualificationResult, packetConfig *PacketConfiguration, elapsed time.Duration, cfg *configpb.Config) {
+	elapsedSeconds := elapsed.Seconds()
+	if elapsedSeconds <= 0 {
+		return
+	}
+	rate := packetConfig.PacketRate
+	expectedPackets := uint64(elapsedSeconds * float64(rate))
+
+	// Apply network simulation parameters
+	var lossRate float32
+	var errorRate float32
+	if cfg != nil && cfg.GetNetworkSimulation() != nil {
+		lossRate = cfg.GetNetworkSimulation().GetPacketLossRate()
+		errorRate = cfg.GetNetworkSimulation().GetPacketErrorRate()
+	}
+
+	dropped := uint64(float64(expectedPackets) * float64(lossRate))
+	errored := uint64(float64(expectedPackets) * float64(errorRate))
+	successful := expectedPackets - dropped
+
+	// Update statistics atomically
+	result.mu.Lock()
+	switch {
+	case packetConfig.IsGenerator:
+		// Generator: sends packets, receives responses
+		result.PacketsSent = expectedPackets
+		result.PacketsReceived = successful
+	case packetConfig.IsReflector:
+		// Reflector: receives packets, reflects them back
+		result.PacketsReceived = successful
+		result.PacketsSent = successful
+	default:
+		log.Errorf("updatePacketStatistics: unknown packet endpoint type (not generator or reflector)")
+	}
+	result.PacketsDropped = dropped
+	result.PacketsError = errored
+	result.mu.Unlock()
+}
+
+// restoreInterfaceOperStatus restores interface to original operational state.
+func restoreInterfaceOperStatus(ctx context.Context, c *ygnmi.Client, interfaceName string, originalStatus oc.E_Interface_OperStatus) error {
+	timestampedCtx := gnmi.AddTimestampMetadata(ctx, time.Now().UnixNano())
+	if _, err := gnmiclient.Replace(timestampedCtx, c, ocpath.Root().Interface(interfaceName).OperStatus().State(), originalStatus); err != nil {
+		return fmt.Errorf("failed to restore interface operational status to %v: %v", originalStatus, err)
+	}
+	log.Infof("Restored interface operational status to %v", originalStatus)
+	return nil
 }

@@ -14,6 +14,7 @@ go_library(
         "//internal/config",
         "//proto/config",
         "@com_github_golang_glog//:glog",
+        "@com_github_openconfig_gnoi//packet_link_qualification",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",

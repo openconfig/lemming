@@ -122,3 +122,50 @@ func IsValidComponentName(config *configpb.Config, name string) bool {
 
 	return false
 }
+
+// GetInterfaceByName finds an interface configuration by name
+func GetInterfaceByName(config *configpb.Config, name string) *configpb.InterfaceSpec {
+	if config.GetInterfaces() == nil {
+		return nil
+	}
+	for _, iface := range config.GetInterfaces().GetInterface() {
+		if iface.GetName() == name {
+			return iface
+		}
+	}
+	return nil
+}
+
+// GetInterfaceByIndex finds an interface configuration by if_index
+func GetInterfaceByIndex(config *configpb.Config, ifIndex uint32) *configpb.InterfaceSpec {
+	if config.GetInterfaces() == nil {
+		return nil
+	}
+	for _, iface := range config.GetInterfaces().GetInterface() {
+		if iface.GetIfIndex() == ifIndex {
+			return iface
+		}
+	}
+	return nil
+}
+
+// GetAllInterfaceNames returns all interface names from the configuration
+func GetAllInterfaceNames(config *configpb.Config) []string {
+	if config.GetInterfaces() == nil {
+		return nil
+	}
+
+	var names []string
+	for _, iface := range config.GetInterfaces().GetInterface() {
+		names = append(names, iface.GetName())
+	}
+	if names == nil {
+		names = []string{}
+	}
+	return names
+}
+
+// IsValidInterfaceName checks if a given name matches any interface in the configuration
+func IsValidInterfaceName(config *configpb.Config, name string) bool {
+	return GetInterfaceByName(config, name) != nil
+}

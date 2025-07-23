@@ -380,3 +380,245 @@ func TestIsValidComponentNameNilConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestGetInterfaceByName(t *testing.T) {
+	config := &configpb.Config{
+		Interfaces: &configpb.InterfaceConfig{
+			Interface: []*configpb.InterfaceSpec{
+				{Name: "eth0", Description: "First interface", IfIndex: 1},
+				{Name: "eth1", Description: "Second interface", IfIndex: 2},
+				{Name: "Ethernet1/1", Description: "Third interface", IfIndex: 3},
+			},
+		},
+	}
+
+	tests := []struct {
+		name          string
+		interfaceName string
+		expected      *configpb.InterfaceSpec
+	}{
+		{
+			name:          "existing interface eth0",
+			interfaceName: "eth0",
+			expected:      &configpb.InterfaceSpec{Name: "eth0", Description: "First interface", IfIndex: 1},
+		},
+		{
+			name:          "existing interface Ethernet1/1",
+			interfaceName: "Ethernet1/1",
+			expected:      &configpb.InterfaceSpec{Name: "Ethernet1/1", Description: "Third interface", IfIndex: 3},
+		},
+		{
+			name:          "non-existing interface",
+			interfaceName: "eth99",
+			expected:      nil,
+		},
+		{
+			name:          "empty string",
+			interfaceName: "",
+			expected:      nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetInterfaceByName(config, tt.interfaceName)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("Expected %+v, got %+v", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestGetInterfaceByIndex(t *testing.T) {
+	config := &configpb.Config{
+		Interfaces: &configpb.InterfaceConfig{
+			Interface: []*configpb.InterfaceSpec{
+				{Name: "eth0", Description: "First interface", IfIndex: 1},
+				{Name: "eth1", Description: "Second interface", IfIndex: 2},
+				{Name: "Ethernet1/1", Description: "Third interface", IfIndex: 10},
+			},
+		},
+	}
+
+	tests := []struct {
+		name     string
+		ifIndex  uint32
+		expected *configpb.InterfaceSpec
+	}{
+		{
+			name:     "existing index 1",
+			ifIndex:  1,
+			expected: &configpb.InterfaceSpec{Name: "eth0", Description: "First interface", IfIndex: 1},
+		},
+		{
+			name:     "existing index 10",
+			ifIndex:  10,
+			expected: &configpb.InterfaceSpec{Name: "Ethernet1/1", Description: "Third interface", IfIndex: 10},
+		},
+		{
+			name:     "non-existing index",
+			ifIndex:  99,
+			expected: nil,
+		},
+		{
+			name:     "zero index",
+			ifIndex:  0,
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetInterfaceByIndex(config, tt.ifIndex)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("Expected %+v, got %+v", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestGetAllInterfaceNames(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   *configpb.Config
+		expected []string
+	}{
+		{
+			name: "normal interface config",
+			config: &configpb.Config{
+				Interfaces: &configpb.InterfaceConfig{
+					Interface: []*configpb.InterfaceSpec{
+						{Name: "eth0", IfIndex: 1},
+						{Name: "eth1", IfIndex: 2},
+						{Name: "Ethernet1/1", IfIndex: 3},
+					},
+				},
+			},
+			expected: []string{"eth0", "eth1", "Ethernet1/1"},
+		},
+		{
+			name: "empty interfaces",
+			config: &configpb.Config{
+				Interfaces: &configpb.InterfaceConfig{
+					Interface: []*configpb.InterfaceSpec{},
+				},
+			},
+			expected: []string{},
+		},
+		{
+			name: "nil interfaces",
+			config: &configpb.Config{
+				Interfaces: nil,
+			},
+			expected: nil,
+		},
+		{
+			name: "nil interface list",
+			config: &configpb.Config{
+				Interfaces: &configpb.InterfaceConfig{
+					Interface: nil,
+				},
+			},
+			expected: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetAllInterfaceNames(tt.config)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("Expected %v, got %v", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestIsValidInterfaceName(t *testing.T) {
+	config := &configpb.Config{
+		Interfaces: &configpb.InterfaceConfig{
+			Interface: []*configpb.InterfaceSpec{
+				{Name: "eth0", IfIndex: 1},
+				{Name: "eth1", IfIndex: 2},
+				{Name: "Ethernet1/1", IfIndex: 3},
+			},
+		},
+	}
+
+	tests := []struct {
+		name          string
+		interfaceName string
+		expected      bool
+	}{
+		{
+			name:          "valid interface eth0",
+			interfaceName: "eth0",
+			expected:      true,
+		},
+		{
+			name:          "valid interface Ethernet1/1",
+			interfaceName: "Ethernet1/1",
+			expected:      true,
+		},
+		{
+			name:          "invalid interface",
+			interfaceName: "eth99",
+			expected:      false,
+		},
+		{
+			name:          "empty string",
+			interfaceName: "",
+			expected:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsValidInterfaceName(config, tt.interfaceName)
+			if result != tt.expected {
+				t.Errorf("Expected %v for interface %q, got %v", tt.expected, tt.interfaceName, result)
+			}
+		})
+	}
+}
+
+func TestInterfaceHelpersNilConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		config        *configpb.Config
+		interfaceName string
+		ifIndex       uint32
+	}{
+		{
+			name:          "nil config",
+			config:        nil,
+			interfaceName: "eth0",
+			ifIndex:       1,
+		},
+		{
+			name: "nil interfaces",
+			config: &configpb.Config{
+				Interfaces: nil,
+			},
+			interfaceName: "eth0",
+			ifIndex:       1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// All functions should handle nil configs gracefully
+			if result := GetInterfaceByName(tt.config, tt.interfaceName); result != nil {
+				t.Errorf("GetInterfaceByName should return nil for nil config, got %+v", result)
+			}
+			if result := GetInterfaceByIndex(tt.config, tt.ifIndex); result != nil {
+				t.Errorf("GetInterfaceByIndex should return nil for nil config, got %+v", result)
+			}
+			if result := GetAllInterfaceNames(tt.config); result != nil {
+				t.Errorf("GetAllInterfaceNames should return nil for nil config, got %+v", result)
+			}
+			if result := IsValidInterfaceName(tt.config, tt.interfaceName); result {
+				t.Errorf("IsValidInterfaceName should return false for nil config, got %v", result)
+			}
+		})
+	}
+}
