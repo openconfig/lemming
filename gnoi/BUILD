@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "gnoi",
-    srcs = ["gnoi.go"],
+    srcs = [
+        "gnoi.go",
+        "linkqual.go",
+    ],
     importpath = "github.com/openconfig/lemming/gnoi",
     visibility = ["//visibility:public"],
     deps = [
