@@ -58,6 +58,7 @@ Deploy and Test:
 
 1. Load the debug image in the cluster: `make load-debug`
 2. Modify a topology.pb.txt to start lemming with dlv.
+
 ```prototext
 nodes: {
     name: "lemming"
