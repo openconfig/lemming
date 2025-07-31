@@ -29,6 +29,7 @@ components {
 }
 
 processes {
+  default_restart_on_kill: true
   process {
     name: "Octa"
     pid: 1001
@@ -103,11 +104,60 @@ processes {
 timing {
   switchover_duration_ms: 2000
   reboot_duration_ms: 2000
+  process_restart_delay_ms: 2000
 }
 
 network_simulation {
   base_latency_ms: 50
   latency_jitter_ms: 20
   packet_loss_rate: 0.0
+  packet_error_rate: 0.0
   default_ttl: 64
+}
+
+interfaces {
+  interface {
+    name: "eth0"
+    description: "Standard Ethernet interface"
+    if_index: 1
+  }
+  interface {
+    name: "eth1"
+    description: "Standard Ethernet interface"
+    if_index: 2
+  }
+  interface {
+    name: "eth2"
+    description: "Line card port 1"
+    if_index: 3
+  }
+  interface {
+    name: "eth3"
+    description: "Line card port 2"
+    if_index: 4
+  }
+  interface {
+    name: "HundredGigE0/0/0/29"
+    description: "100G port"
+    if_index: 5
+  }
+  interface {
+    name: "FourHundredGigE0/0/0/26"
+    description: "400G port"
+    if_index: 6
+  }
+}
+
+link_qualification {
+  max_bps: 400000000000
+  max_pps: 500000000
+  min_mtu: 64
+  max_mtu: 9000
+  min_setup_duration_ms: 1000
+  min_teardown_duration_ms: 1000
+  min_sample_interval_ms: 1000
+  default_packet_rate: 138888
+  default_packet_size: 8184
+  default_test_duration_ms: 5000
+  max_historical_results: 10
 }

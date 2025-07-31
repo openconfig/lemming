@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "gnoi",
-    srcs = ["gnoi.go"],
+    srcs = [
+        "gnoi.go",
+        "linkqual.go",
+    ],
     importpath = "github.com/openconfig/lemming/gnoi",
     visibility = ["//visibility:public"],
     deps = [
@@ -22,13 +25,17 @@ go_library(
         "@com_github_openconfig_gnoi//mpls",
         "@com_github_openconfig_gnoi//os",
         "@com_github_openconfig_gnoi//otdr",
+        "@com_github_openconfig_gnoi//packet_link_qualification",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_gnoi//types",
         "@com_github_openconfig_gnoi//wavelength_router",
         "@com_github_openconfig_ygnmi//ygnmi",
+        "@org_golang_google_genproto_googleapis_rpc//status",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//types/known/durationpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
 
@@ -40,16 +47,21 @@ go_test(
     deps = [
         "//gnmi",
         "//gnmi/fakedevice",
+        "//gnmi/gnmiclient",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
         "//internal/config",
         "//proto/config",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_openconfig_gnoi//packet_link_qualification",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_gnoi//types",
         "@com_github_openconfig_ygnmi//ygnmi",
+        "@com_github_openconfig_ygot//ygot",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//types/known/durationpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
