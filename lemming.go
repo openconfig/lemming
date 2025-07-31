@@ -300,6 +300,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 		fakedevice.NewCurrentTimeTask(),
 		fakedevice.NewChassisComponentsTask(lemmingConfig),
 		fakedevice.NewProcessMonitoringTask(lemmingConfig),
+		fakedevice.NewInterfaceInitializationTask(lemmingConfig),
 		bgp.NewGoBGPTask(targetName, zapiURL, resolvedOpts.bgpPort),
 	)
 
