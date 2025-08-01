@@ -29,22 +29,40 @@ import (
 
 	"github.com/google/uuid"
 
+	configpb "github.com/openconfig/lemming/proto/config"
 	faultpb "github.com/openconfig/lemming/proto/fault"
 )
 
 func NewInterceptor() *Interceptor {
 	return &Interceptor{
-		receivers: map[string]chan *faultMessage{},
-		faultSubs: map[string]*faultSubscription{},
+		receivers:        map[string]chan *faultMessage{},
+		faultSubs:        map[string]*faultSubscription{},
+		configuredFaults: map[string][]*faultpb.FaultMessage{},
+		configFaultIndex: map[string]int{},
 	}
+}
+
+// NewInterceptorFromConfig creates a new interceptor configured with static faults from config
+func NewInterceptorFromConfig(faultConfig *configpb.FaultServiceConfiguration) *Interceptor {
+	interceptor := NewInterceptor()
+
+	if faultConfig != nil {
+		for _, gnoiFault := range faultConfig.GetGnoiFaults() {
+			interceptor.configureFaults(gnoiFault.GetRpcMethod(), gnoiFault.GetFaults())
+		}
+	}
+
+	return interceptor
 }
 
 type Interceptor struct {
 	faultpb.UnimplementedFaultInjectServer
-	faultSubsMu sync.Mutex
-	faultSubs   map[string]*faultSubscription
-	receiversMu sync.Mutex
-	receivers   map[string]chan *faultMessage
+	faultSubsMu      sync.Mutex
+	faultSubs        map[string]*faultSubscription
+	receiversMu      sync.Mutex
+	receivers        map[string]chan *faultMessage
+	configuredFaults map[string][]*faultpb.FaultMessage
+	configFaultIndex map[string]int
 }
 
 type faultMessage struct {
@@ -117,8 +135,88 @@ func (i *Interceptor) sendRecvFault(ch chan *faultMessage, rpcID string, msg any
 	return res, recv.status.Err()
 }
 
-// Unary implements the grpc unary server imterceptor interface, adding fault injection to unary RPCs.
+// configureFaults sets pre-configured faults for a specific RPC method
+func (i *Interceptor) configureFaults(rpcMethod string, faults []*faultpb.FaultMessage) {
+	i.faultSubsMu.Lock()
+	defer i.faultSubsMu.Unlock()
+
+	if rpcMethod == "" {
+		log.Warningf("configureFaults called with empty rpcMethod")
+		return
+	}
+
+	if len(faults) == 0 {
+		delete(i.configuredFaults, rpcMethod)
+		delete(i.configFaultIndex, rpcMethod)
+		log.Infof("Removed fault configuration for RPC method: %s", rpcMethod)
+		return
+	}
+
+	i.configuredFaults[rpcMethod] = faults
+	i.configFaultIndex[rpcMethod] = 0
+	log.Infof("Configured %d faults for RPC method: %s", len(faults), rpcMethod)
+}
+
+// nextConfiguredFault returns the next configured fault for an RPC method
+func (i *Interceptor) nextConfiguredFault(rpcMethod string) *faultpb.FaultMessage {
+	i.faultSubsMu.Lock()
+	defer i.faultSubsMu.Unlock()
+
+	faults, exists := i.configuredFaults[rpcMethod]
+	if !exists || len(faults) == 0 {
+		return nil
+	}
+
+	index := i.configFaultIndex[rpcMethod]
+
+	// If we've exhausted all faults, return nil (pass through normally)
+	if index >= len(faults) {
+		return nil
+	}
+
+	fault := faults[index]
+
+	// Move to next fault index
+	i.configFaultIndex[rpcMethod] = index + 1
+
+	return fault
+}
+
+// applyConfiguredFault applies a configured fault to the message
+func (i *Interceptor) applyConfiguredFault(rpcMethod string, fault *faultpb.FaultMessage, originalMsg any, originalErr error) (any, error) {
+	if fault == nil {
+		return originalMsg, originalErr
+	}
+
+	log.Infof("Applying configured fault for RPC %s: msg_id=%s", rpcMethod, fault.GetMsgId())
+
+	// If fault has a message, use it; otherwise use original.
+	if fault.GetMsg() != nil {
+		faultMsg, err := fault.GetMsg().UnmarshalNew()
+		if err == nil {
+			return faultMsg, status.FromProto(fault.GetStatus()).Err()
+		}
+		log.Warningf("Failed to unmarshal fault message for %s: %v", rpcMethod, err)
+	}
+
+	// If fault only has status, return original message with fault status
+	return originalMsg, status.FromProto(fault.GetStatus()).Err()
+}
+
+// Unary implements the grpc unary server interceptor interface, adding fault injection to unary RPCs.
 func (i *Interceptor) Unary(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	// Check for configured faults first
+	if fault := i.nextConfiguredFault(info.FullMethod); fault != nil {
+		modifiedReq, faultErr := i.applyConfiguredFault(info.FullMethod, fault, req, nil)
+
+		// If fault has an error status, return immediately without calling handler.
+		if faultErr != nil {
+			return modifiedReq, faultErr
+		}
+		req = modifiedReq
+	}
+
+	// Check for live fault subscriptions
 	i.faultSubsMu.Lock()
 	sub, ok := i.faultSubs[info.FullMethod]
 	i.faultSubsMu.Unlock()
@@ -165,12 +263,19 @@ func (si *streamInt) SendMsg(m any) error {
 	return si.ServerStream.SendMsg(msg)
 }
 
-// Stream implements the grpc strean server imterceptor interface, adding fault injection to streanubg RPCs.
+// Stream implements the grpc stream server interceptor interface, adding fault injection to streaming RPCs.
 func (i *Interceptor) Stream(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	if info.FullMethod == "/lemming.fault.FaultInject/Intercept" { // Do not self-intercept
 		return handler(srv, stream)
 	}
 
+	// Check for configured faults first - for streaming, apply fault immediately
+	if fault := i.nextConfiguredFault(info.FullMethod); fault != nil {
+		log.Infof("Applying configured stream fault for RPC %s: msg_id=%s", info.FullMethod, fault.GetMsgId())
+		return status.FromProto(fault.GetStatus()).Err()
+	}
+
+	// Check for live fault subscriptions
 	i.faultSubsMu.Lock()
 	sub, ok := i.faultSubs[info.FullMethod]
 	i.faultSubsMu.Unlock()
