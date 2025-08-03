@@ -1,7 +1,11 @@
 package gnoi
 
 import (
+	"bytes"
 	"context"
+	"crypto/md5"
+	"crypto/sha256"
+	"io"
 	"math"
 	"net"
 	"strings"
@@ -9,13 +13,21 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	spb "github.com/openconfig/gnoi/system"
-	pb "github.com/openconfig/gnoi/types"
+	"github.com/openconfig/gnmi/errdiff"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	cpb "github.com/openconfig/gnoi/common"
+	fpb "github.com/openconfig/gnoi/file"
+	plqpb "github.com/openconfig/gnoi/packet_link_qualification"
+	spb "github.com/openconfig/gnoi/system"
+	pb "github.com/openconfig/gnoi/types"
+	configpb "github.com/openconfig/lemming/proto/config"
 
 	"github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
@@ -23,11 +35,6 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/internal/config"
-	configpb "github.com/openconfig/lemming/proto/config"
-
-	plqpb "github.com/openconfig/gnoi/packet_link_qualification"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -2995,5 +3002,843 @@ func testGeneratorReflectorCoordination(t *testing.T, linkQualServer *linkQualif
 	_, err = linkQualServer.Delete(ctx, deleteReq)
 	if err != nil {
 		t.Fatalf("Failed to delete qualifications: %v", err)
+	}
+}
+
+// File service tests
+
+// mockPutStream implements fpb.File_PutServer for testing
+type mockPutStream struct {
+	grpc.ServerStream
+	requests []*fpb.PutRequest
+	response *fpb.PutResponse
+	err      error
+}
+
+func (m *mockPutStream) Recv() (*fpb.PutRequest, error) {
+	if len(m.requests) == 0 {
+		return nil, io.EOF
+	}
+	req := m.requests[0]
+	m.requests = m.requests[1:]
+	return req, nil
+}
+
+func (m *mockPutStream) SendAndClose(response *fpb.PutResponse) error {
+	m.response = response
+	return m.err
+}
+
+// mockGetStream implements fpb.File_GetServer for testing
+type mockGetStream struct {
+	grpc.ServerStream
+	responses []*fpb.GetResponse
+	err       error
+}
+
+func (m *mockGetStream) Send(response *fpb.GetResponse) error {
+	if m.err != nil {
+		return m.err
+	}
+	m.responses = append(m.responses, response)
+	return nil
+}
+
+func TestFile_Put(t *testing.T) {
+	tests := []struct {
+		name     string
+		requests []*fpb.PutRequest
+		wantErr  string
+	}{
+		{
+			name: "successful put",
+			requests: []*fpb.PutRequest{
+				{
+					Request: &fpb.PutRequest_Open{
+						Open: &fpb.PutRequest_Details{
+							RemoteFile:  "/tmp/test.txt",
+							Permissions: 0644,
+						},
+					},
+				},
+				{
+					Request: &fpb.PutRequest_Contents{
+						Contents: []byte("hello world"),
+					},
+				},
+				{
+					Request: &fpb.PutRequest_Hash{
+						Hash: &pb.HashType{
+							Method: pb.HashType_MD5,
+							Hash:   func() []byte { h := md5.Sum([]byte("hello world")); return h[:] }(),
+						},
+					},
+				},
+			},
+			wantErr: "",
+		},
+		{
+			name: "missing open request",
+			requests: []*fpb.PutRequest{
+				{
+					Request: &fpb.PutRequest_Contents{
+						Contents: []byte("hello world"),
+					},
+				},
+			},
+			wantErr: "must send Open message before Contents",
+		},
+		{
+			name: "invalid path",
+			requests: []*fpb.PutRequest{
+				{
+					Request: &fpb.PutRequest_Open{
+						Open: &fpb.PutRequest_Details{
+							RemoteFile:  "relative/path",
+							Permissions: 0644,
+						},
+					},
+				},
+			},
+			wantErr: "path must be absolute",
+		},
+		{
+			name: "hash mismatch",
+			requests: []*fpb.PutRequest{
+				{
+					Request: &fpb.PutRequest_Open{
+						Open: &fpb.PutRequest_Details{
+							RemoteFile:  "/tmp/test.txt",
+							Permissions: 0644,
+						},
+					},
+				},
+				{
+					Request: &fpb.PutRequest_Contents{
+						Contents: []byte("hello world"),
+					},
+				},
+				{
+					Request: &fpb.PutRequest_Hash{
+						Hash: &pb.HashType{
+							Method: pb.HashType_MD5,
+							Hash:   []byte("wrong hash"),
+						},
+					},
+				},
+			},
+			wantErr: "hash verification failed",
+		},
+		{
+			name: "system path access denied",
+			requests: []*fpb.PutRequest{
+				{
+					Request: &fpb.PutRequest_Open{
+						Open: &fpb.PutRequest_Details{
+							RemoteFile:  "/proc/version",
+							Permissions: 0644,
+						},
+					},
+				},
+			},
+			wantErr: "access to system paths not allowed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newFile()
+			stream := &mockPutStream{requests: tt.requests}
+
+			err := f.Put(stream)
+
+			if diff := errdiff.Check(err, tt.wantErr); diff != "" {
+				t.Fatalf("Put() error diff: %s", diff)
+			}
+
+			if tt.wantErr != "" {
+				return
+			}
+
+			if stream.response == nil {
+				t.Fatalf("Expected response but got none")
+			}
+		})
+	}
+}
+
+func TestFile_Get(t *testing.T) {
+	f := newFile()
+	testPath := "/tmp/test.txt"
+	testContent := []byte("hello world")
+
+	// First put a file
+	f.files[testPath] = &fileInfo{
+		path:        testPath,
+		content:     testContent,
+		permissions: 0644,
+		created:     time.Now(),
+		modified:    time.Now(),
+	}
+
+	tests := []struct {
+		name    string
+		request *fpb.GetRequest
+		wantErr string
+	}{
+		{
+			name: "successful get",
+			request: &fpb.GetRequest{
+				RemoteFile: testPath,
+			},
+			wantErr: "",
+		},
+		{
+			name: "file not found",
+			request: &fpb.GetRequest{
+				RemoteFile: "/tmp/nonexistent.txt",
+			},
+			wantErr: "file /tmp/nonexistent.txt not found",
+		},
+		{
+			name: "invalid path",
+			request: &fpb.GetRequest{
+				RemoteFile: "relative/path",
+			},
+			wantErr: "path must be absolute",
+		},
+		{
+			name: "system path access denied",
+			request: &fpb.GetRequest{
+				RemoteFile: "/proc/version",
+			},
+			wantErr: "access to system paths not allowed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stream := &mockGetStream{}
+
+			err := f.Get(tt.request, stream)
+
+			if diff := errdiff.Check(err, tt.wantErr); diff != "" {
+				t.Fatalf("Get() error diff: %s", diff)
+			}
+
+			if tt.wantErr != "" {
+				return
+			}
+
+			if len(stream.responses) == 0 {
+				t.Fatalf("Expected responses but got none")
+			}
+
+			// Verify content
+			var receivedContent []byte
+			var receivedHash []byte
+			for _, resp := range stream.responses {
+				switch r := resp.Response.(type) {
+				case *fpb.GetResponse_Contents:
+					receivedContent = append(receivedContent, r.Contents...)
+				case *fpb.GetResponse_Hash:
+					receivedHash = r.Hash.Hash
+				}
+			}
+
+			if !bytes.Equal(receivedContent, testContent) {
+				t.Fatalf("Content mismatch: expected %s, got %s", testContent, receivedContent)
+			}
+
+			expectedHash := md5.Sum(testContent)
+			if !bytes.Equal(receivedHash, expectedHash[:]) {
+				t.Fatalf("Hash mismatch: expected %x, got %x", expectedHash, receivedHash)
+			}
+		})
+	}
+}
+
+func TestFile_Stat(t *testing.T) {
+	f := newFile()
+
+	// Add test files
+	f.files["/tmp/test1.txt"] = &fileInfo{
+		path:        "/tmp/test1.txt",
+		content:     []byte("content1"),
+		permissions: 0644,
+		created:     time.Now(),
+		modified:    time.Now(),
+	}
+	f.files["/tmp/test2.txt"] = &fileInfo{
+		path:        "/tmp/test2.txt",
+		content:     []byte("content2"),
+		permissions: 0755,
+		created:     time.Now(),
+		modified:    time.Now(),
+	}
+	f.files["/home/user/file.txt"] = &fileInfo{
+		path:        "/home/user/file.txt",
+		content:     []byte("content3"),
+		permissions: 0600,
+		created:     time.Now(),
+		modified:    time.Now(),
+	}
+
+	tests := []struct {
+		name          string
+		request       *fpb.StatRequest
+		wantErr       string
+		expectedCount int
+	}{
+		{
+			name: "stat /tmp directory",
+			request: &fpb.StatRequest{
+				Path: "/tmp",
+			},
+			wantErr:       "",
+			expectedCount: 2,
+		},
+		{
+			name: "stat /home/user directory",
+			request: &fpb.StatRequest{
+				Path: "/home/user",
+			},
+			wantErr:       "",
+			expectedCount: 1,
+		},
+		{
+			name: "stat empty directory",
+			request: &fpb.StatRequest{
+				Path: "/empty",
+			},
+			wantErr:       "",
+			expectedCount: 0,
+		},
+		{
+			name: "invalid path",
+			request: &fpb.StatRequest{
+				Path: "relative/path",
+			},
+			wantErr: "path must be absolute",
+		},
+		{
+			name: "system path access denied",
+			request: &fpb.StatRequest{
+				Path: "/proc",
+			},
+			wantErr: "access to system paths not allowed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := f.Stat(context.Background(), tt.request)
+
+			if diff := errdiff.Check(err, tt.wantErr); diff != "" {
+				t.Fatalf("Stat() error diff: %s", diff)
+			}
+
+			if tt.wantErr != "" {
+				return
+			}
+
+			if len(resp.Stats) != tt.expectedCount {
+				t.Fatalf("Expected %d files, got %d", tt.expectedCount, len(resp.Stats))
+			}
+
+			// Verify stat info structure
+			for _, stat := range resp.Stats {
+				if stat.Path == "" {
+					t.Fatalf("Empty path in stat result")
+				}
+				if stat.Size == 0 && len(f.files[stat.Path].content) > 0 {
+					t.Fatalf("Size mismatch for %s", stat.Path)
+				}
+				if stat.Umask != defaultUmask {
+					t.Fatalf("Expected umask %o, got %o", defaultUmask, stat.Umask)
+				}
+			}
+		})
+	}
+}
+
+func TestFile_Remove(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupFile bool
+		request   *fpb.RemoveRequest
+		wantErr   string
+	}{
+		{
+			name:      "successful remove",
+			setupFile: true,
+			request: &fpb.RemoveRequest{
+				RemoteFile: "/tmp/test.txt",
+			},
+			wantErr: "",
+		},
+		{
+			name:      "file not found",
+			setupFile: false,
+			request: &fpb.RemoveRequest{
+				RemoteFile: "/tmp/nonexistent.txt",
+			},
+			wantErr: "file /tmp/nonexistent.txt not found",
+		},
+		{
+			name:      "invalid path",
+			setupFile: false,
+			request: &fpb.RemoveRequest{
+				RemoteFile: "relative/path",
+			},
+			wantErr: "path must be absolute",
+		},
+		{
+			name:      "system path access denied",
+			setupFile: false,
+			request: &fpb.RemoveRequest{
+				RemoteFile: "/proc/version",
+			},
+			wantErr: "access to system paths not allowed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newFile()
+
+			if tt.setupFile {
+				f.files[tt.request.RemoteFile] = &fileInfo{
+					path:        tt.request.RemoteFile,
+					content:     []byte("test content"),
+					permissions: 0644,
+					created:     time.Now(),
+					modified:    time.Now(),
+				}
+			}
+
+			_, err := f.Remove(context.Background(), tt.request)
+
+			if diff := errdiff.Check(err, tt.wantErr); diff != "" {
+				t.Fatalf("Remove() error diff: %s", diff)
+			}
+
+			if tt.wantErr != "" {
+				return
+			}
+
+			// Verify file was removed
+			if _, exists := f.files[tt.request.RemoteFile]; exists {
+				t.Fatalf("File was not removed: %s", tt.request.RemoteFile)
+			}
+		})
+	}
+}
+
+func TestFile_TransferToRemote(t *testing.T) {
+	f := newFile()
+
+	// First, create a test file in the simulated file system
+	testContent := []byte("test file content for transfer")
+	testFilePath := "/tmp/test.txt"
+	testFile := &fileInfo{
+		path:        testFilePath,
+		content:     testContent,
+		permissions: 0644,
+		created:     time.Now(),
+		modified:    time.Now(),
+	}
+	f.mu.Lock()
+	f.files[testFilePath] = testFile
+	f.mu.Unlock()
+
+	tests := []struct {
+		name        string
+		req         *fpb.TransferToRemoteRequest
+		wantErr     bool
+		wantCode    codes.Code
+		description string
+	}{
+		{
+			name: "successful transfer",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: testFilePath,
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "sftp://remote.example.com/path/file.txt",
+					Protocol: cpb.RemoteDownload_SFTP,
+				},
+			},
+			wantErr:     false,
+			description: "should successfully transfer existing file",
+		},
+		{
+			name: "empty local path",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: "",
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "sftp://remote.example.com/path/file.txt",
+					Protocol: cpb.RemoteDownload_SFTP,
+				},
+			},
+			wantErr:     true,
+			wantCode:    codes.InvalidArgument,
+			description: "should fail when local_path is empty",
+		},
+		{
+			name: "nil remote download",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath:      testFilePath,
+				RemoteDownload: nil,
+			},
+			wantErr:     true,
+			wantCode:    codes.InvalidArgument,
+			description: "should fail when remote_download is nil",
+		},
+		{
+			name: "empty remote download path",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: testFilePath,
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "",
+					Protocol: cpb.RemoteDownload_SFTP,
+				},
+			},
+			wantErr:     true,
+			wantCode:    codes.InvalidArgument,
+			description: "should fail when remote_download.path is empty",
+		},
+		{
+			name: "unknown protocol",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: testFilePath,
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "unknown://remote.example.com/path/file.txt",
+					Protocol: cpb.RemoteDownload_UNKNOWN,
+				},
+			},
+			wantErr:     true,
+			wantCode:    codes.InvalidArgument,
+			description: "should fail when protocol is UNKNOWN",
+		},
+		{
+			name: "local file not found",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: "/nonexistent/file.txt",
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "sftp://remote.example.com/path/file.txt",
+					Protocol: cpb.RemoteDownload_SFTP,
+				},
+			},
+			wantErr:     true,
+			wantCode:    codes.NotFound,
+			description: "should fail when local file doesn't exist",
+		},
+		{
+			name: "invalid local path",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: "relative/path/file.txt",
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "sftp://remote.example.com/path/file.txt",
+					Protocol: cpb.RemoteDownload_SFTP,
+				},
+			},
+			wantErr:     true,
+			wantCode:    codes.InvalidArgument,
+			description: "should fail when local path is not absolute",
+		},
+		{
+			name: "HTTP protocol",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: testFilePath,
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "http://remote.example.com/upload/file.txt",
+					Protocol: cpb.RemoteDownload_HTTP,
+				},
+			},
+			wantErr:     false,
+			description: "should support HTTP protocol",
+		},
+		{
+			name: "HTTPS protocol",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: testFilePath,
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "https://remote.example.com/upload/file.txt",
+					Protocol: cpb.RemoteDownload_HTTPS,
+				},
+			},
+			wantErr:     false,
+			description: "should support HTTPS protocol",
+		},
+		{
+			name: "SCP protocol",
+			req: &fpb.TransferToRemoteRequest{
+				LocalPath: testFilePath,
+				RemoteDownload: &cpb.RemoteDownload{
+					Path:     "user@remote.example.com:/path/file.txt",
+					Protocol: cpb.RemoteDownload_SCP,
+				},
+			},
+			wantErr:     false,
+			description: "should support SCP protocol",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := f.TransferToRemote(context.Background(), tt.req)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("Expected error for %s but got none", tt.description)
+				}
+				if tt.wantCode != codes.OK && status.Code(err) != tt.wantCode {
+					t.Fatalf("Expected error code %v for %s, got %v", tt.wantCode, tt.description, status.Code(err))
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("Unexpected error for %s: %v", tt.description, err)
+			}
+			if resp == nil {
+				t.Fatalf("Expected response for %s but got nil", tt.description)
+			}
+			if resp.Hash == nil {
+				t.Fatalf("Expected hash in response for %s but got nil", tt.description)
+			}
+			if resp.Hash.Method != pb.HashType_MD5 {
+				t.Fatalf("Expected MD5 hash method for %s, got %v", tt.description, resp.Hash.Method)
+			}
+			if len(resp.Hash.Hash) == 0 {
+				t.Fatalf("Expected non-empty hash for %s", tt.description)
+			}
+		})
+	}
+}
+
+func TestFile_ComputeHash(t *testing.T) {
+	f := newFile()
+	testData := []byte("hello world")
+
+	tests := []struct {
+		name    string
+		method  pb.HashType_HashMethod
+		wantErr string
+	}{
+		{
+			name:    "MD5 hash",
+			method:  pb.HashType_MD5,
+			wantErr: "",
+		},
+		{
+			name:    "SHA256 hash",
+			method:  pb.HashType_SHA256,
+			wantErr: "",
+		},
+		{
+			name:    "SHA512 hash",
+			method:  pb.HashType_SHA512,
+			wantErr: "",
+		},
+		{
+			name:    "unsupported hash method",
+			method:  pb.HashType_HashMethod(999),
+			wantErr: "unsupported hash method",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hash, err := f.computeHash(testData, tt.method)
+
+			if diff := errdiff.Check(err, tt.wantErr); diff != "" {
+				t.Fatalf("computeHash() error diff: %s", diff)
+			}
+
+			if tt.wantErr != "" {
+				return
+			}
+
+			if len(hash) == 0 {
+				t.Fatalf("Empty hash returned")
+			}
+
+			// Verify hash correctness
+			switch tt.method {
+			case pb.HashType_MD5:
+				expected := md5.Sum(testData)
+				if !bytes.Equal(hash, expected[:]) {
+					t.Fatalf("MD5 hash mismatch")
+				}
+			case pb.HashType_SHA256:
+				expected := sha256.Sum256(testData)
+				if !bytes.Equal(hash, expected[:]) {
+					t.Fatalf("SHA256 hash mismatch")
+				}
+			}
+		})
+	}
+}
+
+func TestFile_FileSizeLimit(t *testing.T) {
+	f := newFile()
+
+	// Create content that exceeds the limit
+	largeContent := make([]byte, maxFileSize+1)
+	for i := range largeContent {
+		largeContent[i] = byte(i % 256)
+	}
+
+	hash := sha256.Sum256(largeContent)
+
+	stream := &mockPutStream{
+		requests: []*fpb.PutRequest{
+			{
+				Request: &fpb.PutRequest_Open{
+					Open: &fpb.PutRequest_Details{
+						RemoteFile:  "/tmp/large.txt",
+						Permissions: 0644,
+					},
+				},
+			},
+			{
+				Request: &fpb.PutRequest_Contents{
+					Contents: largeContent,
+				},
+			},
+			{
+				Request: &fpb.PutRequest_Hash{
+					Hash: &pb.HashType{
+						Method: pb.HashType_SHA256,
+						Hash:   hash[:],
+					},
+				},
+			},
+		},
+	}
+
+	err := f.Put(stream)
+
+	if err == nil {
+		t.Fatalf("Expected error for oversized file but got none")
+	}
+
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("Expected InvalidArgument error, got %v", status.Code(err))
+	}
+}
+
+func TestFile_ConcurrentAccess(t *testing.T) {
+	f := newFile()
+	testPath := "/tmp/concurrent.txt"
+	testContent := []byte("concurrent test")
+
+	// Test concurrent writes and reads
+	const numGoroutines = 10
+	done := make(chan bool, numGoroutines*2)
+
+	// Concurrent puts
+	for range numGoroutines {
+		go func() {
+			defer func() { done <- true }()
+
+			hash := md5.Sum(testContent)
+			stream := &mockPutStream{
+				requests: []*fpb.PutRequest{
+					{
+						Request: &fpb.PutRequest_Open{
+							Open: &fpb.PutRequest_Details{
+								RemoteFile:  testPath,
+								Permissions: 0644,
+							},
+						},
+					},
+					{
+						Request: &fpb.PutRequest_Contents{
+							Contents: testContent,
+						},
+					},
+					{
+						Request: &fpb.PutRequest_Hash{
+							Hash: &pb.HashType{
+								Method: pb.HashType_MD5,
+								Hash:   hash[:],
+							},
+						},
+					},
+				},
+			}
+
+			if err := f.Put(stream); err != nil {
+				t.Errorf("Concurrent put failed: %v", err)
+			}
+		}()
+	}
+
+	// Wait a bit for some files to be created
+	time.Sleep(10 * time.Millisecond)
+
+	// Concurrent stats
+	for range numGoroutines {
+		go func() {
+			defer func() { done <- true }()
+
+			_, err := f.Stat(context.Background(), &fpb.StatRequest{Path: "/tmp"})
+			if err != nil {
+				t.Errorf("Concurrent stat failed: %v", err)
+			}
+		}()
+	}
+
+	// Wait for all goroutines to complete
+	for range numGoroutines * 2 {
+		<-done
+	}
+}
+
+func TestFile_HelperMethods(t *testing.T) {
+	f := newFile()
+	testPath := "/tmp/helper.txt"
+	testContent := []byte("helper test")
+
+	// Test GetFileInfo on non-existent file
+	_, exists := f.GetFileInfo(testPath)
+	if exists {
+		t.Fatalf("Expected file to not exist")
+	}
+
+	// Add a file
+	f.files[testPath] = &fileInfo{
+		path:        testPath,
+		content:     testContent,
+		permissions: 0644,
+		created:     time.Now(),
+		modified:    time.Now(),
+	}
+
+	// Test GetFileInfo on existing file
+	info, exists := f.GetFileInfo(testPath)
+	if !exists {
+		t.Fatalf("Expected file to exist")
+	}
+	if !bytes.Equal(info.content, testContent) {
+		t.Fatalf("Content mismatch")
+	}
+
+	// Test ListFiles
+	files := f.ListFiles()
+	if len(files) != 1 {
+		t.Fatalf("Expected 1 file, got %d", len(files))
+	}
+	if files[0] != testPath {
+		t.Fatalf("Expected %s, got %s", testPath, files[0])
+	}
+
+	// Test Reset
+	f.Reset()
+	files = f.ListFiles()
+	if len(files) != 0 {
+		t.Fatalf("Expected 0 files after reset, got %d", len(files))
 	}
 }

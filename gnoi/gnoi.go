@@ -75,10 +75,6 @@ type factoryReset struct {
 	frpb.UnimplementedFactoryResetServer
 }
 
-type file struct {
-	fpb.UnimplementedFileServer
-}
-
 type healthz struct {
 	hpb.UnimplementedHealthzServer
 }
@@ -778,7 +774,7 @@ func New(s *grpc.Server, gClient gpb.GNMIClient, target string, config *configpb
 		bgpServer:               &bgp{},
 		certServer:              &cert{},
 		diagServer:              &diag{},
-		fileServer:              &file{},
+		fileServer:              newFile(),
 		resetServer:             &factoryReset{},
 		healthzServer:           &healthz{},
 		layer2Server:            &layer2{},

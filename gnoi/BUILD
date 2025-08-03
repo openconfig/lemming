@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "gnoi",
     srcs = [
+        "file.go",
         "gnoi.go",
         "linkqual.go",
     ],
@@ -53,6 +54,9 @@ go_test(
         "//internal/config",
         "//proto/config",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_openconfig_gnmi//errdiff",
+        "@com_github_openconfig_gnoi//common",
+        "@com_github_openconfig_gnoi//file",
         "@com_github_openconfig_gnoi//packet_link_qualification",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_gnoi//types",
