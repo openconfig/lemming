@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package lemming.config;
 
+import "proto/fault/fault.proto";
+
 option go_package = "github.com/openconfig/lemming/proto/config";
 
 // Main configuration message for lemming fake device
@@ -20,6 +22,8 @@ message Config {
   InterfaceConfig interfaces = 6;
   // Link qualification configuration
   LinkQualificationConfig link_qualification = 7;
+  // Fault service configuration
+  FaultServiceConfiguration fault_config = 8;
 }
 
 // Container for process configuration
@@ -152,4 +156,18 @@ message VendorConfig {
   string model = 2;     
   // Operating system version
   string os_version = 3; 
+}
+
+// Configuration for gNOI fault injection
+message GNOIFaults {
+  // gRPC method name (e.g., "/gnoi.system.System/Reboot")
+  string rpc_method = 1;
+  // Fault messages to inject for this RPC method
+  repeated lemming.fault.FaultMessage faults = 2;
+}
+
+// Configuration for fault service
+message FaultServiceConfiguration {
+  // List of gNOI fault configurations
+  repeated GNOIFaults gnoi_faults = 1;
 }

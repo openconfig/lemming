@@ -30,6 +30,7 @@ import (
 const (
 	VendorArista = "arista"
 	VendorNokia  = "nokia"
+	FaultConfig  = "fault_config"
 )
 
 var parseFromEmbeddedFn = parseFromEmbedded
@@ -85,6 +86,8 @@ func determineConfigPath(flagValue string) (string, error) {
 		case VendorArista, VendorNokia:
 			// For known vendor presets, use the embedded config
 			return fmt.Sprintf("embedded:%s_default.textproto", envConfigFile), nil
+		case FaultConfig:
+			return fmt.Sprintf("embedded:%s.textproto", envConfigFile), nil
 		default:
 			if _, err := os.Stat(envConfigFile); err == nil {
 				return envConfigFile, nil
@@ -107,6 +110,7 @@ func mergeWithDefaults(userConfig *configpb.Config) *configpb.Config {
 		NetworkSimulation: defaultNetworkSimulation(),
 		Interfaces:        defaultInterfaces(),
 		LinkQualification: defaultLinkQualification(),
+		FaultConfig:       defaultFaultConfig(),
 	}
 
 	if userConfig == nil {
@@ -139,6 +143,10 @@ func mergeWithDefaults(userConfig *configpb.Config) *configpb.Config {
 
 	if userConfig.LinkQualification != nil {
 		config.LinkQualification = userConfig.LinkQualification
+	}
+
+	if userConfig.FaultConfig != nil {
+		config.FaultConfig = userConfig.FaultConfig
 	}
 
 	return config
@@ -241,6 +249,13 @@ func defaultLinkQualification() *configpb.LinkQualificationConfig {
 	}
 }
 
+// defaultFaultConfig returns default fault configuration
+func defaultFaultConfig() *configpb.FaultServiceConfiguration {
+	return &configpb.FaultServiceConfiguration{
+		GnoiFaults: []*configpb.GNOIFaults{},
+	}
+}
+
 // parseFromEmbedded parses configuration from an embedded file
 func parseFromEmbedded(path string) (*configpb.Config, error) {
 	data, err := configs.FS.ReadFile(path)
@@ -320,6 +335,12 @@ func validate(config *configpb.Config) error {
 	if config.LinkQualification != nil {
 		if err := validateLinkQualification(config.LinkQualification); err != nil {
 			return fmt.Errorf("link qualification validation failed: %v", err)
+		}
+	}
+
+	if config.FaultConfig != nil {
+		if err := validateFaultConfig(config.FaultConfig); err != nil {
+			return fmt.Errorf("fault config validation failed: %v", err)
 		}
 	}
 
@@ -614,4 +635,62 @@ func validateCapabilityFields(lq *configpb.LinkQualificationConfig) error {
 	}
 
 	return nil
+}
+
+// validateFaultConfig validates fault service configuration
+func validateFaultConfig(faultConfig *configpb.FaultServiceConfiguration) error {
+	if faultConfig == nil {
+		return fmt.Errorf("fault config is nil")
+	}
+
+	// Track RPC methods to prevent duplicates
+	rpcMethods := make(map[string]bool)
+
+	for i, gnoiFault := range faultConfig.GetGnoiFaults() {
+		if gnoiFault.GetRpcMethod() == "" {
+			return fmt.Errorf("gnoi_faults[%d]: rpc_method is required", i)
+		}
+
+		rpcMethod := gnoiFault.GetRpcMethod()
+		if rpcMethods[rpcMethod] {
+			return fmt.Errorf("gnoi_faults[%d]: duplicate rpc_method %q", i, rpcMethod)
+		}
+		rpcMethods[rpcMethod] = true
+
+		// Validate RPC method format
+		if !isValidRPCMethod(rpcMethod) {
+			return fmt.Errorf("gnoi_faults[%d]: invalid rpc_method format %q, expected format: /service.Package/Method", i, rpcMethod)
+		}
+
+		// Validate faults
+		if len(gnoiFault.GetFaults()) == 0 {
+			return fmt.Errorf("gnoi_faults[%d]: at least one fault must be specified for rpc_method %q", i, rpcMethod)
+		}
+
+		for j, fault := range gnoiFault.GetFaults() {
+			if fault.GetMsgId() == "" {
+				return fmt.Errorf("gnoi_faults[%d].faults[%d]: msg_id is required", i, j)
+			}
+		}
+	}
+
+	return nil
+}
+
+// isValidRPCMethod validates the RPC method format: /package.service/Method
+func isValidRPCMethod(method string) bool {
+	// Must start with "/" and contain exactly two parts split by "/"
+	if !strings.HasPrefix(method, "/") {
+		return false
+	}
+
+	parts := strings.Split(method[1:], "/")
+	if len(parts) != 2 {
+		return false
+	}
+
+	service, methodName := parts[0], parts[1]
+
+	// Both service and method must be non-empty and contain a dot (package.service format)
+	return service != "" && methodName != "" && strings.Contains(service, ".")
 }

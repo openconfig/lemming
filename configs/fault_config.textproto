@@ -1,0 +1,19 @@
+fault_config {
+  gnoi_faults {
+    rpc_method: "/gnoi.system.System/Reboot"
+    faults {
+      msg_id: "reboot_fault_1"
+      status {
+        code: 10
+        message: "Simulated reboot failure - system maintenance mode"
+      }
+    }
+    faults {
+      msg_id: "reboot_fault_2" 
+      status {
+        code: 14
+        message: "Simulated reboot failure - resource temporarily unavailable"
+      }
+    }
+  }
+}

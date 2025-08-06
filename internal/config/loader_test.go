@@ -1444,3 +1444,86 @@ func TestValidateLinkQualification(t *testing.T) {
 		})
 	}
 }
+
+func TestIsValidRPCMethod(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		want   bool
+	}{
+		{
+			name:   "valid gnoi system method",
+			method: "/gnoi.system.System/Reboot",
+			want:   true,
+		},
+		{
+			name:   "valid gnoi file method",
+			method: "/gnoi.file.File/Get",
+			want:   true,
+		},
+		{
+			name:   "valid custom service",
+			method: "/com.example.service.MyService/DoSomething",
+			want:   true,
+		},
+		{
+			name:   "missing leading slash",
+			method: "gnoi.system.System/Reboot",
+			want:   false,
+		},
+		{
+			name:   "empty string",
+			method: "",
+			want:   false,
+		},
+		{
+			name:   "only slash",
+			method: "/",
+			want:   false,
+		},
+		{
+			name:   "missing service part",
+			method: "/Reboot",
+			want:   false,
+		},
+		{
+			name:   "missing method part",
+			method: "/gnoi.system.System/",
+			want:   false,
+		},
+		{
+			name:   "no package in service",
+			method: "/System/Reboot",
+			want:   false,
+		},
+		{
+			name:   "empty service part",
+			method: "//Reboot",
+			want:   false,
+		},
+		{
+			name:   "empty method part",
+			method: "/gnoi.system.System/",
+			want:   false,
+		},
+		{
+			name:   "too many slashes",
+			method: "/gnoi.system.System/Reboot/Extra",
+			want:   false,
+		},
+		{
+			name:   "single character parts",
+			method: "/a.b/C",
+			want:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isValidRPCMethod(tt.method)
+			if got != tt.want {
+				t.Errorf("isValidRPCMethod(%q) = %v, want %v", tt.method, got, tt.want)
+			}
+		})
+	}
+}

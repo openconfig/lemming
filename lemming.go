@@ -272,8 +272,13 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 
 	var faultService *gRPCService
 
+	// Initialize fault interceptor with static config
+	faultInt := fault.NewInterceptorFromConfig(lemmingConfig.GetFaultConfig())
+	streamInt = append(streamInt, faultInt.Stream)
+	unaryInt = append(unaryInt, faultInt.Unary)
+
+	// Only start fault service if explicitly enabled for external clients
 	if resolvedOpts.faultInject {
-		faultInt := fault.NewInterceptor()
 		l, err := net.Listen("tcp", resolvedOpts.faultAddr)
 		if err != nil {
 			return nil, err
@@ -281,8 +286,6 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 		srv := grpc.NewServer(grpc.Creds(creds))
 		faultpb.RegisterFaultInjectServer(srv, faultInt)
 
-		streamInt = append(streamInt, faultInt.Stream)
-		unaryInt = append(unaryInt, faultInt.Unary)
 		faultService = &gRPCService{
 			lis:     l,
 			s:       srv,
