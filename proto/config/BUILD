@@ -6,6 +6,7 @@ proto_library(
     name = "config_proto",
     srcs = ["lemming_config.proto"],
     visibility = ["//visibility:public"],
+    deps = ["//proto/fault:fault_proto"],
 )
 
 go_proto_library(
@@ -13,6 +14,7 @@ go_proto_library(
     importpath = "github.com/openconfig/lemming/proto/config",
     proto = ":config_proto",
     visibility = ["//visibility:public"],
+    deps = ["//proto/fault"],
 )
 
 go_library(

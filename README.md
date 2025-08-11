@@ -59,23 +59,23 @@ Deploy and Test:
 1. Load the debug image in the cluster: `make load-debug`
 2. Modify a topology.pb.txt to start lemming with dlv.
 
-```prototext
-nodes: {
-    name: "lemming"
-    vendor: OPENCONFIG
-    config: {
-        command: "/dlv/dlv"
-        args: "exec"
-        args: "--headless"
-        args: "--continue"
-        args: "--accept-multiclient"
-        args: "--listen=:56268"
-        args: "--api-version=2"
-        args: "/lemming/lemming"
-        args: "--"
+    ```prototext
+    nodes: {
+        name: "lemming"
+        vendor: OPENCONFIG
+        config: {
+            command: "/dlv/dlv"
+            args: "exec"
+            args: "--headless"
+            args: "--continue"
+            args: "--accept-multiclient"
+            args: "--listen=:56268"
+            args: "--api-version=2"
+            args: "/lemming/lemming"
+            args: "--"
+        }
     }
-}
-```
+    ```
 3. Create the topology: `kne create <topofile>`.
 4. Forward the debugger connection (this is blocking so run in seperate terminal): `kubectl port-forward -n <topo name> <node name> 56268:56268`
 5. Attach to the debugger.

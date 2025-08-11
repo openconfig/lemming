@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package lemming.config;
 
+import "proto/fault/fault.proto";
+
 option go_package = "github.com/openconfig/lemming/proto/config";
 
 // Main configuration message for lemming fake device
@@ -16,20 +18,33 @@ message Config {
   NetworkSimConfig network_simulation = 4;
   // Vendor-specific behavior settings
   VendorConfig vendor = 5;
+  // Network interfaces configuration
+  InterfaceConfig interfaces = 6;
+  // Link qualification configuration
+  LinkQualificationConfig link_qualification = 7;
+  // Fault service configuration
+  FaultServiceConfiguration fault_config = 8;
 }
 
 // Container for process configuration
 message ProcessesConfig{
   repeated ProcessConfig process = 1;
+  // Default restart behavior when a process is killed
+  bool default_restart_on_kill = 2;
 }
 
 // Configuration for device component names and structure
 message ComponentConfig {
-  string supervisor1_name = 1;  // Name for primary supervisor
-  string supervisor2_name = 2;  // Name for secondary supervisor
-  string chassis_name = 3;      // Chassis component name
-  string linecard_prefix = 4;   // Prefix for linecard component names
-  string fabric_prefix = 5;     // Prefix for fabric component names
+  // Name for primary supervisor
+  string supervisor1_name = 1;  
+  // Name for secondary supervisor
+  string supervisor2_name = 2;  
+  // Chassis component name
+  string chassis_name = 3;      
+  // Prefix for linecard component names
+  string linecard_prefix = 4;   
+  // Prefix for fabric component names
+  string fabric_prefix = 5;     
 
   // Component counts and indexing
   ComponentTypeConfig linecard = 7;
@@ -38,28 +53,85 @@ message ComponentConfig {
 
 // Configuration for a specific component type
 message ComponentTypeConfig {
-  int32 count = 1;        // How many of this component type to create
-  int32 start_index = 2;  // Starting index for component numbering
-  int32 step = 3;         // Index increment between components
+  // How many of this component type to create
+  int32 count = 1;        
+  // Starting index for component numbering
+  int32 start_index = 2;  
+  // Index increment between components
+  int32 step = 3;         
 }
 
 // Configuration for mock system processes
 message ProcessConfig {
-  string name = 1;              // Process name
-  uint32 pid = 2;               // Process ID
-  uint64 cpu_usage_user = 3;    // CPU usage in user space (nanoseconds)
-  uint64 cpu_usage_system = 4;  // CPU usage in system space (nanoseconds)
-  uint32 cpu_utilization = 5;   // Overall CPU utilization percentage
-  uint64 memory_usage = 6;      // Memory usage in bytes
-  uint32 memory_utilization = 7;  // Memory utilization percentage
+  // Process name
+  string name = 1;              
+  // Process ID
+  uint32 pid = 2;               
+  // CPU usage in user space (nanoseconds)
+  uint64 cpu_usage_user = 3;    
+  // CPU usage in system space (nanoseconds)
+  uint64 cpu_usage_system = 4;  
+  // Overall CPU utilization percentage
+  uint32 cpu_utilization = 5;   
+  // Memory usage in bytes
+  uint64 memory_usage = 6;      
+  // Memory utilization percentage
+  uint32 memory_utilization = 7; 
 }
 
 // Configuration for system operation timing
 message TimingConfig {
-  // Duration for supervisor switchover simulation (ms)
+  // Duration for supervisor switchover simulation
   int64 switchover_duration_ms = 1;
-  // Duration for system reboot simulation (ms)
+  // Duration for system reboot simulation
   int64 reboot_duration_ms = 2;
+  // Duration to wait before restarting a killed process
+  int64 process_restart_delay_ms = 3;
+}
+
+// Configuration for network interfaces
+message InterfaceConfig {
+  repeated InterfaceSpec interface = 1;
+}
+
+message InterfaceSpec {
+  // Interface name (e.g., "eth1", "Ethernet1/1")
+  string name = 1;           
+  // Human-readable description
+  string description = 2;    
+  // Interface index
+  uint32 if_index = 3;       
+}
+
+// Configuration for link qualification capabilities and defaults
+message LinkQualificationConfig {
+  // Device capability limits
+  // Maximum bits per second capability
+  uint64 max_bps = 1;                    
+  // Maximum packets per second capability
+  uint64 max_pps = 2;                    
+  // Minimum MTU hardware limit
+  uint32 min_mtu = 3;                    
+  // Maximum MTU hardware limit
+  uint32 max_mtu = 4;                    
+  // Max historical results per interface
+  uint32 max_historical_results = 11;
+  
+  // Timing constraints for simulation
+  // Minimum setup time capability
+  int64 min_setup_duration_ms = 5;       
+  // Minimum teardown time capability
+  int64 min_teardown_duration_ms = 6;    
+  // Minimum sample interval capability
+  int64 min_sample_interval_ms = 7;      
+
+  // Simulation parameters for packet statistics
+  // Default packet rate when not specified
+  uint64 default_packet_rate = 8;        
+  // Default packet size when not specified
+  uint32 default_packet_size = 9;        
+  // Default test duration for rate calculations
+  int64 default_test_duration_ms = 10;   
 }
 
 // Configuration for ping network simulation behavior
@@ -72,11 +144,30 @@ message NetworkSimConfig {
   float packet_loss_rate = 3;
   // Default TTL value for ping responses (0-255)
   int32 default_ttl = 4;
+  // Packet error rate for simulation (0.0-1.0)
+  float packet_error_rate = 5;
 }
 
 // Configuration for vendor-specific behavior (future use)
 message VendorConfig {
-  string name = 1;      // Vendor name identifier
-  string model = 2;     // Device model identifier
-  string os_version = 3;  // Operating system version
+  // Vendor name identifier
+  string name = 1;      
+  // Device model identifier
+  string model = 2;     
+  // Operating system version
+  string os_version = 3; 
+}
+
+// Configuration for gNOI fault injection
+message GNOIFaults {
+  // gRPC method name (e.g., "/gnoi.system.System/Reboot")
+  string rpc_method = 1;
+  // Fault messages to inject for this RPC method
+  repeated lemming.fault.FaultMessage faults = 2;
+}
+
+// Configuration for fault service
+message FaultServiceConfiguration {
+  // List of gNOI fault configurations
+  repeated GNOIFaults gnoi_faults = 1;
 }
