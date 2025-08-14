@@ -4,8 +4,8 @@
 
 ### Setup
 
-1.  Checkout lemming repository `git clone https://github.com/openconfig/lemming.git`
-1.  Install lemctl `go install cmd/lemctl`
+1. Checkout lemming repository `git clone https://github.com/openconfig/lemming.git`
+1. Install lemctl `go install cmd/lemctl`
 
 The lemctl CLI contains useful tools for debugging Lemming and Lucius.
 
@@ -31,9 +31,12 @@ output the full trace for the first test packet.
 
 ### Interpreting Traces
 
-```
+```text
 I1119 18:05:15.964276       1 packet.go:207] "level"=3 "msg"="process current" "action"="<Type=ACTION_TYPE_LOOKUP;<Table=input-iface><onEvaluate=false><Hash=773172257>;>"
-I1119 18:05:15.964279       1 packet.go:207] "level"=3 "msg"="exact table entry matched" "table"="input-iface" "entry"="<key=0000000000000035>;<actions=<Type=ACTION_TYPE_UPDATE;Field={false 0 PACKET_FIELD_NUM_INPUT_IFACE PACKET_HEADER_GROUP_UNSPECIFIED 0 0};Op=UPDATE_TYPE_SET;ByteArg=0000000000000867;FieldArg={false 0 PACKET_FIELD_NUM_UNSPECIFIED PACKET_HEADER_GROUP_UNSPECIFIED 0 0};BitCount=0;BitOffset=0<onEvaluate=false><Hash=3333249902>;>;<Type=ACTION_TYPE_FLOW_COUNTER;<FlowCounter=2151-in-counter><onEvaluate=false><Hash=3798394713>;>>;<timeout=0001-01-01 00:00:00 +0000 UTC>;"
+I1119 18:05:15.964279       1 packet.go:207] "level"=3 "msg"="exact table entry matched" "table"="input-iface" "entry"="<key=0000000000000035>;<actions=<Type=ACTION_TYPE_UPDATE;
+Field={false 0 PACKET_FIELD_NUM_INPUT_IFACE PACKET_HEADER_GROUP_UNSPECIFIED 0 0};Op=UPDATE_TYPE_SET;ByteArg=0000000000000867;
+FieldArg={false 0 PACKET_FIELD_NUM_UNSPECIFIED PACKET_HEADER_GROUP_UNSPECIFIED 0 0};BitCount=0;BitOffset=0<onEvaluate=false><Hash=3333249902>;>;<Type=ACTION_TYPE_FLOW_COUNTER;
+<FlowCounter=2151-in-counter><onEvaluate=false><Hash=3798394713>;>>;<timeout=0001-01-01 00:00:00 +0000 UTC>;"
 I1119 18:05:15.964281       1 packet.go:207] "level"=3 "msg"="process result" "state"=1 "action"="<Type=ACTION_TYPE_UPDATE;Field={false 0 PACKET_FIELD_NUM_INPUT_IFACE PACKET_HEADER_GROUP_UNSPECIFIED 0 0};Op=UPDATE_TYPE_SET;ByteArg=0000000000000867;FieldArg={false 0 PACKET_FIELD_NUM_UNSPECIFIED PACKET_HEADER_GROUP_UNSPECIFIED 0 0};BitCount=0;BitOffset=0<onEvaluate=false><Hash=3333249902>;>;<Type=ACTION_TYPE_FLOW_COUNTER;<FlowCounter=2151-in-counter><onEvaluate=false><Hash=3798394713>;>"
 I1119 18:05:15.964284       1 packet.go:207] "level"=3 "msg"="process current" "action"="<Type=ACTION_TYPE_UPDATE;Field={false 0 PACKET_FIELD_NUM_INPUT_IFACE PACKET_HEADER_GROUP_UNSPECIFIED 0 0};Op=UPDATE_TYPE_SET;ByteArg=0000000000000867;FieldArg={false 0 PACKET_FIELD_NUM_UNSPECIFIED PACKET_HEADER_GROUP_UNSPECIFIED 0 0};BitCount=0;BitOffset=0<onEvaluate=false><Hash=3333249902>;>"
 I1119 18:05:15.964287       1 packet.go:207] "level"=3 "msg"="process result" "state"=1 "action"="Continue"
@@ -77,26 +80,26 @@ between different logs or between the trace and the SAI redis data.
 
 #### Key Tables in the Lucius Pipeline
 
-1.  The pipeline involves multiple tables applied to packets received on a port:
-2.  tun-term: IP and IP tunnel terminations (e.g., decapsulation).
-3.  input-iface: Maps the input port to the L3 interface.
-4.  ingress-vrf: Maps the VRF for the interface.
-5.  preingress-table: Contains entries like pre-ingress ACL rules. This is where
-    pre-ingress ACL rules usually are.
-6.  my-mac-table: Determines if the packet's destination MAC is the router's
-    MAC.
-7.  fib-selector: Decides whether to look up in the IPv4 or IPv6 FIB based on
-    the IP version.
-8.  fib (fib-v4/fib-v6): The main routing table. It's a single table for all
-    VRFs, organized by concatenating the VRF ID and the destination for prefix
-    matching.
-9.  ingress-table: Runs ingress ACL rules.
+1. The pipeline involves multiple tables applied to packets received on a port:
+2. tun-term: IP and IP tunnel terminations (e.g., decapsulation).
+3. input-iface: Maps the input port to the L3 interface.
+4. ingress-vrf: Maps the VRF for the interface.
+5. preingress-table: Contains entries like pre-ingress ACL rules. This is where
+pre-ingress ACL rules usually are.
+6. my-mac-table: Determines if the packet's destination MAC is the router's
+MAC.
+7. fib-selector: Decides whether to look up in the IPv4 or IPv6 FIB based on
+the IP version.
+8. fib (fib-v4/fib-v6): The main routing table. It's a single table for all
+VRFs, organized by concatenating the VRF ID and the destination for prefix
+matching.
+9. ingress-table: Runs ingress ACL rules.
 10. output-interface: Maps output interface to output port
 11. egress-action-table: Egress ACL
 12. neighbor: Used to find the next hop MAC address. Its key is typically the
-    output interface ID and the next top IP address.
+output interface ID and the next top IP address.
 13. output-table: Makes the final decision on forwarding, dropping, or copying
-    to the CPU.
+to the CPU.
 
 #### Debugging Workflow Using Traces
 
