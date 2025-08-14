@@ -4,7 +4,7 @@
 
 ### Setup
 
-1.  Checkout lemming repo `git clone https://github.com/openconfig/lemming.git`
+1.  Checkout lemming repository `git clone https://github.com/openconfig/lemming.git`
 1.  Install lemctl `go install cmd/lemctl`
 
 The lemctl CLI contains useful tools for debugging Lemming and Lucius.
