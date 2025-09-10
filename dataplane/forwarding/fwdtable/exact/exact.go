@@ -141,16 +141,19 @@ func (l *staleList) process(t *Table) time.Duration {
 type Table struct {
 	fwdobject.Base
 	desc    tableutil.KeyDesc   // describes all entries in the table
-	entries map[uint32]*Entry   // entries stored in a hash table
 	ctx     *fwdcontext.Context // context for finding objects
 	actions fwdaction.Actions   // default actions
 
-	staleMu sync.Mutex // mutex to protect the staleList
-	stale   *staleList // list of entries that are monitored for stale detection
+	entries   map[uint32]*Entry // entries stored in a hash table
+	entriesMu sync.RWMutex      // mutex to protect the entries map
+	stale     *staleList        // list of entries that are monitored for stale detection
+	staleMu   sync.Mutex        // mutex to protect the staleList
 }
 
 // Clear removes all entries in the table by walking all entries in the table and deleting them.
 func (t *Table) Clear() {
+	t.entriesMu.Lock()
+	defer t.entriesMu.Unlock()
 	for pos, head := range t.entries {
 		for entry := head; entry != nil; entry = entry.hashNext {
 			entry.actions.Cleanup()
@@ -186,6 +189,8 @@ func (*Table) bucket(key tableutil.Key) uint32 {
 
 // Find looks up a key within the table and returns the entry if it is found.
 func (t *Table) Find(key tableutil.Key) *Entry {
+	t.entriesMu.RLock()
+	defer t.entriesMu.RUnlock()
 	for entry := t.entries[t.bucket(key)]; entry != nil; entry = entry.hashNext {
 		if bytes.Equal(entry.key, key) {
 			return entry
@@ -197,6 +202,8 @@ func (t *Table) Find(key tableutil.Key) *Entry {
 // insert inserts an entry into the table.
 // It assumes that the key does not exist.
 func (t *Table) insert(key tableutil.Key, actions fwdaction.Actions) *Entry {
+	t.entriesMu.Lock()
+	defer t.entriesMu.Unlock()
 	bucket := t.bucket(key)
 	entry := &Entry{
 		key:     key,
@@ -213,6 +220,8 @@ func (t *Table) insert(key tableutil.Key, actions fwdaction.Actions) *Entry {
 // remove removes the specified key from the table.
 // It returns an error if the key is not found.
 func (t *Table) remove(entry *Entry) {
+	t.entriesMu.Lock()
+	defer t.entriesMu.Unlock()
 	if entry.hashNext != nil {
 		entry.hashNext.hashPrev = entry.hashPrev
 	}
@@ -301,6 +310,8 @@ func (t *Table) RemoveEntry(ed *fwdpb.EntryDesc) error {
 // Entries lists all entries in a table. Note that the order of entries is
 // non-deterministic.
 func (t *Table) Entries() []string {
+	t.entriesMu.RLock()
+	defer t.entriesMu.RUnlock()
 	var list []string
 	for _, head := range t.entries {
 		for entry := head; entry != nil; entry = entry.hashNext {
