@@ -96,3 +96,47 @@ index c3e65f2..74c4021 100644
      /**
       * @brief End of attributes
       */
+diff --git a/inc/saitypes.h b/inc/saitypes.h
+index 3ec3c99..cbb18d2 100644
+--- a/inc/saitypes.h
++++ b/inc/saitypes.h
+@@ -106,6 +106,7 @@ typedef uint8_t sai_auth_key_t[16];
+ typedef uint8_t sai_macsec_sak_t[32];
+ typedef uint8_t sai_macsec_auth_key_t[16];
+ typedef uint8_t sai_macsec_salt_t[12];
++typedef uint8_t sai_alpine_attr_t[64];
+
+ #define _In_
+ #define _Out_
+@@ -1622,6 +1623,9 @@ typedef union _sai_attribute_value_t
+     /** @validonly meta->attrvaluetype == SAI_ATTR_VALUE_TYPE_POE_PORT_POWER_CONSUMPTION */
+     sai_poe_port_power_consumption_t portpowerconsumption;
+
++    /** @validonly meta->attrvaluetype == SAI_ATTR_VALUE_TYPE_ALPINE_ATTR */
++    sai_alpine_attr_t alpine_attr;
++
+ } sai_attribute_value_t;
+
+ /**
+diff --git a/meta/saisanitycheck.c b/meta/saisanitycheck.c
+index 37e1ef7..2a32542 100644
+--- a/meta/saisanitycheck.c
++++ b/meta/saisanitycheck.c
+@@ -5609,7 +5609,7 @@ void check_struct_and_union_size()
+     CHECK_STRUCT_SIZE(sai_acl_action_parameter_t, 24);
+     CHECK_STRUCT_SIZE(sai_acl_field_data_data_t, 16);
+     CHECK_STRUCT_SIZE(sai_acl_field_data_mask_t, 16);
+-    CHECK_STRUCT_SIZE(sai_attribute_value_t, 40);
++    CHECK_STRUCT_SIZE(sai_attribute_value_t, 64);
+     CHECK_STRUCT_SIZE(sai_ip_addr_t, 16);
+     CHECK_STRUCT_SIZE(sai_object_key_entry_t, 64);
+     CHECK_STRUCT_SIZE(sai_tlv_entry_t, 36);
+@@ -5624,7 +5624,7 @@ void check_struct_and_union_size()
+     CHECK_STRUCT_SIZE(sai_acl_resource_list_t, 16);
+     CHECK_STRUCT_SIZE(sai_acl_resource_t, 12);
+     CHECK_STRUCT_SIZE(sai_attr_capability_t, 3);
+-    CHECK_STRUCT_SIZE(sai_attribute_t, 48);
++    CHECK_STRUCT_SIZE(sai_attribute_t, 72);
+     CHECK_STRUCT_SIZE(sai_bfd_session_state_notification_t, 16);
+     CHECK_STRUCT_SIZE(sai_fabric_port_reachability_t, 8);
+     CHECK_STRUCT_SIZE(sai_fdb_entry_t, 24);
