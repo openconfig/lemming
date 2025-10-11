@@ -56,7 +56,7 @@ type saiSwitch struct {
 	nextHop         *nextHop
 	policer         *policer
 	route           *route
-	lag             *lag
+	Lag             *lag
 	tunnel          *tunnel
 	queue           *queue
 	sg              *schedulerGroup
@@ -230,7 +230,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		nextHop:         newNextHop(mgr, engine, s),
 		route:           newRoute(mgr, engine, s),
 		routerInterface: newRouterInterface(mgr, engine, s),
-		lag:             newLAG(mgr, engine, s),
+		Lag:             newLAG(mgr, engine, s),
 		tunnel:          newTunnel(mgr, engine, s),
 		udf:             newUdf(mgr, engine, s),
 		scheduler:       newScheduler(mgr, engine, s),
