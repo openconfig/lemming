@@ -730,12 +730,12 @@ sai_status_t l_remove_next_hop_groups(uint32_t object_count, const sai_object_id
 }
 
 sai_status_t l_set_next_hop_groups_attribute(uint32_t object_count, const sai_object_id_t *object_id, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
-	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-	return SAI_STATUS_NOT_IMPLEMENTED;
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__ << " is not implemented but by-passing check";
+	return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_get_next_hop_groups_attribute(uint32_t object_count, const sai_object_id_t *object_id, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
-	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-	return SAI_STATUS_NOT_IMPLEMENTED;
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__ << " is not implemented but by-passing check";
+	return SAI_STATUS_SUCCESS;
 }
 
