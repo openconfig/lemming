@@ -141,14 +141,6 @@ go_deps.gazelle_override(
     path = "github.com/osrg/gobgp/v3",
 )
 
-# Caused by BUILD file being one directory up from the proto files.
-go_deps.gazelle_override(
-    directives = [
-        "gazelle:resolve_regexp go ^github.com/openconfig/attestz/proto/(tpm_attestz|tpm_enrollz)$ @com_github_openconfig_attestz//proto:${1}_go_proto",
-    ],
-    path = "github.com/openconfig/ondatra",
-)
-
 # Without clean, the `com_github_grpc_grpc` repo isn't visible causing build failure.
 go_deps.gazelle_override(
     build_file_generation = "clean",
@@ -167,6 +159,14 @@ go_deps.gazelle_override(
     ],
     path = "github.com/open-traffic-generator/snappi/gosnappi",
 )
+
+# Caused by BUILD file being one directory up from the proto files.
+go_deps.gazelle_override(
+    directives = [
+        "gazelle:resolve_regexp go ^github.com/openconfig/attestz/proto/(tpm_attestz|tpm_enrollz)$ @com_github_openconfig_attestz//proto:${1}_go_proto",
+    ],
+    path = "github.com/openconfig/ondatra",
+)
 go_deps.gazelle_override(
     build_file_generation = "clean",
     directives = [
@@ -174,8 +174,6 @@ go_deps.gazelle_override(
     ],
     path = "github.com/openconfig/bootz",
 )
-
-## remove this??!
 go_deps.gazelle_override(
     build_file_generation = "clean",
     directives = [
