@@ -1792,8 +1792,8 @@ github.com/openconfig/attestz v0.2.0/go.mod h1:byY6H68zm3VXmQHEb4O4OZtRtFyHEjkmz
 github.com/openconfig/bootz v0.3.1 h1:Q0mThGmZiX/kht+crar6FtLVxqdjUS/deMnpcNX+F7c=
 github.com/openconfig/bootz v0.3.1/go.mod h1:IhVtV9zS/2i8rKXHkRW9eD2UV6zGeIXYtLcEzAeyc6A=
 github.com/openconfig/gnmi v0.10.0/go.mod h1:Y9os75GmSkhHw2wX8sMsxfI7qRGAEcDh8NTa5a8vj6E=
-github.com/openconfig/gnmi v0.13.0 h1:4aVopzMZVYtfrRqlpDqM0liutE+3/AiDMzNtI2r7em4=
-github.com/openconfig/gnmi v0.13.0/go.mod h1:YJwAQ6qkU06TU/g4ZqjxSkajOm0adoBK86/s6w0ow3w=
+github.com/openconfig/gnmi v0.14.1 h1:qKMuFvhIRR2/xxCOsStPQ25aKpbMDdWr3kI+nP9bhMs=
+github.com/openconfig/gnmi v0.14.1/go.mod h1:whr6zVq9PCU8mV1D0K9v7Ajd3+swoN6Yam9n8OH3eT0=
 github.com/openconfig/gnoi v0.4.1 h1:sONbBqRBKjPT6voRAFqhTkUIatAajBp+YRLCWgyS4Dk=
 github.com/openconfig/gnoi v0.4.1/go.mod h1:KDWxp9YvfRNR5BbiLy6uQSzHUpGhAtO8C80XXKLqNqU=
 github.com/openconfig/gnoigo v0.0.0-20240320202954-ebd033e3542c h1:egPgBUBDn0XEtbz0CvE+Bh/I/3iTzwzMq5/rmtPJdQs=

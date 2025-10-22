@@ -1,5 +1,17 @@
 # Lemming the Openconfig reference device implementation
 
+## Required System Libraries (Linux)
+
+Go compilation requires some system level C libraries to be available.
+Please install the following libraries on a Debian/Ubuntu system:
+
+```
+sudo apt-get install -y \
+  libpcap-dev
+  libnl-genl-3-dev
+  libnl-3-dev
+```
+
 ## Purpose
 
 To provide a reference implementation of a device which provides the collection

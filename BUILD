@@ -1,10 +1,10 @@
-load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+# gazelle:go_grpc_compilers @io_bazel_rules_go//proto:go_grpc_v2, @io_bazel_rules_go//proto:go_proto
 # gazelle:prefix github.com/openconfig/lemming
-# gazelle:resolve proto proto google/rpc/status.proto @googleapis//google/rpc:status_proto
-# gazelle:resolve proto go google/rpc/status.proto  @org_golang_google_genproto_googleapis_rpc//status
-# gazelle:resolve go github.com/p4lang/p4runtime/go/p4/v1 @com_github_p4lang_p4runtime//:p4runtime_go_proto
+# gazelle:resolve proto go google/rpc/status.proto @org_golang_google_genproto_googleapis_rpc//status
+# gazelle:resolve proto google/rpc/status.proto @googleapis//google/rpc:status_proto
 # gazelle:build_file_name BUILD
 gazelle(
     name = "gazelle",
@@ -48,8 +48,6 @@ go_test(
     srcs = ["lemming_test.go"],
     embed = [":lemming"],
     deps = [
-        "@com_github_openconfig_gnmi//errdiff",
-        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnoi//bgp",
         "@com_github_openconfig_gnoi//cert",
         "@com_github_openconfig_gnoi//diag",
@@ -62,6 +60,8 @@ go_test(
         "@com_github_openconfig_gnoi//otdr",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_gnoi//wavelength_router",
+        "@openconfig_gnmi//errdiff",
+        "@openconfig_gnmi//proto/gnmi",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_protobuf//proto",

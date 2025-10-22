@@ -75,7 +75,7 @@ go_test(
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_gopacket//layers",
         "@com_github_google_gopacket//pcapgo",
-        "@com_github_openconfig_gnmi//errdiff",
+        "@openconfig_gnmi//errdiff",
         "@org_uber_go_mock//gomock",
     ],
 )

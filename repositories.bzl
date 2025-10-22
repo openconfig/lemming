@@ -1464,9 +1464,10 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_openconfig_gnsi",
-        importpath = "github.com/openconfig/gnsi",
-        sum = "h1:PfQa9Gy0lH1sHqA2L3Gj2fEh2zPMbWxMmIRQv2Nk1T8=",
-        version = "v1.6.0",
+        importpath = "github.com/bstoll/gnsi",
+        #sum = "h1:PfQa9Gy0lH1sHqA2L3Gj2fEh2zPMbWxMmIRQv2Nk1T8=",
+        #version = "v1.6.0",
+        commit = "c8968be278dcd9dbd963194532e448077df8b295"
     )
     go_repository(
         name = "com_github_openconfig_gocloser",
