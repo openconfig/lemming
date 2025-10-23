@@ -25,7 +25,10 @@ proto_library(
 
 go_proto_library(
     name = "forwarding_go_proto",
-    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+    compilers = [
+        "@io_bazel_rules_go//proto:go_grpc_v2",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
     importpath = "github.com/openconfig/lemming/proto/forwarding",
     proto = ":forwarding_proto",
     visibility = ["//visibility:public"],

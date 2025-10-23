@@ -22,7 +22,7 @@ import (
 
 // Server is a fake p4rt implementation.
 type Server struct {
-	*p4rtpb.UnimplementedP4RuntimeServer
+	p4rtpb.UnimplementedP4RuntimeServer
 	s *grpc.Server
 }
 

@@ -14,7 +14,10 @@ proto_library(
 
 go_proto_library(
     name = "fault_go_proto",
-    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+    compilers = [
+        "@io_bazel_rules_go//proto:go_grpc_v2",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
     importpath = "github.com/openconfig/lemming/proto/fault",
     proto = ":fault_proto",
     visibility = ["//visibility:public"],
