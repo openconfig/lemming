@@ -12,17 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
 package(
     default_visibility = ["//visibility:public"],
     licenses = ["notice"],
-)
-
-go_library(
-    name = "tools",
-    srcs = ["tools.go"],
-    importpath = "github.com/openconfig/lemming/tools",
-    visibility = ["//visibility:public"],
-    deps = [],
 )
