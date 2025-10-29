@@ -24,7 +24,7 @@ go_test(
     deps = [
         "//dataplane/proto/sai",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_openconfig_gnmi//errdiff",
+        "@openconfig_gnmi//errdiff",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",

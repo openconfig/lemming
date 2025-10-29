@@ -5,12 +5,12 @@ clean:
 
 .PHONY: load-operator 
 load-operator:
-	bazel build //operator:image-tar
+	bazel build //operator:image-tar --output_groups=+tarball
 	kind load image-archive bazel-bin/operator/image-tar/tarball.tar --name kne
 
 .PHONY: load 
 load:
-	bazel build //cmd/lemming:image-tar
+	bazel build //cmd/lemming:image-tar --output_groups=+tarball
 	docker load -i bazel-bin/cmd/lemming/image-tar/tarball.tar
 	kind load docker-image us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga --name kne
 
