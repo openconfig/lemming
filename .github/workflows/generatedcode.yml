@@ -28,7 +28,8 @@ jobs:
       - name: Check Diff
         run: |
           if test -n "$(git status --porcelain)"; then
-            git diff HEAD
+            # MODULE.bazel.lock file can change due to rules_python dependency packages.
+            git diff HEAD -- ':(exclude)MODULE.bazel.lock'
             exit 1
           fi
   protos:
@@ -50,6 +51,7 @@ jobs:
       - name: Check Diff
         run: |
           if test -n "$(git status --porcelain)"; then
-            git diff HEAD
+            # MODULE.bazel.lock file can change due to rules_python dependency packages.
+            git diff HEAD -- ':(exclude)MODULE.bazel.lock'
             exit 1
           fi
