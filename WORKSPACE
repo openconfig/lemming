@@ -280,15 +280,6 @@ swift_rules_dependencies()
 # External non-Go or bazel friendly dependencies
 
 http_archive(
-    name = "com_github_p4lang_p4runtime",
-    patch_args = ["-p1"],
-    patches = ["//patches:p4_workspace.patch"],
-    sha256 = "ba31fb9afce6e62ffe565b16bb909e144cd30d65d926cd90af25e99ee8de863a",
-    strip_prefix = "p4runtime-1.4.0-rc.5/proto",
-    urls = ["https://github.com/p4lang/p4runtime/archive/refs/tags/v1.4.0-rc.5.zip"],
-)
-
-http_archive(
     name = "com_github_opencomputeproject_sai",
     build_file_content = """
 cc_library(

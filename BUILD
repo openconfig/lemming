@@ -6,6 +6,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 # gazelle:resolve proto go google/rpc/status.proto @org_golang_google_genproto_googleapis_rpc//status
 # gazelle:resolve proto google/rpc/status.proto @googleapis//google/rpc:status_proto
 # gazelle:build_file_name BUILD
+# gazelle:exclude github.com/p4lang/p4runtime
 gazelle(
     name = "gazelle",
 )
