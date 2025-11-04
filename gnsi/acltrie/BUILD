@@ -6,9 +6,9 @@ go_library(
     importpath = "github.com/openconfig/lemming/gnsi/acltrie",
     visibility = ["//visibility:public"],
     deps = [
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnsi//pathz",
         "@com_github_openconfig_ygot//util",
-        "@openconfig_gnmi//proto/gnmi",
     ],
 )
 
@@ -19,9 +19,9 @@ go_test(
     embed = [":acltrie"],
     deps = [
         "@com_github_google_go_cmp//cmp",
+        "@com_github_openconfig_gnmi//errdiff",
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnsi//pathz",
         "@com_github_openconfig_ygot//ygot",
-        "@openconfig_gnmi//errdiff",
-        "@openconfig_gnmi//proto/gnmi",
     ],
 )

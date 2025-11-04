@@ -21,6 +21,6 @@ go_test(
         "//dataplane/apigen/docparser",
         "//dataplane/apigen/saiast",
         "@com_github_google_go_cmp//cmp",
-        "@openconfig_gnmi//errdiff",
+        "@com_github_openconfig_gnmi//errdiff",
     ],
 )

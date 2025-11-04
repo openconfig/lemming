@@ -87,10 +87,10 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "f2d15bea3e241aa0e3a90fb17a82e6a8ab12214789f6aeddd53b8d04316d2b7c",
+    sha256 = "a729c8ed2447c90fe140077689079ca0acfb7580ec41637f312d650ce9d93d96",
     urls = [
-        "https://mirror.bazel.build/github.com/bazel-contrib/rules_go/releases/download/v0.54.0/rules_go-v0.54.0.zip",
-        "https://github.com/bazel-contrib/rules_go/releases/download/v0.54.0/rules_go-v0.54.0.zip",
+        "https://mirror.bazel.build/github.com/bazel-contrib/rules_go/releases/download/v0.57.0/rules_go-v0.57.0.zip",
+        "https://github.com/bazel-contrib/rules_go/releases/download/v0.57.0/rules_go-v0.57.0.zip",
     ],
 )
 
@@ -112,9 +112,9 @@ http_archive(
 
 http_archive(
     name = "rules_oci",
-    sha256 = "56d5499025d67a6b86b2e6ebae5232c72104ae682b5a21287770bd3bf0661abf",
-    strip_prefix = "rules_oci-1.7.5",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.7.5/rules_oci-v1.7.5.tar.gz",
+    sha256 = "361c417e8c95cd7c3d8b5cf4b202e76bac8d41532131534ff8e6fa43aa161142",
+    strip_prefix = "rules_oci-2.2.5",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v2.2.5/rules_oci-v2.2.5.tar.gz",
 )
 
 http_archive(
@@ -142,6 +142,13 @@ http_archive(
     url = "https://github.com/GoogleContainerTools/rules_distroless/releases/download/v0.3.7/rules_distroless-v0.3.7.tar.gz",
 )
 
+http_archive(
+    name = "openconfig_gnmi",
+    integrity = "sha256-gT+KUt+gbdG5osd1smxC02oFWV36b7CoXbrq1GtcQ6M=",
+    strip_prefix = "gnmi-0.14.1",
+    url = "https://github.com/openconfig/gnmi/archive/refs/tags/v0.14.1.tar.gz",
+)
+
 # The non-polyfill version of this is needed by rules_proto below.
 http_archive(
     name = "bazel_features",
@@ -165,11 +172,23 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.23.4")
+go_register_toolchains(version = "1.25.0")
+
+# Create the host platform repository transitively required by rules_go.
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@platforms//host:extension.bzl", "host_platform_repo")
+
+maybe(
+	host_platform_repo,
+	name = "host_platform",
+)
 
 # go_repositories
 
-load("//:repositories.bzl", "go_repositories")
+load("//:repositories.bzl", "go_dependencies", "go_repositories")
+
+# gazelle:repository_macro repositories.bzl%go_dependencies
+go_dependencies()
 
 # gazelle:repository_macro repositories.bzl%go_repositories
 go_repositories()
@@ -238,12 +257,10 @@ load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
 
 rules_oci_dependencies()
 
-load("@rules_oci//oci:repositories.bzl", "LATEST_CRANE_VERSION", "oci_register_toolchains")
+load("@rules_oci//oci:repositories.bzl", "oci_register_toolchains")
 
-oci_register_toolchains(
-    name = "oci",
-    crane_version = LATEST_CRANE_VERSION,
-)
+# Crane was removed in rules_oci v2.x so digests from v1.x won't match v2.x.
+oci_register_toolchains(name = "oci")
 
 load("@rules_python//python:repositories.bzl", "py_repositories")
 
@@ -265,7 +282,7 @@ swift_rules_dependencies()
 http_archive(
     name = "com_github_p4lang_p4runtime",
     patch_args = ["-p1"],
-    patches = ["//patches:p4.patch"],
+    patches = ["//patches:p4_workspace.patch"],
     sha256 = "ba31fb9afce6e62ffe565b16bb909e144cd30d65d926cd90af25e99ee8de863a",
     strip_prefix = "p4runtime-1.4.0-rc.5/proto",
     urls = ["https://github.com/p4lang/p4runtime/archive/refs/tags/v1.4.0-rc.5.zip"],

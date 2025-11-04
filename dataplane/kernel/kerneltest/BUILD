@@ -24,13 +24,13 @@ go_test(
     deps = select({
         "@io_bazel_rules_go//go/platform:android": [
             "@com_github_google_go_cmp//cmp",
+            "@com_github_openconfig_gnmi//errdiff",
             "@com_github_vishvananda_netlink//:netlink",
-            "@openconfig_gnmi//errdiff",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
             "@com_github_google_go_cmp//cmp",
+            "@com_github_openconfig_gnmi//errdiff",
             "@com_github_vishvananda_netlink//:netlink",
-            "@openconfig_gnmi//errdiff",
         ],
         "//conditions:default": [],
     }),

@@ -48,6 +48,8 @@ go_test(
     srcs = ["lemming_test.go"],
     embed = [":lemming"],
     deps = [
+        "@com_github_openconfig_gnmi//errdiff",
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnoi//bgp",
         "@com_github_openconfig_gnoi//cert",
         "@com_github_openconfig_gnoi//diag",
@@ -60,8 +62,6 @@ go_test(
         "@com_github_openconfig_gnoi//otdr",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_gnoi//wavelength_router",
-        "@openconfig_gnmi//errdiff",
-        "@openconfig_gnmi//proto/gnmi",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_protobuf//proto",

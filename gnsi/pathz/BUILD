@@ -7,8 +7,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//gnsi/acltrie",
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnsi//pathz",
-        "@openconfig_gnmi//proto/gnmi",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
     ],
@@ -21,9 +21,9 @@ go_test(
     embed = [":pathz"],
     deps = [
         "@com_github_google_go_cmp//cmp",
+        "@com_github_openconfig_gnmi//errdiff",
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnsi//pathz",
-        "@openconfig_gnmi//errdiff",
-        "@openconfig_gnmi//proto/gnmi",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_protobuf//testing/protocmp",

@@ -8,10 +8,10 @@ go_test(
     deps = [
         "//fault",
         "//internal/binding",
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
         "@com_github_openconfig_testt//:testt",
-        "@openconfig_gnmi//proto/gnmi",
         "@org_golang_google_grpc//:grpc",
     ],
 )

@@ -1,0 +1,30 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index ff79e62..335d3f2 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -44,7 +44,7 @@ proto_library(
+         ":p4info_proto",
+         ":p4data_proto",
+         "@com_google_protobuf//:any_proto",
+-        "@com_google_googleapis//google/rpc:status_proto"
++        "@googleapis//google/rpc:status_proto",
+     ],
+     # TODO(github.com/grpc/grpc/issues/20675): strip_import_prefix brakes
+     # cc_grpc_library. Make proto folder the Bazel root folder as a workaround.
+@@ -102,6 +102,7 @@ go_proto_library(
+ 
+ go_proto_library(
+     name = "p4runtime_go_proto",
++    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+     importpath = "github.com/p4lang/p4runtime/go/p4/v1",
+     protos = [
+         ":p4runtime_proto",
+@@ -109,7 +110,7 @@ go_proto_library(
+     ],
+     deps = [
+         ":p4info_go_proto",
+-        "@com_google_googleapis//google/rpc:status_go_proto",
++        "@org_golang_google_genproto_googleapis_rpc//status",
+     ],
+ )
+ 

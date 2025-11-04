@@ -8,9 +8,9 @@ go_library(
     deps = [
         "//gnmi/oc",
         "@com_github_golang_glog//:glog",
+        "@com_github_openconfig_gnmi//errlist",
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_ygnmi//ygnmi",
-        "@openconfig_gnmi//errlist",
-        "@openconfig_gnmi//proto/gnmi",
     ],
 )
 
@@ -23,9 +23,9 @@ go_test(
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_openconfig_gnmi//errdiff",
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_ygnmi//ygnmi",
-        "@openconfig_gnmi//errdiff",
-        "@openconfig_gnmi//proto/gnmi",
         "@org_golang_google_protobuf//testing/protocmp",
     ],
 )

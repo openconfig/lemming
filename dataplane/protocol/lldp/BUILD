@@ -24,6 +24,6 @@ go_test(
     deps = [
         "//dataplane/proto/packetio",
         "@com_github_google_go_cmp//cmp",
-        "@openconfig_gnmi//errdiff",
+        "@com_github_openconfig_gnmi//errdiff",
     ],
 )
