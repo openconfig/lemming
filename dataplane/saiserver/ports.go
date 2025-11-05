@@ -454,6 +454,8 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 		AdminState:                       proto.Bool(true),
 		AutoNegMode:                      proto.Bool(false),
 		Mtu:                              proto.Uint32(1514),
+		OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum(),
+		HwLaneList:                       []uint32{},
 	}
 	port.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_PORT)
 	port.mgr.StoreAttributes(id, cpuPort)
