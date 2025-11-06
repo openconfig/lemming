@@ -1095,6 +1095,10 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 			} else if ed.GetPort().PortInfo.OperStatus == fwdpb.PortState_PORT_STATE_DISABLED_DOWN {
 				status = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN
 			}
+			// update port oper status in the attribute map
+			sw.mgr.StoreAttributes(uint64(num), &saipb.PortAttribute{
+				OperStatus: status.Enum(),
+			})
 			resp := &saipb.PortStateChangeNotificationResponse{
 				Data: []*saipb.PortOperStatusNotification{{
 					PortId:    uint64(num),
