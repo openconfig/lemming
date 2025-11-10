@@ -1,0 +1,240 @@
+module(
+    name = "openconfig_lemming",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "abseil-cpp", version = "20240722.0.bcr.2")
+bazel_dep(name = "gazelle", version = "0.45.0", repo_name = "bazel_gazelle")
+bazel_dep(name = "glog", version = "0.7.1", repo_name = "com_github_google_glog")
+bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a")
+bazel_dep(name = "grpc", version = "1.70.1", repo_name = "com_github_grpc_grpc")
+bazel_dep(name = "openconfig_gnmi", version = "0.14.1", repo_name = "com_github_openconfig_gnmi")
+bazel_dep(name = "p4runtime", version = "0.0.0", repo_name = "p4runtime_protos")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "protobuf", version = "29.3", repo_name = "com_google_protobuf")
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1")
+bazel_dep(name = "rules_go", version = "0.57.0", repo_name = "io_bazel_rules_go")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_proto", version = "7.0.2")
+bazel_dep(name = "rules_proto_grpc_go", version = "5.0.1")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_distroless", version = "0.5.1")
+bazel_dep(name = "rules_oci", version = "2.2.5")
+
+archive_override(
+    module_name = "p4runtime",
+    integrity = "sha256-n2T6gGjkKtl5QRzJWhTjYG1G4Z6wjuUJszs+XAVBqmc=",
+    patches = ["//patches:p4.patch"],
+    strip_prefix = "p4runtime-a60ccfd3128061d3d8c9b8bcda558cdd9bf9858e/proto",
+    urls = ["https://github.com/p4lang/p4runtime/archive/a60ccfd3128061d3d8c9b8bcda558cdd9bf9858e.zip"],
+)
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "com_github_opencomputeproject_sai",
+    build_file_content = """
+cc_library(
+    name = "sai",
+    hdrs = glob(["inc/*.h","experimental/*.h"]),
+    includes = ["inc", "experimental"],
+    visibility = ["//visibility:public"],
+)
+""",
+    patch_args = ["-p1"],
+    patches = ["//patches:sai.patch"],
+    sha256 = "4e3a1d010bda0c589db46e077725a2cd9624a5cc255c89d1caa79deb408d1fa7",
+    strip_prefix = "SAI-1.14.0",
+    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.14.0.tar.gz"],
+)
+
+######################################
+######### Python ####################
+######################################
+bazel_dep(name = "rules_python", version = "1.3.0")
+
+# This prevents "current user is root" build failures in Cloud Build Presubmit
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    ignore_root_user_error = True,
+    is_default = True,
+    python_version = "3.11",
+)
+
+######################################
+######### Golang ####################
+######################################
+go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.24.2")
+
+go_deps = use_extension("@bazel_gazelle//:extensions.bzl", "go_deps")
+go_deps.from_file(go_work = "//:go.work")
+use_repo(
+    go_deps,
+    "com_github_fatih_color",
+    "com_github_go_logr_logr",
+    "com_github_golang_glog",
+    "com_github_google_go_cmp",
+    "com_github_google_gopacket",
+    "com_github_google_uuid",
+    "com_github_googleapis_gax_go_v2",
+    "com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric",
+    "com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace",
+    "com_github_grpc_ecosystem_go_grpc_middleware_v2",
+    "com_github_kentik_patricia",
+    "com_github_mdlayher_genetlink",
+    "com_github_open_traffic_generator_snappi_gosnappi",
+    "com_github_openconfig_gnoi",
+    "com_github_openconfig_gnoigo",
+    "com_github_openconfig_gnsi",
+    "com_github_openconfig_goyang",
+    "com_github_openconfig_gribi",
+    "com_github_openconfig_gribigo",
+    "com_github_openconfig_kne",
+    "com_github_openconfig_magna",
+    "com_github_openconfig_ondatra",
+    "com_github_openconfig_testt",
+    "com_github_openconfig_ygnmi",
+    "com_github_openconfig_ygot",
+    "com_github_osrg_gobgp_v3",
+    "com_github_p4lang_p4runtime",
+    "com_github_sirupsen_logrus",
+    "com_github_spf13_cobra",
+    "com_github_spf13_pflag",
+    "com_github_spf13_viper",
+    "com_github_stoewer_go_strcase",
+    "com_github_vishvananda_netlink",
+    "com_google_cloud_go_cloudbuild",
+    "com_google_cloud_go_logging",
+    "com_google_cloud_go_monitoring",
+    "com_google_cloud_go_trace",
+    "in_gopkg_yaml_v3",
+    "io_k8s_api",
+    "io_k8s_apimachinery",
+    "io_k8s_client_go",
+    "io_k8s_klog",
+    "io_k8s_klog_v2",
+    "io_k8s_sigs_controller_runtime",
+    "io_k8s_utils",
+    "io_opentelemetry_go_contrib_detectors_gcp",
+    "io_opentelemetry_go_contrib_instrumentation_google_golang_org_grpc_otelgrpc",
+    "io_opentelemetry_go_otel",
+    "io_opentelemetry_go_otel_exporters_stdout_stdoutlog",
+    "io_opentelemetry_go_otel_log",
+    "io_opentelemetry_go_otel_sdk",
+    "io_opentelemetry_go_otel_sdk_log",
+    "io_opentelemetry_go_otel_sdk_metric",
+    "io_opentelemetry_go_otel_trace",
+    "org_golang_google_api",
+    "org_golang_google_genproto_googleapis_api",
+    "org_golang_google_genproto_googleapis_rpc",
+    "org_golang_google_grpc",
+    "org_golang_google_grpc_cmd_protoc_gen_go_grpc",
+    "org_golang_google_protobuf",
+    "org_golang_x_oauth2",
+    "org_golang_x_sys",
+    "org_modernc_cc_v4",
+    "org_uber_go_mock",
+)
+
+switched_rules = use_extension("@googleapis//:extensions.bzl", "switched_rules")
+switched_rules.use_languages(
+    cc = True,
+    go = False,
+    grpc = True,
+)
+use_repo(switched_rules, "com_google_googleapis_imports")
+
+go_deps.gazelle_override(
+    directives = [
+        "gazelle:proto disable",  # keep
+    ],
+    path = "github.com/osrg/gobgp/v3",
+)
+
+# Without clean, the `com_github_grpc_grpc` repo isn't visible causing build failure.
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:resolve go github.com/p4lang/p4runtime/go/p4/v1 @p4runtime_protos//:p4runtime_go_proto",
+        "gazelle:proto disable",  # keep
+    ],
+    path = "github.com/p4lang/p4runtime",
+)
+
+# Prevents `missing strict dependencies` error. May be resolved in future versions?
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:proto disable",  # keep
+    ],
+    path = "github.com/open-traffic-generator/snappi/gosnappi",
+)
+
+# Caused by BUILD file being one directory up from the proto files.
+go_deps.gazelle_override(
+    directives = [
+        "gazelle:resolve_regexp go ^github.com/openconfig/attestz/proto/(tpm_attestz|tpm_enrollz)$ @com_github_openconfig_attestz//proto:${1}_go_proto",
+    ],
+    path = "github.com/openconfig/ondatra",
+)
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:proto disable",  # keep
+    ],
+    path = "github.com/openconfig/bootz",
+)
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:proto disable",  # keep
+    ],
+    path = "github.com/openconfig/gnsi",
+)
+go_deps.gazelle_override(
+    directives = [
+        "gazelle:proto disable",  # keep
+    ],
+    path = "github.com/openconfig/gribi",
+)
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:proto disable",  # keep
+    ],
+    path = "github.com/openconfig/gnoi",
+)
+
+######################################
+######### Linux ######################
+######################################
+
+apt = use_extension(
+    "@rules_distroless//apt:extensions.bzl",
+    "apt",
+    dev_dependency = True,
+)
+apt.install(
+    name = "bookworm",
+    lock = "//:bookworm.lock.json",
+    manifest = "//:bookworm.yaml",
+)
+
+# bazel run @bullseye//:lock
+use_repo(apt, "bookworm")
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "debian_bookworm",
+    digest = "sha256:a92ed51e0996d8e9de041ca05ce623d2c491444df6a535a566dabd5cb8336946",  # bookworm as of 06/20/24
+    image = "debian",
+    platforms = ["linux/amd64"],
+)
+oci.pull(
+    name = "distroless_static_debug_nonroot",
+    digest = "sha256:cb0459bf13af06cb3d3ee5dde5f1c5c34381cbce3a86bd08e1e7fd7a3ed28e59",  # debug-nonroot as of 06/20/24
+    image = "gcr.io/distroless/static",
+    platforms = ["linux/amd64"],
+)
+use_repo(oci, "debian_bookworm", "debian_bookworm_linux_amd64", "distroless_static_debug_nonroot", "distroless_static_debug_nonroot_linux_amd64")

@@ -1,25 +1,19 @@
-diff --git a/BUILD.bazel b/BUILD.bazel
-index ff79e62..335d3f2 100644
---- a/BUILD.bazel
-+++ b/BUILD.bazel
-@@ -44,7 +44,7 @@ proto_library(
-         ":p4info_proto",
-         ":p4data_proto",
-         "@com_google_protobuf//:any_proto",
--        "@com_google_googleapis//google/rpc:status_proto"
-+        "@googleapis//google/rpc:status_proto",
-     ],
-     # TODO(github.com/grpc/grpc/issues/20675): strip_import_prefix brakes
-     # cc_grpc_library. Make proto folder the Bazel root folder as a workaround.
-@@ -102,6 +102,7 @@ go_proto_library(
+diff --git BUILD.bazel BUILD.bazel
+index 3bafbd4..7960748 100644
+--- BUILD.bazel
++++ BUILD.bazel
+@@ -113,6 +113,10 @@ go_proto_library(
  
  go_proto_library(
      name = "p4runtime_go_proto",
-+    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
++    compilers = [
++        "@io_bazel_rules_go//proto:go_grpc_v2",
++        "@io_bazel_rules_go//proto:go_proto",
++    ],
      importpath = "github.com/p4lang/p4runtime/go/p4/v1",
      protos = [
-         ":p4runtime_proto",
-@@ -109,7 +110,7 @@ go_proto_library(
+         ":p4data_proto",
+@@ -120,7 +124,7 @@ go_proto_library(
      ],
      deps = [
          ":p4info_go_proto",
@@ -28,3 +22,27 @@ index ff79e62..335d3f2 100644
      ],
  )
  
+diff --git MODULE.bazel MODULE.bazel
+index 9f50aa9..155e0c7 100644
+--- MODULE.bazel
++++ MODULE.bazel
+@@ -4,6 +4,7 @@ module(
+     repo_name = "com_github_p4lang_p4runtime",
+ )
+ 
++bazel_dep(name = "gazelle", version = "0.41.0", repo_name = "bazel_gazelle")
+ bazel_dep(name = "bazel_skylib", version = "1.7.1")
+ bazel_dep(
+     name = "googleapis",
+@@ -36,3 +37,11 @@ switched_rules.use_languages(
+     python = True,
+ )
+ use_repo(switched_rules, "com_google_googleapis_imports")
++
++go_deps = use_extension("@bazel_gazelle//:extensions.bzl", "go_deps")
++go_deps.module(
++    path = "google.golang.org/genproto/googleapis/rpc",
++    sum = "h1:3UsHvIr4Wc2aW4brOaSCmcxh9ksica6fHEr8P1XhkYw=",
++    version = "v0.0.0-20250106144421-5f5ef82da422",
++)
++use_repo(go_deps, "org_golang_google_genproto_googleapis_rpc")

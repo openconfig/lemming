@@ -1,6 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_distroless//distroless:defs.bzl", "cacerts")
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
@@ -52,7 +52,7 @@ oci_image(
 )
 
 # Note: This is image isn't suitable for release, as it doesn't contain license information.
-oci_tarball(
+oci_load(
     name = "image-tar",
     image = ":image",
     repo_tags = ["us-west1-docker.pkg.dev/openconfig-lemming/release/lucius:ga"],

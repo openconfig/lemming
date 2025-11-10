@@ -10,5 +10,7 @@ for fulltarget in $proto_libs; do
     dir=$(sed -E 's/\/\/(.*):.*/\1/g' <<<"$fulltarget")
     target=$(sed -E 's/.*:(.*)_go_proto/\1/g' <<<"$fulltarget")
     parentdir=$(dirname "$dir")
-    cp -r "$gendir"/"$dir"/"$target"_go_proto_/"$importpath" "$parentdir"
+    # Files in bazel-bin are not writable by default and need to be for new files.
+    chmod u+w -R "$gendir"/"$dir"/"$target"_go_proto_/"$importpath"
+    cp -fr "$gendir"/"$dir"/"$target"_go_proto_/"$importpath" "$parentdir"
 done
