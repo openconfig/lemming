@@ -135,6 +135,7 @@ type Server struct {
 	saiSwitch    *saiSwitch
 	systemPort   *systemPort
 	tam          *tam
+	lag          *lag
 }
 
 func (s *Server) ObjectTypeQuery(ctx context.Context, req *saipb.ObjectTypeQueryRequest) (*saipb.ObjectTypeQueryResponse, error) {
@@ -213,6 +214,7 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		saiSwitch:         sw,
 		systemPort:        &systemPort{},
 		tam:               &tam{},
+		lag:               sw.Lag,
 	}
 	fwdpb.RegisterForwardingServer(s, fwdCtx)
 	fwdpb.RegisterInfoServer(s, fwdCtx)
