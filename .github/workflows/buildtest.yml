@@ -37,6 +37,13 @@ jobs:
       - name: Install pcap
         run: |
           sudo apt-get install libpcap-dev libnl-genl-3-dev libnl-3-dev
+      - name: show
+        run: |
+          df -h
+          pwd
+          ls -la .
+          du -sh *
+          du -sh ~/.cache/*
       - name: Build Lemming
         run: bazel build //...
       - name: Save Bazel Cache
