@@ -58,7 +58,7 @@ func TestCreateSwitch(t *testing.T) {
 		AclTableMaximumPriority:          proto.Uint32(10000),
 		MaxAclActionCount:                proto.Uint32(1000),
 		NumberOfEcmpGroups:               proto.Uint32(1024),
-		PortList:                         []uint64{2},
+		PortList:                         []uint64{},
 		SwitchHardwareInfo:               []int32{},
 		DefaultStpInstId:                 proto.Uint64(3),
 		DefaultVlanId:                    proto.Uint64(4),
