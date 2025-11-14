@@ -109,6 +109,7 @@ func getL2Pipeline() []*fwdpb.ActionDesc {
 
 const (
 	numQueues          = 12
+	numCpuQueues       = 48
 	numSchedulerGroups = 12
 )
 
@@ -422,12 +423,47 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 		return 0, err
 	}
 
+	queues := []uint64{}
+	for i := 0; i < numCpuQueues; i++ {
+		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{
+			Type:                saipb.QueueType_QUEUE_TYPE_ALL.Enum(),
+			Port:                proto.Uint64(id),
+			Index:               proto.Uint32(uint32(i)),
+			ParentSchedulerNode: proto.Uint64(id),
+			WredProfileId:       proto.Uint64(0),
+			BufferProfileId:     proto.Uint64(0),
+			SchedulerProfileId:  proto.Uint64(0),
+			TamObject:           []uint64{},
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		queues = append(queues, qResp.GetOid())
+	}
+
+	sgs := []uint64{}
+	for i := 0; i < numCpuQueues; i++ {
+		sgResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.sg.CreateSchedulerGroup, &saipb.CreateSchedulerGroupRequest{
+			PortId:             proto.Uint64(id),
+			SchedulerProfileId: proto.Uint64(0),
+			ParentNode:         proto.Uint64(id),
+		})
+		if err != nil {
+			return 0, err
+		}
+		port.mgr.StoreAttributes(sgResp.GetOid(), &saipb.SchedulerGroupAttribute{
+			ChildCount: proto.Uint32(1),
+			ChildList:  []uint64{queues[i]},
+		})
+		sgs = append(sgs, sgResp.GetOid())
+	}
 	cpuPort := &saipb.PortAttribute{
 		Type:                             saipb.PortType_PORT_TYPE_CPU.Enum(),
-		QosNumberOfQueues:                proto.Uint32(0),
-		QosQueueList:                     []uint64{},
-		QosNumberOfSchedulerGroups:       proto.Uint32(0),
-		QosSchedulerGroupList:            []uint64{},
+		QosNumberOfQueues:                proto.Uint32(uint32(len(queues))),
+		QosQueueList:                     queues,
+		QosNumberOfSchedulerGroups:       proto.Uint32(uint32(len(sgs))),
+		QosSchedulerGroupList:            sgs,
 		IngressPriorityGroupList:         []uint64{},
 		FloodStormControlPolicerId:       proto.Uint64(0),
 		BroadcastStormControlPolicerId:   proto.Uint64(0),
