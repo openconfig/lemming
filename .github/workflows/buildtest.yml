@@ -37,12 +37,28 @@ jobs:
       - name: Install pcap
         run: |
           sudo apt-get install libpcap-dev libnl-genl-3-dev libnl-3-dev
-      - name: show
+      - name: show1
+        run: |
+          df -h
+      - name: Free additional disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo mv "${HOME}/.cache" /mnt/cache
+          ln -s /mnt/cache "${HOME}/.cache"
+      - name: show2
         run: |
           df -h
           pwd
           ls -la .
+          echo du .
+          du -sh .
+          echo du all
           du -sh *
+          echo du cache
+          du -sh ~/.cache
+          echo du cache all
           du -sh ~/.cache/*
       - name: Build Lemming
         run: bazel build //...
