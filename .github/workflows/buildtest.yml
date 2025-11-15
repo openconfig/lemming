@@ -34,6 +34,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-build-
             ${{ runner.os }}-bazel-
+      - name: Free additional disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo mv "${HOME}/.cache" /mnt/cache
+          ln -s /mnt/cache "${HOME}/.cache"
       - name: Install pcap
         run: |
           sudo apt-get install libpcap-dev libnl-genl-3-dev libnl-3-dev
@@ -61,6 +68,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-test-
             ${{ runner.os }}-bazel-
+      - name: Free additional disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo mv "${HOME}/.cache" /mnt/cache
+          ln -s /mnt/cache "${HOME}/.cache"
       - name: Install pcap
         run: |
           sudo apt-get install libpcap-dev libnl-genl-3-dev libnl-3-dev
