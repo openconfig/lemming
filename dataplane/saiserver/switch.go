@@ -788,7 +788,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		AclTableMaximumPriority:          proto.Uint32(10000),
 		MaxAclActionCount:                proto.Uint32(1000),
 		NumberOfEcmpGroups:               proto.Uint32(1024),
-		PortList:                         []uint64{cpuPortID},
+		PortList:                         []uint64{},
 		SwitchHardwareInfo:               []int32{},
 		DefaultVlanId:                    &vlanResp.Oid,
 		DefaultVirtualRouterId:           &vrResp.Oid,
