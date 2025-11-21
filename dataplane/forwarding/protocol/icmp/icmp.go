@@ -25,14 +25,14 @@ import (
 )
 
 const (
-	typeBytes  = 1 // Number of bytes in the ICMP type
-	typeOffset = 0 // Offset in bytes of the ICMP type
-	codeBytes  = 1 // Number of bytes in the ICMP code
-	codeOffset = 1 // Offset in bytes of the ICMP code
-	csumBytes  = 2 // Number of bytes in the ICMP checksum
-	csumOffset = 2 // Offset in bytes of the ICMP checksum
-	icmpBytes  = 8 // Number of bytes in an ICMPv4 header
-	icmpv6Bytes  = 4 // Number of bytes in an ICMPv6 header
+	typeBytes   = 1 // Number of bytes in the ICMP type
+	typeOffset  = 0 // Offset in bytes of the ICMP type
+	codeBytes   = 1 // Number of bytes in the ICMP code
+	codeOffset  = 1 // Offset in bytes of the ICMP code
+	csumBytes   = 2 // Number of bytes in the ICMP checksum
+	csumOffset  = 2 // Offset in bytes of the ICMP checksum
+	icmpBytes   = 8 // Number of bytes in an ICMPv4 header
+	icmpv6Bytes = 4 // Number of bytes in an ICMPv6 header
 )
 
 // An ICMP represents the ICMP header in the packet. Its state and functions
