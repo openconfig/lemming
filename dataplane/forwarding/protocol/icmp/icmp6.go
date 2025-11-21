@@ -198,8 +198,8 @@ func (i *ICMP6) Rebuild() error {
 // parseICMP6 parses an ICMPv6 header in the packet. All data following the ICMP
 // header is assumed to be a part of the ICMP message.
 func parseICMP6(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.PacketHeaderId, error) {
-	if frame.Len() < icmpBytes {
-		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("icmp6: parse failed, invalid frame length %v, expected size is greater than %v bytes", frame.Len(), icmpBytes)
+	if frame.Len() < icmpv6Bytes {
+		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("icmp6: parse failed, invalid frame length %v, expected size is greater than %v bytes", frame.Len(), icmpv6Bytes)
 	}
 	header, err := frame.ReadHeader(frame.Len())
 	if err != nil {

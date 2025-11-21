@@ -31,7 +31,8 @@ const (
 	codeOffset = 1 // Offset in bytes of the ICMP code
 	csumBytes  = 2 // Number of bytes in the ICMP checksum
 	csumOffset = 2 // Offset in bytes of the ICMP checksum
-	icmpBytes  = 8 // Number of bytes in an ICMP header
+	icmpBytes  = 8 // Number of bytes in an ICMPv4 header
+	icmpv6Bytes  = 4 // Number of bytes in an ICMPv6 header
 )
 
 // An ICMP represents the ICMP header in the packet. Its state and functions
