@@ -69,6 +69,8 @@ var CounterList = []fwdpb.CounterId{
 	fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS,
 	fwdpb.CounterId_COUNTER_ID_TX_BROADCAST_PACKETS,
 	fwdpb.CounterId_COUNTER_ID_TX_MULTICAST_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_BROADCAST_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_MULTICAST_PACKETS,
 }
 
 // A Port is an entry or exit point within the forwarding plane. Each port
@@ -257,6 +259,12 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 		port.Increment(fwdpb.CounterId_COUNTER_ID_RX_UCAST_PACKETS, 1)
 	} else {
 		port.Increment(fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS, 1)
+		isBroadcastMac := (mac[0] == 0xFF && mac[1] == 0xFF && mac[2] == 0xFF && mac[3] == 0xFF && mac[4] == 0xFF && mac[5] == 0xFF)
+		if isBroadcastMac { // Broadcast address is when all bits are set to 1.
+			port.Increment(fwdpb.CounterId_COUNTER_ID_RX_BROADCAST_PACKETS, 1)
+		} else { // Multicast address is when least significant bit of the 1st octet is 1.
+			port.Increment(fwdpb.CounterId_COUNTER_ID_RX_MULTICAST_PACKETS, 1)
+		}
 	}
 
 	packet.Log().V(1).Info("input packet", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
