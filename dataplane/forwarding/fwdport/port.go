@@ -238,6 +238,11 @@ func Increment(port Port, octets int, packetID, octetID fwdpb.CounterId) {
 	port.Increment(octetID, uint32(octets)+4) // Add 4 bytes per packet to account for FCS
 }
 
+// isBroadcast checks if the MAC address is a broadcast address.
+func isBroadcast(mac []byte) bool {
+	return mac[0] == 0xFF && mac[1] == 0xFF && mac[2] == 0xFF && mac[3] == 0xFF && mac[4] == 0xFF && mac[5] == 0xFF
+}
+
 // Input processes an incoming packet. The specified port actions are applied
 // to the packet, and if the packet has an output port, output actions are
 // performed on the packet. All appropriate counters are incremented.
@@ -255,12 +260,11 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_ERROR_OCTETS)
 		return err
 	}
-	if mac[0]%2 == 0 { // Unicast address is when is least significant bit of the 1st octet is 0.
+	if mac[0]%2 == 0 { // Unicast address is when least significant bit of the 1st octet is 0.
 		port.Increment(fwdpb.CounterId_COUNTER_ID_RX_UCAST_PACKETS, 1)
 	} else {
 		port.Increment(fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS, 1)
-		isBroadcastMac := (mac[0] == 0xFF && mac[1] == 0xFF && mac[2] == 0xFF && mac[3] == 0xFF && mac[4] == 0xFF && mac[5] == 0xFF)
-		if isBroadcastMac { // Broadcast address is when all bits are set to 1.
+		if isBroadcast(mac) { // Broadcast address is when all bits are set to 1.
 			port.Increment(fwdpb.CounterId_COUNTER_ID_RX_BROADCAST_PACKETS, 1)
 		} else { // Multicast address is when least significant bit of the 1st octet is 1.
 			port.Increment(fwdpb.CounterId_COUNTER_ID_RX_MULTICAST_PACKETS, 1)
@@ -318,9 +322,7 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 		port.Increment(fwdpb.CounterId_COUNTER_ID_TX_UCAST_PACKETS, 1)
 	} else {
 		port.Increment(fwdpb.CounterId_COUNTER_ID_TX_NON_UCAST_PACKETS, 1)
-
-		isBroadcastMac := (mac[0] == 0xFF && mac[1] == 0xFF && mac[2] == 0xFF && mac[3] == 0xFF && mac[4] == 0xFF && mac[5] == 0xFF)
-		if isBroadcastMac { // Broadcast address is when all bits are set to 1.
+		if isBroadcast(mac) { // Broadcast address is when all bits are set to 1.
 			port.Increment(fwdpb.CounterId_COUNTER_ID_TX_BROADCAST_PACKETS, 1)
 		} else { // Multicast address is when least significant bit of the 1st octet is 1.
 			port.Increment(fwdpb.CounterId_COUNTER_ID_TX_MULTICAST_PACKETS, 1)
