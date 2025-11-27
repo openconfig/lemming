@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.15.0
       - name: Run Gazelle
         run: bazel run //:gazelle
       - name: Check Diff
@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.15.0
       - name: Cache Bazel
         uses: actions/cache/restore@v3
         with:
