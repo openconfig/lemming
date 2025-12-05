@@ -512,20 +512,27 @@ func TestRemovePort(t *testing.T) {
 	}{{
 		desc: "success",
 		req: &saipb.RemovePortRequest{
-			Oid: 1,
+			Oid: 0,
 		},
 		want: &fwdpb.ObjectDeleteRequest{
 			ContextId: &fwdpb.ContextId{Id: "foo"},
-			ObjectId:  &fwdpb.ObjectId{Id: "1"},
+			ObjectId:  &fwdpb.ObjectId{Id: ""},
 		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			f := &fakeSwitchDataplane{}
-			c, mgr, stopFn := newTestPort(t, f, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
+			c, _, stopFn := newTestPort(t, f, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 			defer stopFn()
 
-			mgr.StoreAttributes(1, &saipb.CreatePortRequest{HwLaneList: []uint32{1}})
+			// Create a port with a distinct oid from the switch.
+			createResp, err := c.CreatePort(context.Background(), &saipb.CreatePortRequest{Switch: 1, HwLaneList: []uint32{1}})
+			if err != nil {
+				t.Fatalf("CreatePort failed: %v", err)
+			}
+			tt.req.Oid = createResp.Oid
+			tt.want.ObjectId.Id = fmt.Sprint(createResp.Oid)
+
 			_, gotErr := c.RemovePort(context.Background(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("RemovePort() unexpected err: %s", diff)
@@ -552,6 +559,7 @@ func newTestPort(t testing.TB, api switchDataplaneAPI, opts *dplaneopts.Options)
 		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 			DefaultStpInstId: proto.Uint64(101),
 		})
+		mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 		resp, err := vlan.CreateVlan(context.Background(), &saipb.CreateVlanRequest{
 			Switch:       swID,
 			VlanId:       proto.Uint32(DefaultVlanId),
