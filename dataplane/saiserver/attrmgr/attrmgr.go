@@ -48,6 +48,7 @@ type AttrMgr struct {
 	// msgEnumToFieldNum maps a proto message name to a map of an attribute enum to its corresponding proto field.
 	// For example, for SwitchAttribute SWITCH_ATTR_MAX_SYSTEM_CORES (enum val 182) -> field max_system_cores (num 172)
 	msgEnumToFieldNum map[string]map[int32]int
+	switchID          string
 }
 
 func deleteOID(mgr *AttrMgr, oid string) error {
@@ -57,6 +58,9 @@ func deleteOID(mgr *AttrMgr, oid string) error {
 		return fmt.Errorf("OID not found: %s", oid)
 	}
 	delete(mgr.attrs, oid)
+	if oid == mgr.switchID {
+		mgr.switchID = ""
+	}
 	return nil
 }
 
@@ -133,6 +137,14 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 			return nil, err
 		}
 	case strings.Contains(info.FullMethod, "Remove"):
+		switchID, ok := mgr.GetSwitchID()
+		if ok {
+			val := mgr.GetAttribute(switchID, int32(saipb.SwitchAttr_SWITCH_ATTR_RESTART_WARM))
+			if isWarm, ok := val.(bool); ok && isWarm {
+				slog.InfoContext(ctx, "attrmgr.Interceptor: Skipping attribute deletion for RemoveSwitch RPC during warm restart.")
+				return respMsg, nil
+			}
+		}
 		id, err := mgr.getID(reqMsg, respMsg)
 		if err != nil {
 			slog.WarnContext(ctx, "failed to get id", "err", err)
@@ -152,6 +164,7 @@ func (mgr *AttrMgr) Reset() {
 	mgr.attrs = make(map[string]map[int32]*protoreflect.Value)
 	mgr.idToType = make(map[string]saipb.ObjectType)
 	mgr.msgEnumToFieldNum = make(map[string]map[int32]int)
+	mgr.switchID = ""
 	mgr.nextOid.Store(0)
 }
 
@@ -268,11 +281,36 @@ func (mgr *AttrMgr) GetType(id string) saipb.ObjectType {
 	return val
 }
 
+// GetAttribute returns the value of the requested attribute.
+func (mgr *AttrMgr) GetAttribute(id string, attr int32) any {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
+	if objAttrs, ok := mgr.attrs[id]; ok {
+		if val := objAttrs[attr]; val != nil {
+			return val.Interface()
+		}
+	}
+	return nil
+}
+
+// GetSwitchID returns the ID of the switch if it exists.
+func (mgr *AttrMgr) GetSwitchID() (string, bool) {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
+	if mgr.switchID != "" {
+		return mgr.switchID, true
+	}
+	return "", false
+}
+
 // GetType returns the SAI type for the object.
 func (mgr *AttrMgr) SetType(id string, t saipb.ObjectType) {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 	mgr.idToType[id] = t
+	if t == saipb.ObjectType_OBJECT_TYPE_SWITCH {
+		mgr.switchID = id
+	}
 }
 
 // storeAttributes stores all the attributes in the message.

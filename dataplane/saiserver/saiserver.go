@@ -149,8 +149,17 @@ func (s *Server) ObjectTypeQuery(ctx context.Context, req *saipb.ObjectTypeQuery
 }
 
 func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*saipb.InitializeResponse, error) {
-	if s.initialized {
-		slog.InfoContext(ctx, "dataplane already intialized, reseting")
+	isWarmRestart := false
+
+	if switchID, ok := s.mgr.GetSwitchID(); ok {
+		val := s.mgr.GetAttribute(switchID, int32(saipb.SwitchAttr_SWITCH_ATTR_RESTART_WARM))
+		if isWarm, ok := val.(bool); ok {
+			isWarmRestart = isWarm
+		}
+	}
+
+	if s.initialized && !isWarmRestart {
+		slog.InfoContext(ctx, "dataplane already initialized, resetting")
 		s.mgr.Reset()
 		s.saiSwitch.Reset()
 		if err := s.Reset(ctx); err != nil {

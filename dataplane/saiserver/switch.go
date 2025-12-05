@@ -248,9 +248,25 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 	return sw, nil
 }
 
+func (sw *saiSwitch) RemoveSwitch(ctx context.Context, req *saipb.RemoveSwitchRequest) (*saipb.RemoveSwitchResponse, error) {
+	slog.InfoContext(ctx, "RemoveSwitch called", "id", req.GetOid())
+	return &saipb.RemoveSwitchResponse{}, nil
+}
+
 // CreateSwitch a creates a new switch and populates its default values.
 func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequest) (*saipb.CreateSwitchResponse, error) {
+	if id, ok := sw.mgr.GetSwitchID(); ok {
+		oid, err := strconv.ParseUint(id, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		slog.InfoContext(ctx, "Using existing switch id", "id", id)
+		return &saipb.CreateSwitchResponse{
+			Oid: oid,
+		}, nil
+	}
 	swID := sw.mgr.NextID()
+	slog.InfoContext(ctx, "Creating new switch id", "id", swID)
 
 	// Setup forwarding tables.
 	ingressVRF := &fwdpb.TableCreateRequest{
