@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: us-west1-docker.pkg.dev/openconfig-lemming/release/operator
-  newTag: v0.2.3
+  newTag: v0.2.4
