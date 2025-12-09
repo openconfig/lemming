@@ -292,7 +292,14 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
 				WithBytes(lacpDstMAC, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}))))
-	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_IP2ME:
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_IP2ME,
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_GNMI,
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_SSH,
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_SNMP,
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_NTPCLIENT,
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_NTPSERVER,
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_HTTPCLIENT,
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_HTTPSERVER:
 		// IP2ME routes are added to the FIB, do nothing here.
 		return &saipb.CreateHostifTrapResponse{
 			Oid: id,
