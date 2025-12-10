@@ -294,7 +294,6 @@ func (t *Table) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdactio
 			packet.Log().V(3).Info("flow table matched action", "table", t.ID(), "bank", bid, "priority", p, "entry", f, "actions", a)
 			actions = append(actions, a...)
 			match = true
-			break
 		}
 	}
 	if match {
