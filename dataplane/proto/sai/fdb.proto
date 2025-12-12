@@ -91,4 +91,23 @@ service Fdb {
 	rpc GetFdbEntryAttribute (GetFdbEntryAttributeRequest) returns (GetFdbEntryAttributeResponse) {}
 	rpc CreateFdbEntries (CreateFdbEntriesRequest) returns (CreateFdbEntriesResponse) {}
 	rpc RemoveFdbEntries (RemoveFdbEntriesRequest) returns (RemoveFdbEntriesResponse) {}
+	rpc CreateFdbFlush (CreateFdbFlushRequest) returns (CreateFdbFlushResponse) {}
+}
+
+enum FdbFlushAttr {
+	FDB_FLUSH_ATTR_UNSPECIFIED = 0;
+	FDB_FLUSH_ATTR_BRIDGE_PORT_ID = 1;
+	FDB_FLUSH_ATTR_BV_ID = 2;
+	FDB_FLUSH_ATTR_ENTRY_TYPE = 3;
+}
+
+message CreateFdbFlushRequest {
+	option (sai_type) = OBJECT_TYPE_FDB_FLUSH;
+	optional uint64 bridge_port_id = 1 [(attr_enum_value) = 1];
+	optional uint64 bv_id = 2 [(attr_enum_value) = 2];
+	optional int32 entry_type = 3 [(attr_enum_value) = 3];
+}
+
+message CreateFdbFlushResponse {
+	uint64 oid = 1;
 }

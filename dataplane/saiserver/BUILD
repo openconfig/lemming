@@ -4,6 +4,7 @@ go_library(
     name = "saiserver",
     srcs = [
         "acl.go",
+        "fdb.go",
         "hostif.go",
         "isolation_group.go",
         "l2.go",
