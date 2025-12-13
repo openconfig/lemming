@@ -379,7 +379,9 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 	var actions []*fwdpb.ActionDesc
 
 	switch req.GetType() {
-	case saipb.NextHopType_NEXT_HOP_TYPE_IP:
+	case saipb.NextHopType_NEXT_HOP_TYPE_IP, saipb.NextHopType_NEXT_HOP_TYPE_IPMC:
+		// TODO: IPMC might need different handling (e.g., skip setting NEXT_HOP_IP invalid for multicast).
+		// Keeping it same as IP for now.
 		actions = []*fwdpb.ActionDesc{
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetRouterInterfaceId())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),

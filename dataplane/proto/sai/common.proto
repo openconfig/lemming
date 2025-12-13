@@ -1302,6 +1302,7 @@ enum NextHopType {
 	NEXT_HOP_TYPE_MPLS = 2;
 	NEXT_HOP_TYPE_TUNNEL_ENCAP = 3;
 	NEXT_HOP_TYPE_SRV6_SIDLIST = 4;
+	NEXT_HOP_TYPE_IPMC = 5;
 }
 
 enum ObjectStage {
