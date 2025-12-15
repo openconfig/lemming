@@ -140,3 +140,17 @@ index 37e1ef7..2a32542 100644
      CHECK_STRUCT_SIZE(sai_bfd_session_state_notification_t, 16);
      CHECK_STRUCT_SIZE(sai_fabric_port_reachability_t, 8);
      CHECK_STRUCT_SIZE(sai_fdb_entry_t, 24);
+diff --git a/inc/sainexthop.h b/inc/sainexthop.h
+index 1234567..89abcde 100644
+--- a/inc/sainexthop.h
++++ b/inc/sainexthop.h
+@@ -47,6 +47,9 @@ typedef enum _sai_next_hop_type_t
+     SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP,
+ 
+     /** SRV6 SID List */
+     SAI_NEXT_HOP_TYPE_SRV6_SIDLIST,
++
++    /** IPMC */
++    SAI_NEXT_HOP_TYPE_IPMC,
+ 
+ } sai_next_hop_type_t;
