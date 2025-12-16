@@ -1179,8 +1179,9 @@ func (b *bridge) GetBridgeStats(ctx context.Context, req *saipb.GetBridgeStatsRe
 
 func (b *bridge) CreateBridgePort(ctx context.Context, req *saipb.CreateBridgePortRequest) (*saipb.CreateBridgePortResponse, error) {
 	oid := b.mgr.NextID()
+	adminState := req.GetAdminState()
 	attrs := &saipb.BridgePortAttribute{
-		AdminState: proto.Bool(true),
+		AdminState: proto.Bool(adminState),
 	}
 	b.mgr.StoreAttributes(oid, attrs)
 	return &saipb.CreateBridgePortResponse{
