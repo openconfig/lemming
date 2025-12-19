@@ -2,47 +2,47 @@ module github.com/openconfig/lemming
 
 go 1.23.4
 
-toolchain go1.23.8
+toolchain go1.25.5
 
 require (
-	cloud.google.com/go/cloudbuild v1.19.2
-	cloud.google.com/go/logging v1.13.0
-	cloud.google.com/go/monitoring v1.22.1
-	cloud.google.com/go/trace v1.11.3
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.49.0
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.25.0
-	github.com/fatih/color v1.15.0
-	github.com/go-logr/logr v1.4.2
-	github.com/golang/glog v1.2.4
+	cloud.google.com/go/cloudbuild v1.24.0
+	cloud.google.com/go/logging v1.13.1
+	cloud.google.com/go/monitoring v1.24.3
+	cloud.google.com/go/trace v1.11.7
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.54.0
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.30.0
+	github.com/fatih/color v1.18.0
+	github.com/go-logr/logr v1.4.3
+	github.com/golang/glog v1.2.5
 	github.com/google/go-cmp v0.7.0
 	github.com/google/gopacket v1.1.19
 	github.com/google/uuid v1.6.0
-	github.com/googleapis/gax-go/v2 v2.14.1
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
+	github.com/googleapis/gax-go/v2 v2.15.0
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/kentik/patricia v1.2.1
 	github.com/mdlayher/genetlink v1.3.2
-	github.com/open-traffic-generator/snappi/gosnappi v1.5.1
+	github.com/open-traffic-generator/snappi/gosnappi v1.42.0
 	github.com/openconfig/gnmi v0.14.1
-	github.com/openconfig/gnoi v0.4.1
-	github.com/openconfig/gnoigo v0.0.0-20240320202954-ebd033e3542c
-	github.com/openconfig/gnsi v1.6.0
-	github.com/openconfig/goyang v1.6.0
-	github.com/openconfig/gribi v1.9.0
-	github.com/openconfig/gribigo v0.1.1
-	github.com/openconfig/kne v0.1.18
-	github.com/openconfig/magna v0.0.0-20240326180454-518e16696c84
-	github.com/openconfig/ondatra v0.5.8
-	github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07
-	github.com/openconfig/ygnmi v0.11.1
-	github.com/openconfig/ygot v0.31.0
+	github.com/openconfig/gnoi v0.8.0
+	github.com/openconfig/gnoigo fee0fe3eee56
+	github.com/openconfig/gnsi v1.9.0
+	github.com/openconfig/goyang v1.6.3
+	github.com/openconfig/gribi v1.9.1
+	github.com/openconfig/gribigo v0.1.3
+	github.com/openconfig/kne v0.3.0
+	github.com/openconfig/magna 4492db20814b
+	github.com/openconfig/ondatra v0.14.0
+	github.com/openconfig/testt fbbd49c39452
+	github.com/openconfig/ygnmi v0.14.0
+	github.com/openconfig/ygot v0.34.0
 	github.com/osrg/gobgp/v3 v3.37.0
-	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
+	github.com/p4lang/p4runtime v1.4.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.6
-	github.com/spf13/viper v1.19.0
-	github.com/stoewer/go-strcase v1.3.0
-	github.com/vishvananda/netlink v1.2.1
+	github.com/spf13/cobra v1.10.2
+	github.com/spf13/pflag v1.0.10
+	github.com/spf13/viper v1.21.0
+	github.com/stoewer/go-strcase v1.3.1
+	github.com/vishvananda/netlink v1.3.1
 	go.opentelemetry.io/contrib/detectors/gcp v1.32.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.58.0
 	go.opentelemetry.io/otel v1.33.0
@@ -53,20 +53,20 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.33.0
 	go.opentelemetry.io/otel/trace v1.33.0
 	go.uber.org/mock v0.2.0
-	golang.org/x/oauth2 v0.27.0
-	golang.org/x/sys v0.31.0
-	google.golang.org/api v0.216.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20250106144421-5f5ef82da422
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a
-	google.golang.org/grpc v1.70.0
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
-	google.golang.org/protobuf v1.36.5
+	golang.org/x/oauth2 v0.34.0
+	golang.org/x/sys v0.39.0
+	google.golang.org/api v0.257.0
+	google.golang.org/genproto/googleapis/api ff82c1b0f217
+	google.golang.org/genproto/googleapis/rpc ff82c1b0f217
+	google.golang.org/grpc v1.77.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.0
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.29.3
 	k8s.io/client-go v0.29.3
 	k8s.io/klog v1.0.0
-	k8s.io/klog/v2 v2.120.1
-	modernc.org/cc/v4 v4.1.3
+	k8s.io/klog/v2 v2.130.1
+	modernc.org/cc/v4 v4.27.1
 )
 
 require (
