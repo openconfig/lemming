@@ -48,6 +48,7 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 	id := t.mgr.NextID()
 
 	tunType := req.GetType()
+
 	switch tunType {
 	case saipb.TunnelType_TUNNEL_TYPE_IPINIP:
 	default:
@@ -62,17 +63,12 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 	if ecnMode == saipb.TunnelEncapEcnMode_TUNNEL_ENCAP_ECN_MODE_STANDARD && dscpMode == saipb.TunnelDscpMode_TUNNEL_DSCP_MODE_UNIFORM_MODEL { // Copy the QOS bits from the inner IP header.
 		actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS).
 			WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS).WithFieldSrcInstance(1)).Build())
-	} else {
-		return nil, status.Errorf(codes.InvalidArgument, "unsupported encap ecn mode %v and dscp mode: %v", ecnMode, dscpMode)
 	}
 
 	ttlMode := req.GetEncapTtlMode()
-	switch ttlMode {
-	case saipb.TunnelTtlMode_TUNNEL_TTL_MODE_UNIFORM_MODEL: // Copy the TTL from the inner IP header.
+	if ttlMode == saipb.TunnelTtlMode_TUNNEL_TTL_MODE_UNIFORM_MODEL { // Copy the TTL from the inner IP header.
 		actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).
 			WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithFieldSrcInstance(1)).Build())
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "unsupported ttl mode: %v", ttlMode)
 	}
 
 	if req.GetEncapSrcIp() != nil {
