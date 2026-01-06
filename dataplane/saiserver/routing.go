@@ -379,7 +379,9 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 	var actions []*fwdpb.ActionDesc
 
 	switch req.GetType() {
-	case saipb.NextHopType_NEXT_HOP_TYPE_IP:
+	case saipb.NextHopType_NEXT_HOP_TYPE_IP, saipb.NextHopType_NEXT_HOP_TYPE_IPMC:
+		// TODO: IPMC might need different handling (e.g., skip setting NEXT_HOP_IP invalid for multicast).
+		// Keeping it same as IP for now.
 		actions = []*fwdpb.ActionDesc{
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetRouterInterfaceId())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),
@@ -1145,18 +1147,62 @@ func newBridge(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 	return b
 }
 
-func (br *bridge) CreateBridge(context.Context, *saipb.CreateBridgeRequest) (*saipb.CreateBridgeResponse, error) {
-	id := br.mgr.NextID()
+func (b *bridge) CreateBridge(ctx context.Context, req *saipb.CreateBridgeRequest) (*saipb.CreateBridgeResponse, error) {
+	id := b.mgr.NextID()
 	attrs := &saipb.BridgeAttribute{
 		PortList:                   []uint64{},
 		UnknownUnicastFloodGroup:   proto.Uint64(0),
 		UnknownMulticastFloodGroup: proto.Uint64(0),
 		BroadcastFloodGroup:        proto.Uint64(0),
 	}
-	br.mgr.StoreAttributes(id, attrs)
+	b.mgr.StoreAttributes(id, attrs)
 	return &saipb.CreateBridgeResponse{
 		Oid: id,
 	}, nil
+}
+
+func (b *bridge) RemoveBridge(ctx context.Context, req *saipb.RemoveBridgeRequest) (*saipb.RemoveBridgeResponse, error) {
+	return &saipb.RemoveBridgeResponse{}, nil
+}
+
+func (b *bridge) SetBridgeAttribute(ctx context.Context, req *saipb.SetBridgeAttributeRequest) (*saipb.SetBridgeAttributeResponse, error) {
+	return &saipb.SetBridgeAttributeResponse{}, nil
+}
+
+func (b *bridge) GetBridgeAttribute(ctx context.Context, req *saipb.GetBridgeAttributeRequest) (*saipb.GetBridgeAttributeResponse, error) {
+	return &saipb.GetBridgeAttributeResponse{}, nil
+}
+
+func (b *bridge) GetBridgeStats(ctx context.Context, req *saipb.GetBridgeStatsRequest) (*saipb.GetBridgeStatsResponse, error) {
+	return &saipb.GetBridgeStatsResponse{}, nil
+}
+
+func (b *bridge) CreateBridgePort(ctx context.Context, req *saipb.CreateBridgePortRequest) (*saipb.CreateBridgePortResponse, error) {
+	oid := b.mgr.NextID()
+	adminState := req.GetAdminState()
+	attrs := &saipb.BridgePortAttribute{
+		AdminState: proto.Bool(adminState),
+	}
+	b.mgr.StoreAttributes(oid, attrs)
+	return &saipb.CreateBridgePortResponse{
+		Oid: oid,
+	}, nil
+}
+
+func (b *bridge) RemoveBridgePort(ctx context.Context, req *saipb.RemoveBridgePortRequest) (*saipb.RemoveBridgePortResponse, error) {
+	return &saipb.RemoveBridgePortResponse{}, nil
+}
+
+func (b *bridge) SetBridgePortAttribute(ctx context.Context, req *saipb.SetBridgePortAttributeRequest) (*saipb.SetBridgePortAttributeResponse, error) {
+	return &saipb.SetBridgePortAttributeResponse{}, nil
+}
+
+func (b *bridge) GetBridgePortAttribute(ctx context.Context, req *saipb.GetBridgePortAttributeRequest) (*saipb.GetBridgePortAttributeResponse, error) {
+	return &saipb.GetBridgePortAttributeResponse{}, nil
+}
+
+func (b *bridge) GetBridgePortStats(ctx context.Context, req *saipb.GetBridgePortStatsRequest) (*saipb.GetBridgePortStatsResponse, error) {
+	return &saipb.GetBridgePortStatsResponse{}, nil
 }
 
 type hash struct {

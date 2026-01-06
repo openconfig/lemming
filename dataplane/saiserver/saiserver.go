@@ -47,10 +47,6 @@ type dtel struct {
 	saipb.UnimplementedDtelServer
 }
 
-type fdb struct {
-	saipb.UnimplementedFdbServer
-}
-
 type ipmcGroup struct {
 	saipb.UnimplementedIpmcGroupServer
 }
@@ -73,6 +69,7 @@ type mcastFdb struct {
 
 type mirror struct {
 	saipb.UnimplementedMirrorServer
+	mgr *attrmgr.AttrMgr
 }
 
 type mpls struct {
@@ -202,6 +199,11 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		return nil, err
 	}
 
+	fdb, err := newFdb(mgr, fwdCtx, s)
+	if err != nil {
+		return nil, err
+	}
+
 	srv := &Server{
 		mgr:               mgr,
 		forwardingContext: fwdCtx,
@@ -209,13 +211,13 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		counter:           &counter{},
 		debugCounter:      &debugCounter{},
 		dtel:              &dtel{},
-		fdb:               &fdb{},
+		fdb:               fdb,
 		ipmcGroup:         &ipmcGroup{},
 		ipmc:              &ipmc{},
 		ipsec:             &ipsec{},
 		macsec:            &macsec{},
 		mcastFdb:          &mcastFdb{},
-		mirror:            &mirror{},
+		mirror:            &mirror{mgr: mgr},
 		mpls:              &mpls{},
 		nat:               &nat{},
 		samplePacket:      &samplePacket{},
@@ -232,7 +234,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterCounterServer(s, srv.counter)
 	saipb.RegisterDebugCounterServer(s, srv.debugCounter)
 	saipb.RegisterDtelServer(s, srv.dtel)
-	saipb.RegisterFdbServer(s, srv.fdb)
 	saipb.RegisterIpmcGroupServer(s, srv.ipmcGroup)
 	saipb.RegisterIpmcServer(s, srv.ipmc)
 	saipb.RegisterIpsecServer(s, srv.ipsec)

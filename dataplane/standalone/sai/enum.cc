@@ -17,6 +17,8 @@
 
 
 
+
+
 lemming::dataplane::sai::AclActionType convert_sai_acl_action_type_t_to_proto(const sai_int32_t val) {
     switch (val) {
     
@@ -9746,6 +9748,8 @@ lemming::dataplane::sai::NextHopType convert_sai_next_hop_type_t_to_proto(const 
         case SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP: return lemming::dataplane::sai::NEXT_HOP_TYPE_TUNNEL_ENCAP;
     
         case SAI_NEXT_HOP_TYPE_SRV6_SIDLIST: return lemming::dataplane::sai::NEXT_HOP_TYPE_SRV6_SIDLIST;
+
+        case SAI_NEXT_HOP_TYPE_IPMC: return lemming::dataplane::sai::NEXT_HOP_TYPE_IPMC;
     
         default: return lemming::dataplane::sai::NEXT_HOP_TYPE_UNSPECIFIED;
     }
@@ -9760,6 +9764,8 @@ sai_next_hop_type_t convert_sai_next_hop_type_t_to_sai(lemming::dataplane::sai::
         case lemming::dataplane::sai::NEXT_HOP_TYPE_TUNNEL_ENCAP: return SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP;
     
         case lemming::dataplane::sai::NEXT_HOP_TYPE_SRV6_SIDLIST: return SAI_NEXT_HOP_TYPE_SRV6_SIDLIST;
+
+        case lemming::dataplane::sai::NEXT_HOP_TYPE_IPMC: return SAI_NEXT_HOP_TYPE_IPMC;
     
         default: return SAI_NEXT_HOP_TYPE_IP;
     }
