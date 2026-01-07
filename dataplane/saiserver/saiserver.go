@@ -69,6 +69,7 @@ type mcastFdb struct {
 
 type mirror struct {
 	saipb.UnimplementedMirrorServer
+	mgr *attrmgr.AttrMgr
 }
 
 type mpls struct {
@@ -216,7 +217,7 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		ipsec:             &ipsec{},
 		macsec:            &macsec{},
 		mcastFdb:          &mcastFdb{},
-		mirror:            &mirror{},
+		mirror:            &mirror{mgr: mgr},
 		mpls:              &mpls{},
 		nat:               &nat{},
 		samplePacket:      &samplePacket{},
