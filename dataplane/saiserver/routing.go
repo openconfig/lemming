@@ -288,7 +288,7 @@ func (nhg *nextHopGroup) updateNextHopGroupMember(ctx context.Context, nhgid, mi
 func (nhg *nextHopGroup) RemoveNextHopGroup(_ context.Context, req *saipb.RemoveNextHopGroupRequest) (*saipb.RemoveNextHopGroupResponse, error) {
 	oid := req.GetOid()
 	if _, ok := nhg.groups[oid]; !ok {
-		return nil, status.Errorf(codes.FailedPrecondition, "group %d does not exist", oid)
+		return nil, status.Errorf(codes.NotFound, "group %d does not exist", oid)
 	}
 	delete(nhg.groups, oid)
 
@@ -304,6 +304,19 @@ func (nhg *nextHopGroup) RemoveNextHopGroup(_ context.Context, req *saipb.Remove
 		return nil, err
 	}
 	return &saipb.RemoveNextHopGroupResponse{}, nil
+}
+
+// RemoveNextHopGroups removes multiple next hop groups specified in the OID.
+func (nhg *nextHopGroup) RemoveNextHopGroups(ctx context.Context, req *saipb.RemoveNextHopGroupsRequest) (*saipb.RemoveNextHopGroupsResponse, error) {
+	resp := &saipb.RemoveNextHopGroupsResponse{}
+	for _, req := range req.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.RemoveNextHopGroup, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
 }
 
 // CreateNextHopGroupMember adds a next hop to a next hop group.
@@ -355,6 +368,19 @@ func (nhg *nextHopGroup) RemoveNextHopGroupMember(ctx context.Context, req *saip
 		return nil, err
 	}
 	return &saipb.RemoveNextHopGroupMemberResponse{}, nil
+}
+
+// RemoveNextHopGroupMembers removes multiple next hop group members specified in the OID.
+func (nhg *nextHopGroup) RemoveNextHopGroupMembers(ctx context.Context, r *saipb.RemoveNextHopGroupMembersRequest) (*saipb.RemoveNextHopGroupMembersResponse, error) {
+	resp := &saipb.RemoveNextHopGroupMembersResponse{}
+	for _, req := range r.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.RemoveNextHopGroupMember, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
 }
 
 type nextHop struct {
