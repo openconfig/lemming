@@ -544,6 +544,10 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		fib = FIBV4Table
 	}
 
+	if req.PacketAction == nil {
+		req.PacketAction = saipb.PacketAction_PACKET_ACTION_FORWARD.Enum()
+	}
+
 	entry := fwdconfig.TableEntryAddRequest(r.dataplane.ID(), fib).AppendEntry(fwdconfig.EntryDesc(
 		fwdconfig.PrefixEntry(
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId()),
@@ -633,6 +637,129 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		return nil, err
 	}
 	return &saipb.CreateRouteEntryResponse{}, nil
+}
+
+func (r *route) SetRouteEntryAttribute(ctx context.Context, req *saipb.SetRouteEntryAttributeRequest) (*saipb.SetRouteEntryAttributeResponse, error) {
+	resp := &saipb.GetRouteEntryAttributeResponse{
+		Attr: &saipb.RouteEntryAttribute{},
+	}
+	pBytes, err := proto.Marshal(req.GetEntry())
+	if err != nil {
+		return nil, err
+	}
+	if err := r.mgr.PopulateAllAttributes(string(pBytes), resp.Attr); err != nil {
+		return nil, err
+	}
+	// The request only has one attribute, so find the one that is set.
+	// Only these three attributes are supported.
+	packetAction := resp.Attr.GetPacketAction()
+	if req.PacketAction != nil {
+		packetAction = req.GetPacketAction()
+	}
+	nextHopID := resp.Attr.GetNextHopId()
+	if req.NextHopId != nil {
+		nextHopID = req.GetNextHopId()
+	}
+	metaData := resp.Attr.MetaData
+	if req.MetaData != nil {
+		metaData = req.MetaData
+	}
+
+	fib := FIBV6Table
+	if len(req.GetEntry().GetDestination().GetAddr()) == 4 {
+		fib = FIBV4Table
+	}
+
+	entry := fwdconfig.TableEntryAddRequest(r.dataplane.ID(), fib).AppendEntry(fwdconfig.EntryDesc(
+		fwdconfig.PrefixEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId()),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+				req.GetEntry().GetDestination().GetAddr(),
+				req.GetEntry().GetDestination().GetMask(),
+			),
+		),
+	))
+
+	forward := true
+	if packetAction == saipb.PacketAction_PACKET_ACTION_DROP ||
+		packetAction == saipb.PacketAction_PACKET_ACTION_TRAP ||
+		packetAction == saipb.PacketAction_PACKET_ACTION_DENY {
+		forward = false
+	}
+	nextType := r.mgr.GetType(fmt.Sprint(nextHopID))
+
+	actions := []fwdconfig.ActionDescBuilder{}
+
+	// If the packet action is drop, then next hop is optional.
+	if forward {
+		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{1}))
+		switch nextType {
+		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP:
+			actions = append(actions,
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(nextHopID),
+				fwdconfig.LookupAction(NHTable),
+			)
+		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP_GROUP:
+			actions = append(actions,
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(nextHopID),
+				fwdconfig.LookupAction(NHGTable),
+			)
+		case saipb.ObjectType_OBJECT_TYPE_ROUTER_INTERFACE:
+			actions = append(actions,
+				// Set the next hop IP in the packet's metadata.
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST),
+				// Set the output iface.
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(nextHopID),
+			)
+		case saipb.ObjectType_OBJECT_TYPE_PORT:
+			attrReq := &saipb.GetSwitchAttributeRequest{
+				Oid:      req.GetEntry().GetSwitchId(),
+				AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT},
+			}
+			resp := &saipb.GetSwitchAttributeResponse{}
+			if err := r.mgr.PopulateAttributes(attrReq, resp); err != nil {
+				return nil, err
+			}
+			if nextHopID == *resp.Attr.CpuPort {
+				_, err := r.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(r.dataplane.ID(), trapTableID).
+					AppendEntry(
+						fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+							fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+								req.GetEntry().GetDestination().GetAddr(),
+								req.GetEntry().GetDestination().GetMask()),
+							fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId()))),
+						fwdconfig.TransmitAction(fmt.Sprint(nextHopID)).WithImmediate(true)).
+					Build())
+				if err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to add next IP2ME route: %v", nextType)
+				}
+				return &saipb.SetRouteEntryAttributeResponse{}, nil
+			}
+			actions = append(actions,
+				// Set the next hop IP in the packet's metadata.
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST),
+				// Set the output port.
+				fwdconfig.TransmitAction(fmt.Sprint(nextHopID)),
+			)
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unknown next hop type: %v", nextType)
+		}
+	} else {
+		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}))
+	}
+	if metaData != nil {
+		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
+			WithFieldIDInstance(routeDstMeta).WithValue(binary.BigEndian.AppendUint32(nil, *metaData)))
+	}
+	entry.AppendActions(actions...)
+
+	route := entry.Build()
+	_, err = r.dataplane.TableEntryAdd(ctx, route)
+	if err != nil {
+		return nil, err
+	}
+
+	return &saipb.SetRouteEntryAttributeResponse{}, nil
 }
 
 func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEntriesRequest) (*saipb.CreateRouteEntriesResponse, error) {
