@@ -284,7 +284,26 @@ sai_status_t l_remove_route_entries(uint32_t object_count, const sai_route_entry
 
 sai_status_t l_set_route_entries_attribute(uint32_t object_count, const sai_route_entry_t *route_entry, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-	return SAI_STATUS_NOT_IMPLEMENTED;
+	sai_status_t status;
+  sai_status_t overall_status = SAI_STATUS_SUCCESS;
+	bool error = false;
+
+	for (uint32_t i = 0; i < object_count; i++) {
+		object_statuses[i] = SAI_STATUS_NOT_EXECUTED;
+		if (false == error)
+    {
+			status = l_set_route_entry_attribute(&route_entry[i], &attr_list[i]);
+			object_statuses[i] = status;
+			if (status != SAI_STATUS_SUCCESS) {
+				overall_status = SAI_STATUS_FAILURE;
+				if (mode == SAI_BULK_OP_ERROR_MODE_STOP_ON_ERROR) {
+					error = true;
+				}
+			}
+		}
+	}
+
+	return overall_status;
 }
 
 sai_status_t l_get_route_entries_attribute(uint32_t object_count, const sai_route_entry_t *route_entry, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
