@@ -135,13 +135,25 @@ func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc
 func (nhg *nextHopGroup) CreateNextHopGroup(ctx context.Context, req *saipb.CreateNextHopGroupRequest) (*saipb.CreateNextHopGroupResponse, error) {
 	id := nhg.mgr.NextID()
 
+	entry := fwdconfig.TableEntryAddRequest(nhg.dataplane.ID(), NHGTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+			fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64(id),
+		)),
+	).Build()
+
 	switch req.GetType() {
 	case saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP:
+		if _, err := nhg.dataplane.TableEntryAdd(ctx, entry); err != nil {
+			return nil, err
+		}
 		nhg.groups[id] = map[uint64]*groupMember{}
 		return &saipb.CreateNextHopGroupResponse{
 			Oid: id,
 		}, nil
 	case saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS:
+		if _, err := nhg.dataplane.TableEntryAdd(ctx, entry); err != nil {
+			return nil, err
+		}
 		nhg.groups[id] = map[uint64]*groupMember{}
 
 		memReq := &saipb.CreateNextHopGroupMembersRequest{}
