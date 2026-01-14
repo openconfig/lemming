@@ -1200,6 +1200,14 @@ func (vlan *vlan) RemoveVlan(ctx context.Context, r *saipb.RemoveVlanRequest) (*
 	return &saipb.RemoveVlanResponse{}, nil
 }
 
+func (vlan *vlan) SetVlanAttribute(ctx context.Context, req *saipb.SetVlanAttributeRequest) (*saipb.SetVlanAttributeResponse, error) {
+	return &saipb.SetVlanAttributeResponse{}, nil
+}
+
+func (vlan *vlan) GetVlanAttribute(ctx context.Context, req *saipb.GetVlanAttributeRequest) (*saipb.GetVlanAttributeResponse, error) {
+	return &saipb.GetVlanAttributeResponse{}, nil
+}
+
 func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMemberRequest) (*saipb.CreateVlanMemberResponse, error) {
 	vOid := r.GetVlanId()
 	vId, err := vlan.vidByOid(vOid)
