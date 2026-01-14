@@ -274,7 +274,7 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 			if gotErr != nil {
 				return
 			}
-			if d := cmp.Diff(dplane.gotEntryAddReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
+			if d := cmp.Diff(dplane.gotEntryAddReqs[1], tt.wantReq, protocmp.Transform()); d != "" {
 				t.Errorf("CreateNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.NextHopGroupMemberAttribute{}
@@ -406,7 +406,7 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 				return
 			}
 
-			if d := cmp.Diff(dplane.gotEntryAddReqs[2], tt.wantReq, protocmp.Transform()); d != "" {
+			if d := cmp.Diff(dplane.gotEntryAddReqs[3], tt.wantReq, protocmp.Transform()); d != "" {
 				t.Errorf("RemoveNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.NextHopGroupMemberAttribute{}
