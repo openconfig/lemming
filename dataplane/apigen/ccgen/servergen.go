@@ -30,7 +30,7 @@ func GenServer(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoOutDir, ccOutDir
 		ProtoOutDir: protoOutDir,
 		CCOutDir:    ccOutDir,
 	}
-	d, err := typeinfo.Data(doc, sai, "", "", ccOutDir, protoOutDir)
+	d, err := typeinfo.Data(doc, sai, "", "", ccOutDir, protoOutDir, false)
 	if err != nil {
 		return nil, err
 	}
