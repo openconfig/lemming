@@ -25,7 +25,6 @@ import (
 )
 
 var unsupportedEnum = map[string]struct{}{
-	"FDB_FLUSH":     {},
 	"HOSTIF_PACKET": {},
 }
 
@@ -243,6 +242,13 @@ lemming::dataplane::sai::{{ .ReturnType }} msg;
 for(uint32_t i = 0; i < attr_count; i++ ) {
 	{{ template "getattr" .AttrSwitch }}
 }
+{{- else if eq .Operation "flush" }}
+lemming::dataplane::sai::{{ .ProtoRequestType }} msg;
+msg.set_switch_(switch_id);
+ for(uint32_t i = 0; i < attr_count; i++ ) {
+	{{ .AttrConvertInsert }}
+	{{ template "setattr" .AttrSwitch }}
+}
 {{- end }}
 return msg;
 }
@@ -416,6 +422,22 @@ return msg;
 		counters[i] = resp.values(i);
 	}
 	{{ end }}
+	return SAI_STATUS_SUCCESS;
+	{{- else if eq .Operation "flush" }}
+	lemming::dataplane::sai::{{ .ProtoRequestType }} req = {{.ConvertFunc}}(switch_id, {{.Vars}});
+	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
+	grpc::ClientContext context;
+
+	grpc::Status status = {{ .Client }}->{{ .ProtoRPCName }}(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
 	return SAI_STATUS_SUCCESS;
 	{{- else }}
 	return SAI_STATUS_NOT_IMPLEMENTED;

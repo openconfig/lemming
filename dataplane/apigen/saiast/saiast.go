@@ -143,6 +143,11 @@ func (sai *SAIAPI) GetFuncMeta(fn *TypeDecl) *FuncMetadata {
 		}
 	}
 
+	if meta.Name == "flush_fdb_entries" {
+		meta.Operation = "flush"
+		meta.TypeName = "FDB_FLUSH"
+	}
+
 	return meta
 }
 

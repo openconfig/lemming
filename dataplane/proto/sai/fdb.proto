@@ -20,6 +20,13 @@ enum FdbEntryAttr {
 	FDB_ENTRY_ATTR_ALLOW_MAC_MOVE = 8;
 }
 
+enum FdbFlushAttr {
+	FDB_FLUSH_ATTR_UNSPECIFIED = 0;
+	FDB_FLUSH_ATTR_BRIDGE_PORT_ID = 1;
+	FDB_FLUSH_ATTR_BV_ID = 2;
+	FDB_FLUSH_ATTR_ENTRY_TYPE = 3;
+}
+
 message CreateFdbEntryRequest {
 	option (sai_type) = OBJECT_TYPE_FDB_ENTRY;
 	FdbEntry entry = 1;
@@ -67,6 +74,17 @@ message GetFdbEntryAttributeResponse {
 	FdbEntryAttribute attr = 1;
 }
 
+message FlushFdbEntriesRequest {
+	option (sai_type) = OBJECT_TYPE_UNSPECIFIED;
+	uint64 switch = 1;
+	optional uint64 bridge_port_id = 2[(attr_enum_value) = 1];
+	optional uint64 bv_id = 3[(attr_enum_value) = 2];
+	optional FdbFlushEntryType entry_type = 4[(attr_enum_value) = 3];
+}
+
+message FlushFdbEntriesResponse {
+}
+
 message CreateFdbEntriesRequest {
 	repeated CreateFdbEntryRequest reqs = 1;
 }
@@ -89,25 +107,7 @@ service Fdb {
 	rpc RemoveFdbEntry (RemoveFdbEntryRequest) returns (RemoveFdbEntryResponse) {}
 	rpc SetFdbEntryAttribute (SetFdbEntryAttributeRequest) returns (SetFdbEntryAttributeResponse) {}
 	rpc GetFdbEntryAttribute (GetFdbEntryAttributeRequest) returns (GetFdbEntryAttributeResponse) {}
+	rpc FlushFdbEntries (FlushFdbEntriesRequest) returns (FlushFdbEntriesResponse) {}
 	rpc CreateFdbEntries (CreateFdbEntriesRequest) returns (CreateFdbEntriesResponse) {}
 	rpc RemoveFdbEntries (RemoveFdbEntriesRequest) returns (RemoveFdbEntriesResponse) {}
-	rpc CreateFdbFlush (CreateFdbFlushRequest) returns (CreateFdbFlushResponse) {}
-}
-
-enum FdbFlushAttr {
-	FDB_FLUSH_ATTR_UNSPECIFIED = 0;
-	FDB_FLUSH_ATTR_BRIDGE_PORT_ID = 1;
-	FDB_FLUSH_ATTR_BV_ID = 2;
-	FDB_FLUSH_ATTR_ENTRY_TYPE = 3;
-}
-
-message CreateFdbFlushRequest {
-	option (sai_type) = OBJECT_TYPE_FDB_FLUSH;
-	optional uint64 bridge_port_id = 1 [(attr_enum_value) = 1];
-	optional uint64 bv_id = 2 [(attr_enum_value) = 2];
-	optional int32 entry_type = 3 [(attr_enum_value) = 3];
-}
-
-message CreateFdbFlushResponse {
-	uint64 oid = 1;
 }
