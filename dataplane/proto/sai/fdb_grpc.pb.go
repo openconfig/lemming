@@ -23,9 +23,9 @@ const (
 	Fdb_RemoveFdbEntry_FullMethodName       = "/lemming.dataplane.sai.Fdb/RemoveFdbEntry"
 	Fdb_SetFdbEntryAttribute_FullMethodName = "/lemming.dataplane.sai.Fdb/SetFdbEntryAttribute"
 	Fdb_GetFdbEntryAttribute_FullMethodName = "/lemming.dataplane.sai.Fdb/GetFdbEntryAttribute"
+	Fdb_FlushFdbEntries_FullMethodName      = "/lemming.dataplane.sai.Fdb/FlushFdbEntries"
 	Fdb_CreateFdbEntries_FullMethodName     = "/lemming.dataplane.sai.Fdb/CreateFdbEntries"
 	Fdb_RemoveFdbEntries_FullMethodName     = "/lemming.dataplane.sai.Fdb/RemoveFdbEntries"
-	Fdb_CreateFdbFlush_FullMethodName       = "/lemming.dataplane.sai.Fdb/CreateFdbFlush"
 )
 
 // FdbClient is the client API for Fdb service.
@@ -36,9 +36,9 @@ type FdbClient interface {
 	RemoveFdbEntry(ctx context.Context, in *RemoveFdbEntryRequest, opts ...grpc.CallOption) (*RemoveFdbEntryResponse, error)
 	SetFdbEntryAttribute(ctx context.Context, in *SetFdbEntryAttributeRequest, opts ...grpc.CallOption) (*SetFdbEntryAttributeResponse, error)
 	GetFdbEntryAttribute(ctx context.Context, in *GetFdbEntryAttributeRequest, opts ...grpc.CallOption) (*GetFdbEntryAttributeResponse, error)
+	FlushFdbEntries(ctx context.Context, in *FlushFdbEntriesRequest, opts ...grpc.CallOption) (*FlushFdbEntriesResponse, error)
 	CreateFdbEntries(ctx context.Context, in *CreateFdbEntriesRequest, opts ...grpc.CallOption) (*CreateFdbEntriesResponse, error)
 	RemoveFdbEntries(ctx context.Context, in *RemoveFdbEntriesRequest, opts ...grpc.CallOption) (*RemoveFdbEntriesResponse, error)
-	CreateFdbFlush(ctx context.Context, in *CreateFdbFlushRequest, opts ...grpc.CallOption) (*CreateFdbFlushResponse, error)
 }
 
 type fdbClient struct {
@@ -89,6 +89,16 @@ func (c *fdbClient) GetFdbEntryAttribute(ctx context.Context, in *GetFdbEntryAtt
 	return out, nil
 }
 
+func (c *fdbClient) FlushFdbEntries(ctx context.Context, in *FlushFdbEntriesRequest, opts ...grpc.CallOption) (*FlushFdbEntriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FlushFdbEntriesResponse)
+	err := c.cc.Invoke(ctx, Fdb_FlushFdbEntries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *fdbClient) CreateFdbEntries(ctx context.Context, in *CreateFdbEntriesRequest, opts ...grpc.CallOption) (*CreateFdbEntriesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateFdbEntriesResponse)
@@ -109,16 +119,6 @@ func (c *fdbClient) RemoveFdbEntries(ctx context.Context, in *RemoveFdbEntriesRe
 	return out, nil
 }
 
-func (c *fdbClient) CreateFdbFlush(ctx context.Context, in *CreateFdbFlushRequest, opts ...grpc.CallOption) (*CreateFdbFlushResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateFdbFlushResponse)
-	err := c.cc.Invoke(ctx, Fdb_CreateFdbFlush_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // FdbServer is the server API for Fdb service.
 // All implementations should embed UnimplementedFdbServer
 // for forward compatibility.
@@ -127,9 +127,9 @@ type FdbServer interface {
 	RemoveFdbEntry(context.Context, *RemoveFdbEntryRequest) (*RemoveFdbEntryResponse, error)
 	SetFdbEntryAttribute(context.Context, *SetFdbEntryAttributeRequest) (*SetFdbEntryAttributeResponse, error)
 	GetFdbEntryAttribute(context.Context, *GetFdbEntryAttributeRequest) (*GetFdbEntryAttributeResponse, error)
+	FlushFdbEntries(context.Context, *FlushFdbEntriesRequest) (*FlushFdbEntriesResponse, error)
 	CreateFdbEntries(context.Context, *CreateFdbEntriesRequest) (*CreateFdbEntriesResponse, error)
 	RemoveFdbEntries(context.Context, *RemoveFdbEntriesRequest) (*RemoveFdbEntriesResponse, error)
-	CreateFdbFlush(context.Context, *CreateFdbFlushRequest) (*CreateFdbFlushResponse, error)
 }
 
 // UnimplementedFdbServer should be embedded to have
@@ -151,14 +151,14 @@ func (UnimplementedFdbServer) SetFdbEntryAttribute(context.Context, *SetFdbEntry
 func (UnimplementedFdbServer) GetFdbEntryAttribute(context.Context, *GetFdbEntryAttributeRequest) (*GetFdbEntryAttributeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFdbEntryAttribute not implemented")
 }
+func (UnimplementedFdbServer) FlushFdbEntries(context.Context, *FlushFdbEntriesRequest) (*FlushFdbEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FlushFdbEntries not implemented")
+}
 func (UnimplementedFdbServer) CreateFdbEntries(context.Context, *CreateFdbEntriesRequest) (*CreateFdbEntriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateFdbEntries not implemented")
 }
 func (UnimplementedFdbServer) RemoveFdbEntries(context.Context, *RemoveFdbEntriesRequest) (*RemoveFdbEntriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveFdbEntries not implemented")
-}
-func (UnimplementedFdbServer) CreateFdbFlush(context.Context, *CreateFdbFlushRequest) (*CreateFdbFlushResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateFdbFlush not implemented")
 }
 func (UnimplementedFdbServer) testEmbeddedByValue() {}
 
@@ -252,6 +252,24 @@ func _Fdb_GetFdbEntryAttribute_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Fdb_FlushFdbEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FlushFdbEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FdbServer).FlushFdbEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Fdb_FlushFdbEntries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FdbServer).FlushFdbEntries(ctx, req.(*FlushFdbEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Fdb_CreateFdbEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateFdbEntriesRequest)
 	if err := dec(in); err != nil {
@@ -288,24 +306,6 @@ func _Fdb_RemoveFdbEntries_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Fdb_CreateFdbFlush_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateFdbFlushRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FdbServer).CreateFdbFlush(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Fdb_CreateFdbFlush_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FdbServer).CreateFdbFlush(ctx, req.(*CreateFdbFlushRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Fdb_ServiceDesc is the grpc.ServiceDesc for Fdb service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -330,16 +330,16 @@ var Fdb_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Fdb_GetFdbEntryAttribute_Handler,
 		},
 		{
+			MethodName: "FlushFdbEntries",
+			Handler:    _Fdb_FlushFdbEntries_Handler,
+		},
+		{
 			MethodName: "CreateFdbEntries",
 			Handler:    _Fdb_CreateFdbEntries_Handler,
 		},
 		{
 			MethodName: "RemoveFdbEntries",
 			Handler:    _Fdb_RemoveFdbEntries_Handler,
-		},
-		{
-			MethodName: "CreateFdbFlush",
-			Handler:    _Fdb_CreateFdbFlush_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

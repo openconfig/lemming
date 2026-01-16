@@ -18,129 +18,129 @@
 
 #include "dataplane/proto/sai/common.pb.h"
  
-#include "dataplane/proto/sai/dash_acl.pb.h"
-
-#include "dataplane/proto/sai/scheduler_group.pb.h"
-
-#include "dataplane/proto/sai/switch.pb.h"
+#include "dataplane/proto/sai/stp.pb.h"
 
 #include "dataplane/proto/sai/udf.pb.h"
 
-#include "dataplane/proto/sai/virtual_router.pb.h"
-
-#include "dataplane/proto/sai/hash.pb.h"
-
-#include "dataplane/proto/sai/stp.pb.h"
-
-#include "dataplane/proto/sai/tam.pb.h"
-
-#include "dataplane/proto/sai/dash_pa_validation.pb.h"
-
-#include "dataplane/proto/sai/system_port.pb.h"
-
-#include "dataplane/proto/sai/fdb.pb.h"
-
-#include "dataplane/proto/sai/macsec.pb.h"
-
-#include "dataplane/proto/sai/nat.pb.h"
-
-#include "dataplane/proto/sai/srv6.pb.h"
-
-#include "dataplane/proto/sai/qos_map.pb.h"
-
-#include "dataplane/proto/sai/hostif.pb.h"
-
-#include "dataplane/proto/sai/l2mc.pb.h"
-
-#include "dataplane/proto/sai/bmtor.pb.h"
-
-#include "dataplane/proto/sai/rpf_group.pb.h"
-
-#include "dataplane/proto/sai/isolation_group.pb.h"
-
-#include "dataplane/proto/sai/l2mc_group.pb.h"
-
-#include "dataplane/proto/sai/next_hop_group.pb.h"
-
-#include "dataplane/proto/sai/dash_outbound_ca_to_pa.pb.h"
-
-#include "dataplane/proto/sai/my_mac.pb.h"
-
-#include "dataplane/proto/sai/ars_profile.pb.h"
-
-#include "dataplane/proto/sai/dash_outbound_routing.pb.h"
-
-#include "dataplane/proto/sai/scheduler.pb.h"
-
-#include "dataplane/proto/sai/acl.pb.h"
-
-#include "dataplane/proto/sai/next_hop.pb.h"
-
-#include "dataplane/proto/sai/dash_vnet.pb.h"
-
-#include "dataplane/proto/sai/dash_inbound_routing.pb.h"
-
-#include "dataplane/proto/sai/dash_eni.pb.h"
-
-#include "dataplane/proto/sai/policer.pb.h"
-
-#include "dataplane/proto/sai/router_interface.pb.h"
-
-#include "dataplane/proto/sai/wred.pb.h"
+#include "dataplane/proto/sai/bfd.pb.h"
 
 #include "dataplane/proto/sai/buffer.pb.h"
 
-#include "dataplane/proto/sai/tunnel.pb.h"
+#include "dataplane/proto/sai/hostif.pb.h"
 
-#include "dataplane/proto/sai/bfd.pb.h"
+#include "dataplane/proto/sai/l2mc_group.pb.h"
 
-#include "dataplane/proto/sai/dash_vip.pb.h"
-
-#include "dataplane/proto/sai/ipmc.pb.h"
-
-#include "dataplane/proto/sai/mcast_fdb.pb.h"
-
-#include "dataplane/proto/sai/route.pb.h"
-
-#include "dataplane/proto/sai/generic_programmable.pb.h"
-
-#include "dataplane/proto/sai/counter.pb.h"
-
-#include "dataplane/proto/sai/ipsec.pb.h"
-
-#include "dataplane/proto/sai/vlan.pb.h"
-
-#include "dataplane/proto/sai/ars.pb.h"
-
-#include "dataplane/proto/sai/bridge.pb.h"
-
-#include "dataplane/proto/sai/ipmc_group.pb.h"
-
-#include "dataplane/proto/sai/mpls.pb.h"
-
-#include "dataplane/proto/sai/neighbor.pb.h"
-
-#include "dataplane/proto/sai/dash_direction_lookup.pb.h"
-
-#include "dataplane/proto/sai/queue.pb.h"
-
-#include "dataplane/proto/sai/twamp.pb.h"
-
-#include "dataplane/proto/sai/mirror.pb.h"
-
-#include "dataplane/proto/sai/port.pb.h"
-
-#include "dataplane/proto/sai/samplepacket.pb.h"
-
-#include "dataplane/proto/sai/dtel.pb.h"
+#include "dataplane/proto/sai/lag.pb.h"
 
 #include "dataplane/proto/sai/debug_counter.pb.h"
 
 #include "dataplane/proto/sai/poe.pb.h"
 
+#include "dataplane/proto/sai/isolation_group.pb.h"
+
 #include "dataplane/proto/sai/dash_meter.pb.h"
 
-#include "dataplane/proto/sai/lag.pb.h"
+#include "dataplane/proto/sai/dash_acl.pb.h"
+
+#include "dataplane/proto/sai/scheduler_group.pb.h"
+
+#include "dataplane/proto/sai/mcast_fdb.pb.h"
+
+#include "dataplane/proto/sai/mirror.pb.h"
+
+#include "dataplane/proto/sai/router_interface.pb.h"
+
+#include "dataplane/proto/sai/rpf_group.pb.h"
+
+#include "dataplane/proto/sai/scheduler.pb.h"
+
+#include "dataplane/proto/sai/twamp.pb.h"
+
+#include "dataplane/proto/sai/srv6.pb.h"
+
+#include "dataplane/proto/sai/dash_eni.pb.h"
+
+#include "dataplane/proto/sai/dash_direction_lookup.pb.h"
+
+#include "dataplane/proto/sai/bmtor.pb.h"
+
+#include "dataplane/proto/sai/port.pb.h"
+
+#include "dataplane/proto/sai/ars.pb.h"
+
+#include "dataplane/proto/sai/bridge.pb.h"
+
+#include "dataplane/proto/sai/counter.pb.h"
+
+#include "dataplane/proto/sai/next_hop_group.pb.h"
+
+#include "dataplane/proto/sai/queue.pb.h"
+
+#include "dataplane/proto/sai/dtel.pb.h"
+
+#include "dataplane/proto/sai/hash.pb.h"
+
+#include "dataplane/proto/sai/route.pb.h"
+
+#include "dataplane/proto/sai/dash_outbound_ca_to_pa.pb.h"
+
+#include "dataplane/proto/sai/fdb.pb.h"
+
+#include "dataplane/proto/sai/macsec.pb.h"
+
+#include "dataplane/proto/sai/system_port.pb.h"
+
+#include "dataplane/proto/sai/tunnel.pb.h"
+
+#include "dataplane/proto/sai/ipmc_group.pb.h"
+
+#include "dataplane/proto/sai/ipmc.pb.h"
+
+#include "dataplane/proto/sai/dash_vip.pb.h"
+
+#include "dataplane/proto/sai/dash_vnet.pb.h"
+
+#include "dataplane/proto/sai/dash_outbound_routing.pb.h"
+
+#include "dataplane/proto/sai/dash_inbound_routing.pb.h"
+
+#include "dataplane/proto/sai/mpls.pb.h"
+
+#include "dataplane/proto/sai/dash_pa_validation.pb.h"
+
+#include "dataplane/proto/sai/policer.pb.h"
+
+#include "dataplane/proto/sai/tam.pb.h"
+
+#include "dataplane/proto/sai/wred.pb.h"
+
+#include "dataplane/proto/sai/my_mac.pb.h"
+
+#include "dataplane/proto/sai/nat.pb.h"
+
+#include "dataplane/proto/sai/switch.pb.h"
+
+#include "dataplane/proto/sai/virtual_router.pb.h"
+
+#include "dataplane/proto/sai/vlan.pb.h"
+
+#include "dataplane/proto/sai/ipsec.pb.h"
+
+#include "dataplane/proto/sai/neighbor.pb.h"
+
+#include "dataplane/proto/sai/next_hop.pb.h"
+
+#include "dataplane/proto/sai/l2mc.pb.h"
+
+#include "dataplane/proto/sai/ars_profile.pb.h"
+
+#include "dataplane/proto/sai/samplepacket.pb.h"
+
+#include "dataplane/proto/sai/generic_programmable.pb.h"
+
+#include "dataplane/proto/sai/acl.pb.h"
+
+#include "dataplane/proto/sai/qos_map.pb.h"
 
 
 extern "C" {
@@ -471,6 +471,11 @@ lemming::dataplane::sai::FdbEvent convert_sai_fdb_event_t_to_proto(const sai_int
 sai_fdb_event_t convert_sai_fdb_event_t_to_sai(lemming::dataplane::sai::FdbEvent val);
 google::protobuf::RepeatedField<int> convert_list_sai_fdb_event_t_to_proto(const sai_s32_list_t &list);
 void convert_list_sai_fdb_event_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::FdbFlushAttr convert_sai_fdb_flush_attr_t_to_proto(const sai_int32_t val);
+sai_fdb_flush_attr_t convert_sai_fdb_flush_attr_t_to_sai(lemming::dataplane::sai::FdbFlushAttr val);
+google::protobuf::RepeatedField<int> convert_list_sai_fdb_flush_attr_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_fdb_flush_attr_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 
 lemming::dataplane::sai::FdbFlushEntryType convert_sai_fdb_flush_entry_type_t_to_proto(const sai_int32_t val);
 sai_fdb_flush_entry_type_t convert_sai_fdb_flush_entry_type_t_to_sai(lemming::dataplane::sai::FdbFlushEntryType val);

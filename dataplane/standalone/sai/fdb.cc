@@ -73,6 +73,31 @@ switch (attr_list[i].id) {
 return msg;
 }
 
+lemming::dataplane::sai::FlushFdbEntriesRequest convert_flush_fdb_entries(sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
+
+lemming::dataplane::sai::FlushFdbEntriesRequest msg;
+msg.set_switch_(switch_id);
+ for(uint32_t i = 0; i < attr_count; i++ ) {
+	
+	
+
+switch (attr_list[i].id) {
+  
+  case SAI_FDB_FLUSH_ATTR_BRIDGE_PORT_ID:
+	msg.set_bridge_port_id(attr_list[i].value.oid);
+	break;
+  case SAI_FDB_FLUSH_ATTR_BV_ID:
+	msg.set_bv_id(attr_list[i].value.oid);
+	break;
+  case SAI_FDB_FLUSH_ATTR_ENTRY_TYPE:
+	msg.set_entry_type(convert_sai_fdb_flush_entry_type_t_to_proto(attr_list[i].value.s32));
+	break;
+}
+
+}
+return msg;
+}
+
 sai_status_t l_create_fdb_entry(const sai_fdb_entry_t *fdb_entry, uint32_t attr_count, const sai_attribute_t *attr_list) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 	
@@ -232,7 +257,21 @@ switch (attr_list[i].id) {
 
 sai_status_t l_flush_fdb_entries(sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-	return SAI_STATUS_NOT_IMPLEMENTED;
+	lemming::dataplane::sai::FlushFdbEntriesRequest req = convert_flush_fdb_entries(switch_id, attr_count, attr_list);
+	lemming::dataplane::sai::FlushFdbEntriesResponse resp;
+	grpc::ClientContext context;
+
+	grpc::Status status = fdb->FlushFdbEntries(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_create_fdb_entries(uint32_t object_count, const sai_fdb_entry_t *fdb_entry, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
