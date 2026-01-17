@@ -32,6 +32,8 @@ enum VlanAttr {
 	VLAN_ATTR_BROADCAST_FLOOD_GROUP = 20;
 	VLAN_ATTR_CUSTOM_IGMP_SNOOPING_ENABLE = 21;
 	VLAN_ATTR_TAM_OBJECT = 22;
+	VLAN_ATTR_STATS_COUNT_MODE = 23;
+	VLAN_ATTR_SELECTIVE_COUNTER_LIST = 24;
 }
 
 enum VlanMemberAttr {
@@ -65,6 +67,8 @@ message CreateVlanRequest {
 	optional uint64 broadcast_flood_group = 20[(attr_enum_value) = 20];
 	optional bool custom_igmp_snooping_enable = 21[(attr_enum_value) = 21];
 	repeated uint64 tam_object = 22[(attr_enum_value) = 22];
+	optional StatsCountMode stats_count_mode = 23[(attr_enum_value) = 23];
+	repeated uint64 selective_counter_list = 24[(attr_enum_value) = 24];
 }
 
 message CreateVlanResponse {
@@ -100,6 +104,8 @@ message SetVlanAttributeRequest {
 	optional uint64 broadcast_flood_group = 19[(attr_enum_value) = 20];
 	optional bool custom_igmp_snooping_enable = 20[(attr_enum_value) = 21];
 	repeated uint64 tam_object = 21[(attr_enum_value) = 22];
+	optional StatsCountMode stats_count_mode = 22[(attr_enum_value) = 23];
+	repeated uint64 selective_counter_list = 23[(attr_enum_value) = 24];
 }
 
 message SetVlanAttributeResponse {

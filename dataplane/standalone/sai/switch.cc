@@ -316,6 +316,12 @@ switch (attr_list[i].id) {
   case SAI_SWITCH_ATTR_POE_DEVICE_LIST:
 	msg.mutable_poe_device_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
 	break;
+  case SAI_SWITCH_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_SWITCH_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+	break;
 }
 
 }
@@ -669,6 +675,12 @@ switch (attr->id) {
 	break;
   case SAI_SWITCH_ATTR_POE_DEVICE_LIST:
 	req.mutable_poe_device_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+	break;
+  case SAI_SWITCH_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_SWITCH_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
 	break;
 }
 
@@ -1322,6 +1334,18 @@ switch (attr_list[i].id) {
 	break;
   case SAI_SWITCH_ATTR_POE_DEVICE_LIST:
 	copy_list(attr_list[i].value.objlist.list, resp.attr().poe_device_list(), &attr_list[i].value.objlist.count);
+	break;
+  case SAI_SWITCH_ATTR_AVAILABLE_ICMP_ECHO_SESSION:
+	 attr_list[i].value.u32 =   resp.attr().available_icmp_echo_session();
+	break;
+  case SAI_SWITCH_ATTR_MAX_ICMP_ECHO_SESSION:
+	 attr_list[i].value.u32 =   resp.attr().max_icmp_echo_session();
+	break;
+  case SAI_SWITCH_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_SWITCH_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
 	break;
 }
 

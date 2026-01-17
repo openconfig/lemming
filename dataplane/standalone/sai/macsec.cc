@@ -119,6 +119,12 @@ switch (attr_list[i].id) {
   case SAI_MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
 	msg.set_switch_switching_mode(convert_sai_switch_switching_mode_t_to_proto(attr_list[i].value.s32));
 	break;
+  case SAI_MACSEC_PORT_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_MACSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+	break;
 }
 
 }
@@ -138,6 +144,12 @@ switch (attr_list[i].id) {
   
   case SAI_MACSEC_FLOW_ATTR_MACSEC_DIRECTION:
 	msg.set_macsec_direction(convert_sai_macsec_direction_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_MACSEC_FLOW_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_MACSEC_FLOW_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
 	break;
 }
 
@@ -502,6 +514,12 @@ switch (attr->id) {
   case SAI_MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
 	req.set_switch_switching_mode(convert_sai_switch_switching_mode_t_to_proto(attr->value.s32));
 	break;
+  case SAI_MACSEC_PORT_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_MACSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+	break;
 }
 
 	grpc::Status status = macsec->SetMacsecPortAttribute(&context, req, &resp);
@@ -560,6 +578,12 @@ switch (attr_list[i].id) {
 	break;
   case SAI_MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
 	 attr_list[i].value.s32 =  convert_sai_switch_switching_mode_t_to_sai(resp.attr().switch_switching_mode());
+	break;
+  case SAI_MACSEC_PORT_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_MACSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
 	break;
 }
 
@@ -659,6 +683,35 @@ sai_status_t l_remove_macsec_flow(sai_object_id_t macsec_flow_id) {
 sai_status_t l_set_macsec_flow_attribute(sai_object_id_t macsec_flow_id, const sai_attribute_t *attr) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 	
+	lemming::dataplane::sai::SetMacsecFlowAttributeRequest req;
+	lemming::dataplane::sai::SetMacsecFlowAttributeResponse resp;
+	grpc::ClientContext context;
+	req.set_oid(macsec_flow_id); 
+	
+	
+	
+
+switch (attr->id) {
+  
+  case SAI_MACSEC_FLOW_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_MACSEC_FLOW_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+	break;
+}
+
+	grpc::Status status = macsec->SetMacsecFlowAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	
 	return SAI_STATUS_SUCCESS;
 }
 
@@ -698,6 +751,12 @@ switch (attr_list[i].id) {
 	break;
   case SAI_MACSEC_FLOW_ATTR_SC_LIST:
 	copy_list(attr_list[i].value.objlist.list, resp.attr().sc_list(), &attr_list[i].value.objlist.count);
+	break;
+  case SAI_MACSEC_FLOW_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_MACSEC_FLOW_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
 	break;
 }
 

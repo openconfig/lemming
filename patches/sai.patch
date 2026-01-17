@@ -1,10 +1,9 @@
-diff --git a/inc/sainexthopgroup.h b/inc/sainexthopgroup.h
-index 4b7821f..cb4ed6c 100644
---- a/inc/sainexthopgroup.h
-+++ b/inc/sainexthopgroup.h
-@@ -56,6 +56,9 @@ typedef enum _sai_next_hop_group_type_t
-     /** Next hop group is class-based, with members selected by Forwarding class */
-     SAI_NEXT_HOP_GROUP_TYPE_CLASS_BASED,
+diff '--color=auto' -Naur '--exclude=*.rej' '--exclude=*.orig' a/inc/sainexthopgroup.h b/inc/sainexthopgroup.h
+--- a/inc/sainexthopgroup.h	2024-10-09 20:25:24.000000000 +0000
++++ b/inc/sainexthopgroup.h	2026-01-07 00:27:46.114446932 +0000
+@@ -59,6 +59,9 @@
+     /** Next hop hardware protection group. This is the group backing up the primary in the protection group type and is managed by hardware */
+     SAI_NEXT_HOP_GROUP_TYPE_HW_PROTECTION,
  
 +    /** Next hop group is ECMP, with members specified with the group */
 +    SAI_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS,
@@ -12,7 +11,7 @@ index 4b7821f..cb4ed6c 100644
      /* Other types of next hop group to be defined in the future, e.g., WCMP */
  
  } sai_next_hop_group_type_t;
-@@ -107,6 +110,8 @@ typedef enum _sai_next_hop_group_attr_t
+@@ -110,6 +113,8 @@
      /**
       * @brief Next hop member list
       *
@@ -21,11 +20,10 @@ index 4b7821f..cb4ed6c 100644
       * @type sai_object_list_t
       * @flags READ_ONLY
       * @objects SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER
-@@ -232,6 +237,42 @@ typedef enum _sai_next_hop_group_attr_t
-      */
+@@ -236,6 +241,42 @@
      SAI_NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS,
  
-+    /**
+     /**
 +     * @brief Next hop member list in the order specified by the application
 +     *
 +     * NH OID list length should match weight list length
@@ -61,10 +59,11 @@ index 4b7821f..cb4ed6c 100644
 +     */
 +    SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST,
 +
-     /**
++    /**
       * @brief End of attributes
       */
-@@ -607,6 +648,11 @@ typedef struct _sai_next_hop_group_api_t
+     SAI_NEXT_HOP_GROUP_ATTR_END,
+@@ -610,6 +651,11 @@
      sai_get_next_hop_group_map_attribute_fn    get_next_hop_group_map_attribute;
      sai_bulk_object_set_attribute_fn           set_next_hop_group_members_attribute;
      sai_bulk_object_get_attribute_fn           get_next_hop_group_members_attribute;
@@ -76,15 +75,13 @@ index 4b7821f..cb4ed6c 100644
  } sai_next_hop_group_api_t;
  
  /**
-diff --git a/inc/sairouterinterface.h b/inc/sairouterinterface.h
-index c3e65f2..74c4021 100644
---- a/inc/sairouterinterface.h
-+++ b/inc/sairouterinterface.h
-@@ -294,6 +294,15 @@ typedef enum _sai_router_interface_attr_t
-      */
-     SAI_ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE,
+diff '--color=auto' -Naur '--exclude=*.rej' '--exclude=*.orig' a/inc/sairouterinterface.h b/inc/sairouterinterface.h
+--- a/inc/sairouterinterface.h	2024-10-09 20:25:24.000000000 +0000
++++ b/inc/sairouterinterface.h	2026-01-07 00:27:46.114693113 +0000
+@@ -317,6 +317,15 @@
+     SAI_ROUTER_INTERFACE_ATTR_SELECTIVE_COUNTER_LIST,
  
-+    /**
+     /**
 +     * @brief Label attribute used to uniquely identify router interface.
 +     *
 +     * @type char
@@ -93,64 +90,7 @@ index c3e65f2..74c4021 100644
 +     */
 +    SAI_ROUTER_INTERFACE_ATTR_LABEL,
 +
-     /**
++    /**
       * @brief End of attributes
       */
-diff --git a/inc/saitypes.h b/inc/saitypes.h
-index 3ec3c99..cbb18d2 100644
---- a/inc/saitypes.h
-+++ b/inc/saitypes.h
-@@ -106,6 +106,7 @@ typedef uint8_t sai_auth_key_t[16];
- typedef uint8_t sai_macsec_sak_t[32];
- typedef uint8_t sai_macsec_auth_key_t[16];
- typedef uint8_t sai_macsec_salt_t[12];
-+typedef uint8_t sai_alpine_attr_t[64];
-
- #define _In_
- #define _Out_
-@@ -1622,6 +1623,9 @@ typedef union _sai_attribute_value_t
-     /** @validonly meta->attrvaluetype == SAI_ATTR_VALUE_TYPE_POE_PORT_POWER_CONSUMPTION */
-     sai_poe_port_power_consumption_t portpowerconsumption;
-
-+    /** @validonly meta->attrvaluetype == SAI_ATTR_VALUE_TYPE_ALPINE_ATTR */
-+    sai_alpine_attr_t alpine_attr;
-+
- } sai_attribute_value_t;
-
- /**
-diff --git a/meta/saisanitycheck.c b/meta/saisanitycheck.c
-index 37e1ef7..2a32542 100644
---- a/meta/saisanitycheck.c
-+++ b/meta/saisanitycheck.c
-@@ -5609,7 +5609,7 @@ void check_struct_and_union_size()
-     CHECK_STRUCT_SIZE(sai_acl_action_parameter_t, 24);
-     CHECK_STRUCT_SIZE(sai_acl_field_data_data_t, 16);
-     CHECK_STRUCT_SIZE(sai_acl_field_data_mask_t, 16);
--    CHECK_STRUCT_SIZE(sai_attribute_value_t, 40);
-+    CHECK_STRUCT_SIZE(sai_attribute_value_t, 64);
-     CHECK_STRUCT_SIZE(sai_ip_addr_t, 16);
-     CHECK_STRUCT_SIZE(sai_object_key_entry_t, 64);
-     CHECK_STRUCT_SIZE(sai_tlv_entry_t, 36);
-@@ -5624,7 +5624,7 @@ void check_struct_and_union_size()
-     CHECK_STRUCT_SIZE(sai_acl_resource_list_t, 16);
-     CHECK_STRUCT_SIZE(sai_acl_resource_t, 12);
-     CHECK_STRUCT_SIZE(sai_attr_capability_t, 3);
--    CHECK_STRUCT_SIZE(sai_attribute_t, 48);
-+    CHECK_STRUCT_SIZE(sai_attribute_t, 72);
-     CHECK_STRUCT_SIZE(sai_bfd_session_state_notification_t, 16);
-     CHECK_STRUCT_SIZE(sai_fabric_port_reachability_t, 8);
-     CHECK_STRUCT_SIZE(sai_fdb_entry_t, 24);
-diff --git a/inc/sainexthop.h b/inc/sainexthop.h
-index 1234567..89abcde 100644
---- a/inc/sainexthop.h
-+++ b/inc/sainexthop.h
-@@ -47,6 +47,9 @@ typedef enum _sai_next_hop_type_t
-     SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP,
- 
-     /** SRV6 SID List */
-     SAI_NEXT_HOP_TYPE_SRV6_SIDLIST,
-+
-+    /** IPMC */
-+    SAI_NEXT_HOP_TYPE_IPMC,
- 
- } sai_next_hop_type_t;
+     SAI_ROUTER_INTERFACE_ATTR_END,

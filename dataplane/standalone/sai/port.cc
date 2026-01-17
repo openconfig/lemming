@@ -390,6 +390,15 @@ switch (attr_list[i].id) {
   case SAI_PORT_ATTR_ARS_PORT_LOAD_FUTURE_WEIGHT:
 	msg.set_ars_port_load_future_weight(attr_list[i].value.u32);
 	break;
+  case SAI_PORT_ATTR_UNRELIABLE_LOS:
+	msg.set_unreliable_los(attr_list[i].value.booldata);
+	break;
+  case SAI_PORT_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_PORT_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+	break;
 }
 
 }
@@ -912,6 +921,15 @@ switch (attr->id) {
 	break;
   case SAI_PORT_ATTR_ARS_PORT_LOAD_FUTURE_WEIGHT:
 	req.set_ars_port_load_future_weight(attr->value.u32);
+	break;
+  case SAI_PORT_ATTR_UNRELIABLE_LOS:
+	req.set_unreliable_los(attr->value.booldata);
+	break;
+  case SAI_PORT_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_PORT_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
 	break;
 }
 
@@ -1448,6 +1466,21 @@ switch (attr_list[i].id) {
 	break;
   case SAI_PORT_ATTR_POE_PORT_ID:
 	 attr_list[i].value.oid =   resp.attr().poe_port_id();
+	break;
+  case SAI_PORT_ATTR_JSON_FORMATTED_DEBUG_DATA_SIZE:
+	 attr_list[i].value.u32 =   resp.attr().json_formatted_debug_data_size();
+	break;
+  case SAI_PORT_ATTR_UNRELIABLE_LOS:
+	 attr_list[i].value.booldata =   resp.attr().unreliable_los();
+	break;
+  case SAI_PORT_ATTR_ERROR_STATUS:
+	 attr_list[i].value.s32 =  convert_sai_port_error_status_t_to_sai(resp.attr().error_status());
+	break;
+  case SAI_PORT_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_PORT_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
 	break;
 }
 

@@ -242,6 +242,11 @@ enum SwitchAttr {
 	SWITCH_ATTR_AVAILABLE_SYSTEM_VOQS = 230;
 	SWITCH_ATTR_ACL_STAGE_PRE_INGRESS = 231;
 	SWITCH_ATTR_POE_DEVICE_LIST = 232;
+	SWITCH_ATTR_ICMP_ECHO_SESSION_STATE_CHANGE_NOTIFY = 233;
+	SWITCH_ATTR_AVAILABLE_ICMP_ECHO_SESSION = 234;
+	SWITCH_ATTR_MAX_ICMP_ECHO_SESSION = 235;
+	SWITCH_ATTR_STATS_COUNT_MODE = 236;
+	SWITCH_ATTR_SELECTIVE_COUNTER_LIST = 237;
 }
 
 enum SwitchTunnelAttr {
@@ -355,6 +360,8 @@ message CreateSwitchRequest {
 	repeated SwitchAsicSdkHealthCategory reg_warning_switch_asic_sdk_health_category = 90[(attr_enum_value) = 220];
 	repeated SwitchAsicSdkHealthCategory reg_notice_switch_asic_sdk_health_category = 91[(attr_enum_value) = 221];
 	repeated uint64 poe_device_list = 92[(attr_enum_value) = 232];
+	optional StatsCountMode stats_count_mode = 93[(attr_enum_value) = 236];
+	repeated uint64 selective_counter_list = 94[(attr_enum_value) = 237];
 }
 
 message CreateSwitchResponse {
@@ -448,6 +455,8 @@ message SetSwitchAttributeRequest {
 	repeated SwitchAsicSdkHealthCategory reg_warning_switch_asic_sdk_health_category = 77[(attr_enum_value) = 220];
 	repeated SwitchAsicSdkHealthCategory reg_notice_switch_asic_sdk_health_category = 78[(attr_enum_value) = 221];
 	repeated uint64 poe_device_list = 79[(attr_enum_value) = 232];
+	optional StatsCountMode stats_count_mode = 80[(attr_enum_value) = 236];
+	repeated uint64 selective_counter_list = 81[(attr_enum_value) = 237];
 }
 
 message SetSwitchAttributeResponse {

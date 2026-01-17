@@ -140,6 +140,12 @@ switch (attr_list[i].id) {
   case SAI_BFD_SESSION_ATTR_SRV6_SIDLIST_ID:
 	msg.set_srv6_sidlist_id(attr_list[i].value.oid);
 	break;
+  case SAI_BFD_SESSION_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_BFD_SESSION_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+	break;
 }
 
 }
@@ -257,6 +263,12 @@ switch (attr->id) {
 	break;
   case SAI_BFD_SESSION_ATTR_MULTIPLIER:
 	req.set_multiplier(attr->value.u8);
+	break;
+  case SAI_BFD_SESSION_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_BFD_SESSION_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
 	break;
 }
 
@@ -424,6 +436,12 @@ switch (attr_list[i].id) {
 	break;
   case SAI_BFD_SESSION_ATTR_SRV6_SIDLIST_ID:
 	 attr_list[i].value.oid =   resp.attr().srv6_sidlist_id();
+	break;
+  case SAI_BFD_SESSION_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_BFD_SESSION_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
 	break;
 }
 
