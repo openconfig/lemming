@@ -34,7 +34,7 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoP
 		return nil, err
 	}
 	files["common.proto"] = common
-	d, err := typeinfo.Data(doc, sai, protoPackage, protoGoPackage, "", protoOutDir)
+	d, err := typeinfo.Data(doc, sai, protoPackage, protoGoPackage, "", protoOutDir, false)
 	if err != nil {
 		return nil, err
 	}
