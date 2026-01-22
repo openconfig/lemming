@@ -154,6 +154,35 @@ switch (attr_list[i].id) {
 return msg;
 }
 
+lemming::dataplane::sai::SetNextHopGroupAttributeRequest convert_set_next_hop_group_attribute(sai_object_id_t next_hop_group_id, const sai_attribute_t *attr) {
+	lemming::dataplane::sai::SetNextHopGroupAttributeRequest req;
+	req.set_oid(next_hop_group_id);
+	switch (attr->id) {
+	case SAI_NEXT_HOP_GROUP_ATTR_SET_SWITCHOVER:
+		req.set_set_switchover(attr->value.booldata);
+		break;
+	case SAI_NEXT_HOP_GROUP_ATTR_COUNTER_ID:
+		req.set_counter_id(attr->value.oid);
+		break;
+	case SAI_NEXT_HOP_GROUP_ATTR_SELECTION_MAP:
+		req.set_selection_map(attr->value.oid);
+		break;
+	case SAI_NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID:
+		req.set_ars_object_id(attr->value.oid);
+		break;
+	case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST:
+		req.mutable_next_hop_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+		break;
+	case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST:
+		req.mutable_next_hop_member_weight_list()->Add(attr->value.u32list.list, attr->value.u32list.list + attr->value.u32list.count);
+		break;
+	case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST:
+		req.mutable_next_hop_member_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+		break;
+	}
+	return req;
+}
+
 sai_status_t l_create_next_hop_group(sai_object_id_t *next_hop_group_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 	
@@ -205,38 +234,9 @@ sai_status_t l_remove_next_hop_group(sai_object_id_t next_hop_group_id) {
 sai_status_t l_set_next_hop_group_attribute(sai_object_id_t next_hop_group_id, const sai_attribute_t *attr) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 	
-	lemming::dataplane::sai::SetNextHopGroupAttributeRequest req;
 	lemming::dataplane::sai::SetNextHopGroupAttributeResponse resp;
 	grpc::ClientContext context;
-	req.set_oid(next_hop_group_id); 
-	
-	
-	
-
-switch (attr->id) {
-  
-  case SAI_NEXT_HOP_GROUP_ATTR_SET_SWITCHOVER:
-	req.set_set_switchover(attr->value.booldata);
-	break;
-  case SAI_NEXT_HOP_GROUP_ATTR_COUNTER_ID:
-	req.set_counter_id(attr->value.oid);
-	break;
-  case SAI_NEXT_HOP_GROUP_ATTR_SELECTION_MAP:
-	req.set_selection_map(attr->value.oid);
-	break;
-  case SAI_NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID:
-	req.set_ars_object_id(attr->value.oid);
-	break;
-  case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST:
-	req.mutable_next_hop_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
-	break;
-  case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST:
-	req.mutable_next_hop_member_weight_list()->Add(attr->value.u32list.list, attr->value.u32list.list + attr->value.u32list.count);
-	break;
-  case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST:
-	req.mutable_next_hop_member_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
-	break;
-}
+	lemming::dataplane::sai::SetNextHopGroupAttributeRequest req = convert_set_next_hop_group_attribute(next_hop_group_id, attr);
 
 	grpc::Status status = next_hop_group->SetNextHopGroupAttribute(&context, req, &resp);
 	if (!status.ok()) {
@@ -730,7 +730,34 @@ sai_status_t l_remove_next_hop_groups(uint32_t object_count, const sai_object_id
 }
 
 sai_status_t l_set_next_hop_groups_attribute(uint32_t object_count, const sai_object_id_t *object_id, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
-	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__ << " is not implemented but by-passing check";
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::SetNextHopGroupsAttributeRequest req;
+	lemming::dataplane::sai::SetNextHopGroupsAttributeResponse resp;
+	grpc::ClientContext context;
+
+	for (uint32_t i = 0; i < object_count; i++) {
+		auto r = convert_set_next_hop_group_attribute(object_id[i], &attr_list[i]);
+		*req.add_reqs() = r;
+	}
+
+	grpc::Status status = next_hop_group->SetNextHopGroupsAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	if (object_count != resp.resps().size()) {
+		return SAI_STATUS_FAILURE;
+	}
+	for (uint32_t i = 0; i < object_count; i++) {
+		object_statuses[i] = SAI_STATUS_SUCCESS;
+	}
+
 	return SAI_STATUS_SUCCESS;
 }
 

@@ -211,6 +211,14 @@ message RemoveNextHopGroupsResponse {
 	repeated RemoveNextHopGroupResponse resps = 1;
 }
 
+message SetNextHopGroupsAttributeRequest {
+	repeated SetNextHopGroupAttributeRequest reqs = 1;
+}
+
+message SetNextHopGroupsAttributeResponse {
+	repeated SetNextHopGroupAttributeResponse resps = 1;
+}
+
 
 service NextHopGroup {
 	rpc CreateNextHopGroup (CreateNextHopGroupRequest) returns (CreateNextHopGroupResponse) {}
@@ -229,4 +237,5 @@ service NextHopGroup {
 	rpc GetNextHopGroupMapAttribute (GetNextHopGroupMapAttributeRequest) returns (GetNextHopGroupMapAttributeResponse) {}
 	rpc CreateNextHopGroups (CreateNextHopGroupsRequest) returns (CreateNextHopGroupsResponse) {}
 	rpc RemoveNextHopGroups (RemoveNextHopGroupsRequest) returns (RemoveNextHopGroupsResponse) {}
+	rpc SetNextHopGroupsAttribute (SetNextHopGroupsAttributeRequest) returns (SetNextHopGroupsAttributeResponse) {}
 }
