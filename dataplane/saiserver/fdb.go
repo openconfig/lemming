@@ -38,6 +38,6 @@ func newFdb(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) 
 	return f, nil
 }
 
-func (f *fdb) CreateFdbFlush(ctx context.Context, req *saipb.CreateFdbFlushRequest) (*saipb.CreateFdbFlushResponse, error) {
-	return &saipb.CreateFdbFlushResponse{}, nil
+func (f *fdb) FlushFdbEntries(ctx context.Context, req *saipb.FlushFdbEntriesRequest) (*saipb.FlushFdbEntriesResponse, error) {
+	return &saipb.FlushFdbEntriesResponse{}, nil
 }

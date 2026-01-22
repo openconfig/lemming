@@ -125,7 +125,7 @@ func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPacka
 
 			populateCCInfo(meta, apiName, sai, doc, fn, gFunc)
 
-			if gFunc.Operation == getAttrOp {
+			if gFunc.Operation == getAttrOp || gFunc.Operation == flushOp {
 				enum := genProtoEnum(doc, apiName, meta)
 				if enum != nil {
 					data.APIs[apiName].Enums = append(data.APIs[apiName].Enums, *enum)
@@ -134,7 +134,7 @@ func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPacka
 				data.APIs[apiName].Funcs = append(data.APIs[apiName].Funcs, fns...)
 				data.APIs[apiName].Types = append(data.APIs[apiName].Types, msgs...)
 			}
-			if gFunc.Operation == createOp {
+			if gFunc.Operation == createOp || gFunc.Operation == flushOp {
 				convertFn := genConvertFunc(gFunc, meta, doc, sai, fn)
 				data.APIs[apiName].ConvertFuncs = append(data.APIs[apiName].ConvertFuncs, convertFn)
 			}
@@ -153,8 +153,12 @@ func genConvertFunc(genFunc *GenFunc, meta *saiast.FuncMetadata, info *docparser
 		ProtoResponseType: genFunc.ProtoResponseType,
 	}
 	paramDefs, paramVars := getParamDefs(sai.Funcs[fn.Typ].Params)
-	convertFn.Args = strings.Join(paramDefs[1:], ", ")
-	convertFn.Vars = strings.Join(paramVars[1:], ", ")
+	startIdx := 1
+	if genFunc.Operation == flushOp {
+		startIdx = 0
+	}
+	convertFn.Args = strings.Join(paramDefs[startIdx:], ", ")
+	convertFn.Vars = strings.Join(paramVars[startIdx:], ", ")
 	convertFn.AttrSwitch = &AttrSwitch{
 		Var:      "attr_list[i].id",
 		ProtoVar: "msg",
@@ -249,6 +253,8 @@ func populateCCInfo(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAP
 	}
 
 	switch genFunc.Operation {
+	case flushOp:
+		genFunc.ConvertFunc = strcase.SnakeCase("convert_" + meta.Name)
 	case createOp:
 		genFunc.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
 	case getAttrOp:
@@ -359,6 +365,7 @@ const (
 	createOp  = "create"
 	getAttrOp = "get_attribute"
 	setAttrOp = "set_attribute"
+	flushOp   = "flush"
 )
 
 type accessorType int
@@ -637,6 +644,18 @@ func genProtoReqResp(docInfo *docparser.SAIInfo, apiName string, meta *saiast.Fu
 
 	// Handle proto generation
 	switch meta.Operation {
+	case flushOp:
+		req.Fields = append(req.Fields, protoTmplField{
+			Index:     1,
+			ProtoType: "uint64",
+			Name:      "switch",
+		})
+		attrs, err := CreateAttrs(2, meta.TypeName, docInfo, docInfo.Attrs[meta.TypeName].CreateFields)
+		if err != nil {
+			return nil, nil, err
+		}
+		req.Fields = append(req.Fields, attrs...)
+		req.Option = "option (sai_type) = OBJECT_TYPE_UNSPECIFIED"
 	case createOp:
 		requestIdx := 1
 		if meta.IsSwitchScoped {
