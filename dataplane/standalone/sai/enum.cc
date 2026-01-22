@@ -17,8 +17,6 @@
 
 
 
-
-
 lemming::dataplane::sai::AclActionType convert_sai_acl_action_type_t_to_proto(const sai_int32_t val) {
     switch (val) {
     
@@ -4677,6 +4675,47 @@ google::protobuf::RepeatedField<int> convert_list_sai_fdb_event_t_to_proto(const
 void convert_list_sai_fdb_event_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
 	for (int i = 0; i < proto_list.size(); i++) {
 		list[i] = convert_sai_fdb_event_t_to_sai(static_cast<lemming::dataplane::sai::FdbEvent>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::FdbFlushAttr convert_sai_fdb_flush_attr_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_FDB_FLUSH_ATTR_BRIDGE_PORT_ID: return lemming::dataplane::sai::FDB_FLUSH_ATTR_BRIDGE_PORT_ID;
+    
+        case SAI_FDB_FLUSH_ATTR_BV_ID: return lemming::dataplane::sai::FDB_FLUSH_ATTR_BV_ID;
+    
+        case SAI_FDB_FLUSH_ATTR_ENTRY_TYPE: return lemming::dataplane::sai::FDB_FLUSH_ATTR_ENTRY_TYPE;
+    
+        default: return lemming::dataplane::sai::FDB_FLUSH_ATTR_UNSPECIFIED;
+    }
+}
+sai_fdb_flush_attr_t convert_sai_fdb_flush_attr_t_to_sai(lemming::dataplane::sai::FdbFlushAttr val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::FDB_FLUSH_ATTR_BRIDGE_PORT_ID: return SAI_FDB_FLUSH_ATTR_BRIDGE_PORT_ID;
+    
+        case lemming::dataplane::sai::FDB_FLUSH_ATTR_BV_ID: return SAI_FDB_FLUSH_ATTR_BV_ID;
+    
+        case lemming::dataplane::sai::FDB_FLUSH_ATTR_ENTRY_TYPE: return SAI_FDB_FLUSH_ATTR_ENTRY_TYPE;
+    
+        default: return SAI_FDB_FLUSH_ATTR_BRIDGE_PORT_ID;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_fdb_flush_attr_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_fdb_flush_attr_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_fdb_flush_attr_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_fdb_flush_attr_t_to_sai(static_cast<lemming::dataplane::sai::FdbFlushAttr>(proto_list[i]));
 	}
 	*count = proto_list.size();
 }
@@ -9748,7 +9787,7 @@ lemming::dataplane::sai::NextHopType convert_sai_next_hop_type_t_to_proto(const 
         case SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP: return lemming::dataplane::sai::NEXT_HOP_TYPE_TUNNEL_ENCAP;
     
         case SAI_NEXT_HOP_TYPE_SRV6_SIDLIST: return lemming::dataplane::sai::NEXT_HOP_TYPE_SRV6_SIDLIST;
-
+    
         case SAI_NEXT_HOP_TYPE_IPMC: return lemming::dataplane::sai::NEXT_HOP_TYPE_IPMC;
     
         default: return lemming::dataplane::sai::NEXT_HOP_TYPE_UNSPECIFIED;
@@ -9764,7 +9803,7 @@ sai_next_hop_type_t convert_sai_next_hop_type_t_to_sai(lemming::dataplane::sai::
         case lemming::dataplane::sai::NEXT_HOP_TYPE_TUNNEL_ENCAP: return SAI_NEXT_HOP_TYPE_TUNNEL_ENCAP;
     
         case lemming::dataplane::sai::NEXT_HOP_TYPE_SRV6_SIDLIST: return SAI_NEXT_HOP_TYPE_SRV6_SIDLIST;
-
+    
         case lemming::dataplane::sai::NEXT_HOP_TYPE_IPMC: return SAI_NEXT_HOP_TYPE_IPMC;
     
         default: return SAI_NEXT_HOP_TYPE_IP;

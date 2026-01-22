@@ -389,8 +389,8 @@ sai_status_t l_create_tunnel(sai_object_id_t *tunnel_id, sai_object_id_t switch_
 	lemming::dataplane::sai::CreateTunnelRequest req = convert_create_tunnel(switch_id, attr_count, attr_list);
 	lemming::dataplane::sai::CreateTunnelResponse resp;
 	grpc::ClientContext context;
-	req.set_switch_(switch_id);
-
+	 req.set_switch_(switch_id); 
+	
 	grpc::Status status = tunnel->CreateTunnel(&context, req, &resp);
 	if (!status.ok()) {
 		auto it = context.GetServerTrailingMetadata().find("traceparent");
