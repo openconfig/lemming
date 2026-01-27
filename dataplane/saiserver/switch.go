@@ -882,6 +882,15 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}, nil
 }
 
+// RemoveSwitch handles switch removal during shutdown.
+// Currently a graceful no-op as switch cleanup is handled by context deletion.
+func (sw *saiSwitch) RemoveSwitch(ctx context.Context, req *saipb.RemoveSwitchRequest) (*saipb.RemoveSwitchResponse, error) {
+	slog.InfoContext(ctx, "RemoveSwitch called", "oid", req.GetOid())
+	// Switch cleanup is handled by forwarding context deletion
+	// No explicit cleanup needed here to avoid shutdown crashes
+	return &saipb.RemoveSwitchResponse{}, nil
+}
+
 // Set up rules to drop packets that contain invalid IP or ttl == 0.
 // https://www.rfc-editor.org/rfc/rfc1812#section-5.3.7
 func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {

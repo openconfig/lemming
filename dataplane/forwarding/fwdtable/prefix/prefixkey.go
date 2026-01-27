@@ -16,6 +16,7 @@ package prefix
 
 import (
 	"fmt"
+	"log/slog"
 )
 
 const (
@@ -122,18 +123,27 @@ func (s *key) HasPrefix(q *key) bool {
 
 // Pack packs the bit set by removing any unused bits.
 func (s *key) Pack() {
+	slog.Info("key.Pack called", "bitCount", s.bitCount, "bitStart", s.bitStart, "bytes_len", len(s.bytes))
 	bytes := wordset(make([]byte, byteCount(s.bitCount)))
 	for pos := 0; pos < s.bitCount; pos++ {
-		bytes.set(pos, s.Bit(pos))
+		bit := s.Bit(pos)
+		bytes.set(pos, bit)
+		if pos%8 == 0 || pos == s.bitCount-1 {
+			slog.Info("key.Pack copying bit", "pos", pos, "bit", bit)
+		}
 	}
 	s.bitStart = 0
 	s.bytes = bytes
+	slog.Info("key.Pack completed", "new_bitStart", 0, "new_bytes_len", len(bytes), "bytes", fmt.Sprintf("%x", bytes))
 }
 
 // String returns the set formatted as a string after it is packed.
 func (s *key) String() string {
+	slog.Info("key.String called", "bitCount", s.bitCount, "bitStart", s.bitStart)
 	s.Pack()
-	return fmt.Sprintf("%x/%d", s.bytes, s.bitCount)
+	result := fmt.Sprintf("%x/%d", s.bytes, s.bitCount)
+	slog.Info("key.String returning", "result", result)
+	return result
 }
 
 // IsEqual returns true if the two keys are equal.
@@ -159,10 +169,16 @@ func (s *key) Set(bitpos int, v byte) {
 	s.bytes.set(s.bitStart+bitpos, v)
 }
 
-// TrimPrefix removes a key which is known to be a prefix.
-func (s *key) TrimPrefix(q *key) {
-	s.bitCount -= q.bitCount
-	s.bitStart += q.bitCount
+// TrimPrefix removes a key which is known to be a prefix and returns a new key.
+func (s *key) TrimPrefix(q *key) *key {
+	slog.Info("key.TrimPrefix called", "s_bitCount", s.bitCount, "q_bitCount", q.bitCount, "s_bitStart", s.bitStart)
+	trimmed := &key{
+		bytes:    s.bytes,
+		bitCount: s.bitCount - q.bitCount,
+		bitStart: s.bitStart + q.bitCount,
+	}
+	slog.Info("key.TrimPrefix completed", "new_bitCount", trimmed.bitCount, "new_bitStart", trimmed.bitStart)
+	return trimmed
 }
 
 // BitCount returns the number of bits in the key.

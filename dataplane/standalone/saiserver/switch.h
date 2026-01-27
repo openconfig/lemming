@@ -74,6 +74,51 @@ class Switch final : public lemming::dataplane::sai::Switch::Service {
       const lemming::dataplane::sai::GetSwitchTunnelAttributeRequest* req,
       lemming::dataplane::sai::GetSwitchTunnelAttributeResponse* resp);
 
+  grpc::Status SwitchStateChangeNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::SwitchStateChangeNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::SwitchStateChangeNotificationResponse>* writer);
+
+  grpc::Status SwitchShutdownRequestNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::SwitchShutdownRequestNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::SwitchShutdownRequestNotificationResponse>* writer);
+
+  grpc::Status FdbEventNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::FdbEventNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::FdbEventNotificationResponse>* writer);
+
+  grpc::Status PortStateChangeNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::PortStateChangeNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::PortStateChangeNotificationResponse>* writer);
+
+  grpc::Status PacketEventNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::PacketEventNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::PacketEventNotificationResponse>* writer);
+
+  grpc::Status QueuePfcDeadlockNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::QueuePfcDeadlockNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::QueuePfcDeadlockNotificationResponse>* writer);
+
+  grpc::Status BfdSessionStateChangeNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::BfdSessionStateChangeNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::BfdSessionStateChangeNotificationResponse>* writer);
+
+  grpc::Status TamEventNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::TamEventNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::TamEventNotificationResponse>* writer);
+
+  grpc::Status IpsecSaStatusChangeNotification(
+      grpc::ServerContext* context,
+      const lemming::dataplane::sai::IpsecSaStatusChangeNotificationRequest* req,
+      grpc::ServerWriter<lemming::dataplane::sai::IpsecSaStatusNotificationDataResponse>* writer);
+
   sai_switch_api_t* api;
 };
 
