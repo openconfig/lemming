@@ -533,14 +533,17 @@ func (nh *nextHop) RemoveNextHops(ctx context.Context, r *saipb.RemoveNextHopsRe
 
 type route struct {
 	saipb.UnimplementedRouteServer
-	mgr       *attrmgr.AttrMgr
-	dataplane switchDataplaneAPI
+	mgr         *attrmgr.AttrMgr
+	dataplane   switchDataplaneAPI
+	ip2meRoutes map[string]bool // tracks IP2Me routes by "vrf:ip/mask"
+	mu          sync.Mutex      // protects ip2meRoutes
 }
 
 func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *route {
 	r := &route{
-		mgr:       mgr,
-		dataplane: dataplane,
+		mgr:         mgr,
+		dataplane:   dataplane,
+		ip2meRoutes: make(map[string]bool),
 	}
 	saipb.RegisterRouteServer(s, r)
 	return r
@@ -548,6 +551,13 @@ func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 
 // routeDstMeta is the key to PACKET_ATTRIBUTE_32 field for routing table metadata.
 const routeDstMeta = 0
+
+// ip2meKey returns a unique key for tracking IP2Me routes.
+func (r *route) ip2meKey(entry *saipb.RouteEntry) string {
+	return fmt.Sprintf("%d:%x/%x", entry.GetVrId(),
+		entry.GetDestination().GetAddr(),
+		entry.GetDestination().GetMask())
+}
 
 // CreateRouteEntry creates a new route entry.
 func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntryRequest) (*saipb.CreateRouteEntryResponse, error) {
@@ -623,6 +633,10 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 				if err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to add next IP2ME route: %v", nextType)
 				}
+				// Track as IP2Me route for later removal
+				r.mu.Lock()
+				r.ip2meRoutes[r.ip2meKey(req.GetEntry())] = true
+				r.mu.Unlock()
 				return &saipb.CreateRouteEntryResponse{}, nil
 			}
 			actions = append(actions,
@@ -786,6 +800,32 @@ func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEnt
 }
 
 func (r *route) RemoveRouteEntry(ctx context.Context, req *saipb.RemoveRouteEntryRequest) (*saipb.RemoveRouteEntryResponse, error) {
+	// Check if this is an IP2Me route that was added to trap table
+	key := r.ip2meKey(req.GetEntry())
+	r.mu.Lock()
+	isIP2Me := r.ip2meRoutes[key]
+	if isIP2Me {
+		delete(r.ip2meRoutes, key)
+	}
+	r.mu.Unlock()
+
+	if isIP2Me {
+		// Remove from trap table with FlowEntry (matches CreateRouteEntry)
+		_, err := r.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: r.dataplane.ID()},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+			EntryDesc: fwdconfig.EntryDesc(
+				fwdconfig.FlowEntry(
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+						req.GetEntry().GetDestination().GetAddr(),
+						req.GetEntry().GetDestination().GetMask()),
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId())),
+			).Build(),
+		})
+		return &saipb.RemoveRouteEntryResponse{}, err
+	}
+
+	// Regular route removal from FIB table with PrefixEntry
 	fib := FIBV6Table
 	if len(req.GetEntry().GetDestination().GetAddr()) == 4 {
 		fib = FIBV4Table
@@ -846,10 +886,44 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	id := ri.mgr.NextID()
 
 	vlanID := uint16(0)
+	portID := req.GetPortId()
 	switch req.GetType() {
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT:
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT:
 		vlanID = uint16(req.GetOuterVlanId())
+	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_VLAN:
+		// Get VLAN attributes to find VLAN ID and members
+		vlanAttr := &saipb.GetVlanAttributeResponse{}
+		err := ri.mgr.PopulateAttributes(&saipb.GetVlanAttributeRequest{
+			Oid: req.GetVlanId(),
+			AttrType: []saipb.VlanAttr{
+				saipb.VlanAttr_VLAN_ATTR_VLAN_ID,
+				saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST,
+			},
+		}, vlanAttr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get VLAN attributes: %v", err)
+		}
+		vlanID = uint16(vlanAttr.GetAttr().GetVlanId())
+
+		// Use the first VLAN member's bridge port if available
+		if len(vlanAttr.GetAttr().GetMemberList()) > 0 {
+			firstMember := vlanAttr.GetAttr().GetMemberList()[0]
+			memberAttr := &saipb.GetVlanMemberAttributeResponse{}
+			err = ri.mgr.PopulateAttributes(&saipb.GetVlanMemberAttributeRequest{
+				Oid:      firstMember,
+				AttrType: []saipb.VlanMemberAttr{saipb.VlanMemberAttr_VLAN_MEMBER_ATTR_BRIDGE_PORT_ID},
+			}, memberAttr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get VLAN member attributes: %v", err)
+			}
+			portID = memberAttr.GetAttr().GetBridgePortId()
+		} else {
+			// No members yet - defer forwarding table setup until members are added
+			// Return success without creating forwarding entries (similar to loopback)
+			slog.InfoContext(ctx, "VLAN router interface created without members", "vlan_id", vlanID, "rif_id", id)
+			return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
+		}
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK: // TODO: Support loopback interfaces
 		slog.WarnContext(ctx, "loopback interfaces not supported")
 		return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
@@ -860,7 +934,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	if err != nil {
 		return nil, err
 	}
-	obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(req.GetPortId())})
+	obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(portID)})
 	if err != nil {
 		return nil, err
 	}
@@ -913,9 +987,9 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	outReq := fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
-			fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId())),
+			fwdconfig.TransmitAction(fmt.Sprint(portID)),
 			fwdconfig.FlowCounterAction(outCounter),
-			fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT).WithUint64Value(req.GetPortId()),
+			fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT).WithUint64Value(portID),
 		).Build()
 
 	if vlanID != 0 {
@@ -963,6 +1037,7 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 	}
 
 	var vlanID uint16
+	var portID uint64
 	if resp.GetAttr().GetType() == saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT {
 		resp := &saipb.GetRouterInterfaceAttributeResponse{}
 		err := ri.mgr.PopulateAttributes(&saipb.GetRouterInterfaceAttributeRequest{
@@ -973,14 +1048,59 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 			return nil, err
 		}
 		vlanID = uint16(resp.GetAttr().GetOuterVlanId())
+		portID = resp.GetAttr().GetPortId()
+	} else if resp.GetAttr().GetType() == saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_VLAN {
+		// Get VLAN ID and port from VLAN object (same as creation)
+		vlanResp := &saipb.GetRouterInterfaceAttributeResponse{}
+		err := ri.mgr.PopulateAttributes(&saipb.GetRouterInterfaceAttributeRequest{
+			Oid:      req.GetOid(),
+			AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_VLAN_ID},
+		}, vlanResp)
+		if err != nil {
+			return nil, err
+		}
+
+		vlanAttr := &saipb.GetVlanAttributeResponse{}
+		err = ri.mgr.PopulateAttributes(&saipb.GetVlanAttributeRequest{
+			Oid: vlanResp.GetAttr().GetVlanId(),
+			AttrType: []saipb.VlanAttr{
+				saipb.VlanAttr_VLAN_ATTR_VLAN_ID,
+				saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST,
+			},
+		}, vlanAttr)
+		if err != nil {
+			return nil, err
+		}
+		vlanID = uint16(vlanAttr.GetAttr().GetVlanId())
+
+		// Use first member (matching creation behavior)
+		if len(vlanAttr.GetAttr().GetMemberList()) > 0 {
+			firstMember := vlanAttr.GetAttr().GetMemberList()[0]
+			memberAttr := &saipb.GetVlanMemberAttributeResponse{}
+			err = ri.mgr.PopulateAttributes(&saipb.GetVlanMemberAttributeRequest{
+				Oid:      firstMember,
+				AttrType: []saipb.VlanMemberAttr{saipb.VlanMemberAttr_VLAN_MEMBER_ATTR_BRIDGE_PORT_ID},
+			}, memberAttr)
+			if err != nil {
+				return nil, err
+			}
+			portID = memberAttr.GetAttr().GetBridgePortId()
+		} else {
+			portID = resp.GetAttr().GetPortId()
+		}
+	} else {
+		portID = resp.GetAttr().GetPortId()
 	}
 
 	nid, err := ri.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: ri.dataplane.ID()},
-		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetPortId())},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(portID)},
 	})
 	if err != nil {
-		return nil, err
+		// Port object not found - interface was created without forwarding entries
+		// (e.g., VLAN without members). Return success without removing entries.
+		slog.InfoContext(ctx, "Router interface removed without forwarding cleanup", "rif_id", req.GetOid(), "port_id", portID)
+		return &saipb.RemoveRouterInterfaceResponse{}, nil
 	}
 
 	_, err = ri.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(ri.dataplane.ID(), inputIfaceTable).
@@ -1036,7 +1156,20 @@ func (ri *routerInterface) GetRouterInterfaceStats(ctx context.Context, req *sai
 		}},
 	})
 	if err != nil {
-		return nil, err
+		// Counters don't exist - interface was created without forwarding entries
+		// (e.g., VLAN without members). Return zeros for all requested stats.
+		slog.InfoContext(ctx, "Router interface stats query failed, returning zeros", "rif_id", req.GetOid(), "error", err)
+		vals := make([]uint64, len(req.GetCounterIds()))
+		return &saipb.GetRouterInterfaceStatsResponse{Values: vals}, nil
+	}
+
+	// Check if we have both inbound and outbound counters
+	if len(counters.GetCounters()) < 2 {
+		// Missing counters - interface created without forwarding entries
+		// Return zeros for all requested stats
+		slog.InfoContext(ctx, "Router interface has incomplete counters, returning zeros", "rif_id", req.GetOid(), "counter_count", len(counters.GetCounters()))
+		vals := make([]uint64, len(req.GetCounterIds()))
+		return &saipb.GetRouterInterfaceStatsResponse{Values: vals}, nil
 	}
 
 	vals := []uint64{}
