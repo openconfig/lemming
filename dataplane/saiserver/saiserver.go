@@ -168,6 +168,12 @@ func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*s
 	return &saipb.InitializeResponse{}, nil
 }
 
+func (s *Server) Uninitialize(ctx context.Context, _ *saipb.UninitializeRequest) (*saipb.UninitializeResponse, error) {
+	slog.InfoContext(ctx, "Uninitialize called")
+	s.initialized = false
+	return &saipb.UninitializeResponse{}, nil
+}
+
 func (s *Server) Reset(ctx context.Context) error {
 	_, err := s.forwardingContext.ContextDelete(ctx, &fwdpb.ContextDeleteRequest{
 		ContextId: &fwdpb.ContextId{Id: s.forwardingContext.id},
