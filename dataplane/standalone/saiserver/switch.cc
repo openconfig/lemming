@@ -117,3 +117,75 @@ grpc::Status Switch::GetSwitchTunnelAttribute(
 
   return grpc::Status::OK;
 }
+
+grpc::Status Switch::SwitchStateChangeNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::SwitchStateChangeNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::SwitchStateChangeNotificationResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
+
+grpc::Status Switch::SwitchShutdownRequestNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::SwitchShutdownRequestNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::SwitchShutdownRequestNotificationResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
+
+grpc::Status Switch::FdbEventNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::FdbEventNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::FdbEventNotificationResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
+
+grpc::Status Switch::PortStateChangeNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::PortStateChangeNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::PortStateChangeNotificationResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
+
+grpc::Status Switch::PacketEventNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::PacketEventNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::PacketEventNotificationResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
+
+grpc::Status Switch::QueuePfcDeadlockNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::QueuePfcDeadlockNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::QueuePfcDeadlockNotificationResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
+
+grpc::Status Switch::BfdSessionStateChangeNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::BfdSessionStateChangeNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::BfdSessionStateChangeNotificationResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
+
+grpc::Status Switch::TamEventNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::TamEventNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::TamEventNotificationResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
+
+grpc::Status Switch::IpsecSaStatusChangeNotification(
+    grpc::ServerContext* context,
+    const lemming::dataplane::sai::IpsecSaStatusChangeNotificationRequest* req,
+    grpc::ServerWriter<lemming::dataplane::sai::IpsecSaStatusNotificationDataResponse>* writer) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "Streaming notifications not supported in standalone mode");
+}
