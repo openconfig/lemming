@@ -533,14 +533,17 @@ func (nh *nextHop) RemoveNextHops(ctx context.Context, r *saipb.RemoveNextHopsRe
 
 type route struct {
 	saipb.UnimplementedRouteServer
-	mgr       *attrmgr.AttrMgr
-	dataplane switchDataplaneAPI
+	mgr         *attrmgr.AttrMgr
+	dataplane   switchDataplaneAPI
+	ip2meRoutes map[string]bool // tracks IP2Me routes by "vrf:ip/mask"
+	mu          sync.Mutex      // protects ip2meRoutes
 }
 
 func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *route {
 	r := &route{
-		mgr:       mgr,
-		dataplane: dataplane,
+		mgr:         mgr,
+		dataplane:   dataplane,
+		ip2meRoutes: make(map[string]bool),
 	}
 	saipb.RegisterRouteServer(s, r)
 	return r
@@ -548,6 +551,13 @@ func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 
 // routeDstMeta is the key to PACKET_ATTRIBUTE_32 field for routing table metadata.
 const routeDstMeta = 0
+
+// ip2meKey returns a unique key for tracking IP2Me routes.
+func (r *route) ip2meKey(entry *saipb.RouteEntry) string {
+	return fmt.Sprintf("%d:%x/%x", entry.GetVrId(),
+		entry.GetDestination().GetAddr(),
+		entry.GetDestination().GetMask())
+}
 
 // CreateRouteEntry creates a new route entry.
 func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntryRequest) (*saipb.CreateRouteEntryResponse, error) {
@@ -623,6 +633,10 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 				if err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to add next IP2ME route: %v", nextType)
 				}
+				// Track as IP2Me route for later removal
+				r.mu.Lock()
+				r.ip2meRoutes[r.ip2meKey(req.GetEntry())] = true
+				r.mu.Unlock()
 				return &saipb.CreateRouteEntryResponse{}, nil
 			}
 			actions = append(actions,
@@ -786,6 +800,32 @@ func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEnt
 }
 
 func (r *route) RemoveRouteEntry(ctx context.Context, req *saipb.RemoveRouteEntryRequest) (*saipb.RemoveRouteEntryResponse, error) {
+	// Check if this is an IP2Me route that was added to trap table
+	key := r.ip2meKey(req.GetEntry())
+	r.mu.Lock()
+	isIP2Me := r.ip2meRoutes[key]
+	if isIP2Me {
+		delete(r.ip2meRoutes, key)
+	}
+	r.mu.Unlock()
+
+	if isIP2Me {
+		// Remove from trap table with FlowEntry (matches CreateRouteEntry)
+		_, err := r.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: r.dataplane.ID()},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+			EntryDesc: fwdconfig.EntryDesc(
+				fwdconfig.FlowEntry(
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+						req.GetEntry().GetDestination().GetAddr(),
+						req.GetEntry().GetDestination().GetMask()),
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId())),
+			).Build(),
+		})
+		return &saipb.RemoveRouteEntryResponse{}, err
+	}
+
+	// Regular route removal from FIB table with PrefixEntry
 	fib := FIBV6Table
 	if len(req.GetEntry().GetDestination().GetAddr()) == 4 {
 		fib = FIBV4Table
