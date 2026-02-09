@@ -299,7 +299,8 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_NTPCLIENT,
 		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_NTPSERVER,
 		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_HTTPCLIENT,
-		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_HTTPSERVER:
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_HTTPSERVER,
+		saipb.HostifTrapType_HOSTIF_TRAP_TYPE_P4RT:
 		// IP2ME routes are added to the FIB, do nothing here.
 		return &saipb.CreateHostifTrapResponse{
 			Oid: id,

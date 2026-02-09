@@ -287,6 +287,60 @@ func TestCPUPacketStream(t *testing.T) {
 	})
 }
 
+func TestCreateHostifTrap(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.CreateHostifTrapRequest
+		want    *saipb.CreateHostifTrapResponse
+		wantErr string
+	}{{
+		desc: "p4rt trap",
+		req: &saipb.CreateHostifTrapRequest{
+			Switch:       1,
+			TrapType:     saipb.HostifTrapType_HOSTIF_TRAP_TYPE_P4RT.Enum(),
+			PacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
+		},
+		want: &saipb.CreateHostifTrapResponse{
+			Oid: 1,
+		},
+	}, {
+		desc: "arp trap",
+		req: &saipb.CreateHostifTrapRequest{
+			Switch:       1,
+			TrapType:     saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_REQUEST.Enum(),
+			PacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
+		},
+		want: &saipb.CreateHostifTrapResponse{
+			Oid: 1,
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{
+				ctx: fwdcontext.New("foo", "foo"),
+			}
+			c, mgr, stopFn := newTestHostif(t, dplane)
+			defer stopFn()
+
+			// CPU Port is required for CreateHostifTrap
+			mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+				CpuPort: proto.Uint64(10),
+			})
+
+			got, gotErr := c.CreateHostifTrap(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateHostifTrap() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("CreateHostifTrap() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func createPacket(t testing.TB, nid uint64) fwdpacket.Packet {
 	t.Helper()
 	eth := &layers.Ethernet{
