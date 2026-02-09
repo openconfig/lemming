@@ -1062,7 +1062,7 @@ func (ri *routerInterface) GetRouterInterfaceStats(ctx context.Context, req *sai
 func (ri *routerInterface) CreateRouterInterfaces(ctx context.Context, req *saipb.CreateRouterInterfacesRequest) (*saipb.CreateRouterInterfacesResponse, error) {
 	resp := &saipb.CreateRouterInterfacesResponse{}
 	for _, r := range req.GetReqs() {
-		id, err := ri.CreateRouterInterface(ctx, r)
+		id, err := attrmgr.InvokeAndSave(ctx, ri.mgr, ri.CreateRouterInterface, r)
 		if err != nil {
 			return nil, err
 		}
@@ -1074,7 +1074,7 @@ func (ri *routerInterface) CreateRouterInterfaces(ctx context.Context, req *saip
 func (ri *routerInterface) RemoveRouterInterfaces(ctx context.Context, req *saipb.RemoveRouterInterfacesRequest) (*saipb.RemoveRouterInterfacesResponse, error) {
 	resp := &saipb.RemoveRouterInterfacesResponse{}
 	for _, r := range req.GetReqs() {
-		id, err := ri.RemoveRouterInterface(ctx, r)
+		id, err := attrmgr.InvokeAndSave(ctx, ri.mgr, ri.RemoveRouterInterface, r)
 		if err != nil {
 			return nil, err
 		}
