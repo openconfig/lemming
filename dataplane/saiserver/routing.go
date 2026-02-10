@@ -298,25 +298,97 @@ func (nhg *nextHopGroup) updateNextHopGroupMember(ctx context.Context, nhgid, mi
 
 // RemoveNextHopGroup removes the next hop group specified in the OID.
 func (nhg *nextHopGroup) RemoveNextHopGroup(_ context.Context, req *saipb.RemoveNextHopGroupRequest) (*saipb.RemoveNextHopGroupResponse, error) {
-	oid := req.GetOid()
-	if _, ok := nhg.groups[oid]; !ok {
-		return nil, status.Errorf(codes.NotFound, "group %d does not exist", oid)
+	if _, ok := nhg.groups[req.GetOid()]; !ok {
+		return nil, status.Errorf(codes.NotFound, "group %d does not exist", req.GetOid())
 	}
-	delete(nhg.groups, oid)
-
-	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
-		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64(oid))).Build()
-	nhgReq := &fwdpb.TableEntryRemoveRequest{
+	if _, err := nhg.dataplane.TableEntryRemove(context.Background(), &fwdpb.TableEntryRemoveRequest{
 		ContextId: &fwdpb.ContextId{Id: nhg.dataplane.ID()},
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHGTable}},
-		EntryDesc: entry,
-	}
-
-	if _, err := nhg.dataplane.TableEntryRemove(context.Background(), nhgReq); err != nil {
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: NHGTable,
+			},
+		},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Exact{
+				Exact: &fwdpb.ExactEntryDesc{
+					Fields: []*fwdpb.PacketFieldBytes{{
+						Bytes: binary.BigEndian.AppendUint64(nil, req.GetOid()),
+						FieldId: &fwdpb.PacketFieldId{
+							Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
+							},
+						},
+					}},
+				},
+			},
+		},
+	}); err != nil {
 		return nil, err
 	}
+	// Copying keys to avoid modification while iterating
+	var membersToRemove []uint64
+	if group, ok := nhg.groups[req.GetOid()]; ok {
+		for mid := range group {
+			membersToRemove = append(membersToRemove, mid)
+		}
+	}
+	for _, mid := range membersToRemove {
+		if _, err := attrmgr.InvokeAndSave(context.Background(), nhg.mgr, nhg.RemoveNextHopGroupMember, &saipb.RemoveNextHopGroupMemberRequest{Oid: mid}); err != nil {
+			return nil, err
+		}
+	}
+	delete(nhg.groups, req.GetOid())
 	return &saipb.RemoveNextHopGroupResponse{}, nil
 }
+
+// SetNextHopGroupAttribute sets the attributes of a next hop group.
+func (nhg *nextHopGroup) SetNextHopGroupAttribute(ctx context.Context, req *saipb.SetNextHopGroupAttributeRequest) (*saipb.SetNextHopGroupAttributeResponse, error) {
+	if len(req.GetNextHopList()) > 0 {
+		var membersToRemove []uint64
+		if group, ok := nhg.groups[req.GetOid()]; ok {
+			for mid := range group {
+				membersToRemove = append(membersToRemove, mid)
+			}
+		}
+		for _, mid := range membersToRemove {
+			if _, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.RemoveNextHopGroupMember, &saipb.RemoveNextHopGroupMemberRequest{Oid: mid}); err != nil {
+				return nil, err
+			}
+		}
+
+		memReq := &saipb.CreateNextHopGroupMembersRequest{}
+		for i, nh := range req.GetNextHopList() {
+			weight := uint32(1)
+			if i < len(req.GetNextHopMemberWeightList()) {
+				weight = req.GetNextHopMemberWeightList()[i]
+			}
+			memReq.Reqs = append(memReq.Reqs, &saipb.CreateNextHopGroupMemberRequest{
+				Switch:         switchID,
+				NextHopGroupId: proto.Uint64(req.GetOid()),
+				NextHopId:      proto.Uint64(nh),
+				Weight:         proto.Uint32(weight),
+			})
+		}
+		if _, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.CreateNextHopGroupMembers, memReq); err != nil {
+			return nil, err
+		}
+	}
+	return &saipb.SetNextHopGroupAttributeResponse{}, nil
+}
+
+// SetNextHopGroupsAttribute sets the attributes of multiple next hop groups.
+func (nhg *nextHopGroup) SetNextHopGroupsAttribute(ctx context.Context, r *saipb.SetNextHopGroupsAttributeRequest) (*saipb.SetNextHopGroupsAttributeResponse, error) {
+	resp := &saipb.SetNextHopGroupsAttributeResponse{}
+	for _, req := range r.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.SetNextHopGroupAttribute, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
+}
+
 
 // RemoveNextHopGroups removes multiple next hop groups specified in the OID.
 func (nhg *nextHopGroup) RemoveNextHopGroups(ctx context.Context, req *saipb.RemoveNextHopGroupsRequest) (*saipb.RemoveNextHopGroupsResponse, error) {

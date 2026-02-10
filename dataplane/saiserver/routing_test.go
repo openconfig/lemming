@@ -181,6 +181,73 @@ func TestRemoveNextHopGroup(t *testing.T) {
 	}
 }
 
+
+func TestSetNextHopGroupAttribute(t *testing.T) {
+	tests := []struct {
+		desc     string
+		req      *saipb.SetNextHopGroupAttributeRequest
+		wantAttr *saipb.NextHopGroupAttribute
+		wantErr  string
+	}{{
+		desc: "replace members",
+		req: &saipb.SetNextHopGroupAttributeRequest{
+			NextHopList:             []uint64{11, 12}, // New members
+			NextHopMemberWeightList: []uint32{2, 3},
+		},
+		wantAttr: &saipb.NextHopGroupAttribute{
+			Type:                    saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS.Enum(),
+			NextHopList:             []uint64{11, 12},
+			NextHopMemberWeightList: []uint32{2, 3},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
+			defer stopFn()
+			
+			// Setup initial state: Group with 1 member (ID 10)
+			mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
+				EcmpHashIpv4: proto.Uint64(5),
+				EcmpHashIpv6: proto.Uint64(5),
+			})
+			mgr.StoreAttributes(5, &saipb.HashAttribute{
+				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
+			})
+			mgr.StoreAttributes(10, &saipb.NextHopAttribute{Ip: []byte{127, 0, 0, 1}})
+			mgr.StoreAttributes(11, &saipb.NextHopAttribute{Ip: []byte{127, 0, 0, 2}})
+			mgr.StoreAttributes(12, &saipb.NextHopAttribute{Ip: []byte{127, 0, 0, 3}})
+
+			resp, err := c.CreateNextHopGroup(context.Background(), &saipb.CreateNextHopGroupRequest{
+				Type:                    saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS.Enum(),
+				NextHopList:             []uint64{10},
+				NextHopMemberWeightList: []uint32{1},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			tt.req.Oid = resp.Oid
+			_, gotErr := c.SetNextHopGroupAttribute(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("SetNextHopGroupAttribute() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			
+			// Verify attributes
+			attr := &saipb.NextHopGroupAttribute{}
+			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
+				t.Fatal(err)
+			}
+			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
+				t.Errorf("SetNextHopGroupAttribute() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func TestCreateNextHopGroupMember(t *testing.T) {
 	tests := []struct {
 		desc     string
