@@ -991,7 +991,7 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 			)),
 		).Build())
 	if err != nil {
-		return nil, err
+		slog.WarnContext(ctx, "failed to remove inputIfaceTable entry for RouterInterface", "err", err)
 	}
 
 	_, err = ri.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(ri.dataplane.ID(), outputIfaceTable).
@@ -999,7 +999,7 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetOid()))),
 		).Build())
 	if err != nil {
-		return nil, err
+		slog.WarnContext(ctx, "failed to remove outputIfaceTable entry for RouterInterface", "err", err)
 	}
 
 	// Link the interface to a VRF.
@@ -1008,7 +1008,7 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64(req.GetOid()))),
 		).Build())
 	if err != nil {
-		return nil, err
+		slog.WarnContext(ctx, "failed to remove IngressVRFTable entry for RouterInterface", "err", err)
 	}
 
 	// Give the interface a SMAC.
@@ -1016,7 +1016,7 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetOid()))),
 	).Build())
 	if err != nil {
-		return nil, err
+		slog.WarnContext(ctx, "failed to remove SRCMACTable entry for RouterInterface", "err", err)
 	}
 
 	return &saipb.RemoveRouterInterfaceResponse{}, nil
