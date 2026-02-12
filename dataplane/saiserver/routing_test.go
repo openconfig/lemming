@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -176,6 +177,71 @@ func TestRemoveNextHopGroup(t *testing.T) {
 			_, gotErr := c.RemoveNextHopGroup(context.TODO(), &saipb.RemoveNextHopGroupRequest{Oid: oid})
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("RemoveNextHopGroup() unexpected err: %s", diff)
+			}
+		})
+	}
+}
+
+func TestSetNextHopGroupAttribute(t *testing.T) {
+	tests := []struct {
+		desc     string
+		req      *saipb.SetNextHopGroupAttributeRequest
+		wantAttr *saipb.NextHopGroupAttribute
+		wantErr  string
+	}{{
+		desc: "replace members",
+		req: &saipb.SetNextHopGroupAttributeRequest{
+			NextHopList: []uint64{3},
+		},
+		wantAttr: &saipb.NextHopGroupAttribute{
+			NextHopList:             []uint64{3},
+			NextHopMemberWeightList: []uint32{1},
+			Type:                    saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum(),
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
+			defer stopFn()
+
+			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(9)})
+			mgr.StoreAttributes(3, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 1}})
+			mgr.StoreAttributes(4, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 2}})
+			mgr.StoreAttributes(10, &saipb.CreateHashRequest{
+				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
+			})
+
+			ctx := context.Background()
+			resp, err := c.CreateNextHopGroup(ctx, &saipb.CreateNextHopGroupRequest{Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum()})
+			if err != nil {
+				t.Fatal(err)
+			}
+			tt.req.Oid = resp.Oid
+
+			_, err = c.CreateNextHopGroupMember(ctx, &saipb.CreateNextHopGroupMemberRequest{
+				NextHopGroupId: proto.Uint64(resp.Oid),
+				NextHopId:      proto.Uint64(4),
+				Weight:         proto.Uint32(1),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, gotErr := c.SetNextHopGroupAttribute(ctx, tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("SetNextHopGroupAttribute() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+
+			attr := &saipb.NextHopGroupAttribute{}
+			if err := mgr.PopulateAllAttributes(fmt.Sprint(resp.Oid), attr); err != nil {
+				t.Fatal(err)
+			}
+			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
+				t.Errorf("SetNextHopGroupAttribute() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}
