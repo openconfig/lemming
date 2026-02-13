@@ -296,6 +296,59 @@ func (nhg *nextHopGroup) updateNextHopGroupMember(ctx context.Context, nhgid, mi
 	return err
 }
 
+// SetNextHopGroupAttribute sets the attribute of the next hop group.
+func (nhg *nextHopGroup) SetNextHopGroupAttribute(ctx context.Context, req *saipb.SetNextHopGroupAttributeRequest) (*saipb.SetNextHopGroupAttributeResponse, error) {
+	if _, ok := nhg.groups[req.GetOid()]; !ok {
+		return nil, status.Errorf(codes.NotFound, "group %d does not exist", req.GetOid())
+	}
+	resp := &saipb.GetNextHopGroupAttributeResponse{
+		Attr: &saipb.NextHopGroupAttribute{},
+	}
+	pBytes, err := proto.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	if err := nhg.mgr.PopulateAllAttributes(string(pBytes), resp.Attr); err != nil {
+		return nil, err
+	}
+
+	// If next hop list is set, then replace all members.
+	if len(req.GetNextHopList()) > 0 {
+		attr := &saipb.NextHopGroupAttribute{}
+		if err := nhg.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), attr); err != nil {
+			return nil, err
+		}
+		attr.NextHopList = req.GetNextHopList()
+		attr.NextHopMemberWeightList = nil
+
+		for mid := range nhg.groups[req.GetOid()] { // Create a copy of the keys since we are deleting them.
+			if _, err := nhg.RemoveNextHopGroupMember(ctx, &saipb.RemoveNextHopGroupMemberRequest{Oid: mid}); err != nil {
+				return nil, err
+			}
+		}
+		memReq := &saipb.CreateNextHopGroupMembersRequest{}
+		for i, nh := range req.GetNextHopList() {
+			weight := uint32(1)
+			if len(req.GetNextHopMemberWeightList()) > i {
+				weight = req.GetNextHopMemberWeightList()[i]
+			}
+			attr.NextHopMemberWeightList = append(attr.NextHopMemberWeightList, weight)
+			memReq.Reqs = append(memReq.Reqs, &saipb.CreateNextHopGroupMemberRequest{
+				Switch:         switchID,
+				NextHopGroupId: proto.Uint64(req.GetOid()),
+				NextHopId:      proto.Uint64(nh),
+				Weight:         proto.Uint32(weight),
+			})
+		}
+		if _, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.CreateNextHopGroupMembers, memReq); err != nil {
+			return nil, err
+		}
+		nhg.mgr.StoreAttributes(req.GetOid(), attr)
+	}
+
+	return &saipb.SetNextHopGroupAttributeResponse{}, nil
+}
+
 // RemoveNextHopGroup removes the next hop group specified in the OID.
 func (nhg *nextHopGroup) RemoveNextHopGroup(_ context.Context, req *saipb.RemoveNextHopGroupRequest) (*saipb.RemoveNextHopGroupResponse, error) {
 	oid := req.GetOid()
