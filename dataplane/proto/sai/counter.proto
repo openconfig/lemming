@@ -12,6 +12,10 @@ enum CounterAttr {
 	COUNTER_ATTR_UNSPECIFIED = 0;
 	COUNTER_ATTR_TYPE = 1;
 	COUNTER_ATTR_LABEL = 2;
+	COUNTER_ATTR_ENABLE_PACKET_COUNT = 3;
+	COUNTER_ATTR_ENABLE_BYTE_COUNT = 4;
+	COUNTER_ATTR_OBJECT_TYPE = 5;
+	COUNTER_ATTR_STAT_ID_LIST = 6;
 }
 
 message CreateCounterRequest {
@@ -19,6 +23,10 @@ message CreateCounterRequest {
 	uint64 switch = 1;
 	optional CounterType type = 2[(attr_enum_value) = 1];
 	optional bytes label = 3[(attr_enum_value) = 2];
+	optional bool enable_packet_count = 4[(attr_enum_value) = 3];
+	optional bool enable_byte_count = 5[(attr_enum_value) = 4];
+	optional ObjectType object_type = 6[(attr_enum_value) = 5];
+	repeated int32 stat_id_list = 7[(attr_enum_value) = 6];
 }
 
 message CreateCounterResponse {
@@ -35,6 +43,7 @@ message RemoveCounterResponse {
 message SetCounterAttributeRequest {
 	uint64 oid = 1;
 	optional bytes label = 2[(attr_enum_value) = 2];
+	repeated int32 stat_id_list = 3[(attr_enum_value) = 6];
 }
 
 message SetCounterAttributeResponse {

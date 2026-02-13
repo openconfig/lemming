@@ -40,6 +40,8 @@ enum IpsecPortAttr {
 	IPSEC_PORT_ATTR_NATIVE_VLAN_ID = 4;
 	IPSEC_PORT_ATTR_VRF_FROM_PACKET_VLAN_ENABLE = 5;
 	IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE = 6;
+	IPSEC_PORT_ATTR_STATS_COUNT_MODE = 7;
+	IPSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST = 8;
 }
 
 enum IpsecSaAttr {
@@ -65,6 +67,8 @@ enum IpsecSaAttr {
 	IPSEC_SA_ATTR_TERM_SRC_IP = 19;
 	IPSEC_SA_ATTR_EGRESS_ESN = 20;
 	IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN = 21;
+	IPSEC_SA_ATTR_STATS_COUNT_MODE = 22;
+	IPSEC_SA_ATTR_SELECTIVE_COUNTER_LIST = 23;
 }
 
 message CreateIpsecRequest {
@@ -123,6 +127,8 @@ message CreateIpsecPortRequest {
 	optional uint32 native_vlan_id = 5[(attr_enum_value) = 4];
 	optional bool vrf_from_packet_vlan_enable = 6[(attr_enum_value) = 5];
 	optional SwitchSwitchingMode switch_switching_mode = 7[(attr_enum_value) = 6];
+	optional StatsCountMode stats_count_mode = 8[(attr_enum_value) = 7];
+	repeated uint64 selective_counter_list = 9[(attr_enum_value) = 8];
 }
 
 message CreateIpsecPortResponse {
@@ -142,6 +148,8 @@ message SetIpsecPortAttributeRequest {
 	optional bool stag_enable = 3[(attr_enum_value) = 3];
 	optional bool vrf_from_packet_vlan_enable = 4[(attr_enum_value) = 5];
 	optional SwitchSwitchingMode switch_switching_mode = 5[(attr_enum_value) = 6];
+	optional StatsCountMode stats_count_mode = 6[(attr_enum_value) = 7];
+	repeated uint64 selective_counter_list = 7[(attr_enum_value) = 8];
 }
 
 message SetIpsecPortAttributeResponse {
@@ -187,6 +195,8 @@ message CreateIpsecSaRequest {
 	optional bytes term_src_ip = 18[(attr_enum_value) = 19];
 	optional uint64 egress_esn = 19[(attr_enum_value) = 20];
 	optional uint64 minimum_ingress_esn = 20[(attr_enum_value) = 21];
+	optional StatsCountMode stats_count_mode = 21[(attr_enum_value) = 22];
+	repeated uint64 selective_counter_list = 22[(attr_enum_value) = 23];
 }
 
 message CreateIpsecSaResponse {
@@ -208,6 +218,8 @@ message SetIpsecSaAttributeRequest {
 	optional uint32 ipsec_replay_protection_window = 5[(attr_enum_value) = 14];
 	optional uint64 egress_esn = 6[(attr_enum_value) = 20];
 	optional uint64 minimum_ingress_esn = 7[(attr_enum_value) = 21];
+	optional StatsCountMode stats_count_mode = 8[(attr_enum_value) = 22];
+	repeated uint64 selective_counter_list = 9[(attr_enum_value) = 23];
 }
 
 message SetIpsecSaAttributeResponse {

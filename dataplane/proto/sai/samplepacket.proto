@@ -13,6 +13,8 @@ enum SamplepacketAttr {
 	SAMPLEPACKET_ATTR_SAMPLE_RATE = 1;
 	SAMPLEPACKET_ATTR_TYPE = 2;
 	SAMPLEPACKET_ATTR_MODE = 3;
+	SAMPLEPACKET_ATTR_TRUNCATE_ENABLE = 4;
+	SAMPLEPACKET_ATTR_TRUNCATE_SIZE = 5;
 }
 
 message CreateSamplepacketRequest {
@@ -21,6 +23,8 @@ message CreateSamplepacketRequest {
 	optional uint32 sample_rate = 2[(attr_enum_value) = 1];
 	optional SamplepacketType type = 3[(attr_enum_value) = 2];
 	optional SamplepacketMode mode = 4[(attr_enum_value) = 3];
+	optional bool truncate_enable = 5[(attr_enum_value) = 4];
+	optional uint32 truncate_size = 6[(attr_enum_value) = 5];
 }
 
 message CreateSamplepacketResponse {
@@ -37,6 +41,8 @@ message RemoveSamplepacketResponse {
 message SetSamplepacketAttributeRequest {
 	uint64 oid = 1;
 	optional uint32 sample_rate = 2[(attr_enum_value) = 1];
+	optional bool truncate_enable = 3[(attr_enum_value) = 4];
+	optional uint32 truncate_size = 4[(attr_enum_value) = 5];
 }
 
 message SetSamplepacketAttributeResponse {

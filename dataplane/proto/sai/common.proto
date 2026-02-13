@@ -442,19 +442,23 @@ enum AclTableSupportedMatchType {
 enum ApiExtensions {
 	option allow_alias = true;
 	API_EXTENSIONS_UNSPECIFIED = 0;
-	API_EXTENSIONS_RANGE_START = 53;
-	API_BMTOR = 53;
-	API_DASH_ACL = 54;
-	API_DASH_DIRECTION_LOOKUP = 55;
-	API_DASH_ENI = 56;
-	API_DASH_INBOUND_ROUTING = 57;
-	API_DASH_METER = 58;
-	API_DASH_OUTBOUND_CA_TO_PA = 59;
-	API_DASH_OUTBOUND_ROUTING = 60;
-	API_DASH_VNET = 61;
-	API_DASH_PA_VALIDATION = 62;
-	API_DASH_VIP = 63;
-	API_EXTENSIONS_RANGE_END = 64;
+	API_EXTENSIONS_RANGE_START = 536870913;
+	API_BMTOR = 536870913;
+	API_DASH_ACL = 536870914;
+	API_DASH_DIRECTION_LOOKUP = 536870915;
+	API_DASH_ENI = 536870916;
+	API_DASH_INBOUND_ROUTING = 536870917;
+	API_DASH_METER = 536870918;
+	API_DASH_OUTBOUND_CA_TO_PA = 536870919;
+	API_DASH_OUTBOUND_ROUTING = 536870920;
+	API_DASH_VNET = 536870921;
+	API_DASH_PA_VALIDATION = 536870922;
+	API_DASH_VIP = 536870923;
+	API_DASH_HA = 536870924;
+	API_DASH_TUNNEL = 536870925;
+	API_DASH_FLOW = 536870926;
+	API_DASH_APPLIANCE = 536870927;
+	API_EXTENSIONS_RANGE_END = 536870928;
 }
 
 enum Api {
@@ -511,9 +515,9 @@ enum Api {
 	API_ARS_PROFILE = 50;
 	API_TWAMP = 51;
 	API_POE = 52;
-	API_MAX = 53;
-	API_CUSTOM_RANGE_START = 257;
-	API_CUSTOM_RANGE_END = 258;
+	API_ICMP_ECHO = 53;
+	API_MAX = 54;
+	API_EXTENSIONS_RANGE_BASE = 536870913;
 }
 
 enum BfdEncapsulationType {
@@ -683,6 +687,13 @@ enum CounterStat {
 enum CounterType {
 	COUNTER_TYPE_UNSPECIFIED = 0;
 	COUNTER_TYPE_REGULAR = 1;
+	COUNTER_TYPE_SELECTIVE = 2;
+}
+
+enum DashCapsHaScopeLevel {
+	DASH_CAPS_HA_SCOPE_LEVEL_UNSPECIFIED = 0;
+	DASH_CAPS_HA_SCOPE_LEVEL_CARD = 1;
+	DASH_CAPS_HA_SCOPE_LEVEL_ENI = 2;
 }
 
 enum DashDirection {
@@ -697,6 +708,95 @@ enum DashEncapsulation {
 	DASH_ENCAPSULATION_INVALID = 1;
 	DASH_ENCAPSULATION_VXLAN = 2;
 	DASH_ENCAPSULATION_NVGRE = 3;
+}
+
+enum DashEniMacOverrideType {
+	DASH_ENI_MAC_OVERRIDE_TYPE_UNSPECIFIED = 0;
+	DASH_ENI_MAC_OVERRIDE_TYPE_NONE = 1;
+	DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC = 2;
+	DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC = 3;
+}
+
+enum DashFlowAction {
+	DASH_FLOW_ACTION_UNSPECIFIED = 0;
+	DASH_FLOW_ACTION_NONE = 1;
+}
+
+enum DashFlowEnabledKey {
+	DASH_FLOW_ENABLED_KEY_UNSPECIFIED = 0;
+	DASH_FLOW_ENABLED_KEY_ENI_MAC = 2;
+	DASH_FLOW_ENABLED_KEY_VNI = 3;
+	DASH_FLOW_ENABLED_KEY_PROTOCOL = 5;
+	DASH_FLOW_ENABLED_KEY_SRC_IP = 9;
+	DASH_FLOW_ENABLED_KEY_DST_IP = 17;
+	DASH_FLOW_ENABLED_KEY_SRC_PORT = 33;
+	DASH_FLOW_ENABLED_KEY_DST_PORT = 65;
+}
+
+enum DashFlowEntryBulkGetSessionFilterKey {
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_UNSPECIFIED = 0;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD = 1;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID = 2;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR = 3;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL = 4;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR = 5;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR = 6;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT = 7;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT = 8;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION = 9;
+}
+
+enum DashFlowEntryBulkGetSessionMode {
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_UNSPECIFIED = 0;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC = 1;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR = 2;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT = 3;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE = 4;
+}
+
+enum DashFlowEntryBulkGetSessionOpKey {
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_UNSPECIFIED = 0;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID = 1;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO = 2;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN = 3;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO = 4;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN = 5;
+	DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO = 6;
+}
+
+enum DashHaRole {
+	DASH_HA_ROLE_UNSPECIFIED = 0;
+	DASH_HA_ROLE_DEAD = 1;
+	DASH_HA_ROLE_ACTIVE = 2;
+	DASH_HA_ROLE_STANDBY = 3;
+	DASH_HA_ROLE_STANDALONE = 4;
+	DASH_HA_ROLE_SWITCHING_TO_ACTIVE = 5;
+}
+
+enum DashHaState {
+	DASH_HA_STATE_UNSPECIFIED = 0;
+	DASH_HA_STATE_DEAD = 1;
+	DASH_HA_STATE_CONNECTING = 2;
+	DASH_HA_STATE_CONNECTED = 3;
+	DASH_HA_STATE_INITIALIZING_TO_ACTIVE = 4;
+	DASH_HA_STATE_INITIALIZING_TO_STANDBY = 5;
+	DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION = 6;
+	DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION = 7;
+	DASH_HA_STATE_PENDING_STANDBY_ACTIVATION = 8;
+	DASH_HA_STATE_STANDALONE = 9;
+	DASH_HA_STATE_ACTIVE = 10;
+	DASH_HA_STATE_STANDBY = 11;
+	DASH_HA_STATE_DESTROYING = 12;
+	DASH_HA_STATE_SWITCHING_TO_STANDALONE = 13;
+}
+
+enum DashRoutingActions {
+	DASH_ROUTING_ACTIONS_UNSPECIFIED = 0;
+	DASH_ROUTING_ACTIONS_STATIC_ENCAP = 2;
+	DASH_ROUTING_ACTIONS_NAT = 3;
+	DASH_ROUTING_ACTIONS_NAT46 = 5;
+	DASH_ROUTING_ACTIONS_NAT64 = 9;
+	DASH_ROUTING_ACTIONS_NAT_PORT = 17;
 }
 
 enum DashTunnelDscpMode {
@@ -767,6 +867,19 @@ enum FdbFlushEntryType {
 	FDB_FLUSH_ENTRY_TYPE_ALL = 3;
 }
 
+enum HaScopeEvent {
+	HA_SCOPE_EVENT_UNSPECIFIED = 0;
+	HA_SCOPE_EVENT_STATE_CHANGED = 1;
+	HA_SCOPE_EVENT_FLOW_RECONCILE_NEEDED = 2;
+	HA_SCOPE_EVENT_SPLIT_BRAIN_DETECTED = 3;
+}
+
+enum HaSetEvent {
+	HA_SET_EVENT_UNSPECIFIED = 0;
+	HA_SET_EVENT_DP_CHANNEL_UP = 1;
+	HA_SET_EVENT_DP_CHANNEL_DOWN = 2;
+}
+
 enum HashAlgorithm {
 	HASH_ALGORITHM_UNSPECIFIED = 0;
 	HASH_ALGORITHM_CRC = 1;
@@ -781,6 +894,7 @@ enum HashAlgorithm {
 enum HealthDataType {
 	HEALTH_DATA_TYPE_UNSPECIFIED = 0;
 	HEALTH_DATA_TYPE_GENERAL = 1;
+	HEALTH_DATA_TYPE_SER = 2;
 }
 
 enum HostifTableEntryChannelType {
@@ -848,6 +962,7 @@ enum HostifTrapType {
 	HOSTIF_TRAP_TYPE_IPV6_NEIGHBOR_SOLICITATION = 8211;
 	HOSTIF_TRAP_TYPE_IPV6_NEIGHBOR_ADVERTISEMENT = 8212;
 	HOSTIF_TRAP_TYPE_ISIS = 8213;
+	HOSTIF_TRAP_TYPE_NEIGHBOR_MISS = 8214;
 	HOSTIF_TRAP_TYPE_ROUTER_CUSTOM_RANGE_BASE = 12289;
 	HOSTIF_TRAP_TYPE_IP2ME = 16385;
 	HOSTIF_TRAP_TYPE_SSH = 16386;
@@ -913,6 +1028,18 @@ enum HostifVlanTag {
 	HOSTIF_VLAN_TAG_STRIP = 1;
 	HOSTIF_VLAN_TAG_KEEP = 2;
 	HOSTIF_VLAN_TAG_ORIGINAL = 3;
+}
+
+enum IcmpEchoSessionStat {
+	ICMP_ECHO_SESSION_STAT_UNSPECIFIED = 0;
+	ICMP_ECHO_SESSION_STAT_IN_PACKETS = 1;
+	ICMP_ECHO_SESSION_STAT_OUT_PACKETS = 2;
+}
+
+enum IcmpEchoSessionState {
+	ICMP_ECHO_SESSION_STATE_UNSPECIFIED = 0;
+	ICMP_ECHO_SESSION_STATE_DOWN = 1;
+	ICMP_ECHO_SESSION_STATE_UP = 2;
 }
 
 enum InDropReason {
@@ -1293,7 +1420,8 @@ enum NextHopGroupType {
 	NEXT_HOP_GROUP_TYPE_FINE_GRAIN_ECMP = 3;
 	NEXT_HOP_GROUP_TYPE_PROTECTION = 4;
 	NEXT_HOP_GROUP_TYPE_CLASS_BASED = 5;
-	NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS = 6;
+	NEXT_HOP_GROUP_TYPE_HW_PROTECTION = 6;
+	NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS = 7;
 }
 
 enum NextHopType {
@@ -1315,25 +1443,34 @@ enum ObjectStage {
 enum ObjectTypeExtensions {
 	option allow_alias = true;
 	OBJECT_TYPE_EXTENSIONS_UNSPECIFIED = 0;
-	OBJECT_TYPE_EXTENSIONS_RANGE_START = 112;
-	OBJECT_TYPE_TABLE_BITMAP_CLASSIFICATION_ENTRY = 112;
-	OBJECT_TYPE_TABLE_BITMAP_ROUTER_ENTRY = 113;
-	OBJECT_TYPE_TABLE_META_TUNNEL_ENTRY = 114;
-	OBJECT_TYPE_DASH_ACL_GROUP = 115;
-	OBJECT_TYPE_DASH_ACL_RULE = 116;
-	OBJECT_TYPE_DIRECTION_LOOKUP_ENTRY = 117;
-	OBJECT_TYPE_ENI_ETHER_ADDRESS_MAP_ENTRY = 118;
-	OBJECT_TYPE_ENI = 119;
-	OBJECT_TYPE_INBOUND_ROUTING_ENTRY = 120;
-	OBJECT_TYPE_METER_BUCKET = 121;
-	OBJECT_TYPE_METER_POLICY = 122;
-	OBJECT_TYPE_METER_RULE = 123;
-	OBJECT_TYPE_OUTBOUND_CA_TO_PA_ENTRY = 124;
-	OBJECT_TYPE_OUTBOUND_ROUTING_ENTRY = 125;
-	OBJECT_TYPE_VNET = 126;
-	OBJECT_TYPE_PA_VALIDATION_ENTRY = 127;
-	OBJECT_TYPE_VIP_ENTRY = 128;
-	OBJECT_TYPE_EXTENSIONS_RANGE_END = 129;
+	OBJECT_TYPE_EXTENSIONS_RANGE_START = 536870913;
+	OBJECT_TYPE_TABLE_BITMAP_CLASSIFICATION_ENTRY = 536870913;
+	OBJECT_TYPE_TABLE_BITMAP_ROUTER_ENTRY = 536870914;
+	OBJECT_TYPE_TABLE_META_TUNNEL_ENTRY = 536870915;
+	OBJECT_TYPE_DASH_ACL_GROUP = 536870916;
+	OBJECT_TYPE_DASH_ACL_RULE = 536870917;
+	OBJECT_TYPE_DIRECTION_LOOKUP_ENTRY = 536870918;
+	OBJECT_TYPE_ENI_ETHER_ADDRESS_MAP_ENTRY = 536870919;
+	OBJECT_TYPE_ENI = 536870920;
+	OBJECT_TYPE_INBOUND_ROUTING_ENTRY = 536870921;
+	OBJECT_TYPE_METER_BUCKET_ENTRY = 536870922;
+	OBJECT_TYPE_METER_POLICY = 536870923;
+	OBJECT_TYPE_METER_RULE = 536870924;
+	OBJECT_TYPE_OUTBOUND_CA_TO_PA_ENTRY = 536870925;
+	OBJECT_TYPE_OUTBOUND_ROUTING_ENTRY = 536870926;
+	OBJECT_TYPE_VNET = 536870927;
+	OBJECT_TYPE_PA_VALIDATION_ENTRY = 536870928;
+	OBJECT_TYPE_VIP_ENTRY = 536870929;
+	OBJECT_TYPE_HA_SET = 536870930;
+	OBJECT_TYPE_HA_SCOPE = 536870931;
+	OBJECT_TYPE_DASH_TUNNEL = 536870932;
+	OBJECT_TYPE_OUTBOUND_ROUTING_GROUP = 536870933;
+	OBJECT_TYPE_FLOW_TABLE = 536870934;
+	OBJECT_TYPE_FLOW_ENTRY = 536870935;
+	OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER = 536870936;
+	OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION = 536870937;
+	OBJECT_TYPE_DASH_APPLIANCE = 536870938;
+	OBJECT_TYPE_EXTENSIONS_RANGE_END = 536870939;
 }
 
 enum ObjectType {
@@ -1449,9 +1586,9 @@ enum ObjectType {
 	OBJECT_TYPE_POE_DEVICE = 109;
 	OBJECT_TYPE_POE_PSE = 110;
 	OBJECT_TYPE_POE_PORT = 111;
-	OBJECT_TYPE_MAX = 112;
-	OBJECT_TYPE_CUSTOM_RANGE_START = 257;
-	OBJECT_TYPE_CUSTOM_RANGE_END = 258;
+	OBJECT_TYPE_ICMP_ECHO_SESSION = 112;
+	OBJECT_TYPE_MAX = 113;
+	OBJECT_TYPE_EXTENSIONS_RANGE_BASE = 536870913;
 }
 
 enum OutDropReason {
@@ -1562,8 +1699,8 @@ enum PolicerStat {
 
 enum PortAttrExtensions {
 	PORT_ATTR_EXTENSIONS_UNSPECIFIED = 0;
-	PORT_ATTR_EXTENSIONS_RANGE_START = 179;
-	PORT_ATTR_EXTENSIONS_RANGE_END = 180;
+	PORT_ATTR_EXTENSIONS_RANGE_START = 536870913;
+	PORT_ATTR_EXTENSIONS_RANGE_END = 536870914;
 }
 
 enum PortAutoNegConfigMode {
@@ -1579,7 +1716,8 @@ enum PortBreakoutModeType {
 	PORT_BREAKOUT_MODE_TYPE_1_LANE = 1;
 	PORT_BREAKOUT_MODE_TYPE_2_LANE = 2;
 	PORT_BREAKOUT_MODE_TYPE_4_LANE = 3;
-	PORT_BREAKOUT_MODE_TYPE_MAX = 4;
+	PORT_BREAKOUT_MODE_TYPE_8_LANE = 4;
+	PORT_BREAKOUT_MODE_TYPE_MAX = 5;
 }
 
 enum PortCablePairState {
@@ -1634,6 +1772,24 @@ enum PortErrStatus {
 	PORT_ERR_STATUS_CRC_RATE = 7;
 	PORT_ERR_STATUS_REMOTE_FAULT_STATUS = 8;
 	PORT_ERR_STATUS_MAX = 9;
+}
+
+enum PortErrorStatus {
+	PORT_ERROR_STATUS_UNSPECIFIED = 0;
+	PORT_ERROR_STATUS_CLEAR = 1;
+	PORT_ERROR_STATUS_MAC_LOCAL_FAULT = 2;
+	PORT_ERROR_STATUS_MAC_REMOTE_FAULT = 3;
+	PORT_ERROR_STATUS_FEC_SYNC_LOSS = 5;
+	PORT_ERROR_STATUS_FEC_LOSS_ALIGNMENT_MARKER = 9;
+	PORT_ERROR_STATUS_HIGH_SER = 17;
+	PORT_ERROR_STATUS_HIGH_BER = 33;
+	PORT_ERROR_STATUS_CRC_RATE = 65;
+	PORT_ERROR_STATUS_DATA_UNIT_CRC_ERROR = 129;
+	PORT_ERROR_STATUS_DATA_UNIT_SIZE = 257;
+	PORT_ERROR_STATUS_DATA_UNIT_MISALIGNMENT_ERROR = 513;
+	PORT_ERROR_STATUS_CODE_GROUP_ERROR = 1025;
+	PORT_ERROR_STATUS_SIGNAL_LOCAL_ERROR = 2049;
+	PORT_ERROR_STATUS_NO_RX_REACHABILITY = 4097;
 }
 
 enum PortFecModeExtended {
@@ -1830,12 +1986,18 @@ enum PortPtpMode {
 enum PortStatExtensions {
 	option allow_alias = true;
 	PORT_STAT_EXTENSIONS_UNSPECIFIED = 0;
-	PORT_STAT_EXTENSIONS_RANGE_START = 12289;
-	PORT_STAT_LB_FAST_PATH_ICMP_IN_BYTES = 12289;
-	PORT_STAT_LB_FAST_PATH_ICMP_IN_PACKETS = 12290;
-	PORT_STAT_LB_FAST_PATH_ENI_MISS_BYTES = 12291;
-	PORT_STAT_LB_FAST_PATH_ENI_MISS_PACKETS = 12292;
-	PORT_STAT_EXTENSIONS_RANGE_END = 12293;
+	PORT_STAT_EXTENSIONS_RANGE_START = 536870913;
+	PORT_STAT_LB_FAST_PATH_ICMP_IN_BYTES = 536870913;
+	PORT_STAT_LB_FAST_PATH_ICMP_IN_PACKETS = 536870914;
+	PORT_STAT_LB_FAST_PATH_ENI_MISS_BYTES = 536870915;
+	PORT_STAT_LB_FAST_PATH_ENI_MISS_PACKETS = 536870916;
+	PORT_STAT_VIP_MISS_DROP_PACKETS = 536870917;
+	PORT_STAT_ENI_MISS_DROP_PACKETS = 536870918;
+	PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_BYTES = 536870919;
+	PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_PACKETS = 536870920;
+	PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_BYTES = 536870921;
+	PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_PACKETS = 536870922;
+	PORT_STAT_EXTENSIONS_RANGE_END = 536870923;
 }
 
 enum PortStat {
@@ -2062,8 +2224,11 @@ enum PortStat {
 	PORT_STAT_OUT_CONFIGURED_DROP_REASONS_5_DROPPED_PKTS = 8198;
 	PORT_STAT_OUT_CONFIGURED_DROP_REASONS_6_DROPPED_PKTS = 8199;
 	PORT_STAT_OUT_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS = 8200;
+	PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_EVENTS = 8201;
+	PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_DROP_PKTS = 8202;
 	PORT_STAT_OUT_DROP_REASON_RANGE_END = 12288;
 	PORT_STAT_END = 12289;
+	PORT_STAT_EXTENSIONS_RANGE_BASE = 536870913;
 }
 
 enum PortType {
@@ -2205,6 +2370,34 @@ enum SchedulingType {
 	SCHEDULING_TYPE_DWRR = 3;
 }
 
+enum SerCorrectionType {
+	SER_CORRECTION_TYPE_UNSPECIFIED = 0;
+	SER_CORRECTION_TYPE_NO_ACTION = 1;
+	SER_CORRECTION_TYPE_FAIL_TO_CORRECT = 2;
+	SER_CORRECTION_TYPE_ENTRY_CLEAR = 3;
+	SER_CORRECTION_TYPE_SW_CACHE_RESTORE = 4;
+	SER_CORRECTION_TYPE_HW_CACHE_RESTORE = 5;
+	SER_CORRECTION_TYPE_SPECIAL = 6;
+}
+
+enum SerLogType {
+	SER_LOG_TYPE_UNSPECIFIED = 0;
+	SER_LOG_TYPE_MEM = 2;
+	SER_LOG_TYPE_REG = 3;
+	SER_LOG_TYPE_MULTI = 5;
+	SER_LOG_TYPE_CORRECTED = 9;
+	SER_LOG_TYPE_ENTRY_INFO = 17;
+	SER_LOG_TYPE_CACHE = 33;
+}
+
+enum SerType {
+	SER_TYPE_UNSPECIFIED = 0;
+	SER_TYPE_UNKNOWN = 1;
+	SER_TYPE_PARITY = 2;
+	SER_TYPE_ECC_SINGLE_BIT = 3;
+	SER_TYPE_ECC_DOUBLE_BIT = 4;
+}
+
 enum Srv6SidlistStat {
 	SRV6_SIDLIST_STAT_UNSPECIFIED = 0;
 	SRV6_SIDLIST_STAT_OUT_PACKETS = 1;
@@ -2218,6 +2411,14 @@ enum Srv6SidlistType {
 	SRV6_SIDLIST_TYPE_ENCAPS = 3;
 	SRV6_SIDLIST_TYPE_ENCAPS_RED = 4;
 	SRV6_SIDLIST_TYPE_CUSTOM_RANGE_BASE = 268435457;
+}
+
+enum StatsCountMode {
+	STATS_COUNT_MODE_UNSPECIFIED = 0;
+	STATS_COUNT_MODE_PACKET_AND_BYTE = 1;
+	STATS_COUNT_MODE_PACKET = 2;
+	STATS_COUNT_MODE_BYTE = 3;
+	STATS_COUNT_MODE_NONE = 4;
 }
 
 enum StatsMode {
@@ -2252,9 +2453,15 @@ enum SwitchAsicSdkHealthSeverity {
 }
 
 enum SwitchAttrExtensions {
+	option allow_alias = true;
 	SWITCH_ATTR_EXTENSIONS_UNSPECIFIED = 0;
-	SWITCH_ATTR_EXTENSIONS_RANGE_START = 233;
-	SWITCH_ATTR_EXTENSIONS_RANGE_END = 234;
+	SWITCH_ATTR_EXTENSIONS_RANGE_START = 536870913;
+	SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI = 536870913;
+	SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL = 536870914;
+	SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED = 536870915;
+	SWITCH_ATTR_HA_SET_EVENT_NOTIFY = 536870916;
+	SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY = 536870917;
+	SWITCH_ATTR_EXTENSIONS_RANGE_END = 536870918;
 }
 
 enum SwitchFailoverConfigMode {
@@ -3028,6 +3235,8 @@ message BfdSessionAttribute {
 	optional uint32 remote_diag = 39 [(attr_enum_value) = 39];
 	optional uint32 remote_multiplier = 40 [(attr_enum_value) = 40];
 	optional uint64 srv6_sidlist_id = 41 [(attr_enum_value) = 41];
+	optional StatsCountMode stats_count_mode = 42 [(attr_enum_value) = 42];
+	repeated uint64 selective_counter_list = 43 [(attr_enum_value) = 43];
 }
 
 message BridgeAttribute {
@@ -3041,6 +3250,8 @@ message BridgeAttribute {
 	optional uint64 unknown_multicast_flood_group = 8 [(attr_enum_value) = 8];
 	optional BridgeFloodControlType broadcast_flood_control_type = 9 [(attr_enum_value) = 9];
 	optional uint64 broadcast_flood_group = 10 [(attr_enum_value) = 10];
+	optional StatsCountMode stats_count_mode = 11 [(attr_enum_value) = 11];
+	repeated uint64 selective_counter_list = 12 [(attr_enum_value) = 12];
 }
 
 message BridgePortAttribute {
@@ -3058,6 +3269,8 @@ message BridgePortAttribute {
 	optional bool ingress_filtering = 12 [(attr_enum_value) = 12];
 	optional bool egress_filtering = 13 [(attr_enum_value) = 13];
 	optional uint64 isolation_group = 14 [(attr_enum_value) = 14];
+	optional StatsCountMode stats_count_mode = 15 [(attr_enum_value) = 15];
+	repeated uint64 selective_counter_list = 16 [(attr_enum_value) = 16];
 }
 
 message BufferPoolAttribute {
@@ -3068,6 +3281,8 @@ message BufferPoolAttribute {
 	repeated uint64 tam = 5 [(attr_enum_value) = 5];
 	optional uint64 xoff_size = 6 [(attr_enum_value) = 6];
 	optional uint64 wred_profile_id = 7 [(attr_enum_value) = 7];
+	optional StatsCountMode stats_count_mode = 8 [(attr_enum_value) = 8];
+	repeated uint64 selective_counter_list = 9 [(attr_enum_value) = 9];
 }
 
 message BufferProfileAttribute {
@@ -3084,6 +3299,10 @@ message BufferProfileAttribute {
 message CounterAttribute {
 	optional CounterType type = 1 [(attr_enum_value) = 1];
 	optional bytes label = 2 [(attr_enum_value) = 2];
+	optional bool enable_packet_count = 3 [(attr_enum_value) = 3];
+	optional bool enable_byte_count = 4 [(attr_enum_value) = 4];
+	optional ObjectType object_type = 5 [(attr_enum_value) = 5];
+	repeated int32 stat_id_list = 6 [(attr_enum_value) = 6];
 }
 
 message DebugCounterAttribute {
@@ -3227,11 +3446,35 @@ message HostifUserDefinedTrapAttribute {
 	optional uint64 trap_group = 3 [(attr_enum_value) = 3];
 }
 
+message IcmpEchoSessionAttribute {
+	optional bool hw_lookup_valid = 1 [(attr_enum_value) = 1];
+	optional uint64 virtual_router = 2 [(attr_enum_value) = 2];
+	optional uint64 port = 3 [(attr_enum_value) = 3];
+	optional uint64 rx_port = 4 [(attr_enum_value) = 4];
+	optional uint64 guid = 5 [(attr_enum_value) = 5];
+	optional uint32 cookie = 6 [(attr_enum_value) = 6];
+	optional uint32 iphdr_version = 7 [(attr_enum_value) = 7];
+	optional uint32 tos = 8 [(attr_enum_value) = 8];
+	optional uint32 ttl = 9 [(attr_enum_value) = 9];
+	optional bytes src_ip_address = 10 [(attr_enum_value) = 10];
+	optional bytes dst_ip_address = 11 [(attr_enum_value) = 11];
+	optional bytes src_mac_address = 12 [(attr_enum_value) = 12];
+	optional bytes dst_mac_address = 13 [(attr_enum_value) = 13];
+	optional uint32 tx_interval = 14 [(attr_enum_value) = 14];
+	optional uint32 rx_interval = 15 [(attr_enum_value) = 15];
+	optional bool set_next_hop_group_switchover = 16 [(attr_enum_value) = 16];
+	optional IcmpEchoSessionState state = 17 [(attr_enum_value) = 17];
+	optional StatsCountMode stats_count_mode = 18 [(attr_enum_value) = 18];
+	repeated uint64 selective_counter_list = 19 [(attr_enum_value) = 19];
+}
+
 message IngressPriorityGroupAttribute {
 	optional uint64 buffer_profile = 1 [(attr_enum_value) = 1];
 	optional uint64 port = 2 [(attr_enum_value) = 2];
 	repeated uint64 tam = 3 [(attr_enum_value) = 3];
 	optional uint32 index = 4 [(attr_enum_value) = 4];
+	optional StatsCountMode stats_count_mode = 5 [(attr_enum_value) = 5];
+	repeated uint64 selective_counter_list = 6 [(attr_enum_value) = 6];
 }
 
 message InsegEntryAttribute {
@@ -3295,6 +3538,8 @@ message IpsecPortAttribute {
 	optional uint32 native_vlan_id = 4 [(attr_enum_value) = 4];
 	optional bool vrf_from_packet_vlan_enable = 5 [(attr_enum_value) = 5];
 	optional SwitchSwitchingMode switch_switching_mode = 6 [(attr_enum_value) = 6];
+	optional StatsCountMode stats_count_mode = 7 [(attr_enum_value) = 7];
+	repeated uint64 selective_counter_list = 8 [(attr_enum_value) = 8];
 }
 
 message IpsecSaAttribute {
@@ -3319,6 +3564,8 @@ message IpsecSaAttribute {
 	optional bytes term_src_ip = 19 [(attr_enum_value) = 19];
 	optional uint64 egress_esn = 20 [(attr_enum_value) = 20];
 	optional uint64 minimum_ingress_esn = 21 [(attr_enum_value) = 21];
+	optional StatsCountMode stats_count_mode = 22 [(attr_enum_value) = 22];
+	repeated uint64 selective_counter_list = 23 [(attr_enum_value) = 23];
 }
 
 message IsolationGroupAttribute {
@@ -3403,6 +3650,8 @@ message MacsecFlowAttribute {
 	optional MacsecDirection macsec_direction = 1 [(attr_enum_value) = 1];
 	repeated uint64 acl_entry_list = 2 [(attr_enum_value) = 2];
 	repeated uint64 sc_list = 3 [(attr_enum_value) = 3];
+	optional StatsCountMode stats_count_mode = 4 [(attr_enum_value) = 4];
+	repeated uint64 selective_counter_list = 5 [(attr_enum_value) = 5];
 }
 
 message MacsecPortAttribute {
@@ -3411,6 +3660,8 @@ message MacsecPortAttribute {
 	optional bool ctag_enable = 3 [(attr_enum_value) = 3];
 	optional bool stag_enable = 4 [(attr_enum_value) = 4];
 	optional SwitchSwitchingMode switch_switching_mode = 5 [(attr_enum_value) = 5];
+	optional StatsCountMode stats_count_mode = 6 [(attr_enum_value) = 6];
+	repeated uint64 selective_counter_list = 7 [(attr_enum_value) = 7];
 }
 
 message MacsecSaAttribute {
@@ -3608,6 +3859,8 @@ message PolicerAttribute {
 	optional PacketAction red_packet_action = 10 [(attr_enum_value) = 10];
 	repeated PacketAction enable_counter_packet_action_list = 11 [(attr_enum_value) = 11];
 	optional ObjectStage object_stage = 12 [(attr_enum_value) = 12];
+	optional StatsCountMode stats_count_mode = 13 [(attr_enum_value) = 13];
+	repeated uint64 selective_counter_list = 14 [(attr_enum_value) = 14];
 }
 
 message PortAttribute {
@@ -3789,6 +4042,11 @@ message PortAttribute {
 	optional uint32 ars_port_load_past_weight = 176 [(attr_enum_value) = 176];
 	optional uint32 ars_port_load_future_weight = 177 [(attr_enum_value) = 177];
 	optional uint64 poe_port_id = 178 [(attr_enum_value) = 178];
+	optional uint32 json_formatted_debug_data_sz = 179 [(attr_enum_value) = 179];
+	optional bool unreliable_los = 180 [(attr_enum_value) = 180];
+	optional PortErrorStatus error_status = 181 [(attr_enum_value) = 181];
+	optional StatsCountMode stats_count_mode = 182 [(attr_enum_value) = 182];
+	repeated uint64 selective_counter_list = 183 [(attr_enum_value) = 183];
 }
 
 message PortConnectorAttribute {
@@ -3847,6 +4105,8 @@ message QueueAttribute {
 	repeated uint64 tam_object = 11 [(attr_enum_value) = 11];
 	optional PacketAction pfc_dlr_packet_action = 12 [(attr_enum_value) = 12];
 	optional QueuePfcContinuousDeadlockState pfc_continuous_deadlock_state = 13 [(attr_enum_value) = 13];
+	optional StatsCountMode stats_count_mode = 14 [(attr_enum_value) = 14];
+	repeated uint64 selective_counter_list = 15 [(attr_enum_value) = 15];
 }
 
 message RouterInterfaceAttribute {
@@ -3871,7 +4131,9 @@ message RouterInterfaceAttribute {
 	optional uint32 nat_zone_id = 19 [(attr_enum_value) = 19];
 	optional bool disable_decrement_ttl = 20 [(attr_enum_value) = 20];
 	optional bool admin_mpls_state = 21 [(attr_enum_value) = 21];
-	optional bytes label = 22 [(attr_enum_value) = 22];
+	optional StatsCountMode stats_count_mode = 22 [(attr_enum_value) = 22];
+	repeated uint64 selective_counter_list = 23 [(attr_enum_value) = 23];
+	optional bytes label = 24 [(attr_enum_value) = 24];
 }
 
 message RouteEntryAttribute {
@@ -3898,6 +4160,8 @@ message SamplepacketAttribute {
 	optional uint32 sample_rate = 1 [(attr_enum_value) = 1];
 	optional SamplepacketType type = 2 [(attr_enum_value) = 2];
 	optional SamplepacketMode mode = 3 [(attr_enum_value) = 3];
+	optional bool truncate_enable = 4 [(attr_enum_value) = 4];
+	optional uint32 truncate_size = 5 [(attr_enum_value) = 5];
 }
 
 message SchedulerAttribute {
@@ -3925,6 +4189,8 @@ message Srv6SidlistAttribute {
 	repeated TLVEntry tlv_list = 2 [(attr_enum_value) = 2];
 	repeated bytes segment_list = 3 [(attr_enum_value) = 3];
 	optional uint64 next_hop_id = 4 [(attr_enum_value) = 4];
+	optional StatsCountMode stats_count_mode = 5 [(attr_enum_value) = 5];
+	repeated uint64 selective_counter_list = 6 [(attr_enum_value) = 6];
 }
 
 message StpAttribute {
@@ -4157,6 +4423,10 @@ message SwitchAttribute {
 	optional uint32 available_system_voqs = 215 [(attr_enum_value) = 230];
 	optional ACLCapability acl_stage_pre_ingress = 216 [(attr_enum_value) = 231];
 	repeated uint64 poe_device_list = 217 [(attr_enum_value) = 232];
+	optional uint32 available_icmp_echo_session = 218 [(attr_enum_value) = 234];
+	optional uint32 max_icmp_echo_session = 219 [(attr_enum_value) = 235];
+	optional StatsCountMode stats_count_mode = 220 [(attr_enum_value) = 236];
+	repeated uint64 selective_counter_list = 221 [(attr_enum_value) = 237];
 }
 
 message SwitchTunnelAttribute {
@@ -4370,6 +4640,8 @@ message TunnelAttribute {
 	optional uint64 decap_qos_dscp_to_tc_map = 28 [(attr_enum_value) = 28];
 	optional uint64 decap_qos_tc_to_priority_group_map = 29 [(attr_enum_value) = 29];
 	optional bool vxlan_udp_sport_security = 30 [(attr_enum_value) = 30];
+	optional StatsCountMode stats_count_mode = 31 [(attr_enum_value) = 31];
+	repeated uint64 selective_counter_list = 32 [(attr_enum_value) = 32];
 }
 
 message TunnelMapAttribute {
@@ -4467,6 +4739,8 @@ message VlanAttribute {
 	optional uint64 broadcast_flood_group = 20 [(attr_enum_value) = 20];
 	optional bool custom_igmp_snooping_enable = 21 [(attr_enum_value) = 21];
 	repeated uint64 tam_object = 22 [(attr_enum_value) = 22];
+	optional StatsCountMode stats_count_mode = 23 [(attr_enum_value) = 23];
+	repeated uint64 selective_counter_list = 24 [(attr_enum_value) = 24];
 }
 
 message VlanMemberAttribute {

@@ -51,6 +51,8 @@ enum BfdSessionAttr {
 	BFD_SESSION_ATTR_REMOTE_DIAG = 39;
 	BFD_SESSION_ATTR_REMOTE_MULTIPLIER = 40;
 	BFD_SESSION_ATTR_SRV6_SIDLIST_ID = 41;
+	BFD_SESSION_ATTR_STATS_COUNT_MODE = 42;
+	BFD_SESSION_ATTR_SELECTIVE_COUNTER_LIST = 43;
 }
 
 message CreateBfdSessionRequest {
@@ -89,6 +91,8 @@ message CreateBfdSessionRequest {
 	optional uint32 multiplier = 32[(attr_enum_value) = 31];
 	optional BfdSessionOffloadType offload_type = 33[(attr_enum_value) = 35];
 	optional uint64 srv6_sidlist_id = 34[(attr_enum_value) = 41];
+	optional StatsCountMode stats_count_mode = 35[(attr_enum_value) = 42];
+	repeated uint64 selective_counter_list = 36[(attr_enum_value) = 43];
 }
 
 message CreateBfdSessionResponse {
@@ -121,6 +125,8 @@ message SetBfdSessionAttributeRequest {
 	optional uint32 min_tx = 16[(attr_enum_value) = 29];
 	optional uint32 min_rx = 17[(attr_enum_value) = 30];
 	optional uint32 multiplier = 18[(attr_enum_value) = 31];
+	optional StatsCountMode stats_count_mode = 19[(attr_enum_value) = 42];
+	repeated uint64 selective_counter_list = 20[(attr_enum_value) = 43];
 }
 
 message SetBfdSessionAttributeResponse {

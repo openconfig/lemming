@@ -77,6 +77,12 @@ switch (attr_list[i].id) {
   case SAI_POLICER_ATTR_OBJECT_STAGE:
 	msg.set_object_stage(convert_sai_object_stage_t_to_proto(attr_list[i].value.s32));
 	break;
+  case SAI_POLICER_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_POLICER_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+	break;
 }
 
 }
@@ -168,6 +174,12 @@ switch (attr->id) {
   case SAI_POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST:
 	req.mutable_enable_counter_packet_action_list()->CopyFrom(convert_list_sai_packet_action_t_to_proto(attr->value.s32list));
 	break;
+  case SAI_POLICER_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_POLICER_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+	break;
 }
 
 	grpc::Status status = policer->SetPolicerAttribute(&context, req, &resp);
@@ -247,6 +259,12 @@ switch (attr_list[i].id) {
 	break;
   case SAI_POLICER_ATTR_OBJECT_STAGE:
 	 attr_list[i].value.s32 =  convert_sai_object_stage_t_to_sai(resp.attr().object_stage());
+	break;
+  case SAI_POLICER_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_POLICER_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
 	break;
 }
 

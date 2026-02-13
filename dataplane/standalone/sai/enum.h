@@ -18,129 +18,139 @@
 
 #include "dataplane/proto/sai/common.pb.h"
  
-#include "dataplane/proto/sai/stp.pb.h"
-
-#include "dataplane/proto/sai/udf.pb.h"
-
-#include "dataplane/proto/sai/bfd.pb.h"
-
-#include "dataplane/proto/sai/buffer.pb.h"
+#include "dataplane/proto/sai/vlan.pb.h"
 
 #include "dataplane/proto/sai/hostif.pb.h"
 
+#include "dataplane/proto/sai/dash_direction_lookup.pb.h"
+
+#include "dataplane/proto/sai/tunnel.pb.h"
+
+#include "dataplane/proto/sai/system_port.pb.h"
+
+#include "dataplane/proto/sai/dash_flow.pb.h"
+
 #include "dataplane/proto/sai/l2mc_group.pb.h"
 
+#include "dataplane/proto/sai/acl.pb.h"
+
+#include "dataplane/proto/sai/mpls.pb.h"
+
+#include "dataplane/proto/sai/neighbor.pb.h"
+
+#include "dataplane/proto/sai/dash_outbound_ca_to_pa.pb.h"
+
+#include "dataplane/proto/sai/dash_eni.pb.h"
+
+#include "dataplane/proto/sai/counter.pb.h"
+
+#include "dataplane/proto/sai/dtel.pb.h"
+
+#include "dataplane/proto/sai/generic_programmable.pb.h"
+
+#include "dataplane/proto/sai/dash_pa_validation.pb.h"
+
+#include "dataplane/proto/sai/isolation_group.pb.h"
+
+#include "dataplane/proto/sai/mirror.pb.h"
+
+#include "dataplane/proto/sai/nat.pb.h"
+
+#include "dataplane/proto/sai/dash_vip.pb.h"
+
+#include "dataplane/proto/sai/dash_inbound_routing.pb.h"
+
+#include "dataplane/proto/sai/bfd.pb.h"
+
+#include "dataplane/proto/sai/icmp_echo.pb.h"
+
+#include "dataplane/proto/sai/bridge.pb.h"
+
+#include "dataplane/proto/sai/fdb.pb.h"
+
+#include "dataplane/proto/sai/dash_meter.pb.h"
+
+#include "dataplane/proto/sai/virtual_router.pb.h"
+
+#include "dataplane/proto/sai/my_mac.pb.h"
+
+#include "dataplane/proto/sai/ipsec.pb.h"
+
 #include "dataplane/proto/sai/lag.pb.h"
+
+#include "dataplane/proto/sai/macsec.pb.h"
+
+#include "dataplane/proto/sai/dash_acl.pb.h"
+
+#include "dataplane/proto/sai/samplepacket.pb.h"
 
 #include "dataplane/proto/sai/debug_counter.pb.h"
 
 #include "dataplane/proto/sai/poe.pb.h"
 
-#include "dataplane/proto/sai/isolation_group.pb.h"
-
-#include "dataplane/proto/sai/dash_meter.pb.h"
-
-#include "dataplane/proto/sai/dash_acl.pb.h"
-
 #include "dataplane/proto/sai/scheduler_group.pb.h"
 
-#include "dataplane/proto/sai/mcast_fdb.pb.h"
-
-#include "dataplane/proto/sai/mirror.pb.h"
-
-#include "dataplane/proto/sai/router_interface.pb.h"
-
-#include "dataplane/proto/sai/rpf_group.pb.h"
-
-#include "dataplane/proto/sai/scheduler.pb.h"
-
-#include "dataplane/proto/sai/twamp.pb.h"
-
-#include "dataplane/proto/sai/srv6.pb.h"
-
-#include "dataplane/proto/sai/dash_eni.pb.h"
-
-#include "dataplane/proto/sai/dash_direction_lookup.pb.h"
-
-#include "dataplane/proto/sai/bmtor.pb.h"
-
-#include "dataplane/proto/sai/port.pb.h"
+#include "dataplane/proto/sai/tam.pb.h"
 
 #include "dataplane/proto/sai/ars.pb.h"
 
-#include "dataplane/proto/sai/bridge.pb.h"
-
-#include "dataplane/proto/sai/counter.pb.h"
+#include "dataplane/proto/sai/l2mc.pb.h"
 
 #include "dataplane/proto/sai/next_hop_group.pb.h"
 
-#include "dataplane/proto/sai/queue.pb.h"
-
-#include "dataplane/proto/sai/dtel.pb.h"
-
-#include "dataplane/proto/sai/hash.pb.h"
+#include "dataplane/proto/sai/next_hop.pb.h"
 
 #include "dataplane/proto/sai/route.pb.h"
 
-#include "dataplane/proto/sai/dash_outbound_ca_to_pa.pb.h"
+#include "dataplane/proto/sai/router_interface.pb.h"
 
-#include "dataplane/proto/sai/fdb.pb.h"
-
-#include "dataplane/proto/sai/macsec.pb.h"
-
-#include "dataplane/proto/sai/system_port.pb.h"
-
-#include "dataplane/proto/sai/tunnel.pb.h"
+#include "dataplane/proto/sai/hash.pb.h"
 
 #include "dataplane/proto/sai/ipmc_group.pb.h"
 
 #include "dataplane/proto/sai/ipmc.pb.h"
 
-#include "dataplane/proto/sai/dash_vip.pb.h"
+#include "dataplane/proto/sai/srv6.pb.h"
 
 #include "dataplane/proto/sai/dash_vnet.pb.h"
 
+#include "dataplane/proto/sai/queue.pb.h"
+
+#include "dataplane/proto/sai/dash_ha.pb.h"
+
+#include "dataplane/proto/sai/rpf_group.pb.h"
+
+#include "dataplane/proto/sai/mcast_fdb.pb.h"
+
+#include "dataplane/proto/sai/bmtor.pb.h"
+
+#include "dataplane/proto/sai/port.pb.h"
+
+#include "dataplane/proto/sai/qos_map.pb.h"
+
 #include "dataplane/proto/sai/dash_outbound_routing.pb.h"
-
-#include "dataplane/proto/sai/dash_inbound_routing.pb.h"
-
-#include "dataplane/proto/sai/mpls.pb.h"
-
-#include "dataplane/proto/sai/dash_pa_validation.pb.h"
-
-#include "dataplane/proto/sai/policer.pb.h"
-
-#include "dataplane/proto/sai/tam.pb.h"
-
-#include "dataplane/proto/sai/wred.pb.h"
-
-#include "dataplane/proto/sai/my_mac.pb.h"
-
-#include "dataplane/proto/sai/nat.pb.h"
-
-#include "dataplane/proto/sai/switch.pb.h"
-
-#include "dataplane/proto/sai/virtual_router.pb.h"
-
-#include "dataplane/proto/sai/vlan.pb.h"
-
-#include "dataplane/proto/sai/ipsec.pb.h"
-
-#include "dataplane/proto/sai/neighbor.pb.h"
-
-#include "dataplane/proto/sai/next_hop.pb.h"
-
-#include "dataplane/proto/sai/l2mc.pb.h"
 
 #include "dataplane/proto/sai/ars_profile.pb.h"
 
-#include "dataplane/proto/sai/samplepacket.pb.h"
+#include "dataplane/proto/sai/switch.pb.h"
 
-#include "dataplane/proto/sai/generic_programmable.pb.h"
+#include "dataplane/proto/sai/buffer.pb.h"
 
-#include "dataplane/proto/sai/acl.pb.h"
+#include "dataplane/proto/sai/dash_appliance.pb.h"
 
-#include "dataplane/proto/sai/qos_map.pb.h"
+#include "dataplane/proto/sai/policer.pb.h"
+
+#include "dataplane/proto/sai/scheduler.pb.h"
+
+#include "dataplane/proto/sai/stp.pb.h"
+
+#include "dataplane/proto/sai/udf.pb.h"
+
+#include "dataplane/proto/sai/wred.pb.h"
+
+#include "dataplane/proto/sai/twamp.pb.h"
+
+#include "dataplane/proto/sai/dash_tunnel.pb.h"
 
 
 extern "C" {
@@ -387,6 +397,11 @@ sai_counter_type_t convert_sai_counter_type_t_to_sai(lemming::dataplane::sai::Co
 google::protobuf::RepeatedField<int> convert_list_sai_counter_type_t_to_proto(const sai_s32_list_t &list);
 void convert_list_sai_counter_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 
+lemming::dataplane::sai::DashCapsHaScopeLevel convert_sai_dash_caps_ha_scope_level_t_to_proto(const sai_int32_t val);
+sai_dash_caps_ha_scope_level_t convert_sai_dash_caps_ha_scope_level_t_to_sai(lemming::dataplane::sai::DashCapsHaScopeLevel val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_caps_ha_scope_level_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_caps_ha_scope_level_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
 lemming::dataplane::sai::DashDirection convert_sai_dash_direction_t_to_proto(const sai_int32_t val);
 sai_dash_direction_t convert_sai_dash_direction_t_to_sai(lemming::dataplane::sai::DashDirection val);
 google::protobuf::RepeatedField<int> convert_list_sai_dash_direction_t_to_proto(const sai_s32_list_t &list);
@@ -396,6 +411,51 @@ lemming::dataplane::sai::DashEncapsulation convert_sai_dash_encapsulation_t_to_p
 sai_dash_encapsulation_t convert_sai_dash_encapsulation_t_to_sai(lemming::dataplane::sai::DashEncapsulation val);
 google::protobuf::RepeatedField<int> convert_list_sai_dash_encapsulation_t_to_proto(const sai_s32_list_t &list);
 void convert_list_sai_dash_encapsulation_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashEniMacOverrideType convert_sai_dash_eni_mac_override_type_t_to_proto(const sai_int32_t val);
+sai_dash_eni_mac_override_type_t convert_sai_dash_eni_mac_override_type_t_to_sai(lemming::dataplane::sai::DashEniMacOverrideType val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_eni_mac_override_type_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_eni_mac_override_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashFlowAction convert_sai_dash_flow_action_t_to_proto(const sai_int32_t val);
+sai_dash_flow_action_t convert_sai_dash_flow_action_t_to_sai(lemming::dataplane::sai::DashFlowAction val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_action_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_flow_action_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashFlowEnabledKey convert_sai_dash_flow_enabled_key_t_to_proto(const sai_int32_t val);
+sai_dash_flow_enabled_key_t convert_sai_dash_flow_enabled_key_t_to_sai(lemming::dataplane::sai::DashFlowEnabledKey val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_enabled_key_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_flow_enabled_key_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashFlowEntryBulkGetSessionFilterKey convert_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_proto(const sai_int32_t val);
+sai_dash_flow_entry_bulk_get_session_filter_key_t convert_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_sai(lemming::dataplane::sai::DashFlowEntryBulkGetSessionFilterKey val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashFlowEntryBulkGetSessionMode convert_sai_dash_flow_entry_bulk_get_session_mode_t_to_proto(const sai_int32_t val);
+sai_dash_flow_entry_bulk_get_session_mode_t convert_sai_dash_flow_entry_bulk_get_session_mode_t_to_sai(lemming::dataplane::sai::DashFlowEntryBulkGetSessionMode val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_entry_bulk_get_session_mode_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_flow_entry_bulk_get_session_mode_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashFlowEntryBulkGetSessionOpKey convert_sai_dash_flow_entry_bulk_get_session_op_key_t_to_proto(const sai_int32_t val);
+sai_dash_flow_entry_bulk_get_session_op_key_t convert_sai_dash_flow_entry_bulk_get_session_op_key_t_to_sai(lemming::dataplane::sai::DashFlowEntryBulkGetSessionOpKey val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_entry_bulk_get_session_op_key_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_flow_entry_bulk_get_session_op_key_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashHaRole convert_sai_dash_ha_role_t_to_proto(const sai_int32_t val);
+sai_dash_ha_role_t convert_sai_dash_ha_role_t_to_sai(lemming::dataplane::sai::DashHaRole val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_ha_role_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_ha_role_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashHaState convert_sai_dash_ha_state_t_to_proto(const sai_int32_t val);
+sai_dash_ha_state_t convert_sai_dash_ha_state_t_to_sai(lemming::dataplane::sai::DashHaState val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_ha_state_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_ha_state_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::DashRoutingActions convert_sai_dash_routing_actions_t_to_proto(const sai_int32_t val);
+sai_dash_routing_actions_t convert_sai_dash_routing_actions_t_to_sai(lemming::dataplane::sai::DashRoutingActions val);
+google::protobuf::RepeatedField<int> convert_list_sai_dash_routing_actions_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_dash_routing_actions_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 
 lemming::dataplane::sai::DashTunnelDscpMode convert_sai_dash_tunnel_dscp_mode_t_to_proto(const sai_int32_t val);
 sai_dash_tunnel_dscp_mode_t convert_sai_dash_tunnel_dscp_mode_t_to_sai(lemming::dataplane::sai::DashTunnelDscpMode val);
@@ -492,6 +552,16 @@ sai_generic_programmable_attr_t convert_sai_generic_programmable_attr_t_to_sai(l
 google::protobuf::RepeatedField<int> convert_list_sai_generic_programmable_attr_t_to_proto(const sai_s32_list_t &list);
 void convert_list_sai_generic_programmable_attr_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 
+lemming::dataplane::sai::HaScopeEvent convert_sai_ha_scope_event_t_to_proto(const sai_int32_t val);
+sai_ha_scope_event_t convert_sai_ha_scope_event_t_to_sai(lemming::dataplane::sai::HaScopeEvent val);
+google::protobuf::RepeatedField<int> convert_list_sai_ha_scope_event_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_ha_scope_event_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::HaSetEvent convert_sai_ha_set_event_t_to_proto(const sai_int32_t val);
+sai_ha_set_event_t convert_sai_ha_set_event_t_to_sai(lemming::dataplane::sai::HaSetEvent val);
+google::protobuf::RepeatedField<int> convert_list_sai_ha_set_event_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_ha_set_event_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
 lemming::dataplane::sai::HashAlgorithm convert_sai_hash_algorithm_t_to_proto(const sai_int32_t val);
 sai_hash_algorithm_t convert_sai_hash_algorithm_t_to_sai(lemming::dataplane::sai::HashAlgorithm val);
 google::protobuf::RepeatedField<int> convert_list_sai_hash_algorithm_t_to_proto(const sai_s32_list_t &list);
@@ -566,6 +636,21 @@ lemming::dataplane::sai::HostifVlanTag convert_sai_hostif_vlan_tag_t_to_proto(co
 sai_hostif_vlan_tag_t convert_sai_hostif_vlan_tag_t_to_sai(lemming::dataplane::sai::HostifVlanTag val);
 google::protobuf::RepeatedField<int> convert_list_sai_hostif_vlan_tag_t_to_proto(const sai_s32_list_t &list);
 void convert_list_sai_hostif_vlan_tag_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::IcmpEchoSessionAttr convert_sai_icmp_echo_session_attr_t_to_proto(const sai_int32_t val);
+sai_icmp_echo_session_attr_t convert_sai_icmp_echo_session_attr_t_to_sai(lemming::dataplane::sai::IcmpEchoSessionAttr val);
+google::protobuf::RepeatedField<int> convert_list_sai_icmp_echo_session_attr_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_icmp_echo_session_attr_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::IcmpEchoSessionStat convert_sai_icmp_echo_session_stat_t_to_proto(const sai_int32_t val);
+sai_icmp_echo_session_stat_t convert_sai_icmp_echo_session_stat_t_to_sai(lemming::dataplane::sai::IcmpEchoSessionStat val);
+google::protobuf::RepeatedField<int> convert_list_sai_icmp_echo_session_stat_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_icmp_echo_session_stat_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::IcmpEchoSessionState convert_sai_icmp_echo_session_state_t_to_proto(const sai_int32_t val);
+sai_icmp_echo_session_state_t convert_sai_icmp_echo_session_state_t_to_sai(lemming::dataplane::sai::IcmpEchoSessionState val);
+google::protobuf::RepeatedField<int> convert_list_sai_icmp_echo_session_state_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_icmp_echo_session_state_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 
 lemming::dataplane::sai::InDropReason convert_sai_in_drop_reason_t_to_proto(const sai_int32_t val);
 sai_in_drop_reason_t convert_sai_in_drop_reason_t_to_sai(lemming::dataplane::sai::InDropReason val);
@@ -1037,6 +1122,11 @@ sai_port_err_status_t convert_sai_port_err_status_t_to_sai(lemming::dataplane::s
 google::protobuf::RepeatedField<int> convert_list_sai_port_err_status_t_to_proto(const sai_s32_list_t &list);
 void convert_list_sai_port_err_status_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 
+lemming::dataplane::sai::PortErrorStatus convert_sai_port_error_status_t_to_proto(const sai_int32_t val);
+sai_port_error_status_t convert_sai_port_error_status_t_to_sai(lemming::dataplane::sai::PortErrorStatus val);
+google::protobuf::RepeatedField<int> convert_list_sai_port_error_status_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_port_error_status_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
 lemming::dataplane::sai::PortFecModeExtended convert_sai_port_fec_mode_extended_t_to_proto(const sai_int32_t val);
 sai_port_fec_mode_extended_t convert_sai_port_fec_mode_extended_t_to_sai(lemming::dataplane::sai::PortFecModeExtended val);
 google::protobuf::RepeatedField<int> convert_list_sai_port_fec_mode_extended_t_to_proto(const sai_s32_list_t &list);
@@ -1257,6 +1347,21 @@ sai_scheduling_type_t convert_sai_scheduling_type_t_to_sai(lemming::dataplane::s
 google::protobuf::RepeatedField<int> convert_list_sai_scheduling_type_t_to_proto(const sai_s32_list_t &list);
 void convert_list_sai_scheduling_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 
+lemming::dataplane::sai::SerCorrectionType convert_sai_ser_correction_type_t_to_proto(const sai_int32_t val);
+sai_ser_correction_type_t convert_sai_ser_correction_type_t_to_sai(lemming::dataplane::sai::SerCorrectionType val);
+google::protobuf::RepeatedField<int> convert_list_sai_ser_correction_type_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_ser_correction_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::SerLogType convert_sai_ser_log_type_t_to_proto(const sai_int32_t val);
+sai_ser_log_type_t convert_sai_ser_log_type_t_to_sai(lemming::dataplane::sai::SerLogType val);
+google::protobuf::RepeatedField<int> convert_list_sai_ser_log_type_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_ser_log_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::SerType convert_sai_ser_type_t_to_proto(const sai_int32_t val);
+sai_ser_type_t convert_sai_ser_type_t_to_sai(lemming::dataplane::sai::SerType val);
+google::protobuf::RepeatedField<int> convert_list_sai_ser_type_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_ser_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
 lemming::dataplane::sai::Srv6SidlistAttr convert_sai_srv6_sidlist_attr_t_to_proto(const sai_int32_t val);
 sai_srv6_sidlist_attr_t convert_sai_srv6_sidlist_attr_t_to_sai(lemming::dataplane::sai::Srv6SidlistAttr val);
 google::protobuf::RepeatedField<int> convert_list_sai_srv6_sidlist_attr_t_to_proto(const sai_s32_list_t &list);
@@ -1271,6 +1376,11 @@ lemming::dataplane::sai::Srv6SidlistType convert_sai_srv6_sidlist_type_t_to_prot
 sai_srv6_sidlist_type_t convert_sai_srv6_sidlist_type_t_to_sai(lemming::dataplane::sai::Srv6SidlistType val);
 google::protobuf::RepeatedField<int> convert_list_sai_srv6_sidlist_type_t_to_proto(const sai_s32_list_t &list);
 void convert_list_sai_srv6_sidlist_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
+
+lemming::dataplane::sai::StatsCountMode convert_sai_stats_count_mode_t_to_proto(const sai_int32_t val);
+sai_stats_count_mode_t convert_sai_stats_count_mode_t_to_sai(lemming::dataplane::sai::StatsCountMode val);
+google::protobuf::RepeatedField<int> convert_list_sai_stats_count_mode_t_to_proto(const sai_s32_list_t &list);
+void convert_list_sai_stats_count_mode_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 
 lemming::dataplane::sai::StatsMode convert_sai_stats_mode_t_to_proto(const sai_int32_t val);
 sai_stats_mode_t convert_sai_stats_mode_t_to_sai(lemming::dataplane::sai::StatsMode val);

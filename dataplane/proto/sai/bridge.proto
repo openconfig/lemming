@@ -20,6 +20,8 @@ enum BridgeAttr {
 	BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP = 8;
 	BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE = 9;
 	BRIDGE_ATTR_BROADCAST_FLOOD_GROUP = 10;
+	BRIDGE_ATTR_STATS_COUNT_MODE = 11;
+	BRIDGE_ATTR_SELECTIVE_COUNTER_LIST = 12;
 }
 
 enum BridgePortAttr {
@@ -38,6 +40,8 @@ enum BridgePortAttr {
 	BRIDGE_PORT_ATTR_INGRESS_FILTERING = 12;
 	BRIDGE_PORT_ATTR_EGRESS_FILTERING = 13;
 	BRIDGE_PORT_ATTR_ISOLATION_GROUP = 14;
+	BRIDGE_PORT_ATTR_STATS_COUNT_MODE = 15;
+	BRIDGE_PORT_ATTR_SELECTIVE_COUNTER_LIST = 16;
 }
 
 message CreateBridgeRequest {
@@ -52,6 +56,8 @@ message CreateBridgeRequest {
 	optional uint64 unknown_multicast_flood_group = 8[(attr_enum_value) = 8];
 	optional BridgeFloodControlType broadcast_flood_control_type = 9[(attr_enum_value) = 9];
 	optional uint64 broadcast_flood_group = 10[(attr_enum_value) = 10];
+	optional StatsCountMode stats_count_mode = 11[(attr_enum_value) = 11];
+	repeated uint64 selective_counter_list = 12[(attr_enum_value) = 12];
 }
 
 message CreateBridgeResponse {
@@ -75,6 +81,8 @@ message SetBridgeAttributeRequest {
 	optional uint64 unknown_multicast_flood_group = 7[(attr_enum_value) = 8];
 	optional BridgeFloodControlType broadcast_flood_control_type = 8[(attr_enum_value) = 9];
 	optional uint64 broadcast_flood_group = 9[(attr_enum_value) = 10];
+	optional StatsCountMode stats_count_mode = 10[(attr_enum_value) = 11];
+	repeated uint64 selective_counter_list = 11[(attr_enum_value) = 12];
 }
 
 message SetBridgeAttributeResponse {
@@ -115,6 +123,8 @@ message CreateBridgePortRequest {
 	optional bool ingress_filtering = 13[(attr_enum_value) = 12];
 	optional bool egress_filtering = 14[(attr_enum_value) = 13];
 	optional uint64 isolation_group = 15[(attr_enum_value) = 14];
+	optional StatsCountMode stats_count_mode = 16[(attr_enum_value) = 15];
+	repeated uint64 selective_counter_list = 17[(attr_enum_value) = 16];
 }
 
 message CreateBridgePortResponse {
@@ -139,6 +149,8 @@ message SetBridgePortAttributeRequest {
 	optional bool ingress_filtering = 8[(attr_enum_value) = 12];
 	optional bool egress_filtering = 9[(attr_enum_value) = 13];
 	optional uint64 isolation_group = 10[(attr_enum_value) = 14];
+	optional StatsCountMode stats_count_mode = 11[(attr_enum_value) = 15];
+	repeated uint64 selective_counter_list = 12[(attr_enum_value) = 16];
 }
 
 message SetBridgePortAttributeResponse {

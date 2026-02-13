@@ -31,7 +31,9 @@ enum RouterInterfaceAttr {
 	ROUTER_INTERFACE_ATTR_NAT_ZONE_ID = 19;
 	ROUTER_INTERFACE_ATTR_DISABLE_DECREMENT_TTL = 20;
 	ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE = 21;
-	ROUTER_INTERFACE_ATTR_LABEL = 22;
+	ROUTER_INTERFACE_ATTR_STATS_COUNT_MODE = 22;
+	ROUTER_INTERFACE_ATTR_SELECTIVE_COUNTER_LIST = 23;
+	ROUTER_INTERFACE_ATTR_LABEL = 24;
 }
 
 message CreateRouterInterfaceRequest {
@@ -58,7 +60,9 @@ message CreateRouterInterfaceRequest {
 	optional uint32 nat_zone_id = 20[(attr_enum_value) = 19];
 	optional bool disable_decrement_ttl = 21[(attr_enum_value) = 20];
 	optional bool admin_mpls_state = 22[(attr_enum_value) = 21];
-	optional bytes label = 23[(attr_enum_value) = 22];
+	optional StatsCountMode stats_count_mode = 23[(attr_enum_value) = 22];
+	repeated uint64 selective_counter_list = 24[(attr_enum_value) = 23];
+	optional bytes label = 25[(attr_enum_value) = 24];
 }
 
 message CreateRouterInterfaceResponse {
@@ -87,7 +91,9 @@ message SetRouterInterfaceAttributeRequest {
 	optional uint32 nat_zone_id = 12[(attr_enum_value) = 19];
 	optional bool disable_decrement_ttl = 13[(attr_enum_value) = 20];
 	optional bool admin_mpls_state = 14[(attr_enum_value) = 21];
-	optional bytes label = 15[(attr_enum_value) = 22];
+	optional StatsCountMode stats_count_mode = 15[(attr_enum_value) = 22];
+	repeated uint64 selective_counter_list = 16[(attr_enum_value) = 23];
+	optional bytes label = 17[(attr_enum_value) = 24];
 }
 
 message SetRouterInterfaceAttributeResponse {

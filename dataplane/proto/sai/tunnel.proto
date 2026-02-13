@@ -46,6 +46,8 @@ enum TunnelAttr {
 	TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP = 28;
 	TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP = 29;
 	TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY = 30;
+	TUNNEL_ATTR_STATS_COUNT_MODE = 31;
+	TUNNEL_ATTR_SELECTIVE_COUNTER_LIST = 32;
 }
 
 enum TunnelTermTableEntryAttr {
@@ -143,6 +145,8 @@ message CreateTunnelRequest {
 	optional uint64 decap_qos_dscp_to_tc_map = 28[(attr_enum_value) = 28];
 	optional uint64 decap_qos_tc_to_priority_group_map = 29[(attr_enum_value) = 29];
 	optional bool vxlan_udp_sport_security = 30[(attr_enum_value) = 30];
+	optional StatsCountMode stats_count_mode = 31[(attr_enum_value) = 31];
+	repeated uint64 selective_counter_list = 32[(attr_enum_value) = 32];
 }
 
 message CreateTunnelResponse {
@@ -176,6 +180,8 @@ message SetTunnelAttributeRequest {
 	optional uint64 decap_qos_dscp_to_tc_map = 17[(attr_enum_value) = 28];
 	optional uint64 decap_qos_tc_to_priority_group_map = 18[(attr_enum_value) = 29];
 	optional bool vxlan_udp_sport_security = 19[(attr_enum_value) = 30];
+	optional StatsCountMode stats_count_mode = 20[(attr_enum_value) = 31];
+	repeated uint64 selective_counter_list = 21[(attr_enum_value) = 32];
 }
 
 message SetTunnelAttributeResponse {

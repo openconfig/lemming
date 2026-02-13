@@ -47,6 +47,18 @@ switch (attr_list[i].id) {
   case SAI_COUNTER_ATTR_LABEL:
 	msg.set_label(attr_list[i].value.chardata);
 	break;
+  case SAI_COUNTER_ATTR_ENABLE_PACKET_COUNT:
+	msg.set_enable_packet_count(attr_list[i].value.booldata);
+	break;
+  case SAI_COUNTER_ATTR_ENABLE_BYTE_COUNT:
+	msg.set_enable_byte_count(attr_list[i].value.booldata);
+	break;
+  case SAI_COUNTER_ATTR_OBJECT_TYPE:
+	msg.set_object_type(convert_sai_object_type_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_COUNTER_ATTR_STAT_ID_LIST:
+	msg.mutable_stat_id_list()->Add(attr_list[i].value.s32list.list, attr_list[i].value.s32list.list + attr_list[i].value.s32list.count);
+	break;
 }
 
 }
@@ -117,6 +129,9 @@ switch (attr->id) {
   case SAI_COUNTER_ATTR_LABEL:
 	req.set_label(attr->value.chardata);
 	break;
+  case SAI_COUNTER_ATTR_STAT_ID_LIST:
+	req.mutable_stat_id_list()->Add(attr->value.s32list.list, attr->value.s32list.list + attr->value.s32list.count);
+	break;
 }
 
 	grpc::Status status = counter->SetCounterAttribute(&context, req, &resp);
@@ -166,6 +181,18 @@ switch (attr_list[i].id) {
 	break;
   case SAI_COUNTER_ATTR_LABEL:
 	strncpy(attr_list[i].value.chardata, resp.attr().label().data(), 32);
+	break;
+  case SAI_COUNTER_ATTR_ENABLE_PACKET_COUNT:
+	 attr_list[i].value.booldata =   resp.attr().enable_packet_count();
+	break;
+  case SAI_COUNTER_ATTR_ENABLE_BYTE_COUNT:
+	 attr_list[i].value.booldata =   resp.attr().enable_byte_count();
+	break;
+  case SAI_COUNTER_ATTR_OBJECT_TYPE:
+	 attr_list[i].value.s32 =  convert_sai_object_type_t_to_sai(resp.attr().object_type());
+	break;
+  case SAI_COUNTER_ATTR_STAT_ID_LIST:
+	copy_list(attr_list[i].value.s32list.list, resp.attr().stat_id_list(), &attr_list[i].value.s32list.count);
 	break;
 }
 

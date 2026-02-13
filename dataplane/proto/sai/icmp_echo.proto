@@ -1,0 +1,113 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/sai/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
+
+
+enum IcmpEchoSessionAttr {
+	ICMP_ECHO_SESSION_ATTR_UNSPECIFIED = 0;
+	ICMP_ECHO_SESSION_ATTR_HW_LOOKUP_VALID = 1;
+	ICMP_ECHO_SESSION_ATTR_VIRTUAL_ROUTER = 2;
+	ICMP_ECHO_SESSION_ATTR_PORT = 3;
+	ICMP_ECHO_SESSION_ATTR_RX_PORT = 4;
+	ICMP_ECHO_SESSION_ATTR_GUID = 5;
+	ICMP_ECHO_SESSION_ATTR_COOKIE = 6;
+	ICMP_ECHO_SESSION_ATTR_IPHDR_VERSION = 7;
+	ICMP_ECHO_SESSION_ATTR_TOS = 8;
+	ICMP_ECHO_SESSION_ATTR_TTL = 9;
+	ICMP_ECHO_SESSION_ATTR_SRC_IP_ADDRESS = 10;
+	ICMP_ECHO_SESSION_ATTR_DST_IP_ADDRESS = 11;
+	ICMP_ECHO_SESSION_ATTR_SRC_MAC_ADDRESS = 12;
+	ICMP_ECHO_SESSION_ATTR_DST_MAC_ADDRESS = 13;
+	ICMP_ECHO_SESSION_ATTR_TX_INTERVAL = 14;
+	ICMP_ECHO_SESSION_ATTR_RX_INTERVAL = 15;
+	ICMP_ECHO_SESSION_ATTR_SET_NEXT_HOP_GROUP_SWITCHOVER = 16;
+	ICMP_ECHO_SESSION_ATTR_STATE = 17;
+	ICMP_ECHO_SESSION_ATTR_STATS_COUNT_MODE = 18;
+	ICMP_ECHO_SESSION_ATTR_SELECTIVE_COUNTER_LIST = 19;
+}
+
+message CreateIcmpEchoSessionRequest {
+	option (sai_type) = OBJECT_TYPE_ICMP_ECHO_SESSION;
+	uint64 switch = 1;
+	optional bool hw_lookup_valid = 2[(attr_enum_value) = 1];
+	optional uint64 virtual_router = 3[(attr_enum_value) = 2];
+	optional uint64 port = 4[(attr_enum_value) = 3];
+	optional uint64 rx_port = 5[(attr_enum_value) = 4];
+	optional uint64 guid = 6[(attr_enum_value) = 5];
+	optional uint32 cookie = 7[(attr_enum_value) = 6];
+	optional uint32 iphdr_version = 8[(attr_enum_value) = 7];
+	optional uint32 tos = 9[(attr_enum_value) = 8];
+	optional uint32 ttl = 10[(attr_enum_value) = 9];
+	optional bytes src_ip_address = 11[(attr_enum_value) = 10];
+	optional bytes dst_ip_address = 12[(attr_enum_value) = 11];
+	optional bytes src_mac_address = 13[(attr_enum_value) = 12];
+	optional bytes dst_mac_address = 14[(attr_enum_value) = 13];
+	optional uint32 tx_interval = 15[(attr_enum_value) = 14];
+	optional uint32 rx_interval = 16[(attr_enum_value) = 15];
+	optional bool set_next_hop_group_switchover = 17[(attr_enum_value) = 16];
+	optional StatsCountMode stats_count_mode = 18[(attr_enum_value) = 18];
+	repeated uint64 selective_counter_list = 19[(attr_enum_value) = 19];
+}
+
+message CreateIcmpEchoSessionResponse {
+	uint64 oid = 1;
+}
+
+message RemoveIcmpEchoSessionRequest {
+	uint64 oid = 1;
+}
+
+message RemoveIcmpEchoSessionResponse {
+}
+
+message SetIcmpEchoSessionAttributeRequest {
+	uint64 oid = 1;
+	optional uint64 virtual_router = 2[(attr_enum_value) = 2];
+	optional uint64 port = 3[(attr_enum_value) = 3];
+	optional uint64 rx_port = 4[(attr_enum_value) = 4];
+	optional uint32 iphdr_version = 5[(attr_enum_value) = 7];
+	optional uint32 tos = 6[(attr_enum_value) = 8];
+	optional uint32 ttl = 7[(attr_enum_value) = 9];
+	optional bytes src_mac_address = 8[(attr_enum_value) = 12];
+	optional bytes dst_mac_address = 9[(attr_enum_value) = 13];
+	optional uint32 tx_interval = 10[(attr_enum_value) = 14];
+	optional uint32 rx_interval = 11[(attr_enum_value) = 15];
+	optional bool set_next_hop_group_switchover = 12[(attr_enum_value) = 16];
+	optional StatsCountMode stats_count_mode = 13[(attr_enum_value) = 18];
+	repeated uint64 selective_counter_list = 14[(attr_enum_value) = 19];
+}
+
+message SetIcmpEchoSessionAttributeResponse {
+}
+
+message GetIcmpEchoSessionAttributeRequest {
+	uint64 oid = 1;
+	repeated IcmpEchoSessionAttr attr_type = 2;
+}
+
+message GetIcmpEchoSessionAttributeResponse {
+	IcmpEchoSessionAttribute attr = 1;
+}
+
+message GetIcmpEchoSessionStatsRequest {
+	uint64 oid = 1;
+	repeated IcmpEchoSessionStat counter_ids = 2;
+}
+
+message GetIcmpEchoSessionStatsResponse {
+	repeated uint64 values = 1;
+}
+
+
+service IcmpEcho {
+	rpc CreateIcmpEchoSession (CreateIcmpEchoSessionRequest) returns (CreateIcmpEchoSessionResponse) {}
+	rpc RemoveIcmpEchoSession (RemoveIcmpEchoSessionRequest) returns (RemoveIcmpEchoSessionResponse) {}
+	rpc SetIcmpEchoSessionAttribute (SetIcmpEchoSessionAttributeRequest) returns (SetIcmpEchoSessionAttributeResponse) {}
+	rpc GetIcmpEchoSessionAttribute (GetIcmpEchoSessionAttributeRequest) returns (GetIcmpEchoSessionAttributeResponse) {}
+	rpc GetIcmpEchoSessionStats (GetIcmpEchoSessionStatsRequest) returns (GetIcmpEchoSessionStatsResponse) {}
+}

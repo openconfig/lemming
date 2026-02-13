@@ -30,6 +30,7 @@ const (
 	Macsec_GetMacsecPortStats_FullMethodName     = "/lemming.dataplane.sai.Macsec/GetMacsecPortStats"
 	Macsec_CreateMacsecFlow_FullMethodName       = "/lemming.dataplane.sai.Macsec/CreateMacsecFlow"
 	Macsec_RemoveMacsecFlow_FullMethodName       = "/lemming.dataplane.sai.Macsec/RemoveMacsecFlow"
+	Macsec_SetMacsecFlowAttribute_FullMethodName = "/lemming.dataplane.sai.Macsec/SetMacsecFlowAttribute"
 	Macsec_GetMacsecFlowAttribute_FullMethodName = "/lemming.dataplane.sai.Macsec/GetMacsecFlowAttribute"
 	Macsec_GetMacsecFlowStats_FullMethodName     = "/lemming.dataplane.sai.Macsec/GetMacsecFlowStats"
 	Macsec_CreateMacsecSc_FullMethodName         = "/lemming.dataplane.sai.Macsec/CreateMacsecSc"
@@ -59,6 +60,7 @@ type MacsecClient interface {
 	GetMacsecPortStats(ctx context.Context, in *GetMacsecPortStatsRequest, opts ...grpc.CallOption) (*GetMacsecPortStatsResponse, error)
 	CreateMacsecFlow(ctx context.Context, in *CreateMacsecFlowRequest, opts ...grpc.CallOption) (*CreateMacsecFlowResponse, error)
 	RemoveMacsecFlow(ctx context.Context, in *RemoveMacsecFlowRequest, opts ...grpc.CallOption) (*RemoveMacsecFlowResponse, error)
+	SetMacsecFlowAttribute(ctx context.Context, in *SetMacsecFlowAttributeRequest, opts ...grpc.CallOption) (*SetMacsecFlowAttributeResponse, error)
 	GetMacsecFlowAttribute(ctx context.Context, in *GetMacsecFlowAttributeRequest, opts ...grpc.CallOption) (*GetMacsecFlowAttributeResponse, error)
 	GetMacsecFlowStats(ctx context.Context, in *GetMacsecFlowStatsRequest, opts ...grpc.CallOption) (*GetMacsecFlowStatsResponse, error)
 	CreateMacsecSc(ctx context.Context, in *CreateMacsecScRequest, opts ...grpc.CallOption) (*CreateMacsecScResponse, error)
@@ -185,6 +187,16 @@ func (c *macsecClient) RemoveMacsecFlow(ctx context.Context, in *RemoveMacsecFlo
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemoveMacsecFlowResponse)
 	err := c.cc.Invoke(ctx, Macsec_RemoveMacsecFlow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *macsecClient) SetMacsecFlowAttribute(ctx context.Context, in *SetMacsecFlowAttributeRequest, opts ...grpc.CallOption) (*SetMacsecFlowAttributeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetMacsecFlowAttributeResponse)
+	err := c.cc.Invoke(ctx, Macsec_SetMacsecFlowAttribute_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -326,6 +338,7 @@ type MacsecServer interface {
 	GetMacsecPortStats(context.Context, *GetMacsecPortStatsRequest) (*GetMacsecPortStatsResponse, error)
 	CreateMacsecFlow(context.Context, *CreateMacsecFlowRequest) (*CreateMacsecFlowResponse, error)
 	RemoveMacsecFlow(context.Context, *RemoveMacsecFlowRequest) (*RemoveMacsecFlowResponse, error)
+	SetMacsecFlowAttribute(context.Context, *SetMacsecFlowAttributeRequest) (*SetMacsecFlowAttributeResponse, error)
 	GetMacsecFlowAttribute(context.Context, *GetMacsecFlowAttributeRequest) (*GetMacsecFlowAttributeResponse, error)
 	GetMacsecFlowStats(context.Context, *GetMacsecFlowStatsRequest) (*GetMacsecFlowStatsResponse, error)
 	CreateMacsecSc(context.Context, *CreateMacsecScRequest) (*CreateMacsecScResponse, error)
@@ -379,6 +392,9 @@ func (UnimplementedMacsecServer) CreateMacsecFlow(context.Context, *CreateMacsec
 }
 func (UnimplementedMacsecServer) RemoveMacsecFlow(context.Context, *RemoveMacsecFlowRequest) (*RemoveMacsecFlowResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveMacsecFlow not implemented")
+}
+func (UnimplementedMacsecServer) SetMacsecFlowAttribute(context.Context, *SetMacsecFlowAttributeRequest) (*SetMacsecFlowAttributeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetMacsecFlowAttribute not implemented")
 }
 func (UnimplementedMacsecServer) GetMacsecFlowAttribute(context.Context, *GetMacsecFlowAttributeRequest) (*GetMacsecFlowAttributeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMacsecFlowAttribute not implemented")
@@ -630,6 +646,24 @@ func _Macsec_RemoveMacsecFlow_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MacsecServer).RemoveMacsecFlow(ctx, req.(*RemoveMacsecFlowRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Macsec_SetMacsecFlowAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetMacsecFlowAttributeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MacsecServer).SetMacsecFlowAttribute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Macsec_SetMacsecFlowAttribute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MacsecServer).SetMacsecFlowAttribute(ctx, req.(*SetMacsecFlowAttributeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -900,6 +934,10 @@ var Macsec_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveMacsecFlow",
 			Handler:    _Macsec_RemoveMacsecFlow_Handler,
+		},
+		{
+			MethodName: "SetMacsecFlowAttribute",
+			Handler:    _Macsec_SetMacsecFlowAttribute_Handler,
 		},
 		{
 			MethodName: "GetMacsecFlowAttribute",
