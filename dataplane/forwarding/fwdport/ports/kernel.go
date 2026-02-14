@@ -190,8 +190,8 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 
 	netlink.LinkSetUp(l)
 
-	// TODO: configure MTU
-	handle, err := pcap.OpenLive(kp.Kernel.GetDeviceName(), 1514, true, pcap.BlockForever)
+	// Set snaplen to 64KB to capture max size IP packets
+	handle, err := pcap.OpenLive(kp.Kernel.GetDeviceName(), 65536, true, pcap.BlockForever)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}

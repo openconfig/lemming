@@ -22,6 +22,7 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/vishvananda/netlink"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
@@ -218,6 +219,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		AdminState:                       proto.Bool(true),
 		AutoNegMode:                      proto.Bool(req.GetAutoNegMode()),
 		Mtu:                              proto.Uint32(1514),
+		HwLaneList:                       req.HwLaneList,
 		PortVlanId:                       proto.Uint32(vId),
 	}
 
@@ -557,6 +559,23 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 		supported := checkFECMode(req.GetFecModeExtended(), int(portAttr.GetAttr().GetSpeed()), len(portAttr.GetAttr().GetHwLaneList()), port.opts.HardwareProfile.FECModes)
 		if !supported {
 			return nil, fmt.Errorf("unsupported FEC mode: %v for speed %d and lanes %d", req.GetFecModeExtended(), portAttr.GetAttr().GetSpeed(), len(portAttr.GetAttr().GetHwLaneList()))
+		}
+	}
+	if req.Mtu != nil {
+		if len(portAttr.GetAttr().GetHwLaneList()) == 0 {
+			slog.WarnContext(ctx, "port has no lanes", "oid", req.GetOid())
+			return nil, fmt.Errorf("port %v has no lanes", req.GetOid())
+		}
+		dev := fmt.Sprintf("eth%v", portAttr.GetAttr().GetHwLaneList()[0])
+		slog.InfoContext(ctx, "setting port mtu", "oid", req.GetOid(), "dev", dev, "mtu", req.GetMtu())
+		link, err := netlink.LinkByName(dev)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to get link", "dev", dev, "err", err)
+			return nil, err
+		}
+		if err := netlink.LinkSetMTU(link, int(req.GetMtu())); err != nil {
+			slog.ErrorContext(ctx, "failed to set mtu", "dev", dev, "mtu", req.GetMtu(), "err", err)
+			return nil, err
 		}
 	}
 	return &saipb.SetPortAttributeResponse{}, nil
