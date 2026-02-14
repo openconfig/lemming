@@ -73,6 +73,68 @@ func TestCreateUdf(t *testing.T) {
 	}
 }
 
+func TestRemoveUdf(t *testing.T) {
+	tests := []struct {
+		desc      string
+		wantErr   string
+		req       *saipb.RemoveUdfRequest
+		setup     func(*attrmgr.AttrMgr)
+		wantGroup []uint64
+	}{{
+		desc: "remove from list",
+		req: &saipb.RemoveUdfRequest{
+			Oid: 1,
+		},
+		setup: func(mgr *attrmgr.AttrMgr) {
+			mgr.StoreAttributes(10, &saipb.UdfGroupAttribute{
+				UdfList: []uint64{1, 2, 3},
+			})
+			mgr.StoreAttributes(1, &saipb.CreateUdfRequest{
+				GroupId: proto.Uint64(10),
+			})
+		},
+		wantGroup: []uint64{2, 3},
+	}, {
+		desc: "remove not found",
+		req: &saipb.RemoveUdfRequest{
+			Oid: 4,
+		},
+		setup: func(mgr *attrmgr.AttrMgr) {
+			mgr.StoreAttributes(10, &saipb.UdfGroupAttribute{
+				UdfList: []uint64{1, 2, 3},
+			})
+			mgr.StoreAttributes(4, &saipb.CreateUdfRequest{
+				GroupId: proto.Uint64(10),
+			})
+		},
+		wantGroup: []uint64{1, 2, 3},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestUdf(t, dplane)
+			defer stopFn()
+			if tt.setup != nil {
+				tt.setup(mgr)
+			}
+			_, gotErr := c.RemoveUdf(context.Background(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveUdf() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			gr := &saipb.UdfGroupAttribute{}
+			if err := mgr.PopulateAllAttributes("10", gr); err != nil {
+				t.Fatal(err)
+			}
+			if slices.Compare(gr.UdfList, tt.wantGroup) != 0 {
+				t.Errorf("invalid group got %v, want: %v", gr.UdfList, tt.wantGroup)
+			}
+		})
+	}
+}
+
 func newTestUdf(t testing.TB, api switchDataplaneAPI) (saipb.UdfClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newUdf(mgr, api, srv)
