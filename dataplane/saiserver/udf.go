@@ -65,3 +65,38 @@ func (u *udf) CreateUdfMatch(context.Context, *saipb.CreateUdfMatchRequest) (*sa
 		Oid: u.mgr.NextID(),
 	}, nil
 }
+
+func (u *udf) RemoveUdf(ctx context.Context, req *saipb.RemoveUdfRequest) (*saipb.RemoveUdfResponse, error) {
+	groupIDAttr := u.mgr.GetAttribute(fmt.Sprint(req.GetOid()), int32(saipb.UdfAttr_UDF_ATTR_GROUP_ID))
+	if groupIDAttr == nil {
+		return &saipb.RemoveUdfResponse{}, nil
+	}
+	groupID := groupIDAttr.(uint64)
+	udfGroup := &saipb.UdfGroupAttribute{}
+	if err := u.mgr.PopulateAllAttributes(fmt.Sprint(groupID), udfGroup); err != nil {
+		return nil, err
+	}
+	newList := []uint64{}
+	found := false
+	for _, id := range udfGroup.UdfList {
+		if id != req.GetOid() {
+			newList = append(newList, id)
+		} else {
+			found = true
+		}
+	}
+	if found {
+		udfGroup.UdfList = newList
+		u.mgr.StoreAttributes(groupID, udfGroup)
+	}
+
+	return &saipb.RemoveUdfResponse{}, nil
+}
+
+func (u *udf) RemoveUdfGroup(context.Context, *saipb.RemoveUdfGroupRequest) (*saipb.RemoveUdfGroupResponse, error) {
+	return &saipb.RemoveUdfGroupResponse{}, nil
+}
+
+func (u *udf) RemoveUdfMatch(context.Context, *saipb.RemoveUdfMatchRequest) (*saipb.RemoveUdfMatchResponse, error) {
+	return &saipb.RemoveUdfMatchResponse{}, nil
+}
