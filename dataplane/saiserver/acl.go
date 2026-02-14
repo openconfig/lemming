@@ -122,6 +122,22 @@ func (a *acl) CreateAclTableGroupMember(_ context.Context, req *saipb.CreateAclT
 	return &saipb.CreateAclTableGroupMemberResponse{Oid: memberID}, nil
 }
 
+func (a *acl) RemoveAclTableGroupMember(_ context.Context, req *saipb.RemoveAclTableGroupMemberRequest) (*saipb.RemoveAclTableGroupMemberResponse, error) {
+	var tableID uint64
+	found := false
+	for tid, loc := range a.tableToLocation {
+		if loc.memberID == req.GetOid() {
+			tableID = tid
+			found = true
+			break
+		}
+	}
+	if found {
+		delete(a.tableToLocation, tableID)
+	}
+	return &saipb.RemoveAclTableGroupMemberResponse{}, nil
+}
+
 // CreateAclTable is noop as the table is already created in the group.
 func (a *acl) CreateAclTable(context.Context, *saipb.CreateAclTableRequest) (*saipb.CreateAclTableResponse, error) {
 	id := a.mgr.NextID()
@@ -132,6 +148,11 @@ func (a *acl) CreateAclTable(context.Context, *saipb.CreateAclTableRequest) (*sa
 	})
 
 	return &saipb.CreateAclTableResponse{Oid: id}, nil
+}
+
+// RemoveAclTable is noop as the table is not created in the datapalne.
+func (a *acl) RemoveAclTable(context.Context, *saipb.RemoveAclTableRequest) (*saipb.RemoveAclTableResponse, error) {
+	return &saipb.RemoveAclTableResponse{}, nil
 }
 
 func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, gid string, bank int) (*fwdpb.TableEntryAddRequest, error) {
