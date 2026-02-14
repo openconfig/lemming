@@ -735,6 +735,99 @@ func TestGetAclCounterAttribute(t *testing.T) {
 	}
 }
 
+func TestRemoveAclTableGroupMember(t *testing.T) {
+	tests := []struct {
+		desc      string
+		req       *saipb.RemoveAclTableGroupMemberRequest
+		wantErr   string
+		setup     func(*acl)
+		wantState map[uint64]tableLocation
+	}{{
+		desc: "success",
+		req: &saipb.RemoveAclTableGroupMemberRequest{
+			Oid: 10,
+		},
+		setup: func(a *acl) {
+			a.tableToLocation[5] = tableLocation{
+				groupID:  "1",
+				bank:     0,
+				memberID: 10,
+			}
+			a.mgr.StoreAttributes(10, &saipb.CreateAclTableGroupMemberRequest{
+				Priority: proto.Uint32(100),
+			})
+		},
+		wantState: map[uint64]tableLocation{},
+	}, {
+		desc: "not found",
+		req: &saipb.RemoveAclTableGroupMemberRequest{
+			Oid: 11,
+		},
+		setup: func(a *acl) {
+			a.tableToLocation[5] = tableLocation{
+				groupID:  "1",
+				bank:     0,
+				memberID: 10,
+			}
+			a.mgr.StoreAttributes(11, &saipb.CreateAclTableGroupMemberRequest{
+				Priority: proto.Uint32(100),
+			})
+		},
+		wantState: map[uint64]tableLocation{
+			5: {
+				groupID:  "1",
+				bank:     0,
+				memberID: 10,
+			},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, a, stopFn := newTestACL(t, dplane)
+			defer stopFn()
+			if tt.setup != nil {
+				tt.setup(a)
+			}
+			_, gotErr := c.RemoveAclTableGroupMember(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveAclTableGroupMember() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(a.tableToLocation, tt.wantState, cmp.AllowUnexported(tableLocation{})); d != "" {
+				t.Errorf("RemoveAclTableGroupMember() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestRemoveAclTable(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.RemoveAclTableRequest
+		wantErr string
+	}{{
+		desc: "success",
+		req:  &saipb.RemoveAclTableRequest{Oid: 1},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, a, stopFn := newTestACL(t, dplane)
+			a.mgr.StoreAttributes(1, &saipb.CreateAclTableRequest{
+				AclStage: saipb.AclStage_ACL_STAGE_INGRESS.Enum(),
+			})
+			defer stopFn()
+			_, gotErr := c.RemoveAclTable(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveAclTable() unexpected err: %s", diff)
+			}
+		})
+	}
+}
+
 func newTestACL(t testing.TB, api switchDataplaneAPI) (saipb.AclClient, *acl, func()) {
 	var a *acl
 	conn, _, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
