@@ -38,6 +38,8 @@ const sai_buffer_api_t l_buffer = {
 	.remove_buffer_profile = l_remove_buffer_profile,
 	.set_buffer_profile_attribute = l_set_buffer_profile_attribute,
 	.get_buffer_profile_attribute = l_get_buffer_profile_attribute,
+	.set_ingress_priority_groups_attribute = l_set_ingress_priority_groups_attribute,
+	.get_ingress_priority_groups_attribute = l_get_ingress_priority_groups_attribute,
 };
 
 
@@ -70,6 +72,12 @@ switch (attr_list[i].id) {
   case SAI_BUFFER_POOL_ATTR_WRED_PROFILE_ID:
 	msg.set_wred_profile_id(attr_list[i].value.oid);
 	break;
+  case SAI_BUFFER_POOL_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+	break;
 }
 
 }
@@ -98,6 +106,12 @@ switch (attr_list[i].id) {
 	break;
   case SAI_INGRESS_PRIORITY_GROUP_ATTR_INDEX:
 	msg.set_index(attr_list[i].value.u8);
+	break;
+  case SAI_INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
 	break;
 }
 
@@ -219,6 +233,12 @@ switch (attr->id) {
   case SAI_BUFFER_POOL_ATTR_WRED_PROFILE_ID:
 	req.set_wred_profile_id(attr->value.oid);
 	break;
+  case SAI_BUFFER_POOL_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+	break;
 }
 
 	grpc::Status status = buffer->SetBufferPoolAttribute(&context, req, &resp);
@@ -283,6 +303,12 @@ switch (attr_list[i].id) {
 	break;
   case SAI_BUFFER_POOL_ATTR_WRED_PROFILE_ID:
 	 attr_list[i].value.oid =   resp.attr().wred_profile_id();
+	break;
+  case SAI_BUFFER_POOL_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
 	break;
 }
 
@@ -398,6 +424,12 @@ switch (attr->id) {
   case SAI_INGRESS_PRIORITY_GROUP_ATTR_TAM:
 	req.mutable_tam()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
 	break;
+  case SAI_INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+	break;
 }
 
 	grpc::Status status = buffer->SetIngressPriorityGroupAttribute(&context, req, &resp);
@@ -453,6 +485,12 @@ switch (attr_list[i].id) {
 	break;
   case SAI_INGRESS_PRIORITY_GROUP_ATTR_INDEX:
 	 attr_list[i].value.u8 =   resp.attr().index();
+	break;
+  case SAI_INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
 	break;
 }
 
@@ -653,5 +691,15 @@ switch (attr_list[i].id) {
 	}
 	
 	return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_set_ingress_priority_groups_attribute(uint32_t object_count, const sai_object_id_t *object_id, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t l_get_ingress_priority_groups_attribute(uint32_t object_count, const sai_object_id_t *object_id, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	return SAI_STATUS_NOT_IMPLEMENTED;
 }
 

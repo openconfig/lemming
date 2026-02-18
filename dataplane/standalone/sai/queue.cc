@@ -74,6 +74,12 @@ switch (attr_list[i].id) {
   case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
 	msg.set_pfc_dlr_packet_action(convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
 	break;
+  case SAI_QUEUE_ATTR_STATS_COUNT_MODE:
+	msg.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_QUEUE_ATTR_SELECTIVE_COUNTER_LIST:
+	msg.mutable_selective_counter_list()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+	break;
 }
 
 }
@@ -165,6 +171,12 @@ switch (attr->id) {
   case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
 	req.set_pfc_dlr_packet_action(convert_sai_packet_action_t_to_proto(attr->value.s32));
 	break;
+  case SAI_QUEUE_ATTR_STATS_COUNT_MODE:
+	req.set_stats_count_mode(convert_sai_stats_count_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_QUEUE_ATTR_SELECTIVE_COUNTER_LIST:
+	req.mutable_selective_counter_list()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+	break;
 }
 
 	grpc::Status status = queue->SetQueueAttribute(&context, req, &resp);
@@ -248,6 +260,12 @@ switch (attr_list[i].id) {
   case SAI_QUEUE_ATTR_PFC_CONTINUOUS_DEADLOCK_STATE:
 	 attr_list[i].value.s32 =  convert_sai_queue_pfc_continuous_deadlock_state_t_to_sai(resp.attr().pfc_continuous_deadlock_state());
 	break;
+  case SAI_QUEUE_ATTR_STATS_COUNT_MODE:
+	 attr_list[i].value.s32 =  convert_sai_stats_count_mode_t_to_sai(resp.attr().stats_count_mode());
+	break;
+  case SAI_QUEUE_ATTR_SELECTIVE_COUNTER_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().selective_counter_list(), &attr_list[i].value.objlist.count);
+	break;
 }
 
 	}
@@ -294,4 +312,6 @@ sai_status_t l_clear_queue_stats(sai_object_id_t queue_id, uint32_t number_of_co
 	
 	return SAI_STATUS_SUCCESS;
 }
+
+
 

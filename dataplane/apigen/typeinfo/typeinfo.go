@@ -757,8 +757,12 @@ func CreateAttrs(startIdx int, typeName string, xmlInfo *docparser.SAIInfo, attr
 		if strings.Contains(attr.SaiType, "sai_pointer_t") {
 			continue
 		}
-		// Proto field names can't begin with numbers, prepend _.
 		name := attr.MemberName
+		// Rename attribute to avoid collision with Proto _size methods.
+		if name == "json_formatted_debug_data_size" {
+			name = "json_formatted_debug_data_sz"
+		}
+		// Proto field names can't begin with numbers, prepend _.
 		if unicode.IsDigit(rune(attr.MemberName[0])) {
 			name = fmt.Sprintf("_%s", name)
 		}

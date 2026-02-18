@@ -22,6 +22,8 @@ enum PolicerAttr {
 	POLICER_ATTR_RED_PACKET_ACTION = 10;
 	POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST = 11;
 	POLICER_ATTR_OBJECT_STAGE = 12;
+	POLICER_ATTR_STATS_COUNT_MODE = 13;
+	POLICER_ATTR_SELECTIVE_COUNTER_LIST = 14;
 }
 
 message CreatePolicerRequest {
@@ -39,6 +41,8 @@ message CreatePolicerRequest {
 	optional PacketAction red_packet_action = 11[(attr_enum_value) = 10];
 	repeated PacketAction enable_counter_packet_action_list = 12[(attr_enum_value) = 11];
 	optional ObjectStage object_stage = 13[(attr_enum_value) = 12];
+	optional StatsCountMode stats_count_mode = 14[(attr_enum_value) = 13];
+	repeated uint64 selective_counter_list = 15[(attr_enum_value) = 14];
 }
 
 message CreatePolicerResponse {
@@ -62,6 +66,8 @@ message SetPolicerAttributeRequest {
 	optional PacketAction yellow_packet_action = 7[(attr_enum_value) = 9];
 	optional PacketAction red_packet_action = 8[(attr_enum_value) = 10];
 	repeated PacketAction enable_counter_packet_action_list = 9[(attr_enum_value) = 11];
+	optional StatsCountMode stats_count_mode = 10[(attr_enum_value) = 13];
+	repeated uint64 selective_counter_list = 11[(attr_enum_value) = 14];
 }
 
 message SetPolicerAttributeResponse {

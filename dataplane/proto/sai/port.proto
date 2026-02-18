@@ -188,6 +188,11 @@ enum PortAttr {
 	PORT_ATTR_ARS_PORT_LOAD_PAST_WEIGHT = 176;
 	PORT_ATTR_ARS_PORT_LOAD_FUTURE_WEIGHT = 177;
 	PORT_ATTR_POE_PORT_ID = 178;
+	PORT_ATTR_JSON_FORMATTED_DEBUG_DATA_SIZE = 179;
+	PORT_ATTR_UNRELIABLE_LOS = 180;
+	PORT_ATTR_ERROR_STATUS = 181;
+	PORT_ATTR_STATS_COUNT_MODE = 182;
+	PORT_ATTR_SELECTIVE_COUNTER_LIST = 183;
 }
 
 enum PortPoolAttr {
@@ -345,6 +350,9 @@ message CreatePortRequest {
 	optional PortCableType cable_type = 111[(attr_enum_value) = 175];
 	optional uint32 ars_port_load_past_weight = 112[(attr_enum_value) = 176];
 	optional uint32 ars_port_load_future_weight = 113[(attr_enum_value) = 177];
+	optional bool unreliable_los = 114[(attr_enum_value) = 180];
+	optional StatsCountMode stats_count_mode = 115[(attr_enum_value) = 182];
+	repeated uint64 selective_counter_list = 116[(attr_enum_value) = 183];
 }
 
 message CreatePortResponse {
@@ -469,6 +477,9 @@ message SetPortAttributeRequest {
 	optional PortCableType cable_type = 108[(attr_enum_value) = 175];
 	optional uint32 ars_port_load_past_weight = 109[(attr_enum_value) = 176];
 	optional uint32 ars_port_load_future_weight = 110[(attr_enum_value) = 177];
+	optional bool unreliable_los = 111[(attr_enum_value) = 180];
+	optional StatsCountMode stats_count_mode = 112[(attr_enum_value) = 182];
+	repeated uint64 selective_counter_list = 113[(attr_enum_value) = 183];
 }
 
 message SetPortAttributeResponse {

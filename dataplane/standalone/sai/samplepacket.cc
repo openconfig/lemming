@@ -47,6 +47,12 @@ switch (attr_list[i].id) {
   case SAI_SAMPLEPACKET_ATTR_MODE:
 	msg.set_mode(convert_sai_samplepacket_mode_t_to_proto(attr_list[i].value.s32));
 	break;
+  case SAI_SAMPLEPACKET_ATTR_TRUNCATE_ENABLE:
+	msg.set_truncate_enable(attr_list[i].value.booldata);
+	break;
+  case SAI_SAMPLEPACKET_ATTR_TRUNCATE_SIZE:
+	msg.set_truncate_size(attr_list[i].value.u32);
+	break;
 }
 
 }
@@ -117,6 +123,12 @@ switch (attr->id) {
   case SAI_SAMPLEPACKET_ATTR_SAMPLE_RATE:
 	req.set_sample_rate(attr->value.u32);
 	break;
+  case SAI_SAMPLEPACKET_ATTR_TRUNCATE_ENABLE:
+	req.set_truncate_enable(attr->value.booldata);
+	break;
+  case SAI_SAMPLEPACKET_ATTR_TRUNCATE_SIZE:
+	req.set_truncate_size(attr->value.u32);
+	break;
 }
 
 	grpc::Status status = samplepacket->SetSamplepacketAttribute(&context, req, &resp);
@@ -169,6 +181,12 @@ switch (attr_list[i].id) {
 	break;
   case SAI_SAMPLEPACKET_ATTR_MODE:
 	 attr_list[i].value.s32 =  convert_sai_samplepacket_mode_t_to_sai(resp.attr().mode());
+	break;
+  case SAI_SAMPLEPACKET_ATTR_TRUNCATE_ENABLE:
+	 attr_list[i].value.booldata =   resp.attr().truncate_enable();
+	break;
+  case SAI_SAMPLEPACKET_ATTR_TRUNCATE_SIZE:
+	 attr_list[i].value.u32 =   resp.attr().truncate_size();
 	break;
 }
 

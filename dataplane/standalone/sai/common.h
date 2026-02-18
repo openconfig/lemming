@@ -35,6 +35,7 @@
 #include "dataplane/proto/sai/hash.grpc.pb.h"
 #include "dataplane/proto/sai/hostif.grpc.pb.h"
 #include "dataplane/proto/sai/ipmc.grpc.pb.h"
+#include "dataplane/proto/sai/icmp_echo.grpc.pb.h"
 #include "dataplane/proto/sai/ipmc_group.grpc.pb.h"
 #include "dataplane/proto/sai/ipsec.grpc.pb.h"
 #include "dataplane/proto/sai/isolation_group.grpc.pb.h"
@@ -91,6 +92,7 @@ extern std::unique_ptr<lemming::dataplane::sai::Hash::Stub> hash;
 extern std::unique_ptr<lemming::dataplane::sai::Hostif::Stub> hostif;
 extern std::unique_ptr<lemming::dataplane::sai::IpmcGroup::Stub> ipmc_group;
 extern std::unique_ptr<lemming::dataplane::sai::Ipmc::Stub> ipmc;
+extern std::unique_ptr<lemming::dataplane::sai::IcmpEcho::Stub> icmp_echo;
 extern std::unique_ptr<lemming::dataplane::sai::Ipsec::Stub> ipsec;
 extern std::unique_ptr<lemming::dataplane::sai::IsolationGroup::Stub>
     isolation_group;

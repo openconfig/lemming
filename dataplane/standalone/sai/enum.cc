@@ -2141,6 +2141,14 @@ lemming::dataplane::sai::ApiExtensions convert_sai_api_extensions_t_to_proto(con
     
         case SAI_API_DASH_VIP: return lemming::dataplane::sai::API_DASH_VIP;
     
+        case SAI_API_DASH_HA: return lemming::dataplane::sai::API_DASH_HA;
+    
+        case SAI_API_DASH_TUNNEL: return lemming::dataplane::sai::API_DASH_TUNNEL;
+    
+        case SAI_API_DASH_FLOW: return lemming::dataplane::sai::API_DASH_FLOW;
+    
+        case SAI_API_DASH_APPLIANCE: return lemming::dataplane::sai::API_DASH_APPLIANCE;
+    
         case SAI_API_EXTENSIONS_RANGE_END: return lemming::dataplane::sai::API_EXTENSIONS_RANGE_END;
     
         default: return lemming::dataplane::sai::API_EXTENSIONS_UNSPECIFIED;
@@ -2170,6 +2178,14 @@ sai_api_extensions_t convert_sai_api_extensions_t_to_sai(lemming::dataplane::sai
         case lemming::dataplane::sai::API_DASH_PA_VALIDATION: return SAI_API_DASH_PA_VALIDATION;
     
         case lemming::dataplane::sai::API_DASH_VIP: return SAI_API_DASH_VIP;
+    
+        case lemming::dataplane::sai::API_DASH_HA: return SAI_API_DASH_HA;
+    
+        case lemming::dataplane::sai::API_DASH_TUNNEL: return SAI_API_DASH_TUNNEL;
+    
+        case lemming::dataplane::sai::API_DASH_FLOW: return SAI_API_DASH_FLOW;
+    
+        case lemming::dataplane::sai::API_DASH_APPLIANCE: return SAI_API_DASH_APPLIANCE;
     
         case lemming::dataplane::sai::API_EXTENSIONS_RANGE_END: return SAI_API_EXTENSIONS_RANGE_END;
     
@@ -2300,11 +2316,11 @@ lemming::dataplane::sai::Api convert_sai_api_t_to_proto(const sai_int32_t val) {
     
         case SAI_API_POE: return lemming::dataplane::sai::API_POE;
     
+        case SAI_API_ICMP_ECHO: return lemming::dataplane::sai::API_ICMP_ECHO;
+    
         case SAI_API_MAX: return lemming::dataplane::sai::API_MAX;
     
-        case SAI_API_CUSTOM_RANGE_START: return lemming::dataplane::sai::API_CUSTOM_RANGE_START;
-    
-        case SAI_API_CUSTOM_RANGE_END: return lemming::dataplane::sai::API_CUSTOM_RANGE_END;
+        case SAI_API_EXTENSIONS_RANGE_BASE: return lemming::dataplane::sai::API_EXTENSIONS_RANGE_BASE;
     
         default: return lemming::dataplane::sai::API_UNSPECIFIED;
     }
@@ -2416,11 +2432,11 @@ sai_api_t convert_sai_api_t_to_sai(lemming::dataplane::sai::Api val) {
     
         case lemming::dataplane::sai::API_POE: return SAI_API_POE;
     
+        case lemming::dataplane::sai::API_ICMP_ECHO: return SAI_API_ICMP_ECHO;
+    
         case lemming::dataplane::sai::API_MAX: return SAI_API_MAX;
     
-        case lemming::dataplane::sai::API_CUSTOM_RANGE_START: return SAI_API_CUSTOM_RANGE_START;
-    
-        case lemming::dataplane::sai::API_CUSTOM_RANGE_END: return SAI_API_CUSTOM_RANGE_END;
+        case lemming::dataplane::sai::API_EXTENSIONS_RANGE_BASE: return SAI_API_EXTENSIONS_RANGE_BASE;
     
         default: return SAI_API_UNSPECIFIED;
     }
@@ -2572,6 +2588,10 @@ lemming::dataplane::sai::BfdSessionAttr convert_sai_bfd_session_attr_t_to_proto(
     
         case SAI_BFD_SESSION_ATTR_SRV6_SIDLIST_ID: return lemming::dataplane::sai::BFD_SESSION_ATTR_SRV6_SIDLIST_ID;
     
+        case SAI_BFD_SESSION_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::BFD_SESSION_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_BFD_SESSION_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::BFD_SESSION_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::BFD_SESSION_ATTR_UNSPECIFIED;
     }
 }
@@ -2659,6 +2679,10 @@ sai_bfd_session_attr_t convert_sai_bfd_session_attr_t_to_sai(lemming::dataplane:
         case lemming::dataplane::sai::BFD_SESSION_ATTR_REMOTE_MULTIPLIER: return SAI_BFD_SESSION_ATTR_REMOTE_MULTIPLIER;
     
         case lemming::dataplane::sai::BFD_SESSION_ATTR_SRV6_SIDLIST_ID: return SAI_BFD_SESSION_ATTR_SRV6_SIDLIST_ID;
+    
+        case lemming::dataplane::sai::BFD_SESSION_ATTR_STATS_COUNT_MODE: return SAI_BFD_SESSION_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::BFD_SESSION_ATTR_SELECTIVE_COUNTER_LIST: return SAI_BFD_SESSION_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_BFD_SESSION_ATTR_TYPE;
     }
@@ -2875,6 +2899,10 @@ lemming::dataplane::sai::BridgeAttr convert_sai_bridge_attr_t_to_proto(const sai
     
         case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_GROUP: return lemming::dataplane::sai::BRIDGE_ATTR_BROADCAST_FLOOD_GROUP;
     
+        case SAI_BRIDGE_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::BRIDGE_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_BRIDGE_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::BRIDGE_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::BRIDGE_ATTR_UNSPECIFIED;
     }
 }
@@ -2900,6 +2928,10 @@ sai_bridge_attr_t convert_sai_bridge_attr_t_to_sai(lemming::dataplane::sai::Brid
         case lemming::dataplane::sai::BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE: return SAI_BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE;
     
         case lemming::dataplane::sai::BRIDGE_ATTR_BROADCAST_FLOOD_GROUP: return SAI_BRIDGE_ATTR_BROADCAST_FLOOD_GROUP;
+    
+        case lemming::dataplane::sai::BRIDGE_ATTR_STATS_COUNT_MODE: return SAI_BRIDGE_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::BRIDGE_ATTR_SELECTIVE_COUNTER_LIST: return SAI_BRIDGE_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_BRIDGE_ATTR_TYPE;
     }
@@ -2997,6 +3029,10 @@ lemming::dataplane::sai::BridgePortAttr convert_sai_bridge_port_attr_t_to_proto(
     
         case SAI_BRIDGE_PORT_ATTR_ISOLATION_GROUP: return lemming::dataplane::sai::BRIDGE_PORT_ATTR_ISOLATION_GROUP;
     
+        case SAI_BRIDGE_PORT_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::BRIDGE_PORT_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_BRIDGE_PORT_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::BRIDGE_PORT_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::BRIDGE_PORT_ATTR_UNSPECIFIED;
     }
 }
@@ -3030,6 +3066,10 @@ sai_bridge_port_attr_t convert_sai_bridge_port_attr_t_to_sai(lemming::dataplane:
         case lemming::dataplane::sai::BRIDGE_PORT_ATTR_EGRESS_FILTERING: return SAI_BRIDGE_PORT_ATTR_EGRESS_FILTERING;
     
         case lemming::dataplane::sai::BRIDGE_PORT_ATTR_ISOLATION_GROUP: return SAI_BRIDGE_PORT_ATTR_ISOLATION_GROUP;
+    
+        case lemming::dataplane::sai::BRIDGE_PORT_ATTR_STATS_COUNT_MODE: return SAI_BRIDGE_PORT_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::BRIDGE_PORT_ATTR_SELECTIVE_COUNTER_LIST: return SAI_BRIDGE_PORT_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_BRIDGE_PORT_ATTR_TYPE;
     }
@@ -3334,6 +3374,10 @@ lemming::dataplane::sai::BufferPoolAttr convert_sai_buffer_pool_attr_t_to_proto(
     
         case SAI_BUFFER_POOL_ATTR_WRED_PROFILE_ID: return lemming::dataplane::sai::BUFFER_POOL_ATTR_WRED_PROFILE_ID;
     
+        case SAI_BUFFER_POOL_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::BUFFER_POOL_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::BUFFER_POOL_ATTR_UNSPECIFIED;
     }
 }
@@ -3353,6 +3397,10 @@ sai_buffer_pool_attr_t convert_sai_buffer_pool_attr_t_to_sai(lemming::dataplane:
         case lemming::dataplane::sai::BUFFER_POOL_ATTR_XOFF_SIZE: return SAI_BUFFER_POOL_ATTR_XOFF_SIZE;
     
         case lemming::dataplane::sai::BUFFER_POOL_ATTR_WRED_PROFILE_ID: return SAI_BUFFER_POOL_ATTR_WRED_PROFILE_ID;
+    
+        case lemming::dataplane::sai::BUFFER_POOL_ATTR_STATS_COUNT_MODE: return SAI_BUFFER_POOL_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST: return SAI_BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_BUFFER_POOL_ATTR_SHARED_SIZE;
     }
@@ -3776,6 +3824,14 @@ lemming::dataplane::sai::CounterAttr convert_sai_counter_attr_t_to_proto(const s
     
         case SAI_COUNTER_ATTR_LABEL: return lemming::dataplane::sai::COUNTER_ATTR_LABEL;
     
+        case SAI_COUNTER_ATTR_ENABLE_PACKET_COUNT: return lemming::dataplane::sai::COUNTER_ATTR_ENABLE_PACKET_COUNT;
+    
+        case SAI_COUNTER_ATTR_ENABLE_BYTE_COUNT: return lemming::dataplane::sai::COUNTER_ATTR_ENABLE_BYTE_COUNT;
+    
+        case SAI_COUNTER_ATTR_OBJECT_TYPE: return lemming::dataplane::sai::COUNTER_ATTR_OBJECT_TYPE;
+    
+        case SAI_COUNTER_ATTR_STAT_ID_LIST: return lemming::dataplane::sai::COUNTER_ATTR_STAT_ID_LIST;
+    
         default: return lemming::dataplane::sai::COUNTER_ATTR_UNSPECIFIED;
     }
 }
@@ -3785,6 +3841,14 @@ sai_counter_attr_t convert_sai_counter_attr_t_to_sai(lemming::dataplane::sai::Co
         case lemming::dataplane::sai::COUNTER_ATTR_TYPE: return SAI_COUNTER_ATTR_TYPE;
     
         case lemming::dataplane::sai::COUNTER_ATTR_LABEL: return SAI_COUNTER_ATTR_LABEL;
+    
+        case lemming::dataplane::sai::COUNTER_ATTR_ENABLE_PACKET_COUNT: return SAI_COUNTER_ATTR_ENABLE_PACKET_COUNT;
+    
+        case lemming::dataplane::sai::COUNTER_ATTR_ENABLE_BYTE_COUNT: return SAI_COUNTER_ATTR_ENABLE_BYTE_COUNT;
+    
+        case lemming::dataplane::sai::COUNTER_ATTR_OBJECT_TYPE: return SAI_COUNTER_ATTR_OBJECT_TYPE;
+    
+        case lemming::dataplane::sai::COUNTER_ATTR_STAT_ID_LIST: return SAI_COUNTER_ATTR_STAT_ID_LIST;
     
         default: return SAI_COUNTER_ATTR_TYPE;
     }
@@ -3852,6 +3916,8 @@ lemming::dataplane::sai::CounterType convert_sai_counter_type_t_to_proto(const s
     
         case SAI_COUNTER_TYPE_REGULAR: return lemming::dataplane::sai::COUNTER_TYPE_REGULAR;
     
+        case SAI_COUNTER_TYPE_SELECTIVE: return lemming::dataplane::sai::COUNTER_TYPE_SELECTIVE;
+    
         default: return lemming::dataplane::sai::COUNTER_TYPE_UNSPECIFIED;
     }
 }
@@ -3859,6 +3925,8 @@ sai_counter_type_t convert_sai_counter_type_t_to_sai(lemming::dataplane::sai::Co
     switch (val) {
     
         case lemming::dataplane::sai::COUNTER_TYPE_REGULAR: return SAI_COUNTER_TYPE_REGULAR;
+    
+        case lemming::dataplane::sai::COUNTER_TYPE_SELECTIVE: return SAI_COUNTER_TYPE_SELECTIVE;
     
         default: return SAI_COUNTER_TYPE_REGULAR;
     }
@@ -3874,6 +3942,43 @@ google::protobuf::RepeatedField<int> convert_list_sai_counter_type_t_to_proto(co
 void convert_list_sai_counter_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
 	for (int i = 0; i < proto_list.size(); i++) {
 		list[i] = convert_sai_counter_type_t_to_sai(static_cast<lemming::dataplane::sai::CounterType>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashCapsHaScopeLevel convert_sai_dash_caps_ha_scope_level_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_CAPS_HA_SCOPE_LEVEL_CARD: return lemming::dataplane::sai::DASH_CAPS_HA_SCOPE_LEVEL_CARD;
+    
+        case SAI_DASH_CAPS_HA_SCOPE_LEVEL_ENI: return lemming::dataplane::sai::DASH_CAPS_HA_SCOPE_LEVEL_ENI;
+    
+        default: return lemming::dataplane::sai::DASH_CAPS_HA_SCOPE_LEVEL_UNSPECIFIED;
+    }
+}
+sai_dash_caps_ha_scope_level_t convert_sai_dash_caps_ha_scope_level_t_to_sai(lemming::dataplane::sai::DashCapsHaScopeLevel val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_CAPS_HA_SCOPE_LEVEL_CARD: return SAI_DASH_CAPS_HA_SCOPE_LEVEL_CARD;
+    
+        case lemming::dataplane::sai::DASH_CAPS_HA_SCOPE_LEVEL_ENI: return SAI_DASH_CAPS_HA_SCOPE_LEVEL_ENI;
+    
+        default: return SAI_DASH_CAPS_HA_SCOPE_LEVEL_CARD;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_caps_ha_scope_level_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_caps_ha_scope_level_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_caps_ha_scope_level_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_caps_ha_scope_level_t_to_sai(static_cast<lemming::dataplane::sai::DashCapsHaScopeLevel>(proto_list[i]));
 	}
 	*count = proto_list.size();
 }
@@ -3956,6 +4061,479 @@ google::protobuf::RepeatedField<int> convert_list_sai_dash_encapsulation_t_to_pr
 void convert_list_sai_dash_encapsulation_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
 	for (int i = 0; i < proto_list.size(); i++) {
 		list[i] = convert_sai_dash_encapsulation_t_to_sai(static_cast<lemming::dataplane::sai::DashEncapsulation>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashEniMacOverrideType convert_sai_dash_eni_mac_override_type_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_ENI_MAC_OVERRIDE_TYPE_NONE: return lemming::dataplane::sai::DASH_ENI_MAC_OVERRIDE_TYPE_NONE;
+    
+        case SAI_DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC: return lemming::dataplane::sai::DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC;
+    
+        case SAI_DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC: return lemming::dataplane::sai::DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC;
+    
+        default: return lemming::dataplane::sai::DASH_ENI_MAC_OVERRIDE_TYPE_UNSPECIFIED;
+    }
+}
+sai_dash_eni_mac_override_type_t convert_sai_dash_eni_mac_override_type_t_to_sai(lemming::dataplane::sai::DashEniMacOverrideType val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_ENI_MAC_OVERRIDE_TYPE_NONE: return SAI_DASH_ENI_MAC_OVERRIDE_TYPE_NONE;
+    
+        case lemming::dataplane::sai::DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC: return SAI_DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC;
+    
+        case lemming::dataplane::sai::DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC: return SAI_DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC;
+    
+        default: return SAI_DASH_ENI_MAC_OVERRIDE_TYPE_NONE;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_eni_mac_override_type_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_eni_mac_override_type_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_eni_mac_override_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_eni_mac_override_type_t_to_sai(static_cast<lemming::dataplane::sai::DashEniMacOverrideType>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashFlowAction convert_sai_dash_flow_action_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_FLOW_ACTION_NONE: return lemming::dataplane::sai::DASH_FLOW_ACTION_NONE;
+    
+        default: return lemming::dataplane::sai::DASH_FLOW_ACTION_UNSPECIFIED;
+    }
+}
+sai_dash_flow_action_t convert_sai_dash_flow_action_t_to_sai(lemming::dataplane::sai::DashFlowAction val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_FLOW_ACTION_NONE: return SAI_DASH_FLOW_ACTION_NONE;
+    
+        default: return SAI_DASH_FLOW_ACTION_NONE;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_action_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_flow_action_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_flow_action_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_flow_action_t_to_sai(static_cast<lemming::dataplane::sai::DashFlowAction>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashFlowEnabledKey convert_sai_dash_flow_enabled_key_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_FLOW_ENABLED_KEY_ENI_MAC: return lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_ENI_MAC;
+    
+        case SAI_DASH_FLOW_ENABLED_KEY_VNI: return lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_VNI;
+    
+        case SAI_DASH_FLOW_ENABLED_KEY_PROTOCOL: return lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_PROTOCOL;
+    
+        case SAI_DASH_FLOW_ENABLED_KEY_SRC_IP: return lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_SRC_IP;
+    
+        case SAI_DASH_FLOW_ENABLED_KEY_DST_IP: return lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_DST_IP;
+    
+        case SAI_DASH_FLOW_ENABLED_KEY_SRC_PORT: return lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_SRC_PORT;
+    
+        case SAI_DASH_FLOW_ENABLED_KEY_DST_PORT: return lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_DST_PORT;
+    
+        default: return lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_UNSPECIFIED;
+    }
+}
+sai_dash_flow_enabled_key_t convert_sai_dash_flow_enabled_key_t_to_sai(lemming::dataplane::sai::DashFlowEnabledKey val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_ENI_MAC: return SAI_DASH_FLOW_ENABLED_KEY_ENI_MAC;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_VNI: return SAI_DASH_FLOW_ENABLED_KEY_VNI;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_PROTOCOL: return SAI_DASH_FLOW_ENABLED_KEY_PROTOCOL;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_SRC_IP: return SAI_DASH_FLOW_ENABLED_KEY_SRC_IP;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_DST_IP: return SAI_DASH_FLOW_ENABLED_KEY_DST_IP;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_SRC_PORT: return SAI_DASH_FLOW_ENABLED_KEY_SRC_PORT;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENABLED_KEY_DST_PORT: return SAI_DASH_FLOW_ENABLED_KEY_DST_PORT;
+    
+        default: return SAI_DASH_FLOW_ENABLED_KEY_ENI_MAC;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_enabled_key_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_flow_enabled_key_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_flow_enabled_key_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_flow_enabled_key_t_to_sai(static_cast<lemming::dataplane::sai::DashFlowEnabledKey>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashFlowEntryBulkGetSessionFilterKey convert_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION;
+    
+        default: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_UNSPECIFIED;
+    }
+}
+sai_dash_flow_entry_bulk_get_session_filter_key_t convert_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_sai(lemming::dataplane::sai::DashFlowEntryBulkGetSessionFilterKey val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION;
+    
+        default: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_flow_entry_bulk_get_session_filter_key_t_to_sai(static_cast<lemming::dataplane::sai::DashFlowEntryBulkGetSessionFilterKey>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashFlowEntryBulkGetSessionMode convert_sai_dash_flow_entry_bulk_get_session_mode_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE;
+    
+        default: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_UNSPECIFIED;
+    }
+}
+sai_dash_flow_entry_bulk_get_session_mode_t convert_sai_dash_flow_entry_bulk_get_session_mode_t_to_sai(lemming::dataplane::sai::DashFlowEntryBulkGetSessionMode val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE;
+    
+        default: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_entry_bulk_get_session_mode_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_flow_entry_bulk_get_session_mode_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_flow_entry_bulk_get_session_mode_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_flow_entry_bulk_get_session_mode_t_to_sai(static_cast<lemming::dataplane::sai::DashFlowEntryBulkGetSessionMode>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashFlowEntryBulkGetSessionOpKey convert_sai_dash_flow_entry_bulk_get_session_op_key_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN;
+    
+        case SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO;
+    
+        default: return lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_UNSPECIFIED;
+    }
+}
+sai_dash_flow_entry_bulk_get_session_op_key_t convert_sai_dash_flow_entry_bulk_get_session_op_key_t_to_sai(lemming::dataplane::sai::DashFlowEntryBulkGetSessionOpKey val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN;
+    
+        case lemming::dataplane::sai::DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO;
+    
+        default: return SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_flow_entry_bulk_get_session_op_key_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_flow_entry_bulk_get_session_op_key_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_flow_entry_bulk_get_session_op_key_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_flow_entry_bulk_get_session_op_key_t_to_sai(static_cast<lemming::dataplane::sai::DashFlowEntryBulkGetSessionOpKey>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashHaRole convert_sai_dash_ha_role_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_HA_ROLE_DEAD: return lemming::dataplane::sai::DASH_HA_ROLE_DEAD;
+    
+        case SAI_DASH_HA_ROLE_ACTIVE: return lemming::dataplane::sai::DASH_HA_ROLE_ACTIVE;
+    
+        case SAI_DASH_HA_ROLE_STANDBY: return lemming::dataplane::sai::DASH_HA_ROLE_STANDBY;
+    
+        case SAI_DASH_HA_ROLE_STANDALONE: return lemming::dataplane::sai::DASH_HA_ROLE_STANDALONE;
+    
+        case SAI_DASH_HA_ROLE_SWITCHING_TO_ACTIVE: return lemming::dataplane::sai::DASH_HA_ROLE_SWITCHING_TO_ACTIVE;
+    
+        default: return lemming::dataplane::sai::DASH_HA_ROLE_UNSPECIFIED;
+    }
+}
+sai_dash_ha_role_t convert_sai_dash_ha_role_t_to_sai(lemming::dataplane::sai::DashHaRole val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_HA_ROLE_DEAD: return SAI_DASH_HA_ROLE_DEAD;
+    
+        case lemming::dataplane::sai::DASH_HA_ROLE_ACTIVE: return SAI_DASH_HA_ROLE_ACTIVE;
+    
+        case lemming::dataplane::sai::DASH_HA_ROLE_STANDBY: return SAI_DASH_HA_ROLE_STANDBY;
+    
+        case lemming::dataplane::sai::DASH_HA_ROLE_STANDALONE: return SAI_DASH_HA_ROLE_STANDALONE;
+    
+        case lemming::dataplane::sai::DASH_HA_ROLE_SWITCHING_TO_ACTIVE: return SAI_DASH_HA_ROLE_SWITCHING_TO_ACTIVE;
+    
+        default: return SAI_DASH_HA_ROLE_DEAD;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_ha_role_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_ha_role_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_ha_role_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_ha_role_t_to_sai(static_cast<lemming::dataplane::sai::DashHaRole>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashHaState convert_sai_dash_ha_state_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_HA_STATE_DEAD: return lemming::dataplane::sai::DASH_HA_STATE_DEAD;
+    
+        case SAI_DASH_HA_STATE_CONNECTING: return lemming::dataplane::sai::DASH_HA_STATE_CONNECTING;
+    
+        case SAI_DASH_HA_STATE_CONNECTED: return lemming::dataplane::sai::DASH_HA_STATE_CONNECTED;
+    
+        case SAI_DASH_HA_STATE_INITIALIZING_TO_ACTIVE: return lemming::dataplane::sai::DASH_HA_STATE_INITIALIZING_TO_ACTIVE;
+    
+        case SAI_DASH_HA_STATE_INITIALIZING_TO_STANDBY: return lemming::dataplane::sai::DASH_HA_STATE_INITIALIZING_TO_STANDBY;
+    
+        case SAI_DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION: return lemming::dataplane::sai::DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION;
+    
+        case SAI_DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION: return lemming::dataplane::sai::DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION;
+    
+        case SAI_DASH_HA_STATE_PENDING_STANDBY_ACTIVATION: return lemming::dataplane::sai::DASH_HA_STATE_PENDING_STANDBY_ACTIVATION;
+    
+        case SAI_DASH_HA_STATE_STANDALONE: return lemming::dataplane::sai::DASH_HA_STATE_STANDALONE;
+    
+        case SAI_DASH_HA_STATE_ACTIVE: return lemming::dataplane::sai::DASH_HA_STATE_ACTIVE;
+    
+        case SAI_DASH_HA_STATE_STANDBY: return lemming::dataplane::sai::DASH_HA_STATE_STANDBY;
+    
+        case SAI_DASH_HA_STATE_DESTROYING: return lemming::dataplane::sai::DASH_HA_STATE_DESTROYING;
+    
+        case SAI_DASH_HA_STATE_SWITCHING_TO_STANDALONE: return lemming::dataplane::sai::DASH_HA_STATE_SWITCHING_TO_STANDALONE;
+    
+        default: return lemming::dataplane::sai::DASH_HA_STATE_UNSPECIFIED;
+    }
+}
+sai_dash_ha_state_t convert_sai_dash_ha_state_t_to_sai(lemming::dataplane::sai::DashHaState val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_DEAD: return SAI_DASH_HA_STATE_DEAD;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_CONNECTING: return SAI_DASH_HA_STATE_CONNECTING;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_CONNECTED: return SAI_DASH_HA_STATE_CONNECTED;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_INITIALIZING_TO_ACTIVE: return SAI_DASH_HA_STATE_INITIALIZING_TO_ACTIVE;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_INITIALIZING_TO_STANDBY: return SAI_DASH_HA_STATE_INITIALIZING_TO_STANDBY;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION: return SAI_DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION: return SAI_DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_PENDING_STANDBY_ACTIVATION: return SAI_DASH_HA_STATE_PENDING_STANDBY_ACTIVATION;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_STANDALONE: return SAI_DASH_HA_STATE_STANDALONE;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_ACTIVE: return SAI_DASH_HA_STATE_ACTIVE;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_STANDBY: return SAI_DASH_HA_STATE_STANDBY;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_DESTROYING: return SAI_DASH_HA_STATE_DESTROYING;
+    
+        case lemming::dataplane::sai::DASH_HA_STATE_SWITCHING_TO_STANDALONE: return SAI_DASH_HA_STATE_SWITCHING_TO_STANDALONE;
+    
+        default: return SAI_DASH_HA_STATE_DEAD;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_ha_state_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_ha_state_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_ha_state_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_ha_state_t_to_sai(static_cast<lemming::dataplane::sai::DashHaState>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::DashRoutingActions convert_sai_dash_routing_actions_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_DASH_ROUTING_ACTIONS_STATIC_ENCAP: return lemming::dataplane::sai::DASH_ROUTING_ACTIONS_STATIC_ENCAP;
+    
+        case SAI_DASH_ROUTING_ACTIONS_NAT: return lemming::dataplane::sai::DASH_ROUTING_ACTIONS_NAT;
+    
+        case SAI_DASH_ROUTING_ACTIONS_NAT46: return lemming::dataplane::sai::DASH_ROUTING_ACTIONS_NAT46;
+    
+        case SAI_DASH_ROUTING_ACTIONS_NAT64: return lemming::dataplane::sai::DASH_ROUTING_ACTIONS_NAT64;
+    
+        case SAI_DASH_ROUTING_ACTIONS_NAT_PORT: return lemming::dataplane::sai::DASH_ROUTING_ACTIONS_NAT_PORT;
+    
+        default: return lemming::dataplane::sai::DASH_ROUTING_ACTIONS_UNSPECIFIED;
+    }
+}
+sai_dash_routing_actions_t convert_sai_dash_routing_actions_t_to_sai(lemming::dataplane::sai::DashRoutingActions val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::DASH_ROUTING_ACTIONS_STATIC_ENCAP: return SAI_DASH_ROUTING_ACTIONS_STATIC_ENCAP;
+    
+        case lemming::dataplane::sai::DASH_ROUTING_ACTIONS_NAT: return SAI_DASH_ROUTING_ACTIONS_NAT;
+    
+        case lemming::dataplane::sai::DASH_ROUTING_ACTIONS_NAT46: return SAI_DASH_ROUTING_ACTIONS_NAT46;
+    
+        case lemming::dataplane::sai::DASH_ROUTING_ACTIONS_NAT64: return SAI_DASH_ROUTING_ACTIONS_NAT64;
+    
+        case lemming::dataplane::sai::DASH_ROUTING_ACTIONS_NAT_PORT: return SAI_DASH_ROUTING_ACTIONS_NAT_PORT;
+    
+        default: return SAI_DASH_ROUTING_ACTIONS_STATIC_ENCAP;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_dash_routing_actions_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_dash_routing_actions_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_dash_routing_actions_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_dash_routing_actions_t_to_sai(static_cast<lemming::dataplane::sai::DashRoutingActions>(proto_list[i]));
 	}
 	*count = proto_list.size();
 }
@@ -4849,6 +5427,84 @@ void convert_list_sai_generic_programmable_attr_t_to_sai(int32_t *list, const go
 
 
 
+lemming::dataplane::sai::HaScopeEvent convert_sai_ha_scope_event_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_HA_SCOPE_EVENT_STATE_CHANGED: return lemming::dataplane::sai::HA_SCOPE_EVENT_STATE_CHANGED;
+    
+        case SAI_HA_SCOPE_EVENT_FLOW_RECONCILE_NEEDED: return lemming::dataplane::sai::HA_SCOPE_EVENT_FLOW_RECONCILE_NEEDED;
+    
+        case SAI_HA_SCOPE_EVENT_SPLIT_BRAIN_DETECTED: return lemming::dataplane::sai::HA_SCOPE_EVENT_SPLIT_BRAIN_DETECTED;
+    
+        default: return lemming::dataplane::sai::HA_SCOPE_EVENT_UNSPECIFIED;
+    }
+}
+sai_ha_scope_event_t convert_sai_ha_scope_event_t_to_sai(lemming::dataplane::sai::HaScopeEvent val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::HA_SCOPE_EVENT_STATE_CHANGED: return SAI_HA_SCOPE_EVENT_STATE_CHANGED;
+    
+        case lemming::dataplane::sai::HA_SCOPE_EVENT_FLOW_RECONCILE_NEEDED: return SAI_HA_SCOPE_EVENT_FLOW_RECONCILE_NEEDED;
+    
+        case lemming::dataplane::sai::HA_SCOPE_EVENT_SPLIT_BRAIN_DETECTED: return SAI_HA_SCOPE_EVENT_SPLIT_BRAIN_DETECTED;
+    
+        default: return SAI_HA_SCOPE_EVENT_STATE_CHANGED;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_ha_scope_event_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_ha_scope_event_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_ha_scope_event_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_ha_scope_event_t_to_sai(static_cast<lemming::dataplane::sai::HaScopeEvent>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::HaSetEvent convert_sai_ha_set_event_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_HA_SET_EVENT_DP_CHANNEL_UP: return lemming::dataplane::sai::HA_SET_EVENT_DP_CHANNEL_UP;
+    
+        case SAI_HA_SET_EVENT_DP_CHANNEL_DOWN: return lemming::dataplane::sai::HA_SET_EVENT_DP_CHANNEL_DOWN;
+    
+        default: return lemming::dataplane::sai::HA_SET_EVENT_UNSPECIFIED;
+    }
+}
+sai_ha_set_event_t convert_sai_ha_set_event_t_to_sai(lemming::dataplane::sai::HaSetEvent val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::HA_SET_EVENT_DP_CHANNEL_UP: return SAI_HA_SET_EVENT_DP_CHANNEL_UP;
+    
+        case lemming::dataplane::sai::HA_SET_EVENT_DP_CHANNEL_DOWN: return SAI_HA_SET_EVENT_DP_CHANNEL_DOWN;
+    
+        default: return SAI_HA_SET_EVENT_DP_CHANNEL_UP;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_ha_set_event_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_ha_set_event_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_ha_set_event_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_ha_set_event_t_to_sai(static_cast<lemming::dataplane::sai::HaSetEvent>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
 lemming::dataplane::sai::HashAlgorithm convert_sai_hash_algorithm_t_to_proto(const sai_int32_t val) {
     switch (val) {
     
@@ -4952,6 +5608,8 @@ lemming::dataplane::sai::HealthDataType convert_sai_health_data_type_t_to_proto(
     
         case SAI_HEALTH_DATA_TYPE_GENERAL: return lemming::dataplane::sai::HEALTH_DATA_TYPE_GENERAL;
     
+        case SAI_HEALTH_DATA_TYPE_SER: return lemming::dataplane::sai::HEALTH_DATA_TYPE_SER;
+    
         default: return lemming::dataplane::sai::HEALTH_DATA_TYPE_UNSPECIFIED;
     }
 }
@@ -4959,6 +5617,8 @@ sai_health_data_type_t convert_sai_health_data_type_t_to_sai(lemming::dataplane:
     switch (val) {
     
         case lemming::dataplane::sai::HEALTH_DATA_TYPE_GENERAL: return SAI_HEALTH_DATA_TYPE_GENERAL;
+    
+        case lemming::dataplane::sai::HEALTH_DATA_TYPE_SER: return SAI_HEALTH_DATA_TYPE_SER;
     
         default: return SAI_HEALTH_DATA_TYPE_GENERAL;
     }
@@ -5377,6 +6037,8 @@ lemming::dataplane::sai::HostifTrapType convert_sai_hostif_trap_type_t_to_proto(
     
         case SAI_HOSTIF_TRAP_TYPE_ISIS: return lemming::dataplane::sai::HOSTIF_TRAP_TYPE_ISIS;
     
+        case SAI_HOSTIF_TRAP_TYPE_NEIGHBOR_MISS: return lemming::dataplane::sai::HOSTIF_TRAP_TYPE_NEIGHBOR_MISS;
+    
         case SAI_HOSTIF_TRAP_TYPE_ROUTER_CUSTOM_RANGE_BASE: return lemming::dataplane::sai::HOSTIF_TRAP_TYPE_ROUTER_CUSTOM_RANGE_BASE;
     
         case SAI_HOSTIF_TRAP_TYPE_IP2ME: return lemming::dataplane::sai::HOSTIF_TRAP_TYPE_IP2ME;
@@ -5524,6 +6186,8 @@ sai_hostif_trap_type_t convert_sai_hostif_trap_type_t_to_sai(lemming::dataplane:
         case lemming::dataplane::sai::HOSTIF_TRAP_TYPE_IPV6_NEIGHBOR_ADVERTISEMENT: return SAI_HOSTIF_TRAP_TYPE_IPV6_NEIGHBOR_ADVERTISEMENT;
     
         case lemming::dataplane::sai::HOSTIF_TRAP_TYPE_ISIS: return SAI_HOSTIF_TRAP_TYPE_ISIS;
+    
+        case lemming::dataplane::sai::HOSTIF_TRAP_TYPE_NEIGHBOR_MISS: return SAI_HOSTIF_TRAP_TYPE_NEIGHBOR_MISS;
     
         case lemming::dataplane::sai::HOSTIF_TRAP_TYPE_ROUTER_CUSTOM_RANGE_BASE: return SAI_HOSTIF_TRAP_TYPE_ROUTER_CUSTOM_RANGE_BASE;
     
@@ -5828,6 +6492,185 @@ void convert_list_sai_hostif_vlan_tag_t_to_sai(int32_t *list, const google::prot
 
 
 
+lemming::dataplane::sai::IcmpEchoSessionAttr convert_sai_icmp_echo_session_attr_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_HW_LOOKUP_VALID: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_HW_LOOKUP_VALID;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_VIRTUAL_ROUTER: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_VIRTUAL_ROUTER;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_PORT: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_PORT;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_RX_PORT: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_RX_PORT;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_GUID: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_GUID;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_COOKIE: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_COOKIE;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_IPHDR_VERSION: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_IPHDR_VERSION;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_TOS: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_TOS;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_TTL: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_TTL;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_SRC_IP_ADDRESS: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_SRC_IP_ADDRESS;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_DST_IP_ADDRESS: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_DST_IP_ADDRESS;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_SRC_MAC_ADDRESS: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_SRC_MAC_ADDRESS;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_DST_MAC_ADDRESS: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_DST_MAC_ADDRESS;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_TX_INTERVAL: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_TX_INTERVAL;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_RX_INTERVAL: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_RX_INTERVAL;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_SET_NEXT_HOP_GROUP_SWITCHOVER: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_SET_NEXT_HOP_GROUP_SWITCHOVER;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_STATE: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_STATE;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_ICMP_ECHO_SESSION_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_SELECTIVE_COUNTER_LIST;
+    
+        default: return lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_UNSPECIFIED;
+    }
+}
+sai_icmp_echo_session_attr_t convert_sai_icmp_echo_session_attr_t_to_sai(lemming::dataplane::sai::IcmpEchoSessionAttr val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_HW_LOOKUP_VALID: return SAI_ICMP_ECHO_SESSION_ATTR_HW_LOOKUP_VALID;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_VIRTUAL_ROUTER: return SAI_ICMP_ECHO_SESSION_ATTR_VIRTUAL_ROUTER;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_PORT: return SAI_ICMP_ECHO_SESSION_ATTR_PORT;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_RX_PORT: return SAI_ICMP_ECHO_SESSION_ATTR_RX_PORT;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_GUID: return SAI_ICMP_ECHO_SESSION_ATTR_GUID;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_COOKIE: return SAI_ICMP_ECHO_SESSION_ATTR_COOKIE;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_IPHDR_VERSION: return SAI_ICMP_ECHO_SESSION_ATTR_IPHDR_VERSION;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_TOS: return SAI_ICMP_ECHO_SESSION_ATTR_TOS;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_TTL: return SAI_ICMP_ECHO_SESSION_ATTR_TTL;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_SRC_IP_ADDRESS: return SAI_ICMP_ECHO_SESSION_ATTR_SRC_IP_ADDRESS;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_DST_IP_ADDRESS: return SAI_ICMP_ECHO_SESSION_ATTR_DST_IP_ADDRESS;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_SRC_MAC_ADDRESS: return SAI_ICMP_ECHO_SESSION_ATTR_SRC_MAC_ADDRESS;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_DST_MAC_ADDRESS: return SAI_ICMP_ECHO_SESSION_ATTR_DST_MAC_ADDRESS;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_TX_INTERVAL: return SAI_ICMP_ECHO_SESSION_ATTR_TX_INTERVAL;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_RX_INTERVAL: return SAI_ICMP_ECHO_SESSION_ATTR_RX_INTERVAL;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_SET_NEXT_HOP_GROUP_SWITCHOVER: return SAI_ICMP_ECHO_SESSION_ATTR_SET_NEXT_HOP_GROUP_SWITCHOVER;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_STATE: return SAI_ICMP_ECHO_SESSION_ATTR_STATE;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_STATS_COUNT_MODE: return SAI_ICMP_ECHO_SESSION_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_ATTR_SELECTIVE_COUNTER_LIST: return SAI_ICMP_ECHO_SESSION_ATTR_SELECTIVE_COUNTER_LIST;
+    
+        default: return SAI_ICMP_ECHO_SESSION_ATTR_HW_LOOKUP_VALID;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_icmp_echo_session_attr_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_icmp_echo_session_attr_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_icmp_echo_session_attr_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_icmp_echo_session_attr_t_to_sai(static_cast<lemming::dataplane::sai::IcmpEchoSessionAttr>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::IcmpEchoSessionStat convert_sai_icmp_echo_session_stat_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_ICMP_ECHO_SESSION_STAT_IN_PACKETS: return lemming::dataplane::sai::ICMP_ECHO_SESSION_STAT_IN_PACKETS;
+    
+        case SAI_ICMP_ECHO_SESSION_STAT_OUT_PACKETS: return lemming::dataplane::sai::ICMP_ECHO_SESSION_STAT_OUT_PACKETS;
+    
+        default: return lemming::dataplane::sai::ICMP_ECHO_SESSION_STAT_UNSPECIFIED;
+    }
+}
+sai_icmp_echo_session_stat_t convert_sai_icmp_echo_session_stat_t_to_sai(lemming::dataplane::sai::IcmpEchoSessionStat val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_STAT_IN_PACKETS: return SAI_ICMP_ECHO_SESSION_STAT_IN_PACKETS;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_STAT_OUT_PACKETS: return SAI_ICMP_ECHO_SESSION_STAT_OUT_PACKETS;
+    
+        default: return SAI_ICMP_ECHO_SESSION_STAT_IN_PACKETS;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_icmp_echo_session_stat_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_icmp_echo_session_stat_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_icmp_echo_session_stat_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_icmp_echo_session_stat_t_to_sai(static_cast<lemming::dataplane::sai::IcmpEchoSessionStat>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::IcmpEchoSessionState convert_sai_icmp_echo_session_state_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_ICMP_ECHO_SESSION_STATE_DOWN: return lemming::dataplane::sai::ICMP_ECHO_SESSION_STATE_DOWN;
+    
+        case SAI_ICMP_ECHO_SESSION_STATE_UP: return lemming::dataplane::sai::ICMP_ECHO_SESSION_STATE_UP;
+    
+        default: return lemming::dataplane::sai::ICMP_ECHO_SESSION_STATE_UNSPECIFIED;
+    }
+}
+sai_icmp_echo_session_state_t convert_sai_icmp_echo_session_state_t_to_sai(lemming::dataplane::sai::IcmpEchoSessionState val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_STATE_DOWN: return SAI_ICMP_ECHO_SESSION_STATE_DOWN;
+    
+        case lemming::dataplane::sai::ICMP_ECHO_SESSION_STATE_UP: return SAI_ICMP_ECHO_SESSION_STATE_UP;
+    
+        default: return SAI_ICMP_ECHO_SESSION_STATE_DOWN;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_icmp_echo_session_state_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_icmp_echo_session_state_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_icmp_echo_session_state_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_icmp_echo_session_state_t_to_sai(static_cast<lemming::dataplane::sai::IcmpEchoSessionState>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
 lemming::dataplane::sai::InDropReason convert_sai_in_drop_reason_t_to_proto(const sai_int32_t val) {
     switch (val) {
     
@@ -6100,6 +6943,10 @@ lemming::dataplane::sai::IngressPriorityGroupAttr convert_sai_ingress_priority_g
     
         case SAI_INGRESS_PRIORITY_GROUP_ATTR_INDEX: return lemming::dataplane::sai::INGRESS_PRIORITY_GROUP_ATTR_INDEX;
     
+        case SAI_INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::INGRESS_PRIORITY_GROUP_ATTR_UNSPECIFIED;
     }
 }
@@ -6113,6 +6960,10 @@ sai_ingress_priority_group_attr_t convert_sai_ingress_priority_group_attr_t_to_s
         case lemming::dataplane::sai::INGRESS_PRIORITY_GROUP_ATTR_TAM: return SAI_INGRESS_PRIORITY_GROUP_ATTR_TAM;
     
         case lemming::dataplane::sai::INGRESS_PRIORITY_GROUP_ATTR_INDEX: return SAI_INGRESS_PRIORITY_GROUP_ATTR_INDEX;
+    
+        case lemming::dataplane::sai::INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE: return SAI_INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST: return SAI_INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE;
     }
@@ -6786,6 +7637,10 @@ lemming::dataplane::sai::IpsecPortAttr convert_sai_ipsec_port_attr_t_to_proto(co
     
         case SAI_IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE: return lemming::dataplane::sai::IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE;
     
+        case SAI_IPSEC_PORT_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::IPSEC_PORT_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_IPSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::IPSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::IPSEC_PORT_ATTR_UNSPECIFIED;
     }
 }
@@ -6803,6 +7658,10 @@ sai_ipsec_port_attr_t convert_sai_ipsec_port_attr_t_to_sai(lemming::dataplane::s
         case lemming::dataplane::sai::IPSEC_PORT_ATTR_VRF_FROM_PACKET_VLAN_ENABLE: return SAI_IPSEC_PORT_ATTR_VRF_FROM_PACKET_VLAN_ENABLE;
     
         case lemming::dataplane::sai::IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE: return SAI_IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE;
+    
+        case lemming::dataplane::sai::IPSEC_PORT_ATTR_STATS_COUNT_MODE: return SAI_IPSEC_PORT_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::IPSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST: return SAI_IPSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_IPSEC_PORT_ATTR_PORT_ID;
     }
@@ -6922,6 +7781,10 @@ lemming::dataplane::sai::IpsecSaAttr convert_sai_ipsec_sa_attr_t_to_proto(const 
     
         case SAI_IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN: return lemming::dataplane::sai::IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN;
     
+        case SAI_IPSEC_SA_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::IPSEC_SA_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_IPSEC_SA_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::IPSEC_SA_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::IPSEC_SA_ATTR_UNSPECIFIED;
     }
 }
@@ -6969,6 +7832,10 @@ sai_ipsec_sa_attr_t convert_sai_ipsec_sa_attr_t_to_sai(lemming::dataplane::sai::
         case lemming::dataplane::sai::IPSEC_SA_ATTR_EGRESS_ESN: return SAI_IPSEC_SA_ATTR_EGRESS_ESN;
     
         case lemming::dataplane::sai::IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN: return SAI_IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN;
+    
+        case lemming::dataplane::sai::IPSEC_SA_ATTR_STATS_COUNT_MODE: return SAI_IPSEC_SA_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::IPSEC_SA_ATTR_SELECTIVE_COUNTER_LIST: return SAI_IPSEC_SA_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_IPSEC_SA_ATTR_IPSEC_DIRECTION;
     }
@@ -7766,6 +8633,10 @@ lemming::dataplane::sai::MacsecFlowAttr convert_sai_macsec_flow_attr_t_to_proto(
     
         case SAI_MACSEC_FLOW_ATTR_SC_LIST: return lemming::dataplane::sai::MACSEC_FLOW_ATTR_SC_LIST;
     
+        case SAI_MACSEC_FLOW_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::MACSEC_FLOW_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_MACSEC_FLOW_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::MACSEC_FLOW_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::MACSEC_FLOW_ATTR_UNSPECIFIED;
     }
 }
@@ -7777,6 +8648,10 @@ sai_macsec_flow_attr_t convert_sai_macsec_flow_attr_t_to_sai(lemming::dataplane:
         case lemming::dataplane::sai::MACSEC_FLOW_ATTR_ACL_ENTRY_LIST: return SAI_MACSEC_FLOW_ATTR_ACL_ENTRY_LIST;
     
         case lemming::dataplane::sai::MACSEC_FLOW_ATTR_SC_LIST: return SAI_MACSEC_FLOW_ATTR_SC_LIST;
+    
+        case lemming::dataplane::sai::MACSEC_FLOW_ATTR_STATS_COUNT_MODE: return SAI_MACSEC_FLOW_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::MACSEC_FLOW_ATTR_SELECTIVE_COUNTER_LIST: return SAI_MACSEC_FLOW_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_MACSEC_FLOW_ATTR_MACSEC_DIRECTION;
     }
@@ -7953,6 +8828,10 @@ lemming::dataplane::sai::MacsecPortAttr convert_sai_macsec_port_attr_t_to_proto(
     
         case SAI_MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE: return lemming::dataplane::sai::MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE;
     
+        case SAI_MACSEC_PORT_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::MACSEC_PORT_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_MACSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::MACSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::MACSEC_PORT_ATTR_UNSPECIFIED;
     }
 }
@@ -7968,6 +8847,10 @@ sai_macsec_port_attr_t convert_sai_macsec_port_attr_t_to_sai(lemming::dataplane:
         case lemming::dataplane::sai::MACSEC_PORT_ATTR_STAG_ENABLE: return SAI_MACSEC_PORT_ATTR_STAG_ENABLE;
     
         case lemming::dataplane::sai::MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE: return SAI_MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE;
+    
+        case lemming::dataplane::sai::MACSEC_PORT_ATTR_STATS_COUNT_MODE: return SAI_MACSEC_PORT_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::MACSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST: return SAI_MACSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_MACSEC_PORT_ATTR_MACSEC_DIRECTION;
     }
@@ -9737,6 +10620,8 @@ lemming::dataplane::sai::NextHopGroupType convert_sai_next_hop_group_type_t_to_p
     
         case SAI_NEXT_HOP_GROUP_TYPE_CLASS_BASED: return lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_CLASS_BASED;
     
+        case SAI_NEXT_HOP_GROUP_TYPE_HW_PROTECTION: return lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_HW_PROTECTION;
+    
         case SAI_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS: return lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS;
     
         default: return lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_UNSPECIFIED;
@@ -9754,6 +10639,8 @@ sai_next_hop_group_type_t convert_sai_next_hop_group_type_t_to_sai(lemming::data
         case lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_PROTECTION: return SAI_NEXT_HOP_GROUP_TYPE_PROTECTION;
     
         case lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_CLASS_BASED: return SAI_NEXT_HOP_GROUP_TYPE_CLASS_BASED;
+    
+        case lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_HW_PROTECTION: return SAI_NEXT_HOP_GROUP_TYPE_HW_PROTECTION;
     
         case lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS: return SAI_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS;
     
@@ -9888,7 +10775,7 @@ lemming::dataplane::sai::ObjectTypeExtensions convert_sai_object_type_extensions
     
         case SAI_OBJECT_TYPE_INBOUND_ROUTING_ENTRY: return lemming::dataplane::sai::OBJECT_TYPE_INBOUND_ROUTING_ENTRY;
     
-        case SAI_OBJECT_TYPE_METER_BUCKET: return lemming::dataplane::sai::OBJECT_TYPE_METER_BUCKET;
+        case SAI_OBJECT_TYPE_METER_BUCKET_ENTRY: return lemming::dataplane::sai::OBJECT_TYPE_METER_BUCKET_ENTRY;
     
         case SAI_OBJECT_TYPE_METER_POLICY: return lemming::dataplane::sai::OBJECT_TYPE_METER_POLICY;
     
@@ -9903,6 +10790,24 @@ lemming::dataplane::sai::ObjectTypeExtensions convert_sai_object_type_extensions
         case SAI_OBJECT_TYPE_PA_VALIDATION_ENTRY: return lemming::dataplane::sai::OBJECT_TYPE_PA_VALIDATION_ENTRY;
     
         case SAI_OBJECT_TYPE_VIP_ENTRY: return lemming::dataplane::sai::OBJECT_TYPE_VIP_ENTRY;
+    
+        case SAI_OBJECT_TYPE_HA_SET: return lemming::dataplane::sai::OBJECT_TYPE_HA_SET;
+    
+        case SAI_OBJECT_TYPE_HA_SCOPE: return lemming::dataplane::sai::OBJECT_TYPE_HA_SCOPE;
+    
+        case SAI_OBJECT_TYPE_DASH_TUNNEL: return lemming::dataplane::sai::OBJECT_TYPE_DASH_TUNNEL;
+    
+        case SAI_OBJECT_TYPE_OUTBOUND_ROUTING_GROUP: return lemming::dataplane::sai::OBJECT_TYPE_OUTBOUND_ROUTING_GROUP;
+    
+        case SAI_OBJECT_TYPE_FLOW_TABLE: return lemming::dataplane::sai::OBJECT_TYPE_FLOW_TABLE;
+    
+        case SAI_OBJECT_TYPE_FLOW_ENTRY: return lemming::dataplane::sai::OBJECT_TYPE_FLOW_ENTRY;
+    
+        case SAI_OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER: return lemming::dataplane::sai::OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER;
+    
+        case SAI_OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION: return lemming::dataplane::sai::OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION;
+    
+        case SAI_OBJECT_TYPE_DASH_APPLIANCE: return lemming::dataplane::sai::OBJECT_TYPE_DASH_APPLIANCE;
     
         case SAI_OBJECT_TYPE_EXTENSIONS_RANGE_END: return lemming::dataplane::sai::OBJECT_TYPE_EXTENSIONS_RANGE_END;
     
@@ -9930,7 +10835,7 @@ sai_object_type_extensions_t convert_sai_object_type_extensions_t_to_sai(lemming
     
         case lemming::dataplane::sai::OBJECT_TYPE_INBOUND_ROUTING_ENTRY: return SAI_OBJECT_TYPE_INBOUND_ROUTING_ENTRY;
     
-        case lemming::dataplane::sai::OBJECT_TYPE_METER_BUCKET: return SAI_OBJECT_TYPE_METER_BUCKET;
+        case lemming::dataplane::sai::OBJECT_TYPE_METER_BUCKET_ENTRY: return SAI_OBJECT_TYPE_METER_BUCKET_ENTRY;
     
         case lemming::dataplane::sai::OBJECT_TYPE_METER_POLICY: return SAI_OBJECT_TYPE_METER_POLICY;
     
@@ -9945,6 +10850,24 @@ sai_object_type_extensions_t convert_sai_object_type_extensions_t_to_sai(lemming
         case lemming::dataplane::sai::OBJECT_TYPE_PA_VALIDATION_ENTRY: return SAI_OBJECT_TYPE_PA_VALIDATION_ENTRY;
     
         case lemming::dataplane::sai::OBJECT_TYPE_VIP_ENTRY: return SAI_OBJECT_TYPE_VIP_ENTRY;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_HA_SET: return SAI_OBJECT_TYPE_HA_SET;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_HA_SCOPE: return SAI_OBJECT_TYPE_HA_SCOPE;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_DASH_TUNNEL: return SAI_OBJECT_TYPE_DASH_TUNNEL;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_OUTBOUND_ROUTING_GROUP: return SAI_OBJECT_TYPE_OUTBOUND_ROUTING_GROUP;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_FLOW_TABLE: return SAI_OBJECT_TYPE_FLOW_TABLE;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_FLOW_ENTRY: return SAI_OBJECT_TYPE_FLOW_ENTRY;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER: return SAI_OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION: return SAI_OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION;
+    
+        case lemming::dataplane::sai::OBJECT_TYPE_DASH_APPLIANCE: return SAI_OBJECT_TYPE_DASH_APPLIANCE;
     
         case lemming::dataplane::sai::OBJECT_TYPE_EXTENSIONS_RANGE_END: return SAI_OBJECT_TYPE_EXTENSIONS_RANGE_END;
     
@@ -10193,11 +11116,11 @@ lemming::dataplane::sai::ObjectType convert_sai_object_type_t_to_proto(const sai
     
         case SAI_OBJECT_TYPE_POE_PORT: return lemming::dataplane::sai::OBJECT_TYPE_POE_PORT;
     
+        case SAI_OBJECT_TYPE_ICMP_ECHO_SESSION: return lemming::dataplane::sai::OBJECT_TYPE_ICMP_ECHO_SESSION;
+    
         case SAI_OBJECT_TYPE_MAX: return lemming::dataplane::sai::OBJECT_TYPE_MAX;
     
-        case SAI_OBJECT_TYPE_CUSTOM_RANGE_START: return lemming::dataplane::sai::OBJECT_TYPE_CUSTOM_RANGE_START;
-    
-        case SAI_OBJECT_TYPE_CUSTOM_RANGE_END: return lemming::dataplane::sai::OBJECT_TYPE_CUSTOM_RANGE_END;
+        case SAI_OBJECT_TYPE_EXTENSIONS_RANGE_BASE: return lemming::dataplane::sai::OBJECT_TYPE_EXTENSIONS_RANGE_BASE;
     
         default: return lemming::dataplane::sai::OBJECT_TYPE_UNSPECIFIED;
     }
@@ -10427,11 +11350,11 @@ sai_object_type_t convert_sai_object_type_t_to_sai(lemming::dataplane::sai::Obje
     
         case lemming::dataplane::sai::OBJECT_TYPE_POE_PORT: return SAI_OBJECT_TYPE_POE_PORT;
     
+        case lemming::dataplane::sai::OBJECT_TYPE_ICMP_ECHO_SESSION: return SAI_OBJECT_TYPE_ICMP_ECHO_SESSION;
+    
         case lemming::dataplane::sai::OBJECT_TYPE_MAX: return SAI_OBJECT_TYPE_MAX;
     
-        case lemming::dataplane::sai::OBJECT_TYPE_CUSTOM_RANGE_START: return SAI_OBJECT_TYPE_CUSTOM_RANGE_START;
-    
-        case lemming::dataplane::sai::OBJECT_TYPE_CUSTOM_RANGE_END: return SAI_OBJECT_TYPE_CUSTOM_RANGE_END;
+        case lemming::dataplane::sai::OBJECT_TYPE_EXTENSIONS_RANGE_BASE: return SAI_OBJECT_TYPE_EXTENSIONS_RANGE_BASE;
     
         default: return SAI_OBJECT_TYPE_NULL;
     }
@@ -10914,6 +11837,10 @@ lemming::dataplane::sai::PolicerAttr convert_sai_policer_attr_t_to_proto(const s
     
         case SAI_POLICER_ATTR_OBJECT_STAGE: return lemming::dataplane::sai::POLICER_ATTR_OBJECT_STAGE;
     
+        case SAI_POLICER_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::POLICER_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_POLICER_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::POLICER_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::POLICER_ATTR_UNSPECIFIED;
     }
 }
@@ -10943,6 +11870,10 @@ sai_policer_attr_t convert_sai_policer_attr_t_to_sai(lemming::dataplane::sai::Po
         case lemming::dataplane::sai::POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST: return SAI_POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST;
     
         case lemming::dataplane::sai::POLICER_ATTR_OBJECT_STAGE: return SAI_POLICER_ATTR_OBJECT_STAGE;
+    
+        case lemming::dataplane::sai::POLICER_ATTR_STATS_COUNT_MODE: return SAI_POLICER_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::POLICER_ATTR_SELECTIVE_COUNTER_LIST: return SAI_POLICER_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_POLICER_ATTR_METER_TYPE;
     }
@@ -11511,6 +12442,16 @@ lemming::dataplane::sai::PortAttr convert_sai_port_attr_t_to_proto(const sai_int
     
         case SAI_PORT_ATTR_POE_PORT_ID: return lemming::dataplane::sai::PORT_ATTR_POE_PORT_ID;
     
+        case SAI_PORT_ATTR_JSON_FORMATTED_DEBUG_DATA_SIZE: return lemming::dataplane::sai::PORT_ATTR_JSON_FORMATTED_DEBUG_DATA_SIZE;
+    
+        case SAI_PORT_ATTR_UNRELIABLE_LOS: return lemming::dataplane::sai::PORT_ATTR_UNRELIABLE_LOS;
+    
+        case SAI_PORT_ATTR_ERROR_STATUS: return lemming::dataplane::sai::PORT_ATTR_ERROR_STATUS;
+    
+        case SAI_PORT_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::PORT_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_PORT_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::PORT_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::PORT_ATTR_UNSPECIFIED;
     }
 }
@@ -11873,6 +12814,16 @@ sai_port_attr_t convert_sai_port_attr_t_to_sai(lemming::dataplane::sai::PortAttr
     
         case lemming::dataplane::sai::PORT_ATTR_POE_PORT_ID: return SAI_PORT_ATTR_POE_PORT_ID;
     
+        case lemming::dataplane::sai::PORT_ATTR_JSON_FORMATTED_DEBUG_DATA_SIZE: return SAI_PORT_ATTR_JSON_FORMATTED_DEBUG_DATA_SIZE;
+    
+        case lemming::dataplane::sai::PORT_ATTR_UNRELIABLE_LOS: return SAI_PORT_ATTR_UNRELIABLE_LOS;
+    
+        case lemming::dataplane::sai::PORT_ATTR_ERROR_STATUS: return SAI_PORT_ATTR_ERROR_STATUS;
+    
+        case lemming::dataplane::sai::PORT_ATTR_STATS_COUNT_MODE: return SAI_PORT_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::PORT_ATTR_SELECTIVE_COUNTER_LIST: return SAI_PORT_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return SAI_PORT_ATTR_TYPE;
     }
 }
@@ -11947,6 +12898,8 @@ lemming::dataplane::sai::PortBreakoutModeType convert_sai_port_breakout_mode_typ
     
         case SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE: return lemming::dataplane::sai::PORT_BREAKOUT_MODE_TYPE_4_LANE;
     
+        case SAI_PORT_BREAKOUT_MODE_TYPE_8_LANE: return lemming::dataplane::sai::PORT_BREAKOUT_MODE_TYPE_8_LANE;
+    
         case SAI_PORT_BREAKOUT_MODE_TYPE_MAX: return lemming::dataplane::sai::PORT_BREAKOUT_MODE_TYPE_MAX;
     
         default: return lemming::dataplane::sai::PORT_BREAKOUT_MODE_TYPE_UNSPECIFIED;
@@ -11960,6 +12913,8 @@ sai_port_breakout_mode_type_t convert_sai_port_breakout_mode_type_t_to_sai(lemmi
         case lemming::dataplane::sai::PORT_BREAKOUT_MODE_TYPE_2_LANE: return SAI_PORT_BREAKOUT_MODE_TYPE_2_LANE;
     
         case lemming::dataplane::sai::PORT_BREAKOUT_MODE_TYPE_4_LANE: return SAI_PORT_BREAKOUT_MODE_TYPE_4_LANE;
+    
+        case lemming::dataplane::sai::PORT_BREAKOUT_MODE_TYPE_8_LANE: return SAI_PORT_BREAKOUT_MODE_TYPE_8_LANE;
     
         case lemming::dataplane::sai::PORT_BREAKOUT_MODE_TYPE_MAX: return SAI_PORT_BREAKOUT_MODE_TYPE_MAX;
     
@@ -12320,6 +13275,91 @@ google::protobuf::RepeatedField<int> convert_list_sai_port_err_status_t_to_proto
 void convert_list_sai_port_err_status_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
 	for (int i = 0; i < proto_list.size(); i++) {
 		list[i] = convert_sai_port_err_status_t_to_sai(static_cast<lemming::dataplane::sai::PortErrStatus>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::PortErrorStatus convert_sai_port_error_status_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_PORT_ERROR_STATUS_CLEAR: return lemming::dataplane::sai::PORT_ERROR_STATUS_CLEAR;
+    
+        case SAI_PORT_ERROR_STATUS_MAC_LOCAL_FAULT: return lemming::dataplane::sai::PORT_ERROR_STATUS_MAC_LOCAL_FAULT;
+    
+        case SAI_PORT_ERROR_STATUS_MAC_REMOTE_FAULT: return lemming::dataplane::sai::PORT_ERROR_STATUS_MAC_REMOTE_FAULT;
+    
+        case SAI_PORT_ERROR_STATUS_FEC_SYNC_LOSS: return lemming::dataplane::sai::PORT_ERROR_STATUS_FEC_SYNC_LOSS;
+    
+        case SAI_PORT_ERROR_STATUS_FEC_LOSS_ALIGNMENT_MARKER: return lemming::dataplane::sai::PORT_ERROR_STATUS_FEC_LOSS_ALIGNMENT_MARKER;
+    
+        case SAI_PORT_ERROR_STATUS_HIGH_SER: return lemming::dataplane::sai::PORT_ERROR_STATUS_HIGH_SER;
+    
+        case SAI_PORT_ERROR_STATUS_HIGH_BER: return lemming::dataplane::sai::PORT_ERROR_STATUS_HIGH_BER;
+    
+        case SAI_PORT_ERROR_STATUS_CRC_RATE: return lemming::dataplane::sai::PORT_ERROR_STATUS_CRC_RATE;
+    
+        case SAI_PORT_ERROR_STATUS_DATA_UNIT_CRC_ERROR: return lemming::dataplane::sai::PORT_ERROR_STATUS_DATA_UNIT_CRC_ERROR;
+    
+        case SAI_PORT_ERROR_STATUS_DATA_UNIT_SIZE: return lemming::dataplane::sai::PORT_ERROR_STATUS_DATA_UNIT_SIZE;
+    
+        case SAI_PORT_ERROR_STATUS_DATA_UNIT_MISALIGNMENT_ERROR: return lemming::dataplane::sai::PORT_ERROR_STATUS_DATA_UNIT_MISALIGNMENT_ERROR;
+    
+        case SAI_PORT_ERROR_STATUS_CODE_GROUP_ERROR: return lemming::dataplane::sai::PORT_ERROR_STATUS_CODE_GROUP_ERROR;
+    
+        case SAI_PORT_ERROR_STATUS_SIGNAL_LOCAL_ERROR: return lemming::dataplane::sai::PORT_ERROR_STATUS_SIGNAL_LOCAL_ERROR;
+    
+        case SAI_PORT_ERROR_STATUS_NO_RX_REACHABILITY: return lemming::dataplane::sai::PORT_ERROR_STATUS_NO_RX_REACHABILITY;
+    
+        default: return lemming::dataplane::sai::PORT_ERROR_STATUS_UNSPECIFIED;
+    }
+}
+sai_port_error_status_t convert_sai_port_error_status_t_to_sai(lemming::dataplane::sai::PortErrorStatus val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_CLEAR: return SAI_PORT_ERROR_STATUS_CLEAR;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_MAC_LOCAL_FAULT: return SAI_PORT_ERROR_STATUS_MAC_LOCAL_FAULT;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_MAC_REMOTE_FAULT: return SAI_PORT_ERROR_STATUS_MAC_REMOTE_FAULT;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_FEC_SYNC_LOSS: return SAI_PORT_ERROR_STATUS_FEC_SYNC_LOSS;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_FEC_LOSS_ALIGNMENT_MARKER: return SAI_PORT_ERROR_STATUS_FEC_LOSS_ALIGNMENT_MARKER;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_HIGH_SER: return SAI_PORT_ERROR_STATUS_HIGH_SER;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_HIGH_BER: return SAI_PORT_ERROR_STATUS_HIGH_BER;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_CRC_RATE: return SAI_PORT_ERROR_STATUS_CRC_RATE;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_DATA_UNIT_CRC_ERROR: return SAI_PORT_ERROR_STATUS_DATA_UNIT_CRC_ERROR;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_DATA_UNIT_SIZE: return SAI_PORT_ERROR_STATUS_DATA_UNIT_SIZE;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_DATA_UNIT_MISALIGNMENT_ERROR: return SAI_PORT_ERROR_STATUS_DATA_UNIT_MISALIGNMENT_ERROR;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_CODE_GROUP_ERROR: return SAI_PORT_ERROR_STATUS_CODE_GROUP_ERROR;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_SIGNAL_LOCAL_ERROR: return SAI_PORT_ERROR_STATUS_SIGNAL_LOCAL_ERROR;
+    
+        case lemming::dataplane::sai::PORT_ERROR_STATUS_NO_RX_REACHABILITY: return SAI_PORT_ERROR_STATUS_NO_RX_REACHABILITY;
+    
+        default: return SAI_PORT_ERROR_STATUS_CLEAR;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_port_error_status_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_port_error_status_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_port_error_status_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_port_error_status_t_to_sai(static_cast<lemming::dataplane::sai::PortErrorStatus>(proto_list[i]));
 	}
 	*count = proto_list.size();
 }
@@ -13511,6 +14551,18 @@ lemming::dataplane::sai::PortStatExtensions convert_sai_port_stat_extensions_t_t
     
         case SAI_PORT_STAT_LB_FAST_PATH_ENI_MISS_PACKETS: return lemming::dataplane::sai::PORT_STAT_LB_FAST_PATH_ENI_MISS_PACKETS;
     
+        case SAI_PORT_STAT_VIP_MISS_DROP_PACKETS: return lemming::dataplane::sai::PORT_STAT_VIP_MISS_DROP_PACKETS;
+    
+        case SAI_PORT_STAT_ENI_MISS_DROP_PACKETS: return lemming::dataplane::sai::PORT_STAT_ENI_MISS_DROP_PACKETS;
+    
+        case SAI_PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_BYTES: return lemming::dataplane::sai::PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_BYTES;
+    
+        case SAI_PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_PACKETS: return lemming::dataplane::sai::PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_PACKETS;
+    
+        case SAI_PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_BYTES: return lemming::dataplane::sai::PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_BYTES;
+    
+        case SAI_PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_PACKETS: return lemming::dataplane::sai::PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_PACKETS;
+    
         case SAI_PORT_STAT_EXTENSIONS_RANGE_END: return lemming::dataplane::sai::PORT_STAT_EXTENSIONS_RANGE_END;
     
         default: return lemming::dataplane::sai::PORT_STAT_EXTENSIONS_UNSPECIFIED;
@@ -13526,6 +14578,18 @@ sai_port_stat_extensions_t convert_sai_port_stat_extensions_t_to_sai(lemming::da
         case lemming::dataplane::sai::PORT_STAT_LB_FAST_PATH_ENI_MISS_BYTES: return SAI_PORT_STAT_LB_FAST_PATH_ENI_MISS_BYTES;
     
         case lemming::dataplane::sai::PORT_STAT_LB_FAST_PATH_ENI_MISS_PACKETS: return SAI_PORT_STAT_LB_FAST_PATH_ENI_MISS_PACKETS;
+    
+        case lemming::dataplane::sai::PORT_STAT_VIP_MISS_DROP_PACKETS: return SAI_PORT_STAT_VIP_MISS_DROP_PACKETS;
+    
+        case lemming::dataplane::sai::PORT_STAT_ENI_MISS_DROP_PACKETS: return SAI_PORT_STAT_ENI_MISS_DROP_PACKETS;
+    
+        case lemming::dataplane::sai::PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_BYTES: return SAI_PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_BYTES;
+    
+        case lemming::dataplane::sai::PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_PACKETS: return SAI_PORT_STAT_PORT_LB_FAST_PATH_ICMP_IN_PACKETS;
+    
+        case lemming::dataplane::sai::PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_BYTES: return SAI_PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_BYTES;
+    
+        case lemming::dataplane::sai::PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_PACKETS: return SAI_PORT_STAT_PORT_LB_FAST_PATH_ENI_MISS_DROP_PACKETS;
     
         case lemming::dataplane::sai::PORT_STAT_EXTENSIONS_RANGE_END: return SAI_PORT_STAT_EXTENSIONS_RANGE_END;
     
@@ -13988,9 +15052,15 @@ lemming::dataplane::sai::PortStat convert_sai_port_stat_t_to_proto(const sai_int
     
         case SAI_PORT_STAT_OUT_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS: return lemming::dataplane::sai::PORT_STAT_OUT_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS;
     
+        case SAI_PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_EVENTS: return lemming::dataplane::sai::PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_EVENTS;
+    
+        case SAI_PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_DROP_PKTS: return lemming::dataplane::sai::PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_DROP_PKTS;
+    
         case SAI_PORT_STAT_OUT_DROP_REASON_RANGE_END: return lemming::dataplane::sai::PORT_STAT_OUT_DROP_REASON_RANGE_END;
     
         case SAI_PORT_STAT_END: return lemming::dataplane::sai::PORT_STAT_END;
+    
+        case SAI_PORT_STAT_EXTENSIONS_RANGE_BASE: return lemming::dataplane::sai::PORT_STAT_EXTENSIONS_RANGE_BASE;
     
         default: return lemming::dataplane::sai::PORT_STAT_UNSPECIFIED;
     }
@@ -14434,9 +15504,15 @@ sai_port_stat_t convert_sai_port_stat_t_to_sai(lemming::dataplane::sai::PortStat
     
         case lemming::dataplane::sai::PORT_STAT_OUT_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS: return SAI_PORT_STAT_OUT_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS;
     
+        case lemming::dataplane::sai::PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_EVENTS: return SAI_PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_EVENTS;
+    
+        case lemming::dataplane::sai::PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_DROP_PKTS: return SAI_PORT_STAT_IF_IN_HW_PROTECTION_SWITCHOVER_DROP_PKTS;
+    
         case lemming::dataplane::sai::PORT_STAT_OUT_DROP_REASON_RANGE_END: return SAI_PORT_STAT_OUT_DROP_REASON_RANGE_END;
     
         case lemming::dataplane::sai::PORT_STAT_END: return SAI_PORT_STAT_END;
+    
+        case lemming::dataplane::sai::PORT_STAT_EXTENSIONS_RANGE_BASE: return SAI_PORT_STAT_EXTENSIONS_RANGE_BASE;
     
         default: return SAI_PORT_STAT_START;
     }
@@ -14662,6 +15738,10 @@ lemming::dataplane::sai::QueueAttr convert_sai_queue_attr_t_to_proto(const sai_i
     
         case SAI_QUEUE_ATTR_PFC_CONTINUOUS_DEADLOCK_STATE: return lemming::dataplane::sai::QUEUE_ATTR_PFC_CONTINUOUS_DEADLOCK_STATE;
     
+        case SAI_QUEUE_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::QUEUE_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_QUEUE_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::QUEUE_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::QUEUE_ATTR_UNSPECIFIED;
     }
 }
@@ -14693,6 +15773,10 @@ sai_queue_attr_t convert_sai_queue_attr_t_to_sai(lemming::dataplane::sai::QueueA
         case lemming::dataplane::sai::QUEUE_ATTR_PFC_DLR_PACKET_ACTION: return SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION;
     
         case lemming::dataplane::sai::QUEUE_ATTR_PFC_CONTINUOUS_DEADLOCK_STATE: return SAI_QUEUE_ATTR_PFC_CONTINUOUS_DEADLOCK_STATE;
+    
+        case lemming::dataplane::sai::QUEUE_ATTR_STATS_COUNT_MODE: return SAI_QUEUE_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::QUEUE_ATTR_SELECTIVE_COUNTER_LIST: return SAI_QUEUE_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_QUEUE_ATTR_TYPE;
     }
@@ -15144,6 +16228,10 @@ lemming::dataplane::sai::RouterInterfaceAttr convert_sai_router_interface_attr_t
     
         case SAI_ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE: return lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE;
     
+        case SAI_ROUTER_INTERFACE_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_ROUTER_INTERFACE_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_SELECTIVE_COUNTER_LIST;
+    
         case SAI_ROUTER_INTERFACE_ATTR_LABEL: return lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_LABEL;
     
         default: return lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_UNSPECIFIED;
@@ -15193,6 +16281,10 @@ sai_router_interface_attr_t convert_sai_router_interface_attr_t_to_sai(lemming::
         case lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_DISABLE_DECREMENT_TTL: return SAI_ROUTER_INTERFACE_ATTR_DISABLE_DECREMENT_TTL;
     
         case lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE: return SAI_ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE;
+    
+        case lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_STATS_COUNT_MODE: return SAI_ROUTER_INTERFACE_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_SELECTIVE_COUNTER_LIST: return SAI_ROUTER_INTERFACE_ATTR_SELECTIVE_COUNTER_LIST;
     
         case lemming::dataplane::sai::ROUTER_INTERFACE_ATTR_LABEL: return SAI_ROUTER_INTERFACE_ATTR_LABEL;
     
@@ -15417,6 +16509,10 @@ lemming::dataplane::sai::SamplepacketAttr convert_sai_samplepacket_attr_t_to_pro
     
         case SAI_SAMPLEPACKET_ATTR_MODE: return lemming::dataplane::sai::SAMPLEPACKET_ATTR_MODE;
     
+        case SAI_SAMPLEPACKET_ATTR_TRUNCATE_ENABLE: return lemming::dataplane::sai::SAMPLEPACKET_ATTR_TRUNCATE_ENABLE;
+    
+        case SAI_SAMPLEPACKET_ATTR_TRUNCATE_SIZE: return lemming::dataplane::sai::SAMPLEPACKET_ATTR_TRUNCATE_SIZE;
+    
         default: return lemming::dataplane::sai::SAMPLEPACKET_ATTR_UNSPECIFIED;
     }
 }
@@ -15428,6 +16524,10 @@ sai_samplepacket_attr_t convert_sai_samplepacket_attr_t_to_sai(lemming::dataplan
         case lemming::dataplane::sai::SAMPLEPACKET_ATTR_TYPE: return SAI_SAMPLEPACKET_ATTR_TYPE;
     
         case lemming::dataplane::sai::SAMPLEPACKET_ATTR_MODE: return SAI_SAMPLEPACKET_ATTR_MODE;
+    
+        case lemming::dataplane::sai::SAMPLEPACKET_ATTR_TRUNCATE_ENABLE: return SAI_SAMPLEPACKET_ATTR_TRUNCATE_ENABLE;
+    
+        case lemming::dataplane::sai::SAMPLEPACKET_ATTR_TRUNCATE_SIZE: return SAI_SAMPLEPACKET_ATTR_TRUNCATE_SIZE;
     
         default: return SAI_SAMPLEPACKET_ATTR_SAMPLE_RATE;
     }
@@ -15678,6 +16778,157 @@ void convert_list_sai_scheduling_type_t_to_sai(int32_t *list, const google::prot
 
 
 
+lemming::dataplane::sai::SerCorrectionType convert_sai_ser_correction_type_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_SER_CORRECTION_TYPE_NO_ACTION: return lemming::dataplane::sai::SER_CORRECTION_TYPE_NO_ACTION;
+    
+        case SAI_SER_CORRECTION_TYPE_FAIL_TO_CORRECT: return lemming::dataplane::sai::SER_CORRECTION_TYPE_FAIL_TO_CORRECT;
+    
+        case SAI_SER_CORRECTION_TYPE_ENTRY_CLEAR: return lemming::dataplane::sai::SER_CORRECTION_TYPE_ENTRY_CLEAR;
+    
+        case SAI_SER_CORRECTION_TYPE_SW_CACHE_RESTORE: return lemming::dataplane::sai::SER_CORRECTION_TYPE_SW_CACHE_RESTORE;
+    
+        case SAI_SER_CORRECTION_TYPE_HW_CACHE_RESTORE: return lemming::dataplane::sai::SER_CORRECTION_TYPE_HW_CACHE_RESTORE;
+    
+        case SAI_SER_CORRECTION_TYPE_SPECIAL: return lemming::dataplane::sai::SER_CORRECTION_TYPE_SPECIAL;
+    
+        default: return lemming::dataplane::sai::SER_CORRECTION_TYPE_UNSPECIFIED;
+    }
+}
+sai_ser_correction_type_t convert_sai_ser_correction_type_t_to_sai(lemming::dataplane::sai::SerCorrectionType val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::SER_CORRECTION_TYPE_NO_ACTION: return SAI_SER_CORRECTION_TYPE_NO_ACTION;
+    
+        case lemming::dataplane::sai::SER_CORRECTION_TYPE_FAIL_TO_CORRECT: return SAI_SER_CORRECTION_TYPE_FAIL_TO_CORRECT;
+    
+        case lemming::dataplane::sai::SER_CORRECTION_TYPE_ENTRY_CLEAR: return SAI_SER_CORRECTION_TYPE_ENTRY_CLEAR;
+    
+        case lemming::dataplane::sai::SER_CORRECTION_TYPE_SW_CACHE_RESTORE: return SAI_SER_CORRECTION_TYPE_SW_CACHE_RESTORE;
+    
+        case lemming::dataplane::sai::SER_CORRECTION_TYPE_HW_CACHE_RESTORE: return SAI_SER_CORRECTION_TYPE_HW_CACHE_RESTORE;
+    
+        case lemming::dataplane::sai::SER_CORRECTION_TYPE_SPECIAL: return SAI_SER_CORRECTION_TYPE_SPECIAL;
+    
+        default: return SAI_SER_CORRECTION_TYPE_NO_ACTION;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_ser_correction_type_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_ser_correction_type_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_ser_correction_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_ser_correction_type_t_to_sai(static_cast<lemming::dataplane::sai::SerCorrectionType>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::SerLogType convert_sai_ser_log_type_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_SER_LOG_TYPE_MEM: return lemming::dataplane::sai::SER_LOG_TYPE_MEM;
+    
+        case SAI_SER_LOG_TYPE_REG: return lemming::dataplane::sai::SER_LOG_TYPE_REG;
+    
+        case SAI_SER_LOG_TYPE_MULTI: return lemming::dataplane::sai::SER_LOG_TYPE_MULTI;
+    
+        case SAI_SER_LOG_TYPE_CORRECTED: return lemming::dataplane::sai::SER_LOG_TYPE_CORRECTED;
+    
+        case SAI_SER_LOG_TYPE_ENTRY_INFO: return lemming::dataplane::sai::SER_LOG_TYPE_ENTRY_INFO;
+    
+        case SAI_SER_LOG_TYPE_CACHE: return lemming::dataplane::sai::SER_LOG_TYPE_CACHE;
+    
+        default: return lemming::dataplane::sai::SER_LOG_TYPE_UNSPECIFIED;
+    }
+}
+sai_ser_log_type_t convert_sai_ser_log_type_t_to_sai(lemming::dataplane::sai::SerLogType val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::SER_LOG_TYPE_MEM: return SAI_SER_LOG_TYPE_MEM;
+    
+        case lemming::dataplane::sai::SER_LOG_TYPE_REG: return SAI_SER_LOG_TYPE_REG;
+    
+        case lemming::dataplane::sai::SER_LOG_TYPE_MULTI: return SAI_SER_LOG_TYPE_MULTI;
+    
+        case lemming::dataplane::sai::SER_LOG_TYPE_CORRECTED: return SAI_SER_LOG_TYPE_CORRECTED;
+    
+        case lemming::dataplane::sai::SER_LOG_TYPE_ENTRY_INFO: return SAI_SER_LOG_TYPE_ENTRY_INFO;
+    
+        case lemming::dataplane::sai::SER_LOG_TYPE_CACHE: return SAI_SER_LOG_TYPE_CACHE;
+    
+        default: return SAI_SER_LOG_TYPE_MEM;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_ser_log_type_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_ser_log_type_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_ser_log_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_ser_log_type_t_to_sai(static_cast<lemming::dataplane::sai::SerLogType>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::SerType convert_sai_ser_type_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_SER_TYPE_UNKNOWN: return lemming::dataplane::sai::SER_TYPE_UNKNOWN;
+    
+        case SAI_SER_TYPE_PARITY: return lemming::dataplane::sai::SER_TYPE_PARITY;
+    
+        case SAI_SER_TYPE_ECC_SINGLE_BIT: return lemming::dataplane::sai::SER_TYPE_ECC_SINGLE_BIT;
+    
+        case SAI_SER_TYPE_ECC_DOUBLE_BIT: return lemming::dataplane::sai::SER_TYPE_ECC_DOUBLE_BIT;
+    
+        default: return lemming::dataplane::sai::SER_TYPE_UNSPECIFIED;
+    }
+}
+sai_ser_type_t convert_sai_ser_type_t_to_sai(lemming::dataplane::sai::SerType val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::SER_TYPE_UNKNOWN: return SAI_SER_TYPE_UNKNOWN;
+    
+        case lemming::dataplane::sai::SER_TYPE_PARITY: return SAI_SER_TYPE_PARITY;
+    
+        case lemming::dataplane::sai::SER_TYPE_ECC_SINGLE_BIT: return SAI_SER_TYPE_ECC_SINGLE_BIT;
+    
+        case lemming::dataplane::sai::SER_TYPE_ECC_DOUBLE_BIT: return SAI_SER_TYPE_ECC_DOUBLE_BIT;
+    
+        default: return SAI_SER_TYPE_UNKNOWN;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_ser_type_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_ser_type_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_ser_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_ser_type_t_to_sai(static_cast<lemming::dataplane::sai::SerType>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
 lemming::dataplane::sai::Srv6SidlistAttr convert_sai_srv6_sidlist_attr_t_to_proto(const sai_int32_t val) {
     switch (val) {
     
@@ -15688,6 +16939,10 @@ lemming::dataplane::sai::Srv6SidlistAttr convert_sai_srv6_sidlist_attr_t_to_prot
         case SAI_SRV6_SIDLIST_ATTR_SEGMENT_LIST: return lemming::dataplane::sai::SRV6_SIDLIST_ATTR_SEGMENT_LIST;
     
         case SAI_SRV6_SIDLIST_ATTR_NEXT_HOP_ID: return lemming::dataplane::sai::SRV6_SIDLIST_ATTR_NEXT_HOP_ID;
+    
+        case SAI_SRV6_SIDLIST_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::SRV6_SIDLIST_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_SRV6_SIDLIST_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::SRV6_SIDLIST_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return lemming::dataplane::sai::SRV6_SIDLIST_ATTR_UNSPECIFIED;
     }
@@ -15702,6 +16957,10 @@ sai_srv6_sidlist_attr_t convert_sai_srv6_sidlist_attr_t_to_sai(lemming::dataplan
         case lemming::dataplane::sai::SRV6_SIDLIST_ATTR_SEGMENT_LIST: return SAI_SRV6_SIDLIST_ATTR_SEGMENT_LIST;
     
         case lemming::dataplane::sai::SRV6_SIDLIST_ATTR_NEXT_HOP_ID: return SAI_SRV6_SIDLIST_ATTR_NEXT_HOP_ID;
+    
+        case lemming::dataplane::sai::SRV6_SIDLIST_ATTR_STATS_COUNT_MODE: return SAI_SRV6_SIDLIST_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::SRV6_SIDLIST_ATTR_SELECTIVE_COUNTER_LIST: return SAI_SRV6_SIDLIST_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_SRV6_SIDLIST_ATTR_TYPE;
     }
@@ -15803,6 +17062,51 @@ google::protobuf::RepeatedField<int> convert_list_sai_srv6_sidlist_type_t_to_pro
 void convert_list_sai_srv6_sidlist_type_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
 	for (int i = 0; i < proto_list.size(); i++) {
 		list[i] = convert_sai_srv6_sidlist_type_t_to_sai(static_cast<lemming::dataplane::sai::Srv6SidlistType>(proto_list[i]));
+	}
+	*count = proto_list.size();
+}
+
+
+
+lemming::dataplane::sai::StatsCountMode convert_sai_stats_count_mode_t_to_proto(const sai_int32_t val) {
+    switch (val) {
+    
+        case SAI_STATS_COUNT_MODE_PACKET_AND_BYTE: return lemming::dataplane::sai::STATS_COUNT_MODE_PACKET_AND_BYTE;
+    
+        case SAI_STATS_COUNT_MODE_PACKET: return lemming::dataplane::sai::STATS_COUNT_MODE_PACKET;
+    
+        case SAI_STATS_COUNT_MODE_BYTE: return lemming::dataplane::sai::STATS_COUNT_MODE_BYTE;
+    
+        case SAI_STATS_COUNT_MODE_NONE: return lemming::dataplane::sai::STATS_COUNT_MODE_NONE;
+    
+        default: return lemming::dataplane::sai::STATS_COUNT_MODE_UNSPECIFIED;
+    }
+}
+sai_stats_count_mode_t convert_sai_stats_count_mode_t_to_sai(lemming::dataplane::sai::StatsCountMode val) {
+    switch (val) {
+    
+        case lemming::dataplane::sai::STATS_COUNT_MODE_PACKET_AND_BYTE: return SAI_STATS_COUNT_MODE_PACKET_AND_BYTE;
+    
+        case lemming::dataplane::sai::STATS_COUNT_MODE_PACKET: return SAI_STATS_COUNT_MODE_PACKET;
+    
+        case lemming::dataplane::sai::STATS_COUNT_MODE_BYTE: return SAI_STATS_COUNT_MODE_BYTE;
+    
+        case lemming::dataplane::sai::STATS_COUNT_MODE_NONE: return SAI_STATS_COUNT_MODE_NONE;
+    
+        default: return SAI_STATS_COUNT_MODE_PACKET_AND_BYTE;
+    }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_stats_count_mode_t_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_sai_stats_count_mode_t_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_sai_stats_count_mode_t_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_sai_stats_count_mode_t_to_sai(static_cast<lemming::dataplane::sai::StatsCountMode>(proto_list[i]));
 	}
 	*count = proto_list.size();
 }
@@ -16072,6 +17376,14 @@ lemming::dataplane::sai::SwitchAttrExtensions convert_sai_switch_attr_extensions
     
         case SAI_SWITCH_ATTR_EXTENSIONS_RANGE_START: return lemming::dataplane::sai::SWITCH_ATTR_EXTENSIONS_RANGE_START;
     
+        case SAI_SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL: return lemming::dataplane::sai::SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL;
+    
+        case SAI_SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED: return lemming::dataplane::sai::SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED;
+    
+        case SAI_SWITCH_ATTR_HA_SET_EVENT_NOTIFY: return lemming::dataplane::sai::SWITCH_ATTR_HA_SET_EVENT_NOTIFY;
+    
+        case SAI_SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY: return lemming::dataplane::sai::SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY;
+    
         case SAI_SWITCH_ATTR_EXTENSIONS_RANGE_END: return lemming::dataplane::sai::SWITCH_ATTR_EXTENSIONS_RANGE_END;
     
         default: return lemming::dataplane::sai::SWITCH_ATTR_EXTENSIONS_UNSPECIFIED;
@@ -16081,6 +17393,14 @@ sai_switch_attr_extensions_t convert_sai_switch_attr_extensions_t_to_sai(lemming
     switch (val) {
     
         case lemming::dataplane::sai::SWITCH_ATTR_EXTENSIONS_RANGE_START: return SAI_SWITCH_ATTR_EXTENSIONS_RANGE_START;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL: return SAI_SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED: return SAI_SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_HA_SET_EVENT_NOTIFY: return SAI_SWITCH_ATTR_HA_SET_EVENT_NOTIFY;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY: return SAI_SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY;
     
         case lemming::dataplane::sai::SWITCH_ATTR_EXTENSIONS_RANGE_END: return SAI_SWITCH_ATTR_EXTENSIONS_RANGE_END;
     
@@ -16571,6 +17891,16 @@ lemming::dataplane::sai::SwitchAttr convert_sai_switch_attr_t_to_proto(const sai
     
         case SAI_SWITCH_ATTR_POE_DEVICE_LIST: return lemming::dataplane::sai::SWITCH_ATTR_POE_DEVICE_LIST;
     
+        case SAI_SWITCH_ATTR_ICMP_ECHO_SESSION_STATE_CHANGE_NOTIFY: return lemming::dataplane::sai::SWITCH_ATTR_ICMP_ECHO_SESSION_STATE_CHANGE_NOTIFY;
+    
+        case SAI_SWITCH_ATTR_AVAILABLE_ICMP_ECHO_SESSION: return lemming::dataplane::sai::SWITCH_ATTR_AVAILABLE_ICMP_ECHO_SESSION;
+    
+        case SAI_SWITCH_ATTR_MAX_ICMP_ECHO_SESSION: return lemming::dataplane::sai::SWITCH_ATTR_MAX_ICMP_ECHO_SESSION;
+    
+        case SAI_SWITCH_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::SWITCH_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_SWITCH_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::SWITCH_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::SWITCH_ATTR_UNSPECIFIED;
     }
 }
@@ -17040,6 +18370,16 @@ sai_switch_attr_t convert_sai_switch_attr_t_to_sai(lemming::dataplane::sai::Swit
         case lemming::dataplane::sai::SWITCH_ATTR_ACL_STAGE_PRE_INGRESS: return SAI_SWITCH_ATTR_ACL_STAGE_PRE_INGRESS;
     
         case lemming::dataplane::sai::SWITCH_ATTR_POE_DEVICE_LIST: return SAI_SWITCH_ATTR_POE_DEVICE_LIST;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_ICMP_ECHO_SESSION_STATE_CHANGE_NOTIFY: return SAI_SWITCH_ATTR_ICMP_ECHO_SESSION_STATE_CHANGE_NOTIFY;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_AVAILABLE_ICMP_ECHO_SESSION: return SAI_SWITCH_ATTR_AVAILABLE_ICMP_ECHO_SESSION;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_MAX_ICMP_ECHO_SESSION: return SAI_SWITCH_ATTR_MAX_ICMP_ECHO_SESSION;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_STATS_COUNT_MODE: return SAI_SWITCH_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::SWITCH_ATTR_SELECTIVE_COUNTER_LIST: return SAI_SWITCH_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_SWITCH_ATTR_NUMBER_OF_ACTIVE_PORTS;
     }
@@ -19665,6 +21005,10 @@ lemming::dataplane::sai::TunnelAttr convert_sai_tunnel_attr_t_to_proto(const sai
     
         case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY: return lemming::dataplane::sai::TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY;
     
+        case SAI_TUNNEL_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::TUNNEL_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_TUNNEL_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::TUNNEL_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::TUNNEL_ATTR_UNSPECIFIED;
     }
 }
@@ -19730,6 +21074,10 @@ sai_tunnel_attr_t convert_sai_tunnel_attr_t_to_sai(lemming::dataplane::sai::Tunn
         case lemming::dataplane::sai::TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP: return SAI_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP;
     
         case lemming::dataplane::sai::TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY: return SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY;
+    
+        case lemming::dataplane::sai::TUNNEL_ATTR_STATS_COUNT_MODE: return SAI_TUNNEL_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::TUNNEL_ATTR_SELECTIVE_COUNTER_LIST: return SAI_TUNNEL_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_TUNNEL_ATTR_TYPE;
     }
@@ -20757,6 +22105,10 @@ lemming::dataplane::sai::VlanAttr convert_sai_vlan_attr_t_to_proto(const sai_int
     
         case SAI_VLAN_ATTR_TAM_OBJECT: return lemming::dataplane::sai::VLAN_ATTR_TAM_OBJECT;
     
+        case SAI_VLAN_ATTR_STATS_COUNT_MODE: return lemming::dataplane::sai::VLAN_ATTR_STATS_COUNT_MODE;
+    
+        case SAI_VLAN_ATTR_SELECTIVE_COUNTER_LIST: return lemming::dataplane::sai::VLAN_ATTR_SELECTIVE_COUNTER_LIST;
+    
         default: return lemming::dataplane::sai::VLAN_ATTR_UNSPECIFIED;
     }
 }
@@ -20806,6 +22158,10 @@ sai_vlan_attr_t convert_sai_vlan_attr_t_to_sai(lemming::dataplane::sai::VlanAttr
         case lemming::dataplane::sai::VLAN_ATTR_CUSTOM_IGMP_SNOOPING_ENABLE: return SAI_VLAN_ATTR_CUSTOM_IGMP_SNOOPING_ENABLE;
     
         case lemming::dataplane::sai::VLAN_ATTR_TAM_OBJECT: return SAI_VLAN_ATTR_TAM_OBJECT;
+    
+        case lemming::dataplane::sai::VLAN_ATTR_STATS_COUNT_MODE: return SAI_VLAN_ATTR_STATS_COUNT_MODE;
+    
+        case lemming::dataplane::sai::VLAN_ATTR_SELECTIVE_COUNTER_LIST: return SAI_VLAN_ATTR_SELECTIVE_COUNTER_LIST;
     
         default: return SAI_VLAN_ATTR_VLAN_ID;
     }

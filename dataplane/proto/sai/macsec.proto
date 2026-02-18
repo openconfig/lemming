@@ -45,6 +45,8 @@ enum MacsecPortAttr {
 	MACSEC_PORT_ATTR_CTAG_ENABLE = 3;
 	MACSEC_PORT_ATTR_STAG_ENABLE = 4;
 	MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE = 5;
+	MACSEC_PORT_ATTR_STATS_COUNT_MODE = 6;
+	MACSEC_PORT_ATTR_SELECTIVE_COUNTER_LIST = 7;
 }
 
 enum MacsecFlowAttr {
@@ -52,6 +54,8 @@ enum MacsecFlowAttr {
 	MACSEC_FLOW_ATTR_MACSEC_DIRECTION = 1;
 	MACSEC_FLOW_ATTR_ACL_ENTRY_LIST = 2;
 	MACSEC_FLOW_ATTR_SC_LIST = 3;
+	MACSEC_FLOW_ATTR_STATS_COUNT_MODE = 4;
+	MACSEC_FLOW_ATTR_SELECTIVE_COUNTER_LIST = 5;
 }
 
 enum MacsecScAttr {
@@ -136,6 +140,8 @@ message CreateMacsecPortRequest {
 	optional bool ctag_enable = 4[(attr_enum_value) = 3];
 	optional bool stag_enable = 5[(attr_enum_value) = 4];
 	optional SwitchSwitchingMode switch_switching_mode = 6[(attr_enum_value) = 5];
+	optional StatsCountMode stats_count_mode = 7[(attr_enum_value) = 6];
+	repeated uint64 selective_counter_list = 8[(attr_enum_value) = 7];
 }
 
 message CreateMacsecPortResponse {
@@ -154,6 +160,8 @@ message SetMacsecPortAttributeRequest {
 	optional bool ctag_enable = 2[(attr_enum_value) = 3];
 	optional bool stag_enable = 3[(attr_enum_value) = 4];
 	optional SwitchSwitchingMode switch_switching_mode = 4[(attr_enum_value) = 5];
+	optional StatsCountMode stats_count_mode = 5[(attr_enum_value) = 6];
+	repeated uint64 selective_counter_list = 6[(attr_enum_value) = 7];
 }
 
 message SetMacsecPortAttributeResponse {
@@ -181,6 +189,8 @@ message CreateMacsecFlowRequest {
 	option (sai_type) = OBJECT_TYPE_MACSEC_FLOW;
 	uint64 switch = 1;
 	optional MacsecDirection macsec_direction = 2[(attr_enum_value) = 1];
+	optional StatsCountMode stats_count_mode = 3[(attr_enum_value) = 4];
+	repeated uint64 selective_counter_list = 4[(attr_enum_value) = 5];
 }
 
 message CreateMacsecFlowResponse {
@@ -192,6 +202,15 @@ message RemoveMacsecFlowRequest {
 }
 
 message RemoveMacsecFlowResponse {
+}
+
+message SetMacsecFlowAttributeRequest {
+	uint64 oid = 1;
+	optional StatsCountMode stats_count_mode = 2[(attr_enum_value) = 4];
+	repeated uint64 selective_counter_list = 3[(attr_enum_value) = 5];
+}
+
+message SetMacsecFlowAttributeResponse {
 }
 
 message GetMacsecFlowAttributeRequest {
@@ -333,6 +352,7 @@ service Macsec {
 	rpc GetMacsecPortStats (GetMacsecPortStatsRequest) returns (GetMacsecPortStatsResponse) {}
 	rpc CreateMacsecFlow (CreateMacsecFlowRequest) returns (CreateMacsecFlowResponse) {}
 	rpc RemoveMacsecFlow (RemoveMacsecFlowRequest) returns (RemoveMacsecFlowResponse) {}
+	rpc SetMacsecFlowAttribute (SetMacsecFlowAttributeRequest) returns (SetMacsecFlowAttributeResponse) {}
 	rpc GetMacsecFlowAttribute (GetMacsecFlowAttributeRequest) returns (GetMacsecFlowAttributeResponse) {}
 	rpc GetMacsecFlowStats (GetMacsecFlowStatsRequest) returns (GetMacsecFlowStatsResponse) {}
 	rpc CreateMacsecSc (CreateMacsecScRequest) returns (CreateMacsecScResponse) {}
