@@ -71,6 +71,10 @@ var CounterList = []fwdpb.CounterId{
 	fwdpb.CounterId_COUNTER_ID_TX_MULTICAST_PACKETS,
 	fwdpb.CounterId_COUNTER_ID_RX_BROADCAST_PACKETS,
 	fwdpb.CounterId_COUNTER_ID_RX_MULTICAST_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_IPV6_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_IPV6_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_IPV6_DROP_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_IPV6_DROP_PACKETS,
 }
 
 // A Port is an entry or exit point within the forwarding plane. Each port
@@ -271,6 +275,11 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 		}
 	}
 
+	ethType, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0))
+	if err == nil && len(ethType) >= 2 && binary.BigEndian.Uint16(ethType) == 0x86dd {
+		port.Increment(fwdpb.CounterId_COUNTER_ID_RX_IPV6_PACKETS, 1)
+	}
+
 	packet.Log().V(1).Info("input packet", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 	state, err := fwdaction.ProcessPacket(packet, port.Actions(dir), port)
 	if err != nil {
@@ -282,6 +291,12 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 	case fwdaction.DROP:
 		packet.Log().V(1).Info("input dropped frame", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS)
+
+		ethType, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0))
+		if err == nil && len(ethType) >= 2 && binary.BigEndian.Uint16(ethType) == 0x86dd {
+			port.Increment(fwdpb.CounterId_COUNTER_ID_RX_IPV6_DROP_PACKETS, 1)
+		}
+
 		return nil
 
 	case fwdaction.CONSUME:
@@ -292,6 +307,10 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 		out, err := OutputPort(packet, ctx)
 		if err != nil {
 			Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS)
+			ethType, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0))
+			if err == nil && len(ethType) >= 2 && binary.BigEndian.Uint16(ethType) == 0x86dd {
+				port.Increment(fwdpb.CounterId_COUNTER_ID_RX_IPV6_DROP_PACKETS, 1)
+			}
 			return nil
 		}
 		packet.Log().V(3).Info("transmitting packet", "port", out.ID())
@@ -329,6 +348,11 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 		}
 	}
 
+	ethType, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0))
+	if err == nil && len(ethType) >= 2 && binary.BigEndian.Uint16(ethType) == 0x86dd {
+		port.Increment(fwdpb.CounterId_COUNTER_ID_TX_IPV6_PACKETS, 1)
+	}
+
 	packet.Log().V(3).Info("output packet", "frame", fwdpacket.IncludeFrameInLog)
 	state, err := fwdaction.ProcessPacket(packet, port.Actions(dir), port)
 	if err == nil && state == fwdaction.CONTINUE {
@@ -342,6 +366,12 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 	case fwdaction.DROP:
 		packet.Log().V(1).Info("output dropped frame", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_DROP_OCTETS)
+
+		ethType, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0))
+		if err == nil && len(ethType) >= 2 && binary.BigEndian.Uint16(ethType) == 0x86dd {
+			port.Increment(fwdpb.CounterId_COUNTER_ID_TX_IPV6_DROP_PACKETS, 1)
+		}
+
 		return nil
 	case fwdaction.CONSUME:
 		packet.Log().V(1).Info("consumed frame", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
