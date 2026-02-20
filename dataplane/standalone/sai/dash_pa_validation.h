@@ -25,12 +25,4 @@ extern "C" {
 
 extern const sai_dash_pa_validation_api_t l_dash_pa_validation;
 
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_DASH_PA_VALIDATION_H_

@@ -7,7 +7,4 @@ import "dataplane/proto/sai/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
-
-
-service DashOutboundCaToPa {
-}
+service DashOutboundCaToPa {}

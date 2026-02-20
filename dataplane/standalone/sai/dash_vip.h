@@ -25,12 +25,4 @@ extern "C" {
 
 extern const sai_dash_vip_api_t l_dash_vip;
 
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_DASH_VIP_H_

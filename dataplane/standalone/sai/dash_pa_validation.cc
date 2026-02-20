@@ -13,19 +13,12 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/dash_pa_validation.h"
-#include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/enum.h"
-#include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/proto/sai/dash_pa_validation.pb.h"
+
 #include <glog/logging.h>
 
-const sai_dash_pa_validation_api_t l_dash_pa_validation = {
-};
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/dash_pa_validation.pb.h"
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
-
-
-
-
-
-
-
+const sai_dash_pa_validation_api_t l_dash_pa_validation = {};

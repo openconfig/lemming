@@ -25,13 +25,4 @@ extern "C" {
 
 extern const sai_twamp_api_t l_twamp;
 
-
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_TWAMP_H_

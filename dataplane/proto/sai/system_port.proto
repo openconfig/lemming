@@ -7,59 +7,59 @@ import "dataplane/proto/sai/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
-
 enum SystemPortAttr {
-	SYSTEM_PORT_ATTR_UNSPECIFIED = 0;
-	SYSTEM_PORT_ATTR_TYPE = 1;
-	SYSTEM_PORT_ATTR_QOS_NUMBER_OF_VOQS = 2;
-	SYSTEM_PORT_ATTR_QOS_VOQ_LIST = 3;
-	SYSTEM_PORT_ATTR_PORT = 4;
-	SYSTEM_PORT_ATTR_ADMIN_STATE = 5;
-	SYSTEM_PORT_ATTR_CONFIG_INFO = 6;
-	SYSTEM_PORT_ATTR_QOS_TC_TO_QUEUE_MAP = 7;
+  SYSTEM_PORT_ATTR_UNSPECIFIED = 0;
+  SYSTEM_PORT_ATTR_TYPE = 1;
+  SYSTEM_PORT_ATTR_QOS_NUMBER_OF_VOQS = 2;
+  SYSTEM_PORT_ATTR_QOS_VOQ_LIST = 3;
+  SYSTEM_PORT_ATTR_PORT = 4;
+  SYSTEM_PORT_ATTR_ADMIN_STATE = 5;
+  SYSTEM_PORT_ATTR_CONFIG_INFO = 6;
+  SYSTEM_PORT_ATTR_QOS_TC_TO_QUEUE_MAP = 7;
 }
 
 message CreateSystemPortRequest {
-	option (sai_type) = OBJECT_TYPE_SYSTEM_PORT;
-	uint64 switch = 1;
-	optional bool admin_state = 2[(attr_enum_value) = 5];
-	optional SystemPortConfig config_info = 3[(attr_enum_value) = 6];
-	optional uint64 qos_tc_to_queue_map = 4[(attr_enum_value) = 7];
+  option (sai_type) = OBJECT_TYPE_SYSTEM_PORT;
+  uint64 switch = 1;
+  optional bool admin_state = 2 [(attr_enum_value) = 5];
+  optional SystemPortConfig config_info = 3 [(attr_enum_value) = 6];
+  optional uint64 qos_tc_to_queue_map = 4 [(attr_enum_value) = 7];
 }
 
 message CreateSystemPortResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveSystemPortRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveSystemPortResponse {
-}
+message RemoveSystemPortResponse {}
 
 message SetSystemPortAttributeRequest {
-	uint64 oid = 1;
-	optional bool admin_state = 2[(attr_enum_value) = 5];
-	optional uint64 qos_tc_to_queue_map = 3[(attr_enum_value) = 7];
+  uint64 oid = 1;
+  optional bool admin_state = 2 [(attr_enum_value) = 5];
+  optional uint64 qos_tc_to_queue_map = 3 [(attr_enum_value) = 7];
 }
 
-message SetSystemPortAttributeResponse {
-}
+message SetSystemPortAttributeResponse {}
 
 message GetSystemPortAttributeRequest {
-	uint64 oid = 1;
-	repeated SystemPortAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated SystemPortAttr attr_type = 2;
 }
 
 message GetSystemPortAttributeResponse {
-	SystemPortAttribute attr = 1;
+  SystemPortAttribute attr = 1;
 }
 
-
 service SystemPort {
-	rpc CreateSystemPort (CreateSystemPortRequest) returns (CreateSystemPortResponse) {}
-	rpc RemoveSystemPort (RemoveSystemPortRequest) returns (RemoveSystemPortResponse) {}
-	rpc SetSystemPortAttribute (SetSystemPortAttributeRequest) returns (SetSystemPortAttributeResponse) {}
-	rpc GetSystemPortAttribute (GetSystemPortAttributeRequest) returns (GetSystemPortAttributeResponse) {}
+  rpc CreateSystemPort(CreateSystemPortRequest)
+      returns (CreateSystemPortResponse) {}
+  rpc RemoveSystemPort(RemoveSystemPortRequest)
+      returns (RemoveSystemPortResponse) {}
+  rpc SetSystemPortAttribute(SetSystemPortAttributeRequest)
+      returns (SetSystemPortAttributeResponse) {}
+  rpc GetSystemPortAttribute(GetSystemPortAttributeRequest)
+      returns (GetSystemPortAttributeResponse) {}
 }

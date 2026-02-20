@@ -25,18 +25,4 @@ extern "C" {
 
 extern const sai_dash_acl_api_t l_dash_acl;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_DASH_ACL_H_

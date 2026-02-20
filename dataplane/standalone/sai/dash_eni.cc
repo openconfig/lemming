@@ -13,28 +13,12 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/dash_eni.h"
-#include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/enum.h"
-#include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/proto/sai/dash_eni.pb.h"
+
 #include <glog/logging.h>
 
-const sai_dash_eni_api_t l_dash_eni = {
-};
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/dash_eni.pb.h"
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+const sai_dash_eni_api_t l_dash_eni = {};
