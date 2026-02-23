@@ -25,12 +25,4 @@ extern "C" {
 
 extern const sai_dash_inbound_routing_api_t l_dash_inbound_routing;
 
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_DASH_INBOUND_ROUTING_H_

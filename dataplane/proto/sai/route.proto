@@ -7,83 +7,84 @@ import "dataplane/proto/sai/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
-
 enum RouteEntryAttr {
-	ROUTE_ENTRY_ATTR_UNSPECIFIED = 0;
-	ROUTE_ENTRY_ATTR_PACKET_ACTION = 1;
-	ROUTE_ENTRY_ATTR_USER_TRAP_ID = 2;
-	ROUTE_ENTRY_ATTR_NEXT_HOP_ID = 3;
-	ROUTE_ENTRY_ATTR_META_DATA = 4;
-	ROUTE_ENTRY_ATTR_IP_ADDR_FAMILY = 5;
-	ROUTE_ENTRY_ATTR_COUNTER_ID = 6;
-	ROUTE_ENTRY_ATTR_PREFIX_AGG_ID = 7;
+  ROUTE_ENTRY_ATTR_UNSPECIFIED = 0;
+  ROUTE_ENTRY_ATTR_PACKET_ACTION = 1;
+  ROUTE_ENTRY_ATTR_USER_TRAP_ID = 2;
+  ROUTE_ENTRY_ATTR_NEXT_HOP_ID = 3;
+  ROUTE_ENTRY_ATTR_META_DATA = 4;
+  ROUTE_ENTRY_ATTR_IP_ADDR_FAMILY = 5;
+  ROUTE_ENTRY_ATTR_COUNTER_ID = 6;
+  ROUTE_ENTRY_ATTR_PREFIX_AGG_ID = 7;
 }
 
 message CreateRouteEntryRequest {
-	option (sai_type) = OBJECT_TYPE_ROUTE_ENTRY;
-	RouteEntry entry = 1;
-	optional PacketAction packet_action = 2[(attr_enum_value) = 1];
-	optional uint64 user_trap_id = 3[(attr_enum_value) = 2];
-	optional uint64 next_hop_id = 4[(attr_enum_value) = 3];
-	optional uint32 meta_data = 5[(attr_enum_value) = 4];
-	optional uint64 counter_id = 6[(attr_enum_value) = 6];
-	optional uint32 prefix_agg_id = 7[(attr_enum_value) = 7];
+  option (sai_type) = OBJECT_TYPE_ROUTE_ENTRY;
+  RouteEntry entry = 1;
+  optional PacketAction packet_action = 2 [(attr_enum_value) = 1];
+  optional uint64 user_trap_id = 3 [(attr_enum_value) = 2];
+  optional uint64 next_hop_id = 4 [(attr_enum_value) = 3];
+  optional uint32 meta_data = 5 [(attr_enum_value) = 4];
+  optional uint64 counter_id = 6 [(attr_enum_value) = 6];
+  optional uint32 prefix_agg_id = 7 [(attr_enum_value) = 7];
 }
 
-message CreateRouteEntryResponse {
-}
+message CreateRouteEntryResponse {}
 
 message RemoveRouteEntryRequest {
-	RouteEntry entry = 1;
+  RouteEntry entry = 1;
 }
 
-message RemoveRouteEntryResponse {
-}
+message RemoveRouteEntryResponse {}
 
 message SetRouteEntryAttributeRequest {
-	RouteEntry entry = 1;
-	optional PacketAction packet_action = 2[(attr_enum_value) = 1];
-	optional uint64 user_trap_id = 3[(attr_enum_value) = 2];
-	optional uint64 next_hop_id = 4[(attr_enum_value) = 3];
-	optional uint32 meta_data = 5[(attr_enum_value) = 4];
-	optional uint64 counter_id = 6[(attr_enum_value) = 6];
-	optional uint32 prefix_agg_id = 7[(attr_enum_value) = 7];
+  RouteEntry entry = 1;
+  optional PacketAction packet_action = 2 [(attr_enum_value) = 1];
+  optional uint64 user_trap_id = 3 [(attr_enum_value) = 2];
+  optional uint64 next_hop_id = 4 [(attr_enum_value) = 3];
+  optional uint32 meta_data = 5 [(attr_enum_value) = 4];
+  optional uint64 counter_id = 6 [(attr_enum_value) = 6];
+  optional uint32 prefix_agg_id = 7 [(attr_enum_value) = 7];
 }
 
-message SetRouteEntryAttributeResponse {
-}
+message SetRouteEntryAttributeResponse {}
 
 message GetRouteEntryAttributeRequest {
-	RouteEntry entry = 1;
-	repeated RouteEntryAttr attr_type = 2;
+  RouteEntry entry = 1;
+  repeated RouteEntryAttr attr_type = 2;
 }
 
 message GetRouteEntryAttributeResponse {
-	RouteEntryAttribute attr = 1;
+  RouteEntryAttribute attr = 1;
 }
 
 message CreateRouteEntriesRequest {
-	repeated CreateRouteEntryRequest reqs = 1;
+  repeated CreateRouteEntryRequest reqs = 1;
 }
 
 message CreateRouteEntriesResponse {
-	repeated CreateRouteEntryResponse resps = 1;
+  repeated CreateRouteEntryResponse resps = 1;
 }
 
 message RemoveRouteEntriesRequest {
-	repeated RemoveRouteEntryRequest reqs = 1;
+  repeated RemoveRouteEntryRequest reqs = 1;
 }
 
 message RemoveRouteEntriesResponse {
-	repeated RemoveRouteEntryResponse resps = 1;
+  repeated RemoveRouteEntryResponse resps = 1;
 }
 
-
 service Route {
-	rpc CreateRouteEntry (CreateRouteEntryRequest) returns (CreateRouteEntryResponse) {}
-	rpc RemoveRouteEntry (RemoveRouteEntryRequest) returns (RemoveRouteEntryResponse) {}
-	rpc SetRouteEntryAttribute (SetRouteEntryAttributeRequest) returns (SetRouteEntryAttributeResponse) {}
-	rpc GetRouteEntryAttribute (GetRouteEntryAttributeRequest) returns (GetRouteEntryAttributeResponse) {}
-	rpc CreateRouteEntries (CreateRouteEntriesRequest) returns (CreateRouteEntriesResponse) {}
-	rpc RemoveRouteEntries (RemoveRouteEntriesRequest) returns (RemoveRouteEntriesResponse) {}
+  rpc CreateRouteEntry(CreateRouteEntryRequest)
+      returns (CreateRouteEntryResponse) {}
+  rpc RemoveRouteEntry(RemoveRouteEntryRequest)
+      returns (RemoveRouteEntryResponse) {}
+  rpc SetRouteEntryAttribute(SetRouteEntryAttributeRequest)
+      returns (SetRouteEntryAttributeResponse) {}
+  rpc GetRouteEntryAttribute(GetRouteEntryAttributeRequest)
+      returns (GetRouteEntryAttributeResponse) {}
+  rpc CreateRouteEntries(CreateRouteEntriesRequest)
+      returns (CreateRouteEntriesResponse) {}
+  rpc RemoveRouteEntries(RemoveRouteEntriesRequest)
+      returns (RemoveRouteEntriesResponse) {}
 }

@@ -7,62 +7,70 @@ import "dataplane/proto/sai/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
-
 enum CounterAttr {
-	COUNTER_ATTR_UNSPECIFIED = 0;
-	COUNTER_ATTR_TYPE = 1;
-	COUNTER_ATTR_LABEL = 2;
+  COUNTER_ATTR_UNSPECIFIED = 0;
+  COUNTER_ATTR_TYPE = 1;
+  COUNTER_ATTR_LABEL = 2;
+  COUNTER_ATTR_ENABLE_PACKET_COUNT = 3;
+  COUNTER_ATTR_ENABLE_BYTE_COUNT = 4;
+  COUNTER_ATTR_OBJECT_TYPE = 5;
+  COUNTER_ATTR_STAT_ID_LIST = 6;
 }
 
 message CreateCounterRequest {
-	option (sai_type) = OBJECT_TYPE_COUNTER;
-	uint64 switch = 1;
-	optional CounterType type = 2[(attr_enum_value) = 1];
-	optional bytes label = 3[(attr_enum_value) = 2];
+  option (sai_type) = OBJECT_TYPE_COUNTER;
+  uint64 switch = 1;
+  optional CounterType type = 2 [(attr_enum_value) = 1];
+  optional bytes label = 3 [(attr_enum_value) = 2];
+  optional bool enable_packet_count = 4 [(attr_enum_value) = 3];
+  optional bool enable_byte_count = 5 [(attr_enum_value) = 4];
+  optional ObjectType object_type = 6 [(attr_enum_value) = 5];
+  repeated int32 stat_id_list = 7 [(attr_enum_value) = 6];
 }
 
 message CreateCounterResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveCounterRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveCounterResponse {
-}
+message RemoveCounterResponse {}
 
 message SetCounterAttributeRequest {
-	uint64 oid = 1;
-	optional bytes label = 2[(attr_enum_value) = 2];
+  uint64 oid = 1;
+  optional bytes label = 2 [(attr_enum_value) = 2];
+  repeated int32 stat_id_list = 3 [(attr_enum_value) = 6];
 }
 
-message SetCounterAttributeResponse {
-}
+message SetCounterAttributeResponse {}
 
 message GetCounterAttributeRequest {
-	uint64 oid = 1;
-	repeated CounterAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated CounterAttr attr_type = 2;
 }
 
 message GetCounterAttributeResponse {
-	CounterAttribute attr = 1;
+  CounterAttribute attr = 1;
 }
 
 message GetCounterStatsRequest {
-	uint64 oid = 1;
-	repeated CounterStat counter_ids = 2;
+  uint64 oid = 1;
+  repeated CounterStat counter_ids = 2;
 }
 
 message GetCounterStatsResponse {
-	repeated uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
-
 service Counter {
-	rpc CreateCounter (CreateCounterRequest) returns (CreateCounterResponse) {}
-	rpc RemoveCounter (RemoveCounterRequest) returns (RemoveCounterResponse) {}
-	rpc SetCounterAttribute (SetCounterAttributeRequest) returns (SetCounterAttributeResponse) {}
-	rpc GetCounterAttribute (GetCounterAttributeRequest) returns (GetCounterAttributeResponse) {}
-	rpc GetCounterStats (GetCounterStatsRequest) returns (GetCounterStatsResponse) {}
+  rpc CreateCounter(CreateCounterRequest) returns (CreateCounterResponse) {}
+  rpc RemoveCounter(RemoveCounterRequest) returns (RemoveCounterResponse) {}
+  rpc SetCounterAttribute(SetCounterAttributeRequest)
+      returns (SetCounterAttributeResponse) {}
+  rpc GetCounterAttribute(GetCounterAttributeRequest)
+      returns (GetCounterAttributeResponse) {}
+  rpc GetCounterStats(GetCounterStatsRequest)
+      returns (GetCounterStatsResponse) {}
 }

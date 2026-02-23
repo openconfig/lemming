@@ -25,10 +25,4 @@ extern "C" {
 
 extern const sai_ars_api_t l_ars;
 
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_ARS_H_

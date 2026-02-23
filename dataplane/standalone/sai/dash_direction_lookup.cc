@@ -13,19 +13,12 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/dash_direction_lookup.h"
-#include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/enum.h"
-#include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/proto/sai/dash_direction_lookup.pb.h"
+
 #include <glog/logging.h>
 
-const sai_dash_direction_lookup_api_t l_dash_direction_lookup = {
-};
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/dash_direction_lookup.pb.h"
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
-
-
-
-
-
-
-
+const sai_dash_direction_lookup_api_t l_dash_direction_lookup = {};

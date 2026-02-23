@@ -25,20 +25,31 @@ extern "C" {
 
 extern const sai_policer_api_t l_policer;
 
-
-sai_status_t l_create_policer(sai_object_id_t *policer_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_policer(sai_object_id_t* policer_id,
+                              sai_object_id_t switch_id, uint32_t attr_count,
+                              const sai_attribute_t* attr_list);
 
 sai_status_t l_remove_policer(sai_object_id_t policer_id);
 
-sai_status_t l_set_policer_attribute(sai_object_id_t policer_id, const sai_attribute_t *attr);
+sai_status_t l_set_policer_attribute(sai_object_id_t policer_id,
+                                     const sai_attribute_t* attr);
 
-sai_status_t l_get_policer_attribute(sai_object_id_t policer_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_policer_attribute(sai_object_id_t policer_id,
+                                     uint32_t attr_count,
+                                     sai_attribute_t* attr_list);
 
-sai_status_t l_get_policer_stats(sai_object_id_t policer_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters);
+sai_status_t l_get_policer_stats(sai_object_id_t policer_id,
+                                 uint32_t number_of_counters,
+                                 const sai_stat_id_t* counter_ids,
+                                 uint64_t* counters);
 
-sai_status_t l_get_policer_stats_ext(sai_object_id_t policer_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters);
+sai_status_t l_get_policer_stats_ext(sai_object_id_t policer_id,
+                                     uint32_t number_of_counters,
+                                     const sai_stat_id_t* counter_ids,
+                                     sai_stats_mode_t mode, uint64_t* counters);
 
-sai_status_t l_clear_policer_stats(sai_object_id_t policer_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids);
-
+sai_status_t l_clear_policer_stats(sai_object_id_t policer_id,
+                                   uint32_t number_of_counters,
+                                   const sai_stat_id_t* counter_ids);
 
 #endif  // DATAPLANE_STANDALONE_SAI_POLICER_H_

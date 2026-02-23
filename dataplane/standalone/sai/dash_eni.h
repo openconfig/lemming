@@ -25,21 +25,4 @@ extern "C" {
 
 extern const sai_dash_eni_api_t l_dash_eni;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_DASH_ENI_H_

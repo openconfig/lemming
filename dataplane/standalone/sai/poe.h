@@ -25,18 +25,4 @@ extern "C" {
 
 extern const sai_poe_api_t l_poe;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_POE_H_
