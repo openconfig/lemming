@@ -25,12 +25,4 @@ extern "C" {
 
 extern const sai_dash_vnet_api_t l_dash_vnet;
 
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_DASH_VNET_H_

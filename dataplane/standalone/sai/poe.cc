@@ -13,25 +13,12 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/poe.h"
-#include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/enum.h"
-#include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/proto/sai/poe.pb.h"
+
 #include <glog/logging.h>
 
-const sai_poe_api_t l_poe = {
-};
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/poe.pb.h"
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+const sai_poe_api_t l_poe = {};

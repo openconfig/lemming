@@ -34,6 +34,7 @@
 #include "dataplane/proto/sai/generic_programmable.grpc.pb.h"
 #include "dataplane/proto/sai/hash.grpc.pb.h"
 #include "dataplane/proto/sai/hostif.grpc.pb.h"
+#include "dataplane/proto/sai/icmp_echo.grpc.pb.h"
 #include "dataplane/proto/sai/ipmc.grpc.pb.h"
 #include "dataplane/proto/sai/ipmc_group.grpc.pb.h"
 #include "dataplane/proto/sai/ipsec.grpc.pb.h"
@@ -91,6 +92,7 @@ extern std::unique_ptr<lemming::dataplane::sai::Hash::Stub> hash;
 extern std::unique_ptr<lemming::dataplane::sai::Hostif::Stub> hostif;
 extern std::unique_ptr<lemming::dataplane::sai::IpmcGroup::Stub> ipmc_group;
 extern std::unique_ptr<lemming::dataplane::sai::Ipmc::Stub> ipmc;
+extern std::unique_ptr<lemming::dataplane::sai::IcmpEcho::Stub> icmp_echo;
 extern std::unique_ptr<lemming::dataplane::sai::Ipsec::Stub> ipsec;
 extern std::unique_ptr<lemming::dataplane::sai::IsolationGroup::Stub>
     isolation_group;
@@ -133,105 +135,105 @@ extern std::unique_ptr<lemming::dataplane::sai::Vlan::Stub> vlan;
 extern std::unique_ptr<lemming::dataplane::sai::Wred::Stub> wred;
 
 std::string convert_from_ip_addr(sai_ip_addr_family_t addr_family,
-                                 const sai_ip_addr_t &addr);
-std::string convert_from_ip_address(const sai_ip_address_t &val);
+                                 const sai_ip_addr_t& addr);
+std::string convert_from_ip_address(const sai_ip_address_t& val);
 lemming::dataplane::sai::RouteEntry convert_from_route_entry(
-    const sai_route_entry_t &entry);
+    const sai_route_entry_t& entry);
 lemming::dataplane::sai::IpPrefix convert_from_ip_prefix(
-    const sai_ip_prefix_t &ip_prefix);
+    const sai_ip_prefix_t& ip_prefix);
 
 sai_ip_addr_t convert_to_ip_addr(std::string val);
 sai_ip_address_t convert_to_ip_address(std::string str);
 sai_route_entry_t convert_to_route_entry(
-    const lemming::dataplane::sai::RouteEntry &entry);
+    const lemming::dataplane::sai::RouteEntry& entry);
 sai_ip_prefix_t convert_to_ip_prefix(
-    const lemming::dataplane::sai::IpPrefix &ip_prefix);
+    const lemming::dataplane::sai::IpPrefix& ip_prefix);
 std::vector<sai_port_oper_status_notification_t> convert_to_oper_status(
-    const lemming::dataplane::sai::PortStateChangeNotificationResponse &resp);
+    const lemming::dataplane::sai::PortStateChangeNotificationResponse& resp);
 
 lemming::dataplane::sai::NeighborEntry convert_from_neighbor_entry(
-    const sai_neighbor_entry_t &entry);
+    const sai_neighbor_entry_t& entry);
 
 sai_neighbor_entry_t convert_to_neighbor_entry(
-    const lemming::dataplane::sai::NeighborEntry &entry);
+    const lemming::dataplane::sai::NeighborEntry& entry);
 
 void convert_to_acl_capability(
-    sai_acl_capability_t &out,
-    const lemming::dataplane::sai::ACLCapability &in);
+    sai_acl_capability_t& out,
+    const lemming::dataplane::sai::ACLCapability& in);
 
 lemming::dataplane::sai::AclActionData convert_from_acl_action_data(
-    const sai_acl_action_data_t &in, sai_object_id_t id);
+    const sai_acl_action_data_t& in, sai_object_id_t id);
 
 lemming::dataplane::sai::AclActionData convert_from_acl_action_data_action(
-    const sai_acl_action_data_t &in, sai_int32_t id);
+    const sai_acl_action_data_t& in, sai_int32_t id);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip_type(
-    const sai_acl_field_data_t &in, sai_int32_t type, sai_int32_t mask);
+    const sai_acl_field_data_t& in, sai_int32_t type, sai_int32_t mask);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip4(
-    const sai_acl_field_data_t &in, sai_ip4_t data, sai_ip4_t mask);
+    const sai_acl_field_data_t& in, sai_ip4_t data, sai_ip4_t mask);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
-    const sai_acl_field_data_t &in, sai_uint8_t data, sai_uint8_t mask);
+    const sai_acl_field_data_t& in, sai_uint8_t data, sai_uint8_t mask);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
-    const sai_acl_field_data_t &in, sai_uint16_t data, sai_uint16_t mask);
+    const sai_acl_field_data_t& in, sai_uint16_t data, sai_uint16_t mask);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
-    const sai_acl_field_data_t &in, sai_uint32_t data, sai_uint32_t mask);
+    const sai_acl_field_data_t& in, sai_uint32_t data, sai_uint32_t mask);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
-    const sai_acl_field_data_t &in, sai_object_id_t data);
+    const sai_acl_field_data_t& in, sai_object_id_t data);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip6(
-    const sai_acl_field_data_t &in, const sai_ip6_t data, const sai_ip6_t mask);
+    const sai_acl_field_data_t& in, const sai_ip6_t data, const sai_ip6_t mask);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_mac(
-    const sai_acl_field_data_t &in, const sai_mac_t data, const sai_mac_t mask);
+    const sai_acl_field_data_t& in, const sai_mac_t data, const sai_mac_t mask);
 
 sai_acl_action_data_t convert_to_acl_action_data(
-    const lemming::dataplane::sai::AclActionData &in, uint64_t id);
+    const lemming::dataplane::sai::AclActionData& in, uint64_t id);
 
 sai_acl_action_data_t convert_to_acl_action_data_action(
-    const lemming::dataplane::sai::AclActionData &in,
+    const lemming::dataplane::sai::AclActionData& in,
     lemming::dataplane::sai::PacketAction val);
 
 sai_acl_field_data_t convert_to_acl_field_data(
-    const lemming::dataplane::sai::AclFieldData &in, std::string data,
+    const lemming::dataplane::sai::AclFieldData& in, std::string data,
     std::string mask);
 
 sai_acl_field_data_t convert_to_acl_field_data_u8(
-    const lemming::dataplane::sai::AclFieldData &in, sai_uint8_t data,
+    const lemming::dataplane::sai::AclFieldData& in, sai_uint8_t data,
     sai_uint8_t mask);
 
 sai_acl_field_data_t convert_to_acl_field_data_u16(
-    const lemming::dataplane::sai::AclFieldData &in, sai_uint16_t data,
+    const lemming::dataplane::sai::AclFieldData& in, sai_uint16_t data,
     sai_uint16_t mask);
 
 sai_acl_field_data_t convert_to_acl_field_data_u32(
-    const lemming::dataplane::sai::AclFieldData &in, sai_uint32_t data,
+    const lemming::dataplane::sai::AclFieldData& in, sai_uint32_t data,
     sai_uint32_t mask);
 
 sai_acl_field_data_t convert_to_acl_field_data(
-    const lemming::dataplane::sai::AclFieldData &in, sai_object_id_t data);
+    const lemming::dataplane::sai::AclFieldData& in, sai_object_id_t data);
 
 sai_acl_field_data_t convert_to_acl_field_data_ip6(
-    const lemming::dataplane::sai::AclFieldData &in, std::string data,
+    const lemming::dataplane::sai::AclFieldData& in, std::string data,
     std::string mask);
 
 sai_acl_field_data_t convert_to_acl_field_data_mac(
-    const lemming::dataplane::sai::AclFieldData &in, const std::string data,
+    const lemming::dataplane::sai::AclFieldData& in, const std::string data,
     const std::string mask);
 
 sai_acl_field_data_t convert_to_acl_field_data_ip_type(
-    const lemming::dataplane::sai::AclFieldData &in,
+    const lemming::dataplane::sai::AclFieldData& in,
     lemming::dataplane::sai::AclIpType type);
 
 // copy_list copies a scalar proto list to an attribute.
 // Note: It is expected that the attribute list contains preallocated memory.
 template <typename T, typename S>
-void copy_list(S *dst, const google::protobuf::RepeatedField<T> &src,
-               uint32_t *attr_len) {
+void copy_list(S* dst, const google::protobuf::RepeatedField<T>& src,
+               uint32_t* attr_len) {
   // It's not safe to just memcpy this because in some cases to proto types are
   // larger than the corresponding sai types.
   *attr_len =
@@ -264,7 +266,7 @@ class PortStateReactor
     StartRead(&resp);
   }
 
-  void OnDone(const grpc::Status &status) override {
+  void OnDone(const grpc::Status& status) override {
     if (status.ok()) {
       LOG(INFO) << "PortStateChangeNotification RPC succeeded.";
     } else {
@@ -299,7 +301,7 @@ class PortStateReactor
     StartRead(&resp);
   }
 
-  void OnDone(const grpc::Status &status) override {
+  void OnDone(const grpc::Status& status) override {
     if (status.ok()) {
       LOG(INFO) << "PortStateChangeNotification RPC succeeded.";
     } else {

@@ -25,12 +25,4 @@ extern "C" {
 
 extern const sai_dash_direction_lookup_api_t l_dash_direction_lookup;
 
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_DASH_DIRECTION_LOOKUP_H_

@@ -39,7 +39,14 @@ func parse(headers []string, includePaths ...string) (*cc.AST, error) {
 		cfg.SysIncludePaths = append(cfg.SysIncludePaths, p)
 	}
 
-	sources := []cc.Source{{Name: "<predefined>", Value: cfg.Predefined}, {Name: "<builtin>", Value: cc.Builtin}}
+	sources := []cc.Source{
+		{Name: "<predefined>", Value: cfg.Predefined},
+		{Name: "<builtin>", Value: cc.Builtin},
+		{Name: "stdbool.h", Value: "#define bool _Bool\n#define true 1\n#define false 0"},
+		{Name: "stddef.h", Value: "typedef unsigned long size_t; typedef long ptrdiff_t; typedef int wchar_t;"},
+		{Name: "stdint.h", Value: "typedef signed char int8_t; typedef short int int16_t; typedef int int32_t; typedef long int int64_t; typedef unsigned char uint8_t; typedef unsigned short int uint16_t; typedef unsigned int uint32_t; typedef unsigned long int uint64_t;"},
+	}
+
 	for _, hdr := range headers {
 		sources = append(sources, cc.Source{Name: hdr})
 	}

@@ -25,12 +25,4 @@ extern "C" {
 
 extern const sai_dash_outbound_ca_to_pa_api_t l_dash_outbound_ca_to_pa;
 
-
-
-
-
-
-
-
-
 #endif  // DATAPLANE_STANDALONE_SAI_DASH_OUTBOUND_CA_TO_PA_H_

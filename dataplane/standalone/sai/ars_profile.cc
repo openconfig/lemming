@@ -13,17 +13,12 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/ars_profile.h"
-#include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/enum.h"
-#include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/proto/sai/ars_profile.pb.h"
+
 #include <glog/logging.h>
 
-const sai_ars_profile_api_t l_ars_profile = {
-};
+#include "dataplane/proto/sai/ars_profile.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
-
-
-
-
-
+const sai_ars_profile_api_t l_ars_profile = {};

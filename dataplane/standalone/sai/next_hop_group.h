@@ -25,46 +25,95 @@ extern "C" {
 
 extern const sai_next_hop_group_api_t l_next_hop_group;
 
-
-sai_status_t l_create_next_hop_group(sai_object_id_t *next_hop_group_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_next_hop_group(sai_object_id_t* next_hop_group_id,
+                                     sai_object_id_t switch_id,
+                                     uint32_t attr_count,
+                                     const sai_attribute_t* attr_list);
 
 sai_status_t l_remove_next_hop_group(sai_object_id_t next_hop_group_id);
 
-sai_status_t l_set_next_hop_group_attribute(sai_object_id_t next_hop_group_id, const sai_attribute_t *attr);
+sai_status_t l_set_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
+                                            const sai_attribute_t* attr);
 
-sai_status_t l_get_next_hop_group_attribute(sai_object_id_t next_hop_group_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
+                                            uint32_t attr_count,
+                                            sai_attribute_t* attr_list);
 
-sai_status_t l_create_next_hop_group_member(sai_object_id_t *next_hop_group_member_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_next_hop_group_member(
+    sai_object_id_t* next_hop_group_member_id, sai_object_id_t switch_id,
+    uint32_t attr_count, const sai_attribute_t* attr_list);
 
-sai_status_t l_remove_next_hop_group_member(sai_object_id_t next_hop_group_member_id);
+sai_status_t l_remove_next_hop_group_member(
+    sai_object_id_t next_hop_group_member_id);
 
-sai_status_t l_set_next_hop_group_member_attribute(sai_object_id_t next_hop_group_member_id, const sai_attribute_t *attr);
+sai_status_t l_set_next_hop_group_member_attribute(
+    sai_object_id_t next_hop_group_member_id, const sai_attribute_t* attr);
 
-sai_status_t l_get_next_hop_group_member_attribute(sai_object_id_t next_hop_group_member_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_next_hop_group_member_attribute(
+    sai_object_id_t next_hop_group_member_id, uint32_t attr_count,
+    sai_attribute_t* attr_list);
 
-sai_status_t l_create_next_hop_group_members(sai_object_id_t switch_id, uint32_t object_count, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_object_id_t *object_id, sai_status_t *object_statuses);
+sai_status_t l_create_next_hop_group_members(sai_object_id_t switch_id,
+                                             uint32_t object_count,
+                                             const uint32_t* attr_count,
+                                             const sai_attribute_t** attr_list,
+                                             sai_bulk_op_error_mode_t mode,
+                                             sai_object_id_t* object_id,
+                                             sai_status_t* object_statuses);
 
-sai_status_t l_remove_next_hop_group_members(uint32_t object_count, const sai_object_id_t *object_id, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_remove_next_hop_group_members(uint32_t object_count,
+                                             const sai_object_id_t* object_id,
+                                             sai_bulk_op_error_mode_t mode,
+                                             sai_status_t* object_statuses);
 
-sai_status_t l_create_next_hop_group_map(sai_object_id_t *next_hop_group_map_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_next_hop_group_map(sai_object_id_t* next_hop_group_map_id,
+                                         sai_object_id_t switch_id,
+                                         uint32_t attr_count,
+                                         const sai_attribute_t* attr_list);
 
 sai_status_t l_remove_next_hop_group_map(sai_object_id_t next_hop_group_map_id);
 
-sai_status_t l_set_next_hop_group_map_attribute(sai_object_id_t next_hop_group_map_id, const sai_attribute_t *attr);
+sai_status_t l_set_next_hop_group_map_attribute(
+    sai_object_id_t next_hop_group_map_id, const sai_attribute_t* attr);
 
-sai_status_t l_get_next_hop_group_map_attribute(sai_object_id_t next_hop_group_map_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_next_hop_group_map_attribute(
+    sai_object_id_t next_hop_group_map_id, uint32_t attr_count,
+    sai_attribute_t* attr_list);
 
-sai_status_t l_set_next_hop_group_members_attribute(uint32_t object_count, const sai_object_id_t *object_id, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_set_next_hop_group_members_attribute(
+    uint32_t object_count, const sai_object_id_t* object_id,
+    const sai_attribute_t* attr_list, sai_bulk_op_error_mode_t mode,
+    sai_status_t* object_statuses);
 
-sai_status_t l_get_next_hop_group_members_attribute(uint32_t object_count, const sai_object_id_t *object_id, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_get_next_hop_group_members_attribute(
+    uint32_t object_count, const sai_object_id_t* object_id,
+    const uint32_t* attr_count, sai_attribute_t** attr_list,
+    sai_bulk_op_error_mode_t mode, sai_status_t* object_statuses);
 
-sai_status_t l_create_next_hop_groups(sai_object_id_t switch_id, uint32_t object_count, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_object_id_t *object_id, sai_status_t *object_statuses);
+sai_status_t l_create_next_hop_groups(sai_object_id_t switch_id,
+                                      uint32_t object_count,
+                                      const uint32_t* attr_count,
+                                      const sai_attribute_t** attr_list,
+                                      sai_bulk_op_error_mode_t mode,
+                                      sai_object_id_t* object_id,
+                                      sai_status_t* object_statuses);
 
-sai_status_t l_remove_next_hop_groups(uint32_t object_count, const sai_object_id_t *object_id, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_remove_next_hop_groups(uint32_t object_count,
+                                      const sai_object_id_t* object_id,
+                                      sai_bulk_op_error_mode_t mode,
+                                      sai_status_t* object_statuses);
 
-sai_status_t l_set_next_hop_groups_attribute(uint32_t object_count, const sai_object_id_t *object_id, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_set_next_hop_groups_attribute(uint32_t object_count,
+                                             const sai_object_id_t* object_id,
+                                             const sai_attribute_t* attr_list,
+                                             sai_bulk_op_error_mode_t mode,
+                                             sai_status_t* object_statuses);
 
-sai_status_t l_get_next_hop_groups_attribute(uint32_t object_count, const sai_object_id_t *object_id, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
-
+sai_status_t l_get_next_hop_groups_attribute(uint32_t object_count,
+                                             const sai_object_id_t* object_id,
+                                             const uint32_t* attr_count,
+                                             sai_attribute_t** attr_list,
+                                             sai_bulk_op_error_mode_t mode,
+                                             sai_status_t* object_statuses);
 
 #endif  // DATAPLANE_STANDALONE_SAI_NEXT_HOP_GROUP_H_
