@@ -623,6 +623,12 @@ func (port *port) GetPortStats(ctx context.Context, req *saipb.GetPortStatsReque
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS])
 		case saipb.PortStat_PORT_STAT_IF_OUT_DISCARDS:
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_DROP_PACKETS])
+		case saipb.PortStat_PORT_STAT_IPV6_IN_RECEIVES:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_IPV6_PACKETS])
+		case saipb.PortStat_PORT_STAT_IPV6_IN_DISCARDS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_IPV6_DROP_PACKETS])
+		case saipb.PortStat_PORT_STAT_IPV6_OUT_UCAST_PKTS, saipb.PortStat_PORT_STAT_IPV6_OUT_NON_UCAST_PKTS, saipb.PortStat_PORT_STAT_IPV6_OUT_MCAST_PKTS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_IPV6_PACKETS])
 		default:
 			resp.Values = append(resp.Values, 0)
 		}
