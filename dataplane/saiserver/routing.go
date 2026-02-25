@@ -712,6 +712,9 @@ func (r *route) SetRouteEntryAttribute(ctx context.Context, req *saipb.SetRouteE
 	if err != nil {
 		return nil, err
 	}
+	if r.mgr.GetType(string(pBytes)) == saipb.ObjectType_OBJECT_TYPE_NULL {
+		return nil, status.Errorf(codes.NotFound, "route entry not found")
+	}
 	if err := r.mgr.PopulateAllAttributes(string(pBytes), resp.Attr); err != nil {
 		return nil, err
 	}
@@ -825,6 +828,23 @@ func (r *route) SetRouteEntryAttribute(ctx context.Context, req *saipb.SetRouteE
 	}
 
 	return &saipb.SetRouteEntryAttributeResponse{}, nil
+}
+
+func (r *route) GetRouteEntryAttribute(ctx context.Context, req *saipb.GetRouteEntryAttributeRequest) (*saipb.GetRouteEntryAttributeResponse, error) {
+	resp := &saipb.GetRouteEntryAttributeResponse{
+		Attr: &saipb.RouteEntryAttribute{},
+	}
+	pBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(req.GetEntry())
+	if err != nil {
+		return nil, err
+	}
+	if r.mgr.GetType(string(pBytes)) == saipb.ObjectType_OBJECT_TYPE_NULL {
+		return nil, status.Errorf(codes.NotFound, "route entry not found")
+	}
+	if err := r.mgr.PopulateAllAttributes(string(pBytes), resp.Attr); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEntriesRequest) (*saipb.CreateRouteEntriesResponse, error) {
