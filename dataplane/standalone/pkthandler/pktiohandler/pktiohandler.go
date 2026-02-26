@@ -36,6 +36,8 @@ import (
 	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 )
 
+const packetBufferSize = 16384 // 16KB buffer
+
 // New returns a new PacketIOMgr
 func New(portFile string) (*PacketIOMgr, error) {
 	q, err := queue.NewUnbounded("send")
@@ -251,10 +253,10 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 				Code: int32(codes.OK),
 			}
 			state := resp.Op == pktiopb.PortOperation_PORT_OPERATION_SET_UP
-			if p.SetAdminState(state); err != nil {
+			if setErr := p.SetAdminState(state); setErr != nil {
 				st = &status.Status{
 					Code:    int32(codes.Internal),
-					Message: err.Error(),
+					Message: setErr.Error(),
 				}
 			}
 			sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
@@ -327,7 +329,7 @@ func (m *PacketIOMgr) createPort(msg *pktiopb.HostPortControlMessage) error {
 func (m *PacketIOMgr) queueRead(id uint64, done chan struct{}) {
 	p := m.hostifs[id]
 	go func() {
-		buf := make([]byte, 9100) // TODO: Configurable MTU.
+		buf := make([]byte, packetBufferSize)
 		for {
 			select {
 			case <-done:
@@ -338,9 +340,15 @@ func (m *PacketIOMgr) queueRead(id uint64, done chan struct{}) {
 					time.Sleep(time.Millisecond)
 					continue
 				}
+
+				// sendQueue is asynchronous, so make a packet copy to prevent shared
+				// buffer from overwriting in the next iteration.
+				frameCopy := make([]byte, n)
+				copy(frameCopy, buf[:n])
+
 				pkt := &pktiopb.Packet{
 					HostPort: id,
-					Frame:    buf[0:n],
+					Frame:    frameCopy,
 				}
 				m.sendQueue.Write(pkt)
 				time.Sleep(time.Millisecond)

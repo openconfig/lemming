@@ -29,6 +29,7 @@ go_library(
         "//dataplane/saiserver/attrmgr",
         "//proto/forwarding",
         "@com_github_openconfig_gnmi//errlist",
+        "@com_github_vishvananda_netlink//:netlink",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//:grpc",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "genetlink.h"
+#include "genetlink.h"                    // NOLINT(build/include_subdir)
 
 #include <linux/netlink.h>
 #include <netlink/genl/ctrl.h>
@@ -21,6 +21,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define PACKET_BUFFER_SIZE 16384          // 16KB buffer
+#define NL_SOCKET_BUFFER_SIZE 2097152     // 2MB socket buffer
 
 enum {
   /* packet metadata */
@@ -39,11 +42,20 @@ struct nl_sock* create_port(const char* family, const char* group) {
     return NULL;
   }
   nl_socket_disable_auto_ack(sock);
+
   int error = genl_connect(sock);
   if (error < 0) {
-    fprintf(stderr, "error: failed to disable auto ack: err %d", error);
+    fprintf(stderr, "error: failed to connect to genetlink: err %d\n", error);
     nl_socket_free(sock);
     return NULL;
+  }
+
+  int err = nl_socket_set_buffer_size(sock, NL_SOCKET_BUFFER_SIZE,
+                                      NL_SOCKET_BUFFER_SIZE);
+
+  // If increased size cannot be set, log error without crashing pkthandler.
+  if (err < 0) {
+    fprintf(stderr, "error: failed to set buffer size: err %d\n", err);
   }
   int group_id = genl_ctrl_resolve_grp(sock, family, group);
   if (group_id < 0) {
@@ -59,7 +71,7 @@ void delete_port(void* sock) { nl_socket_free(sock); }
 
 int send_packet(void* sock, int family, const void* pkt, uint32_t size,
                 int in_ifindex, int out_ifindex, unsigned int context) {
-  struct nl_msg* msg = nlmsg_alloc();
+  struct nl_msg* msg = nlmsg_alloc_size(PACKET_BUFFER_SIZE);
   if (msg == NULL) {
     fprintf(stderr, "failed to allocate packet\n");
     return -1;
@@ -70,13 +82,15 @@ int send_packet(void* sock, int family, const void* pkt, uint32_t size,
   NLA_PUT_U32(msg, GENL_PACKET_ATTR_CONTEXT, context);
   NLA_PUT(msg, GENL_PACKET_ATTR_DATA, size, pkt);
   fprintf(stderr, "sending packet size: %d\n", size);
-  if (nl_send(sock, msg) < 0) {
-    fprintf(stderr, "failed to send packet\n");
+  int err = nl_send(sock, msg);
+  if (err < 0) {
+    fprintf(stderr, "failed to send packet: %d\n", err);
     return -1;
   }
   nlmsg_free(msg);
   return 0;
 nla_put_failure:
+  fprintf(stderr, "nla_put_failure: packet exceeds nlmsg allcation size\n");
   nlmsg_free(msg);
   return -1;
 }

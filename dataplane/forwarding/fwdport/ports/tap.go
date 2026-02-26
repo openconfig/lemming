@@ -39,6 +39,8 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
+const packetBufferSize = 16384 // 16KB buffer
+
 func init() {
 	fwdport.Register(fwdpb.PortType_PORT_TYPE_TAP, tapBuilder{})
 }
@@ -112,7 +114,7 @@ func (p *tapPort) Update(upd *fwdpb.PortUpdateDesc) error {
 func (p *tapPort) process() {
 	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
-		buf := make([]byte, 1500) // TODO: MTU
+		buf := make([]byte, packetBufferSize)
 		for {
 			select {
 			case <-p.doneCh:
