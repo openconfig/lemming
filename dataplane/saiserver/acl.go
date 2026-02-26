@@ -275,6 +275,36 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   ipv6Mask,
 		})
 	}
+	srcIpv6Field := false
+	srcIpv6Addr := make([]byte, 16)
+	srcIpv6Mask := make([]byte, 16)
+	if req.GetFieldSrcIpv6Word0() != nil { // Word0 is supposed to match 0:0:0:0:0:0:ffff:ffff
+		srcIpv6Field = true
+		copy(srcIpv6Addr[12:16], req.GetFieldSrcIpv6Word0().GetDataIp()[12:16])
+		copy(srcIpv6Mask[12:16], req.GetFieldSrcIpv6Word0().GetMaskIp()[12:16])
+	}
+	if req.GetFieldSrcIpv6Word1() != nil { // Word1 is supposed to match 0:0:0:0:ffff:ffff::
+		srcIpv6Field = true
+		copy(srcIpv6Addr[8:12], req.GetFieldSrcIpv6Word1().GetDataIp()[8:12])
+		copy(srcIpv6Mask[8:12], req.GetFieldSrcIpv6Word1().GetMaskIp()[8:12])
+	}
+	if req.GetFieldSrcIpv6Word2() != nil { // Word2 is supposed to match 0:0:ffff:ffff:
+		srcIpv6Field = true
+		copy(srcIpv6Addr[4:8], req.GetFieldSrcIpv6Word2().GetDataIp()[4:8])
+		copy(srcIpv6Mask[4:8], req.GetFieldSrcIpv6Word2().GetMaskIp()[4:8])
+	}
+	if req.GetFieldSrcIpv6Word3() != nil { // Word3 is supposed to match ffff:ffff::
+		srcIpv6Field = true
+		copy(srcIpv6Addr[0:4], req.GetFieldSrcIpv6Word3().GetDataIp()[0:4])
+		copy(srcIpv6Mask[0:4], req.GetFieldSrcIpv6Word3().GetMaskIp()[0:4])
+	}
+	if srcIpv6Field {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC}},
+			Bytes:   srcIpv6Addr,
+			Masks:   srcIpv6Mask,
+		})
+	}
 	if req.GetFieldDstMac() != nil {
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
