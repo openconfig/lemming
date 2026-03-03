@@ -38,6 +38,11 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
+const (
+	// aclMeta is the key to PACKET_ATTRIBUTE_32 field for ACL metadata.
+	aclMeta = 1
+)
+
 // tableLocation indentifies the location of an acl table by the group, bank, member id.
 type tableLocation struct {
 	groupID  string
@@ -252,6 +257,13 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldOuterVlanId().GetMaskUint())),
 		})
 	}
+	if req.GetFieldEcn() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS}},
+			Bytes:   []byte{byte(req.GetFieldEcn().GetDataUint())},
+			Masks:   []byte{byte(req.GetFieldEcn().GetMaskUint())},
+		})
+	}
 	ipv6Field := false
 	ipv6Addr := make([]byte, 16)
 	ipv6Mask := make([]byte, 16)
@@ -354,11 +366,25 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldL4DstPort().GetMaskUint())),
 		})
 	}
+	if req.GetFieldL4SrcPort() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
+			Bytes:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldL4SrcPort().GetDataUint())),
+			Masks:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldL4SrcPort().GetMaskUint())),
+		})
+	}
 	if req.GetFieldSrcMac() != nil {
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC}},
 			Bytes:   req.GetFieldSrcMac().GetDataMac(),
 			Masks:   req.GetFieldSrcMac().GetMaskMac(),
+		})
+	}
+	if req.GetFieldAclUserMeta() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, Instance: aclMeta}},
+			Bytes:   binary.BigEndian.AppendUint32(nil, uint32(req.GetFieldAclUserMeta().GetDataUint())),
+			Masks:   binary.BigEndian.AppendUint32(nil, uint32(req.GetFieldAclUserMeta().GetMaskUint())),
 		})
 	}
 	if req.GetFieldTtl() != nil {
@@ -507,6 +533,17 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).
 				WithValue(binary.BigEndian.AppendUint16(nil, uint16(req.GetActionSetOuterVlanId().GetUint())))).Build())
+	}
+	if req.ActionSetTc != nil {
+		aReq.Actions = append(aReq.Actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS).
+				WithValue([]byte{byte(req.GetActionSetTc().GetUint()) << 2})).Build())
+	}
+	if req.ActionSetAclMetaData != nil {
+		aReq.Actions = append(aReq.Actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
+				WithFieldIDInstance(aclMeta).
+				WithValue(binary.BigEndian.AppendUint32(nil, uint32(req.GetActionSetAclMetaData().GetUint())))).Build())
 	}
 
 	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
