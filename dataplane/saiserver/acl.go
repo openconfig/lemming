@@ -245,6 +245,13 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   []byte{mask},
 		})
 	}
+	if req.GetFieldOuterVlanId() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG}},
+			Bytes:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldOuterVlanId().GetDataUint())),
+			Masks:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldOuterVlanId().GetMaskUint())),
+		})
+	}
 	ipv6Field := false
 	ipv6Addr := make([]byte, 16)
 	ipv6Mask := make([]byte, 16)
@@ -465,6 +472,11 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 				WithUint64Value(req.GetActionSetPolicer().GetOid())).Build(),
 			fwdconfig.Action(fwdconfig.LookupAction(policerTabler)).Build(),
 		)
+	}
+	if req.ActionSetOuterVlanId != nil {
+		aReq.Actions = append(aReq.Actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).
+				WithValue(binary.BigEndian.AppendUint16(nil, uint16(req.GetActionSetOuterVlanId().GetUint())))).Build())
 	}
 
 	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
