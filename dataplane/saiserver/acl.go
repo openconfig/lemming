@@ -462,8 +462,38 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 					fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID).WithUint64Value(req.GetActionRedirect().GetOid())).Build(),
 				fwdconfig.Action(fwdconfig.LookupAction(L2MCGroupTable)).Build(), // Check L2MC group.
 			}...)
+		case saipb.ObjectType_OBJECT_TYPE_VIRTUAL_ROUTER:
+			aReq.Actions = append(aReq.Actions,
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
+					WithUint64Value(req.GetActionRedirect().GetOid())).Build())
+		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP:
+			aReq.Actions = append(aReq.Actions, []*fwdpb.ActionDesc{
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET,
+					fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(req.GetActionRedirect().GetOid())).Build(),
+				fwdconfig.Action(fwdconfig.LookupAction(NHTable)).Build(),
+			}...)
+		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP_GROUP:
+			aReq.Actions = append(aReq.Actions, []*fwdpb.ActionDesc{
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET,
+					fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(req.GetActionRedirect().GetOid())).Build(),
+				fwdconfig.Action(fwdconfig.LookupAction(NHGTable)).Build(),
+			}...)
+		case saipb.ObjectType_OBJECT_TYPE_PORT:
+			fwdCtx, err := a.dataplane.FindContext(&fwdpb.ContextId{Id: a.dataplane.ID()})
+			if err != nil {
+				return nil, err
+			}
+			obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(req.GetActionRedirect().GetOid())})
+			if err != nil {
+				return nil, err
+			}
+			nid := obj.NID()
+			aReq.Actions = append(aReq.Actions,
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT).
+					WithUint64Value(uint64(nid))).Build())
+			aReq.Actions = append(aReq.Actions, computePacketAction(saipb.PacketAction_PACKET_ACTION_FORWARD))
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, "type %q is not supported; only support L2MC Group for ACL Redirect for now", typ.String())
+			return nil, status.Errorf(codes.InvalidArgument, "type %q is not supported; only support L2MC Group, Virtual Router, Next Hop, Next Hop Group, Port for ACL Redirect for now", typ.String())
 		}
 	}
 	if req.ActionSetPolicer != nil {
