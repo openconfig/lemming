@@ -114,6 +114,17 @@ var (
 	ipV6AnyMask   = make([]byte, 16)
 )
 
+func maskBytes(ip, mask []byte) []byte {
+	if len(ip) != len(mask) {
+		return ip
+	}
+	out := make([]byte, len(ip))
+	for i := 0; i < len(ip); i++ {
+		out[i] = ip[i] & mask[i]
+	}
+	return out
+}
+
 func termFieldsFromReq(req *saipb.CreateTunnelTermTableEntryRequest) ([]*fwdpb.PacketFieldMaskedBytes, fwdpb.PacketHeaderId, error) {
 	fields := []*fwdpb.PacketFieldMaskedBytes{}
 
@@ -151,23 +162,23 @@ func termFieldsFromReq(req *saipb.CreateTunnelTermTableEntryRequest) ([]*fwdpb.P
 	switch req.GetType() {
 	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P: // src IP, dst IP
 		fields = append(fields,
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(srcIP, exactMask).Build(),
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(dstIP, exactMask).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, exactMask), exactMask).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, exactMask), exactMask).Build(),
 		)
 	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2MP: // src IP, dst IP & mask
 		fields = append(fields,
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(srcIP, exactMask).Build(),
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(dstIP, dstIPMask).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, exactMask), exactMask).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, dstIPMask), dstIPMask).Build(),
 		)
 	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2P: // src IP & mask, dst IP
 		fields = append(fields,
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(srcIP, srcIPMask).Build(),
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(dstIP, exactMask).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, srcIPMask), srcIPMask).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, exactMask), exactMask).Build(),
 		)
 	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2MP: // src IP & mask, dst IP &mask
 		fields = append(fields,
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(srcIP, srcIPMask).Build(),
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(srcIP, dstIPMask).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, srcIPMask), srcIPMask).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, dstIPMask), dstIPMask).Build(),
 		)
 	default:
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_UNSPECIFIED, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetType())
