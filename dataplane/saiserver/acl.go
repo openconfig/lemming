@@ -440,9 +440,6 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			}
 		}
 	}
-	if len(aReq.EntryDesc.GetFlow().Fields) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "either no fields or not unsupports fields in entry req")
-	}
 	return aReq, nil
 }
 
@@ -533,6 +530,11 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).
 				WithValue(binary.BigEndian.AppendUint16(nil, uint16(req.GetActionSetOuterVlanId().GetUint())))).Build())
+	}
+	if req.ActionSetOuterVlanPri != nil {
+		aReq.Actions = append(aReq.Actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY).
+				WithValue([]byte{byte(req.GetActionSetOuterVlanPri().GetUint())})).Build())
 	}
 	if req.ActionSetTc != nil {
 		aReq.Actions = append(aReq.Actions,

@@ -46,10 +46,56 @@ func TestCreateAclEntry(t *testing.T) {
 		wantErr: "FailedPrecondition",
 		req:     &saipb.CreateAclEntryRequest{},
 	}, {
-		desc:    "no fields",
-		wantErr: "InvalidArgument",
+		desc: "no fields",
 		req: &saipb.CreateAclEntryRequest{
 			TableId: proto.Uint64(2),
+		},
+		want: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Id:       2,
+						Priority: math.MaxUint32,
+					},
+				},
+			},
+		},
+	}, {
+		desc: "action set outer vlan pri",
+		req: &saipb.CreateAclEntryRequest{
+			TableId: proto.Uint64(2),
+			ActionSetOuterVlanPri: &saipb.AclActionData{
+				Parameter: &saipb.AclActionData_Uint{Uint: 5},
+			},
+		},
+		want: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Id:       2,
+						Priority: math.MaxUint32,
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+				Action: &fwdpb.ActionDesc_Update{
+					Update: &fwdpb.UpdateActionDesc{
+						Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+						FieldId: &fwdpb.PacketFieldId{
+							Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY,
+							},
+						},
+						Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+						Value: []byte{5},
+					},
+				},
+			}},
 		},
 	}, {
 		desc: "all fields",
