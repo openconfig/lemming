@@ -443,18 +443,7 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 	return aReq, nil
 }
 
-// CreateAclEntry adds an entry in the a bank.
-func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
-	id := a.mgr.NextID()
-	gb, ok := a.tableToLocation[req.GetTableId()]
-	if !ok {
-		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
-	}
-	aReq, err := a.createAclEntryFields(req, id, gb.groupID, gb.bank)
-	if err != nil {
-		return nil, err
-	}
-
+func (a *acl) appendAclEntryActions(ctx context.Context, req *saipb.CreateAclEntryRequest, aReq *fwdpb.TableEntryAddRequest) error {
 	if req.ActionSetVrf != nil {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
@@ -504,11 +493,11 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		case saipb.ObjectType_OBJECT_TYPE_PORT:
 			fwdCtx, err := a.dataplane.FindContext(&fwdpb.ContextId{Id: a.dataplane.ID()})
 			if err != nil {
-				return nil, err
+				return err
 			}
 			obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(req.GetActionRedirect().GetOid())})
 			if err != nil {
-				return nil, err
+				return err
 			}
 			nid := obj.NID()
 			aReq.Actions = append(aReq.Actions,
@@ -516,7 +505,7 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 					WithUint64Value(uint64(nid))).Build())
 			aReq.Actions = append(aReq.Actions, computePacketAction(saipb.PacketAction_PACKET_ACTION_FORWARD))
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, "type %q is not supported; only support L2MC Group, Virtual Router, Next Hop, Next Hop Group, Port for ACL Redirect for now", typ.String())
+			return status.Errorf(codes.InvalidArgument, "type %q is not supported; only support L2MC Group, Virtual Router, Next Hop, Next Hop Group, Port for ACL Redirect for now", typ.String())
 		}
 	}
 	if req.ActionSetPolicer != nil {
@@ -551,12 +540,31 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 	if err := a.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
-		return nil, err
+		return err
 	}
 
 	if req.ActionPacketAction != nil {
 		aReq.Actions = append(aReq.Actions, computePacketAction(req.GetActionPacketAction().GetPacketAction()))
 	}
+	return nil
+}
+
+// CreateAclEntry adds an entry in the a bank.
+func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
+	id := a.mgr.NextID()
+	gb, ok := a.tableToLocation[req.GetTableId()]
+	if !ok {
+		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
+	}
+	aReq, err := a.createAclEntryFields(req, id, gb.groupID, gb.bank)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := a.appendAclEntryActions(ctx, req, aReq); err != nil {
+		return nil, err
+	}
+
 	slog.InfoContext(ctx, "creating acl entry", "oid", id, "entry", req, "fwdentry", aReq)
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
 		return nil, err
@@ -624,6 +632,55 @@ func (a *acl) RemoveAclEntry(ctx context.Context, req *saipb.RemoveAclEntryReque
 	}
 
 	return &saipb.RemoveAclEntryResponse{}, nil
+}
+
+// SetAclEntryAttribute sets an attribute on an existing ACL entry.
+func (a *acl) SetAclEntryAttribute(ctx context.Context, req *saipb.SetAclEntryAttributeRequest) (*saipb.SetAclEntryAttributeResponse, error) {
+	cOldReq := &saipb.CreateAclEntryRequest{}
+	if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), cOldReq); err != nil {
+		return nil, err
+	}
+	gb, ok := a.tableToLocation[cOldReq.GetTableId()]
+	if !ok {
+		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
+	}
+
+	aOldReq, err := a.createAclEntryFields(cOldReq, req.GetOid(), gb.groupID, gb.bank)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove old entry
+	if _, err := a.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+		ContextId: aOldReq.ContextId,
+		TableId:   aOldReq.TableId,
+		EntryDesc: aOldReq.EntryDesc,
+	}); err != nil {
+		return nil, err
+	}
+
+	a.mgr.StoreAttributes(req.GetOid(), req)
+
+	cReq := &saipb.CreateAclEntryRequest{}
+	if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), cReq); err != nil {
+		return nil, err
+	}
+
+	aReq, err := a.createAclEntryFields(cReq, req.GetOid(), gb.groupID, gb.bank)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := a.appendAclEntryActions(ctx, cReq, aReq); err != nil {
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "setting acl entry attribute", "oid", req.GetOid(), "req", req, "fwdentry", aReq)
+	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
+		return nil, err
+	}
+
+	return &saipb.SetAclEntryAttributeResponse{}, nil
 }
 
 func (a *acl) CreateAclCounter(ctx context.Context, req *saipb.CreateAclCounterRequest) (*saipb.CreateAclCounterResponse, error) {
