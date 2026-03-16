@@ -18,7 +18,7 @@ set -xe
 # shellcheck disable=SC2317
 function dumpinfo {
     if [ -d "/tmp/cluster-log" ]; then
-        gsutil cp -r -Z /tmp/cluster-log "gs://lemming-test-logs/$BUILD"
+        gcloud storage cp --recursive --gzip-local-all /tmp/cluster-log "gs://lemming-test-logs/$BUILD"
     fi
 }
 
