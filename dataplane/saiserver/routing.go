@@ -1284,6 +1284,7 @@ func (vlan *vlan) RemoveVlan(ctx context.Context, r *saipb.RemoveVlanRequest) (*
 	// Update the internal map.
 	vlan.mu.Lock()
 	delete(vlan.vlans, r.GetOid())
+	delete(vlan.oidByVId, vId)
 	vlan.mu.Unlock()
 	return &saipb.RemoveVlanResponse{}, nil
 }
