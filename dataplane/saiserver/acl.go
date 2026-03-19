@@ -33,6 +33,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -624,6 +625,50 @@ func (a *acl) RemoveAclEntry(ctx context.Context, req *saipb.RemoveAclEntryReque
 	}
 
 	return &saipb.RemoveAclEntryResponse{}, nil
+}
+
+func (a *acl) SetAclEntryAttribute(ctx context.Context, req *saipb.SetAclEntryAttributeRequest) (*saipb.SetAclEntryAttributeResponse, error) {
+	createReq := &saipb.CreateAclEntryRequest{}
+	if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), createReq); err != nil {
+		return nil, err
+	}
+
+	// Loop through all proto fields in req and copy them to createReq
+	req.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		destFd := createReq.ProtoReflect().Descriptor().Fields().ByName(fd.Name())
+
+		// Skip oid field or fields that are not present in createReq
+		if fd.Name() == "oid" || destFd == nil {
+			return true
+		}
+
+		// Deep clone message fields to createReq
+		if fd.Kind() == protoreflect.MessageKind {
+			clonedMsg := proto.Clone(v.Message().Interface())
+			v = protoreflect.ValueOfMessage(clonedMsg.ProtoReflect())
+		}
+
+		createReq.ProtoReflect().Set(destFd, v)
+		return true
+	})
+
+	tableId := createReq.GetTableId()
+	loc, ok := a.tableToLocation[tableId]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "table location not found for table %d", tableId)
+	}
+
+	// Rebuild the acl entry with new attributes and update the existing entry in the dataplane
+	fwdReq, err := a.createAclEntryFields(createReq, req.GetOid(), loc.groupID, loc.bank)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := a.dataplane.TableEntryAdd(ctx, fwdReq); err != nil {
+		return nil, err
+	}
+
+	a.mgr.StoreAttributes(req.GetOid(), createReq)
+	return &saipb.SetAclEntryAttributeResponse{}, nil
 }
 
 func (a *acl) CreateAclCounter(ctx context.Context, req *saipb.CreateAclCounterRequest) (*saipb.CreateAclCounterResponse, error) {
