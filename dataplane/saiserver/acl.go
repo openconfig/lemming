@@ -235,6 +235,12 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 				Bytes:   []byte{0x4}, // IPv4 0100 IPv6 0110
 				Masks:   []byte{0x4}, // Mask 0100
 			}
+		case saipb.AclIpType_ACL_IP_TYPE_NON_IP:
+			fieldMask = &fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION}},
+				Bytes:   []byte{0x0}, // Non IP packets return 0x0 for IP VERSION
+				Masks:   []byte{0x4},
+			}
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unsupported ACL_IP_TYPE: %v", t)
 		}
