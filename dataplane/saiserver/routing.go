@@ -107,6 +107,21 @@ func (n *neighbor) CreateNeighborEntries(ctx context.Context, re *saipb.CreateNe
 	return resp, nil
 }
 
+// SetNeighborEntryAttribute updates the attribute for the neighbor entry.
+// TODO: Update neighbor table to use attrmgr to persist other fields besides mac address.
+func (n *neighbor) SetNeighborEntryAttribute(ctx context.Context, req *saipb.SetNeighborEntryAttributeRequest) (*saipb.SetNeighborEntryAttributeResponse, error) {
+	entry := fwdconfig.TableEntryAddRequest(n.dataplane.ID(), NeighborTable).AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetEntry().GetRifId()),
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithBytes(req.GetEntry().GetIpAddress()),
+	)), fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetDstMacAddress()),
+	).Build()
+
+	if _, err := n.dataplane.TableEntryAdd(ctx, entry); err != nil {
+		return nil, err
+	}
+	return &saipb.SetNeighborEntryAttributeResponse{}, nil
+}
+
 type groupMember struct {
 	nextHop uint64 // ID of the next hop
 	weight  uint32
@@ -1269,6 +1284,7 @@ func (vlan *vlan) RemoveVlan(ctx context.Context, r *saipb.RemoveVlanRequest) (*
 	// Update the internal map.
 	vlan.mu.Lock()
 	delete(vlan.vlans, r.GetOid())
+	delete(vlan.oidByVId, vId)
 	vlan.mu.Unlock()
 	return &saipb.RemoveVlanResponse{}, nil
 }
