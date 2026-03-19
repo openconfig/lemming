@@ -50,7 +50,7 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 	tunType := req.GetType()
 
 	switch tunType {
-	case saipb.TunnelType_TUNNEL_TYPE_IPINIP:
+	case saipb.TunnelType_TUNNEL_TYPE_IPINIP, saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE:
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported tunnel type: %v", tunType)
 	}
@@ -90,6 +90,8 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 		return nil, err
 	}
 
+	t.mgr.StoreAttributes(id, req)
+
 	return &saipb.CreateTunnelResponse{
 		Oid: id,
 	}, nil
@@ -105,6 +107,30 @@ func (t *tunnel) RemoveTunnel(ctx context.Context, req *saipb.RemoveTunnelReques
 		return nil, err
 	}
 	return &saipb.RemoveTunnelResponse{}, nil
+}
+
+func (t *tunnel) CreateTunnels(ctx context.Context, req *saipb.CreateTunnelsRequest) (*saipb.CreateTunnelsResponse, error) {
+	resp := &saipb.CreateTunnelsResponse{}
+	for _, r := range req.GetReqs() {
+		res, err := t.CreateTunnel(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
+}
+
+func (t *tunnel) RemoveTunnels(ctx context.Context, req *saipb.RemoveTunnelsRequest) (*saipb.RemoveTunnelsResponse, error) {
+	resp := &saipb.RemoveTunnelsResponse{}
+	for _, r := range req.GetReqs() {
+		res, err := t.RemoveTunnel(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
 }
 
 var (
