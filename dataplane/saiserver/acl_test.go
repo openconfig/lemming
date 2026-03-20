@@ -67,6 +67,7 @@ func TestCreateAclEntry(t *testing.T) {
 		req: &saipb.CreateAclEntryRequest{
 			TableId: proto.Uint64(2),
 			ActionSetOuterVlanPri: &saipb.AclActionData{
+				Enable:    true,
 				Parameter: &saipb.AclActionData_Uint{Uint: 5},
 			},
 		},
@@ -254,6 +255,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionSetVrf: &saipb.AclActionData{
+				Enable:    true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 1,
 				},
@@ -304,6 +306,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionSetUserTrapId: &saipb.AclActionData{
+				Enable:    true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 1,
 				},
@@ -354,6 +357,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionPacketAction: &saipb.AclActionData{
+				Enable:    true,
 				Parameter: &saipb.AclActionData_PacketAction{
 					PacketAction: saipb.PacketAction_PACKET_ACTION_DROP,
 				},
@@ -401,6 +405,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionPacketAction: &saipb.AclActionData{
+				Enable:    true,
 				Parameter: &saipb.AclActionData_PacketAction{
 					PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD,
 				},
@@ -448,6 +453,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionCounter: &saipb.AclActionData{
+				Enable:    true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 10,
 				},
