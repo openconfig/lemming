@@ -450,17 +450,17 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 }
 
 func (a *acl) appendAclEntryActions(ctx context.Context, req *saipb.CreateAclEntryRequest, aReq *fwdpb.TableEntryAddRequest) error {
-	if req.ActionSetVrf != nil {
+	if req.ActionSetVrf != nil && req.ActionSetVrf.GetEnable() {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
 				WithUint64Value(req.GetActionSetVrf().GetOid())).Build())
 	}
-	if req.ActionSetUserTrapId != nil {
+	if req.ActionSetUserTrapId != nil && req.ActionSetUserTrapId.GetEnable() {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).
 				WithUint64Value(req.GetActionSetUserTrapId().GetOid())).Build())
 	}
-	if req.ActionCounter != nil {
+	if req.ActionCounter != nil && req.ActionCounter.GetEnable() {
 		aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
 			Action: &fwdpb.ActionDesc_Flow{
@@ -472,7 +472,7 @@ func (a *acl) appendAclEntryActions(ctx context.Context, req *saipb.CreateAclEnt
 			},
 		})
 	}
-	if req.ActionRedirect != nil {
+	if req.ActionRedirect != nil && req.ActionRedirect.GetEnable() {
 		switch typ := a.mgr.GetType(fmt.Sprint(req.GetActionRedirect().GetOid())); typ {
 		case saipb.ObjectType_OBJECT_TYPE_L2MC_GROUP:
 			aReq.Actions = append(aReq.Actions, []*fwdpb.ActionDesc{
@@ -514,29 +514,29 @@ func (a *acl) appendAclEntryActions(ctx context.Context, req *saipb.CreateAclEnt
 			return status.Errorf(codes.InvalidArgument, "type %q is not supported; only support L2MC Group, Virtual Router, Next Hop, Next Hop Group, Port for ACL Redirect for now", typ.String())
 		}
 	}
-	if req.ActionSetPolicer != nil {
+	if req.ActionSetPolicer != nil && req.ActionSetPolicer.GetEnable() {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID).
 				WithUint64Value(req.GetActionSetPolicer().GetOid())).Build(),
 			fwdconfig.Action(fwdconfig.LookupAction(policerTabler)).Build(),
 		)
 	}
-	if req.ActionSetOuterVlanId != nil {
+	if req.ActionSetOuterVlanId != nil && req.ActionSetOuterVlanId.GetEnable() {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).
 				WithValue(binary.BigEndian.AppendUint16(nil, uint16(req.GetActionSetOuterVlanId().GetUint())))).Build())
 	}
-	if req.ActionSetOuterVlanPri != nil {
+	if req.ActionSetOuterVlanPri != nil && req.ActionSetOuterVlanPri.GetEnable() {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY).
 				WithValue([]byte{byte(req.GetActionSetOuterVlanPri().GetUint())})).Build())
 	}
-	if req.ActionSetTc != nil {
+	if req.ActionSetTc != nil && req.ActionSetTc.GetEnable() {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS).
 				WithValue([]byte{byte(req.GetActionSetTc().GetUint()) << 2})).Build())
 	}
-	if req.ActionSetAclMetaData != nil {
+	if req.ActionSetAclMetaData != nil && req.ActionSetAclMetaData.GetEnable() {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
 				WithFieldIDInstance(aclMeta).
@@ -549,7 +549,7 @@ func (a *acl) appendAclEntryActions(ctx context.Context, req *saipb.CreateAclEnt
 		return err
 	}
 
-	if req.ActionPacketAction != nil {
+	if req.ActionPacketAction != nil && req.ActionPacketAction.GetEnable() {
 		aReq.Actions = append(aReq.Actions, computePacketAction(req.GetActionPacketAction().GetPacketAction()))
 	}
 	return nil
