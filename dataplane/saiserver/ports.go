@@ -612,14 +612,30 @@ func (port *port) GetPortStats(ctx context.Context, req *saipb.GetPortStatsReque
 		counterMap[c.GetId()] = c.GetValue()
 	}
 
+	var kernelRxDropped uint64
+	if slices.Contains(req.GetCounterIds(), saipb.PortStat_PORT_STAT_IF_IN_ERRORS) ||
+		slices.Contains(req.GetCounterIds(), saipb.PortStat_PORT_STAT_ETHER_RX_OVERSIZE_PKTS) {
+		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetOid(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_HW_LANE_LIST}}
+		portAttr := &saipb.GetPortAttributeResponse{}
+
+		// Get rx_drop kernel statistic from the netdev (first lane of interface)
+		if err := port.mgr.PopulateAttributes(attrReq, portAttr); err == nil && len(portAttr.GetAttr().GetHwLaneList()) > 0 {
+			dev := fmt.Sprintf("eth%v", portAttr.GetAttr().GetHwLaneList()[0])
+			if l, err := netlink.LinkByName(dev); err == nil && l.Attrs() != nil && l.Attrs().Statistics != nil {
+				kernelRxDropped = uint64(l.Attrs().Statistics.RxDropped)
+			}
+		}
+	}
+
 	for _, id := range req.GetCounterIds() {
 		switch id {
 		case saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS:
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_UCAST_PACKETS])
 		case saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS:
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS])
+		// TODO: Investigate whether kernel rx_dropped can be updated in COUNTER_ID_RX_ERROR_PACKETS
 		case saipb.PortStat_PORT_STAT_IF_IN_ERRORS:
-			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS])
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS]+kernelRxDropped)
 		case saipb.PortStat_PORT_STAT_IF_OUT_UCAST_PKTS:
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_UCAST_PACKETS])
 		case saipb.PortStat_PORT_STAT_IF_OUT_NON_UCAST_PKTS:
@@ -648,6 +664,9 @@ func (port *port) GetPortStats(ctx context.Context, req *saipb.GetPortStatsReque
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_IPV6_DROP_PACKETS])
 		case saipb.PortStat_PORT_STAT_IPV6_OUT_UCAST_PKTS, saipb.PortStat_PORT_STAT_IPV6_OUT_NON_UCAST_PKTS, saipb.PortStat_PORT_STAT_IPV6_OUT_MCAST_PKTS:
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_IPV6_PACKETS])
+		// TODO: Investigate whether a new counter should be added to counter map for kernel rx_dropped
+		case saipb.PortStat_PORT_STAT_ETHER_RX_OVERSIZE_PKTS:
+			resp.Values = append(resp.Values, kernelRxDropped)
 		default:
 			resp.Values = append(resp.Values, 0)
 		}
