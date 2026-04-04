@@ -219,6 +219,7 @@ type fakeSwitchDataplane struct {
 	gotPortCreateReqs        []*fwdpb.PortCreateRequest
 	gotPortUpdateReqs        []*fwdpb.PortUpdateRequest
 	gotObjectDeleteReqs      []*fwdpb.ObjectDeleteRequest
+	gotObjectNIDReqs         []*fwdpb.ObjectNIDRequest
 	gotFlowCounterCreateReqs []*fwdpb.FlowCounterCreateRequest
 	gotFlowCounterQueryReqs  []*fwdpb.FlowCounterQueryRequest
 	gotEntryRemoveReqs       []*fwdpb.TableEntryRemoveRequest
@@ -292,7 +293,8 @@ func (f *fakeSwitchDataplane) AttributeUpdate(context.Context, *fwdpb.AttributeU
 	return nil, nil
 }
 
-func (f *fakeSwitchDataplane) ObjectNID(context.Context, *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error) {
+func (f *fakeSwitchDataplane) ObjectNID(_ context.Context, req *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error) {
+	f.gotObjectNIDReqs = append(f.gotObjectNIDReqs, req)
 	return nil, nil
 }
 

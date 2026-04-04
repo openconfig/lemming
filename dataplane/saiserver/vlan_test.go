@@ -128,6 +128,11 @@ func TestVlanOperations(t *testing.T) {
 	mgr.StoreAttributes(1, &saipb.SwitchAttribute{
 		DefaultStpInstId: proto.Uint64(testStpInstId),
 	})
+	// Crete bridge port mapping in attrmgr for each port
+	mgr.StoreAttributes(11, &saipb.BridgePortAttribute{PortId: proto.Uint64(11)})
+	mgr.StoreAttributes(12, &saipb.BridgePortAttribute{PortId: proto.Uint64(12)})
+	mgr.StoreAttributes(13, &saipb.BridgePortAttribute{PortId: proto.Uint64(13)})
+	mgr.StoreAttributes(14, &saipb.BridgePortAttribute{PortId: proto.Uint64(14)})
 	ctx := context.TODO()
 
 	getVLANMembers := func(vlanOID uint64) ([]uint64, error) {
@@ -270,4 +275,54 @@ func newTestVlan(t testing.TB, api switchDataplaneAPI) (saipb.VlanClient, *attrm
 		newVlan(mgr, api, srv)
 	})
 	return saipb.NewVlanClient(conn), mgr, stopFn
+}
+
+func TestCreateVlanMemberLogicalMapping(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	c, mgr, stopFn := newTestVlan(t, dplane)
+	defer stopFn()
+	ctx := context.TODO()
+
+	mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+		DefaultStpInstId: proto.Uint64(10),
+	})
+
+	// Create vlan.
+	resp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
+		Switch: 1,
+		VlanId: proto.Uint32(10),
+	})
+	if err != nil {
+		t.Fatalf("CreateVlan failed: %v", err)
+	}
+	vlanOid := resp.Oid
+
+	// Create mock bridge port mapping in attrmgr for given port id.
+	bridgePortOid := uint64(100)
+	testPortId := uint64(10)
+	mgr.StoreAttributes(bridgePortOid, &saipb.BridgePortAttribute{
+		PortId: proto.Uint64(testPortId),
+	})
+
+	// Create vlan member using bridge port oid.
+	_, err = c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		Switch:       1,
+		VlanId:       &vlanOid,
+		BridgePortId: &bridgePortOid,
+	})
+	if err != nil {
+		t.Fatalf("CreateVlanMember failed: %v", err)
+	}
+
+	// Verify that ObjectNID was queried with the port id.
+	found := false
+	for _, req := range dplane.gotObjectNIDReqs {
+		if req.GetObjectId().GetId() == "10" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("ObjectNID was not queried with port id 10, got reqs: %+v", dplane.gotObjectNIDReqs)
+	}
 }
