@@ -731,6 +731,17 @@ func (a *acl) GetAclCounterAttribute(ctx context.Context, req *saipb.GetAclCount
 	if err != nil {
 		return nil, err
 	}
+	if len(count.GetCounters()) == 0 {
+		slog.WarnContext(ctx, "GetAclCounterAttribute: no counters returned", "oid", req.Oid)
+		resp := &saipb.GetAclCounterAttributeResponse{
+			Attr: &saipb.AclCounterAttribute{
+				Packets: proto.Uint64(0),
+				Bytes:   proto.Uint64(0),
+			},
+		}
+		a.mgr.StoreAttributes(req.GetOid(), resp.GetAttr())
+		return resp, nil
+	}
 	resp := &saipb.GetAclCounterAttributeResponse{
 		Attr: &saipb.AclCounterAttribute{
 			Packets: &count.GetCounters()[0].Packets,
