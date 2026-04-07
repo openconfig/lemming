@@ -16,9 +16,11 @@ package saiserver
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -248,6 +250,12 @@ func (f *fakeSwitchDataplane) TableEntryAdd(_ context.Context, req *fwdpb.TableE
 }
 
 func (f *fakeSwitchDataplane) TableEntryRemove(_ context.Context, req *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+	for _, prev := range f.gotEntryRemoveReqs {
+		if cmp.Equal(prev, req, protocmp.Transform()) {
+			return nil, fmt.Errorf("double table entry removal detected: %v", req)
+		}
+	}
+
 	f.gotEntryRemoveReqs = append(f.gotEntryRemoveReqs, req)
 	return nil, nil
 }
@@ -295,7 +303,10 @@ func (f *fakeSwitchDataplane) AttributeUpdate(context.Context, *fwdpb.AttributeU
 
 func (f *fakeSwitchDataplane) ObjectNID(_ context.Context, req *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error) {
 	f.gotObjectNIDReqs = append(f.gotObjectNIDReqs, req)
-	return nil, nil
+
+	// Derive unique nid by using request object id to prevent collisions in tests.
+	id, _ := strconv.ParseUint(req.GetObjectId().GetId(), 10, 64)
+	return &fwdpb.ObjectNIDReply{Nid: id}, nil
 }
 
 func (f *fakeSwitchDataplane) InjectPacket(_ *fwdpb.ContextId, _ *fwdpb.PortId, _ fwdpb.PacketHeaderId, pkt []byte, _ []*fwdpb.ActionDesc, _ bool, _ fwdpb.PortAction) error {

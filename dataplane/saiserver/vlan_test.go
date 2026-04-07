@@ -326,3 +326,57 @@ func TestCreateVlanMemberLogicalMapping(t *testing.T) {
 		t.Errorf("ObjectNID was not queried with port id 10, got reqs: %+v", dplane.gotObjectNIDReqs)
 	}
 }
+
+func TestRemoveVlan(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	c, mgr, stopFn := newTestVlan(t, dplane)
+	defer stopFn()
+	ctx := context.TODO()
+
+	mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+		DefaultStpInstId: proto.Uint64(testStpInstId),
+	})
+
+	// Create vlan.
+	vlanResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
+		Switch: 1,
+		VlanId: proto.Uint32(10),
+	})
+	if err != nil {
+		t.Fatalf("CreateVlan failed: %v", err)
+	}
+	vlanOid := vlanResp.Oid
+
+	// Create mapping for mock bridge ports.
+	bridgePortOid := uint64(100)
+	physicalPortId := uint64(10)
+	mgr.StoreAttributes(bridgePortOid, &saipb.BridgePortAttribute{
+		PortId: proto.Uint64(physicalPortId),
+	})
+
+	// Create vlan member with bridge port.
+	memberResp, err := c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		Switch:       1,
+		VlanId:       &vlanOid,
+		BridgePortId: &bridgePortOid,
+	})
+	if err != nil {
+		t.Fatalf("CreateVlanMember failed: %v", err)
+	}
+
+	// Remove vlan member.
+	_, err = c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{
+		Oid: memberResp.Oid,
+	})
+	if err != nil {
+		t.Fatalf("RemoveVlanMember failed: %v", err)
+	}
+
+	// Remove vlan.
+	_, err = c.RemoveVlan(ctx, &saipb.RemoveVlanRequest{
+		Oid: vlanOid,
+	})
+	if err != nil {
+		t.Fatalf("RemoveVlan failed: %v", err)
+	}
+}
