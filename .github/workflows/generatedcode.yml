@@ -39,7 +39,7 @@ jobs:
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.14.0
       - name: Cache Bazel
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.cache/bazel
