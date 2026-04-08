@@ -39,9 +39,6 @@ type counter struct {
 	saipb.UnimplementedCounterServer
 }
 
-type debugCounter struct {
-	saipb.UnimplementedDebugCounterServer
-}
 
 type dtel struct {
 	saipb.UnimplementedDtelServer
@@ -209,7 +206,7 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		forwardingContext: fwdCtx,
 		bfd:               &bfd{},
 		counter:           &counter{},
-		debugCounter:      &debugCounter{},
+		debugCounter:      newDebugCounter(mgr, fwdCtx, s),
 		dtel:              &dtel{},
 		fdb:               fdb,
 		ipmcGroup:         &ipmcGroup{},
@@ -232,7 +229,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterEntrypointServer(s, srv)
 	saipb.RegisterBfdServer(s, srv.bfd)
 	saipb.RegisterCounterServer(s, srv.counter)
-	saipb.RegisterDebugCounterServer(s, srv.debugCounter)
 	saipb.RegisterDtelServer(s, srv.dtel)
 	saipb.RegisterIpmcGroupServer(s, srv.ipmcGroup)
 	saipb.RegisterIpmcServer(s, srv.ipmc)
