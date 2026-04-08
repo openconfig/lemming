@@ -1273,9 +1273,17 @@ func (vlan *vlan) RemoveVlan(ctx context.Context, r *saipb.RemoveVlanRequest) (*
 	if vId == DefaultVlanId {
 		return nil, fmt.Errorf("cannot remove default VLAN")
 	}
-	for _, v := range vlan.vlans[r.GetOid()] {
+
+	vlan.mu.Lock()
+	var memberOids []uint64
+	for mOid := range vlan.vlans[r.GetOid()] {
+		memberOids = append(memberOids, mOid)
+	}
+	vlan.mu.Unlock()
+
+	for _, mOid := range memberOids {
 		_, err := attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.RemoveVlanMember, &saipb.RemoveVlanMemberRequest{
-			Oid: v.Oid,
+			Oid: mOid,
 		})
 		if err != nil {
 			return nil, err
@@ -1303,14 +1311,30 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	if err != nil {
 		return nil, err
 	}
-	member := vlan.memberByPortId(r.GetBridgePortId()) // Keep the vlan member if this port was assigned to any VLAN.
+
+	// Get the port ID from the bridge port.
+	bpAttrReq := &saipb.GetBridgePortAttributeRequest{
+		Oid:      r.GetBridgePortId(),
+		AttrType: []saipb.BridgePortAttr{saipb.BridgePortAttr_BRIDGE_PORT_ATTR_PORT_ID},
+	}
+	bpAttrResp := &saipb.GetBridgePortAttributeResponse{}
+	if err := vlan.mgr.PopulateAttributes(bpAttrReq, bpAttrResp); err != nil {
+		return nil, err
+	}
+
+	portID := bpAttrResp.GetAttr().GetPortId()
+
+	// For the case where this port was assigned to a prior vlan, store the
+	// vlan member to remove it from cache later.
+	member := vlan.memberByPortId(portID)
+
 	mOid := vlan.mgr.NextID()
 	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
-		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(r.GetBridgePortId())},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(portID)},
 	})
 	if err != nil {
-		slog.InfoContext(ctx, "Failed to find NID for port", "bridge_port", r.GetBridgePortId(), "err", err)
+		slog.InfoContext(ctx, "Failed to find NID for port", "port_id", portID, "err", err)
 		return nil, err
 	}
 	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
@@ -1331,8 +1355,10 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
 	vlan.mgr.StoreAttributes(vOid, vlanAttrResp.GetAttr())
 	vlan.mu.Lock()
-	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: r.GetBridgePortId(), Vid: vId, Mode: r.GetVlanTaggingMode()}
+	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: portID, Vid: vId, Mode: r.GetVlanTaggingMode()}
 	vlan.mu.Unlock()
+
+	// Fetch the original vlan from the old vlan member and remove the member from that vlan
 	if member != nil {
 		preVlanOid := vlan.oidByVId[member.Vid]
 		vlanAttrReq = &saipb.GetVlanAttributeRequest{Oid: preVlanOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
@@ -1357,8 +1383,23 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 }
 
 func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMemberRequest) (*saipb.RemoveVlanMemberResponse, error) {
-	member := vlan.memberByOid(r.GetOid())
-	if member == nil {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+
+	var member *vlanMember
+	var targetVlanOid uint64
+	found := false
+
+	for vlanOid, members := range vlan.vlans {
+		if m, ok := members[r.GetOid()]; ok {
+			member = m
+			targetVlanOid = vlanOid
+			found = true
+			break
+		}
+	}
+
+	if !found {
 		return nil, fmt.Errorf("cannot find member with OID %d", r.GetOid())
 	}
 	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
@@ -1373,6 +1414,9 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()); err != nil {
 		return nil, err
 	}
+
+	delete(vlan.vlans[targetVlanOid], r.GetOid())
+
 	return &saipb.RemoveVlanMemberResponse{}, nil
 }
 
@@ -1444,6 +1488,8 @@ func (b *bridge) CreateBridgePort(ctx context.Context, req *saipb.CreateBridgePo
 	adminState := req.GetAdminState()
 	attrs := &saipb.BridgePortAttribute{
 		AdminState: proto.Bool(adminState),
+		PortId:     proto.Uint64(req.GetPortId()),
+		Type:       req.Type,
 	}
 	b.mgr.StoreAttributes(oid, attrs)
 	return &saipb.CreateBridgePortResponse{
