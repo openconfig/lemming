@@ -23,6 +23,10 @@ extern "C" {
 #include "experimental/saiextensions.h"
 }
 
+#define SAI_SWITCH_ATTR_SUPPORTED_DEBUG_COUNTER_TYPE_LIST (sai_switch_attr_t)2112
+#define SAI_SWITCH_ATTR_SUPPORTED_INGRESS_DROP_REASON_LIST (sai_switch_attr_t)2113
+#define SAI_SWITCH_ATTR_AVAILABLE_SWITCH_INGRESS_DROP_COUNTERS (sai_switch_attr_t)2118
+
 extern const sai_switch_api_t l_switch;
 
 sai_status_t l_create_switch(sai_object_id_t* switch_id, uint32_t attr_count,

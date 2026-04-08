@@ -1510,6 +1510,29 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
                   resp.attr().selective_counter_list(),
                   &attr_list[i].value.objlist.count);
         break;
+      case SAI_SWITCH_ATTR_SUPPORTED_DEBUG_COUNTER_TYPE_LIST:
+        if (attr_list[i].value.s32list.list == nullptr || attr_list[i].value.s32list.count < 1) {
+          attr_list[i].value.s32list.count = 1;
+        } else {
+          attr_list[i].value.s32list.list[0] = SAI_DEBUG_COUNTER_TYPE_SWITCH_IN_DROP_REASONS;
+          attr_list[i].value.s32list.count = 1;
+        }
+        break;
+      case SAI_SWITCH_ATTR_SUPPORTED_INGRESS_DROP_REASON_LIST:
+        if (attr_list[i].value.s32list.list == nullptr || attr_list[i].value.s32list.count < 2) {
+          attr_list[i].value.s32list.count = 2;
+        } else {
+          attr_list[i].value.s32list.list[0] = SAI_IN_DROP_REASON_LPM4_MISS;
+          attr_list[i].value.s32list.list[1] = SAI_IN_DROP_REASON_LPM6_MISS;
+          attr_list[i].value.s32list.count = 2;
+        }
+        break;
+      case SAI_SWITCH_ATTR_AVAILABLE_SWITCH_INGRESS_DROP_COUNTERS:
+        attr_list[i].value.u32 = 1000;
+        break;
+      default:
+        LOG(ERROR) << "Unhandled Switch attribute ID during get: " << attr_list[i].id;
+        break;
     }
   }
 
@@ -1528,7 +1551,11 @@ sai_status_t l_get_switch_stats(sai_object_id_t switch_id,
   req.set_oid(switch_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(convert_sai_switch_stat_t_to_proto(counter_ids[i]));
+    auto proto_id = convert_sai_switch_stat_t_to_proto(counter_ids[i]);
+    if (proto_id == lemming::dataplane::sai::SWITCH_STAT_UNSPECIFIED) {
+      LOG(ERROR) << "Lucius: Unhandled counter_id: " << counter_ids[i];
+    }
+    req.add_counter_ids(proto_id);
   }
   grpc::Status status = switch_->GetSwitchStats(&context, req, &resp);
   if (!status.ok()) {
@@ -1555,7 +1582,7 @@ sai_status_t l_get_switch_stats_ext(sai_object_id_t switch_id,
                                     sai_stats_mode_t mode, uint64_t* counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  return SAI_STATUS_SUCCESS;
+  return l_get_switch_stats(switch_id, number_of_counters, counter_ids, counters);
 }
 
 sai_status_t l_clear_switch_stats(sai_object_id_t switch_id,

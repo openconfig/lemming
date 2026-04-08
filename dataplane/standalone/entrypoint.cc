@@ -500,6 +500,30 @@ sai_status_t sai_query_attribute_enum_values_capability(
     _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
     _In_ sai_attr_id_t attr_id,
     _Inout_ sai_s32_list_t *enum_values_capability) {
+  if (object_type == SAI_OBJECT_TYPE_DEBUG_COUNTER) {
+    if (attr_id == SAI_DEBUG_COUNTER_ATTR_TYPE) {
+      if (enum_values_capability->list == nullptr ||
+          enum_values_capability->count < 1) {
+        enum_values_capability->count = 1;
+      } else {
+        enum_values_capability->list[0] =
+            SAI_DEBUG_COUNTER_TYPE_SWITCH_IN_DROP_REASONS;
+        enum_values_capability->count = 1;
+      }
+      return SAI_STATUS_SUCCESS;
+    }
+    if (attr_id == SAI_DEBUG_COUNTER_ATTR_IN_DROP_REASON_LIST) {
+      if (enum_values_capability->list == nullptr ||
+          enum_values_capability->count < 2) {
+        enum_values_capability->count = 2;
+      } else {
+        enum_values_capability->list[0] = SAI_IN_DROP_REASON_LPM4_MISS;
+        enum_values_capability->list[1] = SAI_IN_DROP_REASON_LPM6_MISS;
+        enum_values_capability->count = 2;
+      }
+      return SAI_STATUS_SUCCESS;
+    }
+  }
   return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
