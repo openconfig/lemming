@@ -268,6 +268,33 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	swID := sw.mgr.NextID()
 	slog.InfoContext(ctx, "Creating new switch id", "id", swID)
 
+	// Create LPM miss flow counters if they don't exist.
+	qResp, err := sw.dataplane.FlowCounterQuery(ctx, &fwdpb.FlowCounterQueryRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Ids:       []*fwdpb.FlowCounterId{{ObjectId: &fwdpb.ObjectId{Id: "LPM4_MISS_COUNTER"}}},
+	})
+	if err != nil || len(qResp.GetCounters()) == 0 {
+		if _, err := sw.dataplane.FlowCounterCreate(ctx, &fwdpb.FlowCounterCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+			Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: "LPM4_MISS_COUNTER"}},
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	qResp6, err := sw.dataplane.FlowCounterQuery(ctx, &fwdpb.FlowCounterQueryRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Ids:       []*fwdpb.FlowCounterId{{ObjectId: &fwdpb.ObjectId{Id: "LPM6_MISS_COUNTER"}}},
+	})
+	if err != nil || len(qResp6.GetCounters()) == 0 {
+		if _, err := sw.dataplane.FlowCounterCreate(ctx, &fwdpb.FlowCounterCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+			Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: "LPM6_MISS_COUNTER"}},
+		}); err != nil {
+			return nil, err
+		}
+	}
+
 	// Setup forwarding tables.
 	ingressVRF := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
@@ -295,7 +322,17 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
-			Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0})).Build()},
+			Actions: []*fwdpb.ActionDesc{
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0})).Build(),
+				{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
+					Action: &fwdpb.ActionDesc_Flow{
+						Flow: &fwdpb.FlowCounterActionDesc{
+							CounterId: &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: "LPM4_MISS_COUNTER"}},
+						},
+					},
+				},
+			},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -319,7 +356,17 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
-			Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0})).Build()},
+			Actions: []*fwdpb.ActionDesc{
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0})).Build(),
+				{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
+					Action: &fwdpb.ActionDesc_Flow{
+						Flow: &fwdpb.FlowCounterActionDesc{
+							CounterId: &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: "LPM6_MISS_COUNTER"}},
+						},
+					},
+				},
+			},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -515,7 +562,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if _, err := sw.dataplane.TableCreate(ctx, nexthopAction); err != nil {
 		return nil, err
 	}
-	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: portToHostifTable}},
@@ -875,6 +922,26 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		SwitchShellEnable:              proto.Bool(false),
 		SwitchProfileId:                proto.Uint32(0),
 		NatZoneCounterObjectId:         proto.Uint64(0),
+		SupportedObjectTypeList: []saipb.ObjectType{
+			saipb.ObjectType_OBJECT_TYPE_PORT,
+			saipb.ObjectType_OBJECT_TYPE_VLAN,
+			saipb.ObjectType_OBJECT_TYPE_VIRTUAL_ROUTER,
+			saipb.ObjectType_OBJECT_TYPE_NEXT_HOP,
+			saipb.ObjectType_OBJECT_TYPE_NEXT_HOP_GROUP,
+			saipb.ObjectType_OBJECT_TYPE_ROUTE_ENTRY,
+			saipb.ObjectType_OBJECT_TYPE_FDB_ENTRY,
+			saipb.ObjectType_OBJECT_TYPE_ACL_TABLE,
+			saipb.ObjectType_OBJECT_TYPE_ACL_ENTRY,
+			saipb.ObjectType_OBJECT_TYPE_DEBUG_COUNTER,
+		},
+		SupportedDebugCounterTypeList: []saipb.DebugCounterType{
+			saipb.DebugCounterType_DEBUG_COUNTER_TYPE_SWITCH_IN_DROP_REASONS,
+		},
+		SupportedIngressDropReasonList: []saipb.InDropReason{
+			saipb.InDropReason_IN_DROP_REASON_LPM4_MISS,
+			saipb.InDropReason_IN_DROP_REASON_LPM6_MISS,
+		},
+		AvailableSwitchIngressDropCounters: proto.Uint32(2),
 	}
 	sw.mgr.StoreAttributes(swID, attrs)
 	return &saipb.CreateSwitchResponse{
@@ -1134,6 +1201,50 @@ func (sw *saiSwitch) Reset() {
 	sw.vlan.Reset()
 	sw.port.Reset()
 	sw.hostif.Reset()
+}
+
+// GetSwitchStats returns the statistics for the switch.
+func (sw *saiSwitch) GetSwitchStats(ctx context.Context, req *saipb.GetSwitchStatsRequest) (*saipb.GetSwitchStatsResponse, error) {
+	slog.ErrorContext(ctx, "GetSwitchStats called", "req", req)
+	resp := &saipb.GetSwitchStatsResponse{}
+	for _, id := range req.GetCounterIds() {
+		var val uint64
+		switch id {
+		case saipb.SwitchStat_SWITCH_STAT_IN_CONFIGURED_DROP_REASONS_0_DROPPED_PKTS:
+			count, err := sw.dataplane.FlowCounterQuery(ctx, &fwdpb.FlowCounterQueryRequest{
+				ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+				Ids:       []*fwdpb.FlowCounterId{{ObjectId: &fwdpb.ObjectId{Id: "LPM4_MISS_COUNTER"}}},
+			})
+			if err != nil {
+				return nil, err
+			}
+			if len(count.GetCounters()) > 0 {
+				val = count.GetCounters()[0].GetPackets()
+				slog.ErrorContext(ctx, "GetSwitchStats: LPM4_MISS_COUNTER", "packets", val)
+			} else {
+				slog.InfoContext(ctx, "GetSwitchStats: LPM4_MISS_COUNTER not found in response")
+			}
+		case saipb.SwitchStat_SWITCH_STAT_IN_CONFIGURED_DROP_REASONS_1_DROPPED_PKTS:
+			count, err := sw.dataplane.FlowCounterQuery(ctx, &fwdpb.FlowCounterQueryRequest{
+				ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+				Ids:       []*fwdpb.FlowCounterId{{ObjectId: &fwdpb.ObjectId{Id: "LPM6_MISS_COUNTER"}}},
+			})
+			if err != nil {
+				return nil, err
+			}
+			if len(count.GetCounters()) > 0 {
+				val = count.GetCounters()[0].GetPackets()
+				slog.ErrorContext(ctx, "GetSwitchStats: LPM6_MISS_COUNTER", "packets", val)
+			} else {
+				slog.InfoContext(ctx, "GetSwitchStats: LPM6_MISS_COUNTER not found in response")
+			}
+		default:
+			val = 0
+		}
+		resp.Values = append(resp.Values, val)
+	}
+
+	return resp, nil
 }
 
 // createFIBSelector creates a table that controls which forwarding table is used.

@@ -132,6 +132,26 @@ func TestCreateSwitch(t *testing.T) {
 		SwitchShellEnable:              proto.Bool(false),
 		SwitchProfileId:                proto.Uint32(0),
 		NatZoneCounterObjectId:         proto.Uint64(0),
+		SupportedObjectTypeList: []saipb.ObjectType{
+			saipb.ObjectType_OBJECT_TYPE_PORT,
+			saipb.ObjectType_OBJECT_TYPE_VLAN,
+			saipb.ObjectType_OBJECT_TYPE_VIRTUAL_ROUTER,
+			saipb.ObjectType_OBJECT_TYPE_NEXT_HOP,
+			saipb.ObjectType_OBJECT_TYPE_NEXT_HOP_GROUP,
+			saipb.ObjectType_OBJECT_TYPE_ROUTE_ENTRY,
+			saipb.ObjectType_OBJECT_TYPE_FDB_ENTRY,
+			saipb.ObjectType_OBJECT_TYPE_ACL_TABLE,
+			saipb.ObjectType_OBJECT_TYPE_ACL_ENTRY,
+			saipb.ObjectType_OBJECT_TYPE_DEBUG_COUNTER,
+		},
+		SupportedDebugCounterTypeList: []saipb.DebugCounterType{
+			saipb.DebugCounterType_DEBUG_COUNTER_TYPE_SWITCH_IN_DROP_REASONS,
+		},
+		SupportedIngressDropReasonList: []saipb.InDropReason{
+			saipb.InDropReason_IN_DROP_REASON_LPM4_MISS,
+			saipb.InDropReason_IN_DROP_REASON_LPM6_MISS,
+		},
+		AvailableSwitchIngressDropCounters: proto.Uint32(2),
 	}
 	attr := &saipb.SwitchAttribute{}
 	if err := mgr.PopulateAllAttributes("1", attr); err != nil {
@@ -326,8 +346,8 @@ func (f *fakeSwitchDataplane) FlowCounterCreate(_ context.Context, req *fwdpb.Fl
 
 func (f *fakeSwitchDataplane) FlowCounterQuery(_ context.Context, req *fwdpb.FlowCounterQueryRequest) (*fwdpb.FlowCounterQueryReply, error) {
 	f.gotFlowCounterQueryReqs = append(f.gotFlowCounterQueryReqs, req)
-	if f.flowQueryRepliesIdx > len(f.flowQueryReplies) {
-		return nil, io.EOF
+	if f.flowQueryRepliesIdx >= len(f.flowQueryReplies) {
+		return &fwdpb.FlowCounterQueryReply{}, nil
 	}
 	r := f.flowQueryReplies[f.flowQueryRepliesIdx]
 	f.flowQueryRepliesIdx++
@@ -362,4 +382,115 @@ func newTestSwitch(t testing.TB, dplane switchDataplaneAPI) (saipb.SwitchClient,
 		newSwitch(mgr, dplane, srv, &dplaneopts.Options{})
 	})
 	return saipb.NewSwitchClient(conn), mgr, stopFn
+}
+
+func TestGetSwitchStats(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.GetSwitchStatsRequest
+		replies []*fwdpb.FlowCounterQueryReply
+		want    *saipb.GetSwitchStatsResponse
+		wantErr string
+	}{{
+		desc: "LPM4 miss counter",
+		req: &saipb.GetSwitchStatsRequest{
+			CounterIds: []saipb.SwitchStat{saipb.SwitchStat_SWITCH_STAT_IN_CONFIGURED_DROP_REASONS_0_DROPPED_PKTS},
+		},
+		replies: []*fwdpb.FlowCounterQueryReply{{
+			Counters: []*fwdpb.FlowCounter{{
+				Packets: 10,
+			}},
+		}},
+		want: &saipb.GetSwitchStatsResponse{
+			Values: []uint64{10},
+		},
+	}, {
+		desc: "LPM6 miss counter",
+		req: &saipb.GetSwitchStatsRequest{
+			CounterIds: []saipb.SwitchStat{saipb.SwitchStat_SWITCH_STAT_IN_CONFIGURED_DROP_REASONS_1_DROPPED_PKTS},
+		},
+		replies: []*fwdpb.FlowCounterQueryReply{{
+			Counters: []*fwdpb.FlowCounter{{
+				Packets: 20,
+			}},
+		}},
+		want: &saipb.GetSwitchStatsResponse{
+			Values: []uint64{20},
+		},
+	}, {
+		desc: "unknown counter",
+		req: &saipb.GetSwitchStatsRequest{
+			CounterIds: []saipb.SwitchStat{saipb.SwitchStat_SWITCH_STAT_ECC_DROP},
+		},
+		replies: []*fwdpb.FlowCounterQueryReply{},
+		want: &saipb.GetSwitchStatsResponse{
+			Values: []uint64{0},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{
+				flowQueryReplies: tt.replies,
+			}
+			c, _, stopFn := newTestSwitch(t, dplane)
+			defer stopFn()
+
+			got, gotErr := c.GetSwitchStats(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("GetSwitchStats() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("GetSwitchStats() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+// TestLpmMissCountersScenario emulates the scenario where a packet is sent to an address different than any installed route,
+// causing an ALPM miss which is tracked by the miss counters.
+func TestLpmMissCountersScenario(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	c, _, stopFn := newTestSwitch(t, dplane)
+	defer stopFn()
+
+	_, err := c.CreateSwitch(context.TODO(), &saipb.CreateSwitchRequest{})
+	if err != nil {
+		t.Fatalf("CreateSwitch() failed: %v", err)
+	}
+
+	// Verify counters were created.
+	var gotV4, gotV6 bool
+	for _, req := range dplane.gotFlowCounterCreateReqs {
+		if req.GetId().GetObjectId().GetId() == "LPM4_MISS_COUNTER" {
+			gotV4 = true
+		}
+		if req.GetId().GetObjectId().GetId() == "LPM6_MISS_COUNTER" {
+			gotV6 = true
+		}
+	}
+	if !gotV4 {
+		t.Errorf("LPM4_MISS_COUNTER not created")
+	}
+	if !gotV6 {
+		t.Errorf("LPM6_MISS_COUNTER not created")
+	}
+
+	// Verify we can query stats.
+	dplane.flowQueryReplies = []*fwdpb.FlowCounterQueryReply{{
+		Counters: []*fwdpb.FlowCounter{{Packets: 42}},
+	}}
+	dplane.flowQueryRepliesIdx = 0
+
+	stats, err := c.GetSwitchStats(context.TODO(), &saipb.GetSwitchStatsRequest{
+		CounterIds: []saipb.SwitchStat{saipb.SwitchStat_SWITCH_STAT_IN_CONFIGURED_DROP_REASONS_0_DROPPED_PKTS},
+	})
+	if err != nil {
+		t.Fatalf("GetSwitchStats() failed: %v", err)
+	}
+	if len(stats.GetValues()) == 0 || stats.GetValues()[0] != 42 {
+		t.Errorf("Expected 42, got %v", stats.GetValues())
+	}
 }

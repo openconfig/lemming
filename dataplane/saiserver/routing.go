@@ -704,6 +704,21 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		}
 	} else {
 		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}))
+
+		isZeroMask := true
+		for _, b := range req.GetEntry().GetDestination().GetMask() {
+			if b != 0 {
+				isZeroMask = false
+				break
+			}
+		}
+		if isZeroMask {
+			counterID := "LPM6_MISS_COUNTER"
+			if fib == FIBV4Table {
+				counterID = "LPM4_MISS_COUNTER"
+			}
+			actions = append(actions, fwdconfig.FlowCounterAction(counterID))
+		}
 	}
 	if req.MetaData != nil {
 		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
@@ -829,6 +844,21 @@ func (r *route) SetRouteEntryAttribute(ctx context.Context, req *saipb.SetRouteE
 		}
 	} else {
 		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}))
+
+		isZeroMask := true
+		for _, b := range req.GetEntry().GetDestination().GetMask() {
+			if b != 0 {
+				isZeroMask = false
+				break
+			}
+		}
+		if isZeroMask {
+			counterID := "LPM6_MISS_COUNTER"
+			if fib == FIBV4Table {
+				counterID = "LPM4_MISS_COUNTER"
+			}
+			actions = append(actions, fwdconfig.FlowCounterAction(counterID))
+		}
 	}
 	if metaData != nil {
 		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
