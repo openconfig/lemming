@@ -1063,7 +1063,7 @@ func TestRemoveRouterInterface(t *testing.T) {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
 								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
 							}},
-							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05},
 						}, {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
 								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
@@ -1089,7 +1089,7 @@ func TestRemoveRouterInterface(t *testing.T) {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
 								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
 							}},
-							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05},
 						}, {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
 								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
