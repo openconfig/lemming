@@ -4567,6 +4567,9 @@ message SwitchAttribute {
   optional uint32 max_icmp_echo_session = 219 [(attr_enum_value) = 235];
   optional StatsCountMode stats_count_mode = 220 [(attr_enum_value) = 236];
   repeated uint64 selective_counter_list = 221 [(attr_enum_value) = 237];
+  repeated DebugCounterType supported_debug_counter_type_list = 222 [(attr_enum_value) = 2112];
+  repeated InDropReason supported_ingress_drop_reason_list = 223 [(attr_enum_value) = 2113];
+  optional uint32 available_switch_ingress_drop_counters = 224 [(attr_enum_value) = 2118];
 }
 
 message SwitchTunnelAttribute {

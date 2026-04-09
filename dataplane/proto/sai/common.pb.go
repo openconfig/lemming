@@ -29186,6 +29186,9 @@ type SwitchAttribute struct {
 	MaxIcmpEchoSession                             *uint32                           `protobuf:"varint,219,opt,name=max_icmp_echo_session,json=maxIcmpEchoSession,proto3,oneof" json:"max_icmp_echo_session,omitempty"`
 	StatsCountMode                                 *StatsCountMode                   `protobuf:"varint,220,opt,name=stats_count_mode,json=statsCountMode,proto3,enum=lemming.dataplane.sai.StatsCountMode,oneof" json:"stats_count_mode,omitempty"`
 	SelectiveCounterList                           []uint64                          `protobuf:"varint,221,rep,packed,name=selective_counter_list,json=selectiveCounterList,proto3" json:"selective_counter_list,omitempty"`
+	SupportedDebugCounterTypeList                  []DebugCounterType                `protobuf:"varint,222,rep,packed,name=supported_debug_counter_type_list,json=supportedDebugCounterTypeList,proto3,enum=lemming.dataplane.sai.DebugCounterType" json:"supported_debug_counter_type_list,omitempty"`
+	SupportedIngressDropReasonList                 []InDropReason                    `protobuf:"varint,223,rep,packed,name=supported_ingress_drop_reason_list,json=supportedIngressDropReasonList,proto3,enum=lemming.dataplane.sai.InDropReason" json:"supported_ingress_drop_reason_list,omitempty"`
+	AvailableSwitchIngressDropCounters             *uint32                           `protobuf:"varint,224,opt,name=available_switch_ingress_drop_counters,json=availableSwitchIngressDropCounters,proto3,oneof" json:"available_switch_ingress_drop_counters,omitempty"`
 	unknownFields                                  protoimpl.UnknownFields
 	sizeCache                                      protoimpl.SizeCache
 }
@@ -30765,6 +30768,27 @@ func (x *SwitchAttribute) GetSelectiveCounterList() []uint64 {
 		return x.SelectiveCounterList
 	}
 	return nil
+}
+
+func (x *SwitchAttribute) GetSupportedDebugCounterTypeList() []DebugCounterType {
+	if x != nil {
+		return x.SupportedDebugCounterTypeList
+	}
+	return nil
+}
+
+func (x *SwitchAttribute) GetSupportedIngressDropReasonList() []InDropReason {
+	if x != nil {
+		return x.SupportedIngressDropReasonList
+	}
+	return nil
+}
+
+func (x *SwitchAttribute) GetAvailableSwitchIngressDropCounters() uint32 {
+	if x != nil && x.AvailableSwitchIngressDropCounters != nil {
+		return *x.AvailableSwitchIngressDropCounters
+	}
+	return 0
 }
 
 type SwitchTunnelAttribute struct {
@@ -36618,7 +36642,7 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x05state\x18\x03 \x01(\x0e2#.lemming.dataplane.sai.StpPortStateB\x06\xf0ܓ\xad\x0f\x03H\x02R\x05state\x88\x01\x01B\x06\n" +
 	"\x04_stpB\x0e\n" +
 	"\f_bridge_portB\b\n" +
-	"\x06_state\"ܨ\x01\n" +
+	"\x06_state\"\xe3\xab\x01\n" +
 	"\x0fSwitchAttribute\x12@\n" +
 	"\x16number_of_active_ports\x18\x01 \x01(\rB\x06\xf0ܓ\xad\x0f\x01H\x00R\x13numberOfActivePorts\x88\x01\x01\x12M\n" +
 	"\x1dmax_number_of_supported_ports\x18\x02 \x01(\rB\x06\xf0ܓ\xad\x0f\x02H\x01R\x19maxNumberOfSupportedPorts\x88\x01\x01\x12#\n" +
@@ -36853,7 +36877,10 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x1bavailable_icmp_echo_session\x18\xda\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xea\x01H\xbd\x01R\x18availableIcmpEchoSession\x88\x01\x01\x12A\n" +
 	"\x15max_icmp_echo_session\x18\xdb\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xeb\x01H\xbe\x01R\x12maxIcmpEchoSession\x88\x01\x01\x12_\n" +
 	"\x10stats_count_mode\x18\xdc\x01 \x01(\x0e2%.lemming.dataplane.sai.StatsCountModeB\a\xf0ܓ\xad\x0f\xec\x01H\xbf\x01R\x0estatsCountMode\x88\x01\x01\x12>\n" +
-	"\x16selective_counter_list\x18\xdd\x01 \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterListB\x19\n" +
+	"\x16selective_counter_list\x18\xdd\x01 \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterList\x12{\n" +
+	"!supported_debug_counter_type_list\x18\xde\x01 \x03(\x0e2'.lemming.dataplane.sai.DebugCounterTypeB\a\xf0ܓ\xad\x0f\xc0\x10R\x1dsupportedDebugCounterTypeList\x12y\n" +
+	"\"supported_ingress_drop_reason_list\x18\xdf\x01 \x03(\x0e2#.lemming.dataplane.sai.InDropReasonB\a\xf0ܓ\xad\x0f\xc1\x10R\x1esupportedIngressDropReasonList\x12b\n" +
+	"&available_switch_ingress_drop_counters\x18\xe0\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xc6\x10H\xc0\x01R\"availableSwitchIngressDropCounters\x88\x01\x01B\x19\n" +
 	"\x17_number_of_active_portsB \n" +
 	"\x1e_max_number_of_supported_portsB\x0f\n" +
 	"\r_port_max_mtuB\v\n" +
@@ -37049,7 +37076,8 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x16_acl_stage_pre_ingressB\x1e\n" +
 	"\x1c_available_icmp_echo_sessionB\x18\n" +
 	"\x16_max_icmp_echo_sessionB\x13\n" +
-	"\x11_stats_count_mode\"\xda\n" +
+	"\x11_stats_count_modeB)\n" +
+	"'_available_switch_ingress_drop_counters\"\xda\n" +
 	"\n" +
 	"\x15SwitchTunnelAttribute\x12O\n" +
 	"\vtunnel_type\x18\x01 \x01(\x0e2!.lemming.dataplane.sai.TunnelTypeB\x06\xf0ܓ\xad\x0f\x01H\x00R\n" +
@@ -40703,78 +40731,80 @@ var file_dataplane_proto_sai_common_proto_depIdxs = []int32{
 	170, // 419: lemming.dataplane.sai.SwitchAttribute.reg_notice_switch_asic_sdk_health_category:type_name -> lemming.dataplane.sai.SwitchAsicSdkHealthCategory
 	222, // 420: lemming.dataplane.sai.SwitchAttribute.acl_stage_pre_ingress:type_name -> lemming.dataplane.sai.ACLCapability
 	167, // 421: lemming.dataplane.sai.SwitchAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	213, // 422: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
-	110, // 423: lemming.dataplane.sai.SwitchTunnelAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	207, // 424: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_encap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelEncapEcnMode
-	205, // 425: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_decap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelDecapEcnMode
-	214, // 426: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_vxlan_udp_sport_mode:type_name -> lemming.dataplane.sai.TunnelVxlanUdpSportMode
-	184, // 427: lemming.dataplane.sai.SystemPortAttribute.type:type_name -> lemming.dataplane.sai.SystemPortType
-	250, // 428: lemming.dataplane.sai.SystemPortAttribute.config_info:type_name -> lemming.dataplane.sai.SystemPortConfig
-	185, // 429: lemming.dataplane.sai.TableBitmapClassificationEntryAttribute.action:type_name -> lemming.dataplane.sai.TableBitmapClassificationEntryAction
-	187, // 430: lemming.dataplane.sai.TableBitmapRouterEntryAttribute.action:type_name -> lemming.dataplane.sai.TableBitmapRouterEntryAction
-	231, // 431: lemming.dataplane.sai.TableBitmapRouterEntryAttribute.dst_ip_key:type_name -> lemming.dataplane.sai.IpPrefix
-	189, // 432: lemming.dataplane.sai.TableMetaTunnelEntryAttribute.action:type_name -> lemming.dataplane.sai.TableMetaTunnelEntryAction
-	191, // 433: lemming.dataplane.sai.TamAttribute.tam_bind_point_type_list:type_name -> lemming.dataplane.sai.TamBindPointType
-	193, // 434: lemming.dataplane.sai.TamEventAttribute.type:type_name -> lemming.dataplane.sai.TamEventType
-	192, // 435: lemming.dataplane.sai.TamEventThresholdAttribute.unit:type_name -> lemming.dataplane.sai.TamEventThresholdUnit
-	195, // 436: lemming.dataplane.sai.TamIntAttribute.type:type_name -> lemming.dataplane.sai.TamIntType
-	194, // 437: lemming.dataplane.sai.TamIntAttribute.int_presence_type:type_name -> lemming.dataplane.sai.TamIntPresenceType
-	200, // 438: lemming.dataplane.sai.TamMathFuncAttribute.tam_tel_math_func_type:type_name -> lemming.dataplane.sai.TamTelMathFuncType
-	198, // 439: lemming.dataplane.sai.TamReportAttribute.type:type_name -> lemming.dataplane.sai.TamReportType
-	197, // 440: lemming.dataplane.sai.TamReportAttribute.report_mode:type_name -> lemming.dataplane.sai.TamReportMode
-	196, // 441: lemming.dataplane.sai.TamReportAttribute.report_interval_unit:type_name -> lemming.dataplane.sai.TamReportIntervalUnit
-	199, // 442: lemming.dataplane.sai.TamTelemetryAttribute.tam_reporting_unit:type_name -> lemming.dataplane.sai.TamReportingUnit
-	201, // 443: lemming.dataplane.sai.TamTelTypeAttribute.tam_telemetry_type:type_name -> lemming.dataplane.sai.TamTelemetryType
-	203, // 444: lemming.dataplane.sai.TamTransportAttribute.transport_type:type_name -> lemming.dataplane.sai.TamTransportType
-	202, // 445: lemming.dataplane.sai.TamTransportAttribute.transport_auth_type:type_name -> lemming.dataplane.sai.TamTransportAuthType
-	213, // 446: lemming.dataplane.sai.TunnelAttribute.type:type_name -> lemming.dataplane.sai.TunnelType
-	209, // 447: lemming.dataplane.sai.TunnelAttribute.peer_mode:type_name -> lemming.dataplane.sai.TunnelPeerMode
-	212, // 448: lemming.dataplane.sai.TunnelAttribute.encap_ttl_mode:type_name -> lemming.dataplane.sai.TunnelTtlMode
-	206, // 449: lemming.dataplane.sai.TunnelAttribute.encap_dscp_mode:type_name -> lemming.dataplane.sai.TunnelDscpMode
-	207, // 450: lemming.dataplane.sai.TunnelAttribute.encap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelEncapEcnMode
-	205, // 451: lemming.dataplane.sai.TunnelAttribute.decap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelDecapEcnMode
-	212, // 452: lemming.dataplane.sai.TunnelAttribute.decap_ttl_mode:type_name -> lemming.dataplane.sai.TunnelTtlMode
-	206, // 453: lemming.dataplane.sai.TunnelAttribute.decap_dscp_mode:type_name -> lemming.dataplane.sai.TunnelDscpMode
-	110, // 454: lemming.dataplane.sai.TunnelAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	214, // 455: lemming.dataplane.sai.TunnelAttribute.vxlan_udp_sport_mode:type_name -> lemming.dataplane.sai.TunnelVxlanUdpSportMode
-	167, // 456: lemming.dataplane.sai.TunnelAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	208, // 457: lemming.dataplane.sai.TunnelMapAttribute.type:type_name -> lemming.dataplane.sai.TunnelMapType
-	208, // 458: lemming.dataplane.sai.TunnelMapEntryAttribute.tunnel_map_type:type_name -> lemming.dataplane.sai.TunnelMapType
-	211, // 459: lemming.dataplane.sai.TunnelTermTableEntryAttribute.type:type_name -> lemming.dataplane.sai.TunnelTermTableEntryType
-	213, // 460: lemming.dataplane.sai.TunnelTermTableEntryAttribute.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
-	73,  // 461: lemming.dataplane.sai.TunnelTermTableEntryAttribute.ip_addr_family:type_name -> lemming.dataplane.sai.IpAddrFamily
-	215, // 462: lemming.dataplane.sai.UdfAttribute.base:type_name -> lemming.dataplane.sai.UdfBase
-	216, // 463: lemming.dataplane.sai.UdfGroupAttribute.type:type_name -> lemming.dataplane.sai.UdfGroupType
-	223, // 464: lemming.dataplane.sai.UdfMatchAttribute.l2_type:type_name -> lemming.dataplane.sai.AclFieldData
-	223, // 465: lemming.dataplane.sai.UdfMatchAttribute.l3_type:type_name -> lemming.dataplane.sai.AclFieldData
-	223, // 466: lemming.dataplane.sai.UdfMatchAttribute.gre_type:type_name -> lemming.dataplane.sai.AclFieldData
-	223, // 467: lemming.dataplane.sai.UdfMatchAttribute.l4_dst_port_type:type_name -> lemming.dataplane.sai.AclFieldData
-	110, // 468: lemming.dataplane.sai.VirtualRouterAttribute.violation_ttl1_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	110, // 469: lemming.dataplane.sai.VirtualRouterAttribute.violation_ip_options_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	110, // 470: lemming.dataplane.sai.VirtualRouterAttribute.unknown_l3_multicast_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	218, // 471: lemming.dataplane.sai.VlanAttribute.ipv4_mcast_lookup_key_type:type_name -> lemming.dataplane.sai.VlanMcastLookupKeyType
-	218, // 472: lemming.dataplane.sai.VlanAttribute.ipv6_mcast_lookup_key_type:type_name -> lemming.dataplane.sai.VlanMcastLookupKeyType
-	217, // 473: lemming.dataplane.sai.VlanAttribute.unknown_unicast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
-	217, // 474: lemming.dataplane.sai.VlanAttribute.unknown_multicast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
-	217, // 475: lemming.dataplane.sai.VlanAttribute.broadcast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
-	167, // 476: lemming.dataplane.sai.VlanAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	220, // 477: lemming.dataplane.sai.VlanMemberAttribute.vlan_tagging_mode:type_name -> lemming.dataplane.sai.VlanTaggingMode
-	50,  // 478: lemming.dataplane.sai.WredAttribute.ecn_mark_mode:type_name -> lemming.dataplane.sai.EcnMarkMode
-	223, // 479: lemming.dataplane.sai.AclEntryAttribute.UserDefinedFieldGroupMinEntry.value:type_name -> lemming.dataplane.sai.AclFieldData
-	372, // 480: lemming.dataplane.sai.attr_enum_value:extendee -> google.protobuf.FieldOptions
-	373, // 481: lemming.dataplane.sai.sai_type:extendee -> google.protobuf.MessageOptions
-	105, // 482: lemming.dataplane.sai.sai_type:type_name -> lemming.dataplane.sai.ObjectType
-	254, // 483: lemming.dataplane.sai.Entrypoint.ObjectTypeQuery:input_type -> lemming.dataplane.sai.ObjectTypeQueryRequest
-	256, // 484: lemming.dataplane.sai.Entrypoint.Initialize:input_type -> lemming.dataplane.sai.InitializeRequest
-	258, // 485: lemming.dataplane.sai.Entrypoint.Uninitialize:input_type -> lemming.dataplane.sai.UninitializeRequest
-	255, // 486: lemming.dataplane.sai.Entrypoint.ObjectTypeQuery:output_type -> lemming.dataplane.sai.ObjectTypeQueryResponse
-	257, // 487: lemming.dataplane.sai.Entrypoint.Initialize:output_type -> lemming.dataplane.sai.InitializeResponse
-	259, // 488: lemming.dataplane.sai.Entrypoint.Uninitialize:output_type -> lemming.dataplane.sai.UninitializeResponse
-	486, // [486:489] is the sub-list for method output_type
-	483, // [483:486] is the sub-list for method input_type
-	482, // [482:483] is the sub-list for extension type_name
-	480, // [480:482] is the sub-list for extension extendee
-	0,   // [0:480] is the sub-list for field type_name
+	48,  // 422: lemming.dataplane.sai.SwitchAttribute.supported_debug_counter_type_list:type_name -> lemming.dataplane.sai.DebugCounterType
+	68,  // 423: lemming.dataplane.sai.SwitchAttribute.supported_ingress_drop_reason_list:type_name -> lemming.dataplane.sai.InDropReason
+	213, // 424: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
+	110, // 425: lemming.dataplane.sai.SwitchTunnelAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	207, // 426: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_encap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelEncapEcnMode
+	205, // 427: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_decap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelDecapEcnMode
+	214, // 428: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_vxlan_udp_sport_mode:type_name -> lemming.dataplane.sai.TunnelVxlanUdpSportMode
+	184, // 429: lemming.dataplane.sai.SystemPortAttribute.type:type_name -> lemming.dataplane.sai.SystemPortType
+	250, // 430: lemming.dataplane.sai.SystemPortAttribute.config_info:type_name -> lemming.dataplane.sai.SystemPortConfig
+	185, // 431: lemming.dataplane.sai.TableBitmapClassificationEntryAttribute.action:type_name -> lemming.dataplane.sai.TableBitmapClassificationEntryAction
+	187, // 432: lemming.dataplane.sai.TableBitmapRouterEntryAttribute.action:type_name -> lemming.dataplane.sai.TableBitmapRouterEntryAction
+	231, // 433: lemming.dataplane.sai.TableBitmapRouterEntryAttribute.dst_ip_key:type_name -> lemming.dataplane.sai.IpPrefix
+	189, // 434: lemming.dataplane.sai.TableMetaTunnelEntryAttribute.action:type_name -> lemming.dataplane.sai.TableMetaTunnelEntryAction
+	191, // 435: lemming.dataplane.sai.TamAttribute.tam_bind_point_type_list:type_name -> lemming.dataplane.sai.TamBindPointType
+	193, // 436: lemming.dataplane.sai.TamEventAttribute.type:type_name -> lemming.dataplane.sai.TamEventType
+	192, // 437: lemming.dataplane.sai.TamEventThresholdAttribute.unit:type_name -> lemming.dataplane.sai.TamEventThresholdUnit
+	195, // 438: lemming.dataplane.sai.TamIntAttribute.type:type_name -> lemming.dataplane.sai.TamIntType
+	194, // 439: lemming.dataplane.sai.TamIntAttribute.int_presence_type:type_name -> lemming.dataplane.sai.TamIntPresenceType
+	200, // 440: lemming.dataplane.sai.TamMathFuncAttribute.tam_tel_math_func_type:type_name -> lemming.dataplane.sai.TamTelMathFuncType
+	198, // 441: lemming.dataplane.sai.TamReportAttribute.type:type_name -> lemming.dataplane.sai.TamReportType
+	197, // 442: lemming.dataplane.sai.TamReportAttribute.report_mode:type_name -> lemming.dataplane.sai.TamReportMode
+	196, // 443: lemming.dataplane.sai.TamReportAttribute.report_interval_unit:type_name -> lemming.dataplane.sai.TamReportIntervalUnit
+	199, // 444: lemming.dataplane.sai.TamTelemetryAttribute.tam_reporting_unit:type_name -> lemming.dataplane.sai.TamReportingUnit
+	201, // 445: lemming.dataplane.sai.TamTelTypeAttribute.tam_telemetry_type:type_name -> lemming.dataplane.sai.TamTelemetryType
+	203, // 446: lemming.dataplane.sai.TamTransportAttribute.transport_type:type_name -> lemming.dataplane.sai.TamTransportType
+	202, // 447: lemming.dataplane.sai.TamTransportAttribute.transport_auth_type:type_name -> lemming.dataplane.sai.TamTransportAuthType
+	213, // 448: lemming.dataplane.sai.TunnelAttribute.type:type_name -> lemming.dataplane.sai.TunnelType
+	209, // 449: lemming.dataplane.sai.TunnelAttribute.peer_mode:type_name -> lemming.dataplane.sai.TunnelPeerMode
+	212, // 450: lemming.dataplane.sai.TunnelAttribute.encap_ttl_mode:type_name -> lemming.dataplane.sai.TunnelTtlMode
+	206, // 451: lemming.dataplane.sai.TunnelAttribute.encap_dscp_mode:type_name -> lemming.dataplane.sai.TunnelDscpMode
+	207, // 452: lemming.dataplane.sai.TunnelAttribute.encap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelEncapEcnMode
+	205, // 453: lemming.dataplane.sai.TunnelAttribute.decap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelDecapEcnMode
+	212, // 454: lemming.dataplane.sai.TunnelAttribute.decap_ttl_mode:type_name -> lemming.dataplane.sai.TunnelTtlMode
+	206, // 455: lemming.dataplane.sai.TunnelAttribute.decap_dscp_mode:type_name -> lemming.dataplane.sai.TunnelDscpMode
+	110, // 456: lemming.dataplane.sai.TunnelAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	214, // 457: lemming.dataplane.sai.TunnelAttribute.vxlan_udp_sport_mode:type_name -> lemming.dataplane.sai.TunnelVxlanUdpSportMode
+	167, // 458: lemming.dataplane.sai.TunnelAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	208, // 459: lemming.dataplane.sai.TunnelMapAttribute.type:type_name -> lemming.dataplane.sai.TunnelMapType
+	208, // 460: lemming.dataplane.sai.TunnelMapEntryAttribute.tunnel_map_type:type_name -> lemming.dataplane.sai.TunnelMapType
+	211, // 461: lemming.dataplane.sai.TunnelTermTableEntryAttribute.type:type_name -> lemming.dataplane.sai.TunnelTermTableEntryType
+	213, // 462: lemming.dataplane.sai.TunnelTermTableEntryAttribute.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
+	73,  // 463: lemming.dataplane.sai.TunnelTermTableEntryAttribute.ip_addr_family:type_name -> lemming.dataplane.sai.IpAddrFamily
+	215, // 464: lemming.dataplane.sai.UdfAttribute.base:type_name -> lemming.dataplane.sai.UdfBase
+	216, // 465: lemming.dataplane.sai.UdfGroupAttribute.type:type_name -> lemming.dataplane.sai.UdfGroupType
+	223, // 466: lemming.dataplane.sai.UdfMatchAttribute.l2_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 467: lemming.dataplane.sai.UdfMatchAttribute.l3_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 468: lemming.dataplane.sai.UdfMatchAttribute.gre_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 469: lemming.dataplane.sai.UdfMatchAttribute.l4_dst_port_type:type_name -> lemming.dataplane.sai.AclFieldData
+	110, // 470: lemming.dataplane.sai.VirtualRouterAttribute.violation_ttl1_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 471: lemming.dataplane.sai.VirtualRouterAttribute.violation_ip_options_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 472: lemming.dataplane.sai.VirtualRouterAttribute.unknown_l3_multicast_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	218, // 473: lemming.dataplane.sai.VlanAttribute.ipv4_mcast_lookup_key_type:type_name -> lemming.dataplane.sai.VlanMcastLookupKeyType
+	218, // 474: lemming.dataplane.sai.VlanAttribute.ipv6_mcast_lookup_key_type:type_name -> lemming.dataplane.sai.VlanMcastLookupKeyType
+	217, // 475: lemming.dataplane.sai.VlanAttribute.unknown_unicast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
+	217, // 476: lemming.dataplane.sai.VlanAttribute.unknown_multicast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
+	217, // 477: lemming.dataplane.sai.VlanAttribute.broadcast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
+	167, // 478: lemming.dataplane.sai.VlanAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	220, // 479: lemming.dataplane.sai.VlanMemberAttribute.vlan_tagging_mode:type_name -> lemming.dataplane.sai.VlanTaggingMode
+	50,  // 480: lemming.dataplane.sai.WredAttribute.ecn_mark_mode:type_name -> lemming.dataplane.sai.EcnMarkMode
+	223, // 481: lemming.dataplane.sai.AclEntryAttribute.UserDefinedFieldGroupMinEntry.value:type_name -> lemming.dataplane.sai.AclFieldData
+	372, // 482: lemming.dataplane.sai.attr_enum_value:extendee -> google.protobuf.FieldOptions
+	373, // 483: lemming.dataplane.sai.sai_type:extendee -> google.protobuf.MessageOptions
+	105, // 484: lemming.dataplane.sai.sai_type:type_name -> lemming.dataplane.sai.ObjectType
+	254, // 485: lemming.dataplane.sai.Entrypoint.ObjectTypeQuery:input_type -> lemming.dataplane.sai.ObjectTypeQueryRequest
+	256, // 486: lemming.dataplane.sai.Entrypoint.Initialize:input_type -> lemming.dataplane.sai.InitializeRequest
+	258, // 487: lemming.dataplane.sai.Entrypoint.Uninitialize:input_type -> lemming.dataplane.sai.UninitializeRequest
+	255, // 488: lemming.dataplane.sai.Entrypoint.ObjectTypeQuery:output_type -> lemming.dataplane.sai.ObjectTypeQueryResponse
+	257, // 489: lemming.dataplane.sai.Entrypoint.Initialize:output_type -> lemming.dataplane.sai.InitializeResponse
+	259, // 490: lemming.dataplane.sai.Entrypoint.Uninitialize:output_type -> lemming.dataplane.sai.UninitializeResponse
+	488, // [488:491] is the sub-list for method output_type
+	485, // [485:488] is the sub-list for method input_type
+	484, // [484:485] is the sub-list for extension type_name
+	482, // [482:484] is the sub-list for extension extendee
+	0,   // [0:482] is the sub-list for field type_name
 }
 
 func init() { file_dataplane_proto_sai_common_proto_init() }
