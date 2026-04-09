@@ -197,6 +197,9 @@ sai_status_t l_get_debug_counter_attribute(sai_object_id_t debug_counter_id,
             attr_list[i].value.s32list.list, resp.attr().out_drop_reason_list(),
             &attr_list[i].value.s32list.count);
         break;
+      default:
+        LOG(ERROR) << "Unhandled DebugCounter attribute ID: " << attr_list[i].id;
+        break;
     }
   }
 
