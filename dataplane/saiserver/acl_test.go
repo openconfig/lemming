@@ -749,6 +749,7 @@ func TestGetAclCounterAttribute(t *testing.T) {
 		req     *saipb.GetAclCounterAttributeRequest
 		wantErr string
 		want    *saipb.GetAclCounterAttributeResponse
+		replies []*fwdpb.FlowCounterQueryReply
 	}{{
 		desc: "success",
 		req: &saipb.GetAclCounterAttributeRequest{
@@ -761,15 +762,31 @@ func TestGetAclCounterAttribute(t *testing.T) {
 				Bytes:   proto.Uint64(0),
 			},
 		},
+		replies: []*fwdpb.FlowCounterQueryReply{{
+			Counters: []*fwdpb.FlowCounter{{
+				Packets: 1,
+			}},
+		}},
+	}, {
+		desc: "empty counters",
+		req: &saipb.GetAclCounterAttributeRequest{
+			Oid:      1,
+			AttrType: []saipb.AclCounterAttr{saipb.AclCounterAttr_ACL_COUNTER_ATTR_PACKETS},
+		},
+		want: &saipb.GetAclCounterAttributeResponse{
+			Attr: &saipb.AclCounterAttribute{
+				Packets: proto.Uint64(0),
+				Bytes:   proto.Uint64(0),
+			},
+		},
+		replies: []*fwdpb.FlowCounterQueryReply{{
+			Counters: []*fwdpb.FlowCounter{},
+		}},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{
-				flowQueryReplies: []*fwdpb.FlowCounterQueryReply{{
-					Counters: []*fwdpb.FlowCounter{{
-						Packets: 1,
-					}},
-				}},
+				flowQueryReplies: tt.replies,
 			}
 			c, _, stopFn := newTestACL(t, dplane)
 			defer stopFn()

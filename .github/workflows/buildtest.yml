@@ -39,7 +39,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo mv "${HOME}/.cache" /mnt/cache
+          sudo mv "${HOME}/.cache" /mnt/cache || (sudo mkdir /mnt/cache && sudo chown "${USER}:" /mnt/cache)
           ln -s /mnt/cache "${HOME}/.cache"
       - name: Install pcap
         run: |
@@ -73,7 +73,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo mv "${HOME}/.cache" /mnt/cache
+          sudo mv "${HOME}/.cache" /mnt/cache || (sudo mkdir /mnt/cache && sudo chown "${USER}:" /mnt/cache)
           ln -s /mnt/cache "${HOME}/.cache"
       - name: Install pcap
         run: |
