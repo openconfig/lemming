@@ -2,7 +2,7 @@ module github.com/openconfig/lemming
 
 go 1.23.4
 
-toolchain go1.26.1
+toolchain go1.26.2
 
 require (
 	cloud.google.com/go/cloudbuild v1.19.2
