@@ -922,6 +922,8 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		SwitchShellEnable:              proto.Bool(false),
 		SwitchProfileId:                proto.Uint32(0),
 		NatZoneCounterObjectId:         proto.Uint64(0),
+		DisableIngressVlanChecks:       proto.Bool(false),
+		DisableEgressVlanChecks:        proto.Bool(false),
 		SupportedObjectTypeList: []saipb.ObjectType{
 			saipb.ObjectType_OBJECT_TYPE_PORT,
 			saipb.ObjectType_OBJECT_TYPE_VLAN,

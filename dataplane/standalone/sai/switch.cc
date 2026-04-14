@@ -364,6 +364,12 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
+      case SAI_SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS:
+        msg.set_disable_ingress_vlan_checks(attr_list[i].value.booldata);
+        break;
+      case SAI_SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS:
+        msg.set_disable_egress_vlan_checks(attr_list[i].value.booldata);
+        break;
     }
   }
   return msg;
@@ -758,6 +764,12 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       req.mutable_selective_counter_list()->Add(
           attr->value.objlist.list,
           attr->value.objlist.list + attr->value.objlist.count);
+      break;
+    case SAI_SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS:
+      req.set_disable_ingress_vlan_checks(attr->value.booldata);
+      break;
+    case SAI_SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS:
+      req.set_disable_egress_vlan_checks(attr->value.booldata);
       break;
   }
 
@@ -1509,6 +1521,12 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().selective_counter_list(),
                   &attr_list[i].value.objlist.count);
+        break;
+      case SAI_SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS:
+        attr_list[i].value.booldata = resp.attr().disable_ingress_vlan_checks();
+        break;
+      case SAI_SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS:
+        attr_list[i].value.booldata = resp.attr().disable_egress_vlan_checks();
         break;
       case SAI_SWITCH_ATTR_SUPPORTED_DEBUG_COUNTER_TYPE_LIST:
         if (attr_list[i].value.s32list.list == nullptr || attr_list[i].value.s32list.count < 1) {

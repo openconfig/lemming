@@ -98,7 +98,9 @@ type Paragraph struct {
 
 // SimpleSect contains a description of an element.
 type SimpleSect struct {
-	Para string `xml:"para"`
+	Para struct {
+		InnerXML string `xml:",innerxml"`
+	} `xml:"para"`
 }
 
 // ParseSAIXMLDir parses all the SAI Doxygen XML files in a directory.
@@ -149,10 +151,15 @@ func memberToAttrInfo(enum MemberDef) (*Attr, error) {
 	trimStr := strings.TrimSuffix(strings.TrimPrefix(enum.Name, "_"), "_t") + "_"
 
 	for i, value := range enum.EnumValues {
+		tagRegex := regexp.MustCompile(`<[^>]*>`)
 		var canCreate, canRead, canSet bool
 		var saiType string
 		for _, details := range value.DetailedDescription.Paragraph.SimpleSect {
-			annotation := strings.TrimSpace(details.Para)
+			// Handle nested XML tags by capturing raw content and then removing all
+			// tags using regex.
+			annotation := details.Para.InnerXML
+			annotation = tagRegex.ReplaceAllString(annotation, "")
+			annotation = strings.TrimSpace(annotation)
 			switch {
 			case strings.HasPrefix(annotation, "@@type"):
 				saiType = strings.TrimSpace(strings.TrimPrefix(annotation, "@@type"))

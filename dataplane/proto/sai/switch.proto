@@ -246,6 +246,8 @@ enum SwitchAttr {
   SWITCH_ATTR_MAX_ICMP_ECHO_SESSION = 235;
   SWITCH_ATTR_STATS_COUNT_MODE = 236;
   SWITCH_ATTR_SELECTIVE_COUNTER_LIST = 237;
+  SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS = 238;
+  SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS = 239;
 }
 
 enum SwitchTunnelAttr {
@@ -379,6 +381,8 @@ message CreateSwitchRequest {
   repeated uint64 poe_device_list = 92 [(attr_enum_value) = 232];
   optional StatsCountMode stats_count_mode = 93 [(attr_enum_value) = 236];
   repeated uint64 selective_counter_list = 94 [(attr_enum_value) = 237];
+  optional bool disable_ingress_vlan_checks = 95 [(attr_enum_value) = 238];
+  optional bool disable_egress_vlan_checks = 96 [(attr_enum_value) = 239];
 }
 
 message CreateSwitchResponse {
@@ -487,6 +491,8 @@ message SetSwitchAttributeRequest {
   repeated uint64 poe_device_list = 79 [(attr_enum_value) = 232];
   optional StatsCountMode stats_count_mode = 80 [(attr_enum_value) = 236];
   repeated uint64 selective_counter_list = 81 [(attr_enum_value) = 237];
+  optional bool disable_ingress_vlan_checks = 82 [(attr_enum_value) = 238];
+  optional bool disable_egress_vlan_checks = 83 [(attr_enum_value) = 239];
 }
 
 message SetSwitchAttributeResponse {}

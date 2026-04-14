@@ -24855,6 +24855,12 @@ lemming::dataplane::sai::SwitchAttr convert_sai_switch_attr_t_to_proto(
     case SAI_SWITCH_ATTR_SELECTIVE_COUNTER_LIST:
       return lemming::dataplane::sai::SWITCH_ATTR_SELECTIVE_COUNTER_LIST;
 
+    case SAI_SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS:
+      return lemming::dataplane::sai::SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS;
+
+    case SAI_SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS:
+      return lemming::dataplane::sai::SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS;
+
     default:
       return lemming::dataplane::sai::SWITCH_ATTR_UNSPECIFIED;
   }
@@ -25590,6 +25596,12 @@ sai_switch_attr_t convert_sai_switch_attr_t_to_sai(
 
     case lemming::dataplane::sai::SWITCH_ATTR_SELECTIVE_COUNTER_LIST:
       return SAI_SWITCH_ATTR_SELECTIVE_COUNTER_LIST;
+
+    case lemming::dataplane::sai::SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS:
+      return SAI_SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS;
+
+    case lemming::dataplane::sai::SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS:
+      return SAI_SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS;
 
     default:
       return SAI_SWITCH_ATTR_NUMBER_OF_ACTIVE_PORTS;

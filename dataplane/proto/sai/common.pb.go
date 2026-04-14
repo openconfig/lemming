@@ -29189,6 +29189,8 @@ type SwitchAttribute struct {
 	SupportedDebugCounterTypeList                  []DebugCounterType                `protobuf:"varint,222,rep,packed,name=supported_debug_counter_type_list,json=supportedDebugCounterTypeList,proto3,enum=lemming.dataplane.sai.DebugCounterType" json:"supported_debug_counter_type_list,omitempty"`
 	SupportedIngressDropReasonList                 []InDropReason                    `protobuf:"varint,223,rep,packed,name=supported_ingress_drop_reason_list,json=supportedIngressDropReasonList,proto3,enum=lemming.dataplane.sai.InDropReason" json:"supported_ingress_drop_reason_list,omitempty"`
 	AvailableSwitchIngressDropCounters             *uint32                           `protobuf:"varint,224,opt,name=available_switch_ingress_drop_counters,json=availableSwitchIngressDropCounters,proto3,oneof" json:"available_switch_ingress_drop_counters,omitempty"`
+	DisableIngressVlanChecks                       *bool                             `protobuf:"varint,225,opt,name=disable_ingress_vlan_checks,json=disableIngressVlanChecks,proto3,oneof" json:"disable_ingress_vlan_checks,omitempty"`
+	DisableEgressVlanChecks                        *bool                             `protobuf:"varint,226,opt,name=disable_egress_vlan_checks,json=disableEgressVlanChecks,proto3,oneof" json:"disable_egress_vlan_checks,omitempty"`
 	unknownFields                                  protoimpl.UnknownFields
 	sizeCache                                      protoimpl.SizeCache
 }
@@ -30789,6 +30791,20 @@ func (x *SwitchAttribute) GetAvailableSwitchIngressDropCounters() uint32 {
 		return *x.AvailableSwitchIngressDropCounters
 	}
 	return 0
+}
+
+func (x *SwitchAttribute) GetDisableIngressVlanChecks() bool {
+	if x != nil && x.DisableIngressVlanChecks != nil {
+		return *x.DisableIngressVlanChecks
+	}
+	return false
+}
+
+func (x *SwitchAttribute) GetDisableEgressVlanChecks() bool {
+	if x != nil && x.DisableEgressVlanChecks != nil {
+		return *x.DisableEgressVlanChecks
+	}
+	return false
 }
 
 type SwitchTunnelAttribute struct {
@@ -36642,7 +36658,7 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x05state\x18\x03 \x01(\x0e2#.lemming.dataplane.sai.StpPortStateB\x06\xf0ܓ\xad\x0f\x03H\x02R\x05state\x88\x01\x01B\x06\n" +
 	"\x04_stpB\x0e\n" +
 	"\f_bridge_portB\b\n" +
-	"\x06_state\"\xe3\xab\x01\n" +
+	"\x06_state\"\xbe\xad\x01\n" +
 	"\x0fSwitchAttribute\x12@\n" +
 	"\x16number_of_active_ports\x18\x01 \x01(\rB\x06\xf0ܓ\xad\x0f\x01H\x00R\x13numberOfActivePorts\x88\x01\x01\x12M\n" +
 	"\x1dmax_number_of_supported_ports\x18\x02 \x01(\rB\x06\xf0ܓ\xad\x0f\x02H\x01R\x19maxNumberOfSupportedPorts\x88\x01\x01\x12#\n" +
@@ -36880,7 +36896,9 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x16selective_counter_list\x18\xdd\x01 \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterList\x12{\n" +
 	"!supported_debug_counter_type_list\x18\xde\x01 \x03(\x0e2'.lemming.dataplane.sai.DebugCounterTypeB\a\xf0ܓ\xad\x0f\xc0\x10R\x1dsupportedDebugCounterTypeList\x12y\n" +
 	"\"supported_ingress_drop_reason_list\x18\xdf\x01 \x03(\x0e2#.lemming.dataplane.sai.InDropReasonB\a\xf0ܓ\xad\x0f\xc1\x10R\x1esupportedIngressDropReasonList\x12b\n" +
-	"&available_switch_ingress_drop_counters\x18\xe0\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xc6\x10H\xc0\x01R\"availableSwitchIngressDropCounters\x88\x01\x01B\x19\n" +
+	"&available_switch_ingress_drop_counters\x18\xe0\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xc6\x10H\xc0\x01R\"availableSwitchIngressDropCounters\x88\x01\x01\x12M\n" +
+	"\x1bdisable_ingress_vlan_checks\x18\xe1\x01 \x01(\bB\a\xf0ܓ\xad\x0f\xee\x01H\xc1\x01R\x18disableIngressVlanChecks\x88\x01\x01\x12K\n" +
+	"\x1adisable_egress_vlan_checks\x18\xe2\x01 \x01(\bB\a\xf0ܓ\xad\x0f\xef\x01H\xc2\x01R\x17disableEgressVlanChecks\x88\x01\x01B\x19\n" +
 	"\x17_number_of_active_portsB \n" +
 	"\x1e_max_number_of_supported_portsB\x0f\n" +
 	"\r_port_max_mtuB\v\n" +
@@ -37077,7 +37095,9 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x1c_available_icmp_echo_sessionB\x18\n" +
 	"\x16_max_icmp_echo_sessionB\x13\n" +
 	"\x11_stats_count_modeB)\n" +
-	"'_available_switch_ingress_drop_counters\"\xda\n" +
+	"'_available_switch_ingress_drop_countersB\x1e\n" +
+	"\x1c_disable_ingress_vlan_checksB\x1d\n" +
+	"\x1b_disable_egress_vlan_checks\"\xda\n" +
 	"\n" +
 	"\x15SwitchTunnelAttribute\x12O\n" +
 	"\vtunnel_type\x18\x01 \x01(\x0e2!.lemming.dataplane.sai.TunnelTypeB\x06\xf0ܓ\xad\x0f\x01H\x00R\n" +
