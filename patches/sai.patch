@@ -190,3 +190,33 @@ index fb76035..c50f35a 100644
      CHECK_STRUCT_SIZE(sai_bfd_session_state_notification_t, 16);
      CHECK_STRUCT_SIZE(sai_fabric_port_reachability_t, 8);
      CHECK_STRUCT_SIZE(sai_fdb_entry_t, 24);
+
+diff --git a/inc/saiswitch.h b/inc/saiswitch.h
+index 1234567..89abcdef 100644
+--- a/inc/saiswitch.h
++++ b/inc/saiswitch.h
+@@ -3071,6 +3071,24 @@
+     SAI_SWITCH_ATTR_SELECTIVE_COUNTER_LIST,
+ 
++    /**
++     * @brief Disable ingress VLAN checks
++     *
++     * @type bool
++     * @flags CREATE_AND_SET
++     * @default false
++     */
++    SAI_SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS = 0x20000020,
++
++    /**
++     * @brief Disable egress VLAN checks
++     *
++     * @type bool
++     * @flags CREATE_AND_SET
++     * @default false
++     */
++    SAI_SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS = 0x20000021,
++
+     /**
+      * @brief End of attributes
+      */
+     SAI_SWITCH_ATTR_END,

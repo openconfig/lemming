@@ -262,6 +262,8 @@ const (
 	SwitchAttr_SWITCH_ATTR_MAX_ICMP_ECHO_SESSION                                  SwitchAttr = 235
 	SwitchAttr_SWITCH_ATTR_STATS_COUNT_MODE                                       SwitchAttr = 236
 	SwitchAttr_SWITCH_ATTR_SELECTIVE_COUNTER_LIST                                 SwitchAttr = 237
+	SwitchAttr_SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS                            SwitchAttr = 238
+	SwitchAttr_SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS                             SwitchAttr = 239
 )
 
 // Enum value maps for SwitchAttr.
@@ -505,6 +507,8 @@ var (
 		235: "SWITCH_ATTR_MAX_ICMP_ECHO_SESSION",
 		236: "SWITCH_ATTR_STATS_COUNT_MODE",
 		237: "SWITCH_ATTR_SELECTIVE_COUNTER_LIST",
+		238: "SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS",
+		239: "SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS",
 	}
 	SwitchAttr_value = map[string]int32{
 		"SWITCH_ATTR_UNSPECIFIED":                                            0,
@@ -745,6 +749,8 @@ var (
 		"SWITCH_ATTR_MAX_ICMP_ECHO_SESSION":                                  235,
 		"SWITCH_ATTR_STATS_COUNT_MODE":                                       236,
 		"SWITCH_ATTR_SELECTIVE_COUNTER_LIST":                                 237,
+		"SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS":                            238,
+		"SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS":                             239,
 	}
 )
 
@@ -953,6 +959,8 @@ type CreateSwitchRequest struct {
 	PoeDeviceList                         []uint64                          `protobuf:"varint,92,rep,packed,name=poe_device_list,json=poeDeviceList,proto3" json:"poe_device_list,omitempty"`
 	StatsCountMode                        *StatsCountMode                   `protobuf:"varint,93,opt,name=stats_count_mode,json=statsCountMode,proto3,enum=lemming.dataplane.sai.StatsCountMode,oneof" json:"stats_count_mode,omitempty"`
 	SelectiveCounterList                  []uint64                          `protobuf:"varint,94,rep,packed,name=selective_counter_list,json=selectiveCounterList,proto3" json:"selective_counter_list,omitempty"`
+	DisableIngressVlanChecks              *bool                             `protobuf:"varint,95,opt,name=disable_ingress_vlan_checks,json=disableIngressVlanChecks,proto3,oneof" json:"disable_ingress_vlan_checks,omitempty"`
+	DisableEgressVlanChecks               *bool                             `protobuf:"varint,96,opt,name=disable_egress_vlan_checks,json=disableEgressVlanChecks,proto3,oneof" json:"disable_egress_vlan_checks,omitempty"`
 	unknownFields                         protoimpl.UnknownFields
 	sizeCache                             protoimpl.SizeCache
 }
@@ -1645,6 +1653,20 @@ func (x *CreateSwitchRequest) GetSelectiveCounterList() []uint64 {
 	return nil
 }
 
+func (x *CreateSwitchRequest) GetDisableIngressVlanChecks() bool {
+	if x != nil && x.DisableIngressVlanChecks != nil {
+		return *x.DisableIngressVlanChecks
+	}
+	return false
+}
+
+func (x *CreateSwitchRequest) GetDisableEgressVlanChecks() bool {
+	if x != nil && x.DisableEgressVlanChecks != nil {
+		return *x.DisableEgressVlanChecks
+	}
+	return false
+}
+
 type CreateSwitchResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Oid           uint64                 `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
@@ -1852,6 +1874,8 @@ type SetSwitchAttributeRequest struct {
 	PoeDeviceList                         []uint64                          `protobuf:"varint,79,rep,packed,name=poe_device_list,json=poeDeviceList,proto3" json:"poe_device_list,omitempty"`
 	StatsCountMode                        *StatsCountMode                   `protobuf:"varint,80,opt,name=stats_count_mode,json=statsCountMode,proto3,enum=lemming.dataplane.sai.StatsCountMode,oneof" json:"stats_count_mode,omitempty"`
 	SelectiveCounterList                  []uint64                          `protobuf:"varint,81,rep,packed,name=selective_counter_list,json=selectiveCounterList,proto3" json:"selective_counter_list,omitempty"`
+	DisableIngressVlanChecks              *bool                             `protobuf:"varint,82,opt,name=disable_ingress_vlan_checks,json=disableIngressVlanChecks,proto3,oneof" json:"disable_ingress_vlan_checks,omitempty"`
+	DisableEgressVlanChecks               *bool                             `protobuf:"varint,83,opt,name=disable_egress_vlan_checks,json=disableEgressVlanChecks,proto3,oneof" json:"disable_egress_vlan_checks,omitempty"`
 	unknownFields                         protoimpl.UnknownFields
 	sizeCache                             protoimpl.SizeCache
 }
@@ -2451,6 +2475,20 @@ func (x *SetSwitchAttributeRequest) GetSelectiveCounterList() []uint64 {
 		return x.SelectiveCounterList
 	}
 	return nil
+}
+
+func (x *SetSwitchAttributeRequest) GetDisableIngressVlanChecks() bool {
+	if x != nil && x.DisableIngressVlanChecks != nil {
+		return *x.DisableIngressVlanChecks
+	}
+	return false
+}
+
+func (x *SetSwitchAttributeRequest) GetDisableEgressVlanChecks() bool {
+	if x != nil && x.DisableEgressVlanChecks != nil {
+		return *x.DisableEgressVlanChecks
+	}
+	return false
 }
 
 type SetSwitchAttributeResponse struct {
@@ -3957,7 +3995,7 @@ var File_dataplane_proto_sai_switch_proto protoreflect.FileDescriptor
 
 const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"\n" +
-	" dataplane/proto/sai/switch.proto\x12\x15lemming.dataplane.sai\x1a dataplane/proto/sai/common.proto\"\xa5D\n" +
+	" dataplane/proto/sai/switch.proto\x12\x15lemming.dataplane.sai\x1a dataplane/proto/sai/common.proto\"\xfcE\n" +
 	"\x13CreateSwitchRequest\x12,\n" +
 	"\vingress_acl\x18\x01 \x01(\x04B\x06\xf0ܓ\xad\x0f+H\x00R\n" +
 	"ingressAcl\x88\x01\x01\x12*\n" +
@@ -4059,7 +4097,9 @@ const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"*reg_notice_switch_asic_sdk_health_category\x18[ \x03(\x0e22.lemming.dataplane.sai.SwitchAsicSdkHealthCategoryB\a\xf0ܓ\xad\x0f\xdd\x01R$regNoticeSwitchAsicSdkHealthCategory\x12/\n" +
 	"\x0fpoe_device_list\x18\\ \x03(\x04B\a\xf0ܓ\xad\x0f\xe8\x01R\rpoeDeviceList\x12]\n" +
 	"\x10stats_count_mode\x18] \x01(\x0e2%.lemming.dataplane.sai.StatsCountModeB\a\xf0ܓ\xad\x0f\xec\x01HOR\x0estatsCountMode\x88\x01\x01\x12=\n" +
-	"\x16selective_counter_list\x18^ \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterList:\x06\xa0\xa9\x90\xad\x0f\"B\x0e\n" +
+	"\x16selective_counter_list\x18^ \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterList\x12K\n" +
+	"\x1bdisable_ingress_vlan_checks\x18_ \x01(\bB\a\xf0ܓ\xad\x0f\xee\x01HPR\x18disableIngressVlanChecks\x88\x01\x01\x12I\n" +
+	"\x1adisable_egress_vlan_checks\x18` \x01(\bB\a\xf0ܓ\xad\x0f\xef\x01HQR\x17disableEgressVlanChecks\x88\x01\x01:\x06\xa0\xa9\x90\xad\x0f\"B\x0e\n" +
 	"\f_ingress_aclB\r\n" +
 	"\v_egress_aclB\x0f\n" +
 	"\r_restart_warmB\x0f\n" +
@@ -4142,12 +4182,14 @@ const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"\x10_credit_wd_timerB\x11\n" +
 	"\x0f_switch_isolateB!\n" +
 	"\x1f_hostif_oper_status_update_modeB\x13\n" +
-	"\x11_stats_count_mode\"(\n" +
+	"\x11_stats_count_modeB\x1e\n" +
+	"\x1c_disable_ingress_vlan_checksB\x1d\n" +
+	"\x1b_disable_egress_vlan_checks\"(\n" +
 	"\x14CreateSwitchResponse\x12\x10\n" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\"'\n" +
 	"\x13RemoveSwitchRequest\x12\x10\n" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\"\x16\n" +
-	"\x14RemoveSwitchResponse\"\xf3:\n" +
+	"\x14RemoveSwitchResponse\"\xca<\n" +
 	"\x19SetSwitchAttributeRequest\x12\x10\n" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12,\n" +
 	"\vingress_acl\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f+H\x00R\n" +
@@ -4235,7 +4277,9 @@ const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"*reg_notice_switch_asic_sdk_health_category\x18N \x03(\x0e22.lemming.dataplane.sai.SwitchAsicSdkHealthCategoryB\a\xf0ܓ\xad\x0f\xdd\x01R$regNoticeSwitchAsicSdkHealthCategory\x12/\n" +
 	"\x0fpoe_device_list\x18O \x03(\x04B\a\xf0ܓ\xad\x0f\xe8\x01R\rpoeDeviceList\x12]\n" +
 	"\x10stats_count_mode\x18P \x01(\x0e2%.lemming.dataplane.sai.StatsCountModeB\a\xf0ܓ\xad\x0f\xec\x01HER\x0estatsCountMode\x88\x01\x01\x12=\n" +
-	"\x16selective_counter_list\x18Q \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterListB\x0e\n" +
+	"\x16selective_counter_list\x18Q \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterList\x12K\n" +
+	"\x1bdisable_ingress_vlan_checks\x18R \x01(\bB\a\xf0ܓ\xad\x0f\xee\x01HFR\x18disableIngressVlanChecks\x88\x01\x01\x12I\n" +
+	"\x1adisable_egress_vlan_checks\x18S \x01(\bB\a\xf0ܓ\xad\x0f\xef\x01HGR\x17disableEgressVlanChecks\x88\x01\x01B\x0e\n" +
 	"\f_ingress_aclB\r\n" +
 	"\v_egress_aclB\x0f\n" +
 	"\r_restart_warmB\x0f\n" +
@@ -4307,7 +4351,9 @@ const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"\x10_credit_wd_timerB\x11\n" +
 	"\x0f_switch_isolateB!\n" +
 	"\x1f_hostif_oper_status_update_modeB\x13\n" +
-	"\x11_stats_count_mode\"\x1c\n" +
+	"\x11_stats_count_modeB\x1e\n" +
+	"\x1c_disable_ingress_vlan_checksB\x1d\n" +
+	"\x1b_disable_egress_vlan_checks\"\x1c\n" +
 	"\x1aSetSwitchAttributeResponse\"m\n" +
 	"\x19GetSwitchAttributeRequest\x12\x10\n" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12>\n" +
@@ -4413,7 +4459,7 @@ const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12D\n" +
 	"\tattr_type\x18\x02 \x03(\x0e2'.lemming.dataplane.sai.SwitchTunnelAttrR\battrType\"d\n" +
 	" GetSwitchTunnelAttributeResponse\x12@\n" +
-	"\x04attr\x18\x01 \x01(\v2,.lemming.dataplane.sai.SwitchTunnelAttributeR\x04attr*\x9dK\n" +
+	"\x04attr\x18\x01 \x01(\v2,.lemming.dataplane.sai.SwitchTunnelAttributeR\x04attr*\xf8K\n" +
 	"\n" +
 	"SwitchAttr\x12\x1b\n" +
 	"\x17SWITCH_ATTR_UNSPECIFIED\x10\x00\x12&\n" +
@@ -4654,7 +4700,9 @@ const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"'SWITCH_ATTR_AVAILABLE_ICMP_ECHO_SESSION\x10\xea\x01\x12&\n" +
 	"!SWITCH_ATTR_MAX_ICMP_ECHO_SESSION\x10\xeb\x01\x12!\n" +
 	"\x1cSWITCH_ATTR_STATS_COUNT_MODE\x10\xec\x01\x12'\n" +
-	"\"SWITCH_ATTR_SELECTIVE_COUNTER_LIST\x10\xed\x01*\x93\x05\n" +
+	"\"SWITCH_ATTR_SELECTIVE_COUNTER_LIST\x10\xed\x01\x12,\n" +
+	"'SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS\x10\xee\x01\x12+\n" +
+	"&SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS\x10\xef\x01*\x93\x05\n" +
 	"\x10SwitchTunnelAttr\x12\"\n" +
 	"\x1eSWITCH_TUNNEL_ATTR_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eSWITCH_TUNNEL_ATTR_TUNNEL_TYPE\x10\x01\x12-\n" +

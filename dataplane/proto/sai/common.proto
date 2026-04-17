@@ -4570,6 +4570,8 @@ message SwitchAttribute {
   repeated DebugCounterType supported_debug_counter_type_list = 222 [(attr_enum_value) = 2112];
   repeated InDropReason supported_ingress_drop_reason_list = 223 [(attr_enum_value) = 2113];
   optional uint32 available_switch_ingress_drop_counters = 224 [(attr_enum_value) = 2118];
+  optional bool disable_ingress_vlan_checks = 225 [(attr_enum_value) = 238];
+  optional bool disable_egress_vlan_checks = 226 [(attr_enum_value) = 239];
 }
 
 message SwitchTunnelAttribute {
