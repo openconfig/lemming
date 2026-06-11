@@ -170,27 +170,31 @@ func (i *ICMP6) Rebuild() error {
 		return nil
 	}
 
+	var err error
+	var fSrc, fDst []byte
+	if fSrc, err = i.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
+		return fmt.Errorf("icmp6: Rebuild failed: %v", err)
+	}
+	if fDst, err = i.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
+		return fmt.Errorf("icmp6: Rebuild failed: %v", err)
+	}
+
+	if len(fSrc) != protocol.SizeIP6 || len(fDst) != protocol.SizeIP6 {
+		return fmt.Errorf("icmp6: Rebuild failed, invalid IP address length (src=%v, dst=%v)", len(fSrc), len(fDst))
+	}
+
 	i.header.Field(csumOffset, csumBytes).SetValue(0)
 	var sum csum16.Sum
-
-	var err error
-	var f []byte
-	if f, err = i.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
-		return fmt.Errorf("icmp6: Rebuild failed: %v", err)
-	}
-	sum.Write(f)
-	if f, err = i.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
-		return fmt.Errorf("icmp6: Rebuild failed: %v", err)
-	}
-	sum.Write(f)
+	_, _ = sum.Write(fSrc)
+	_, _ = sum.Write(fDst)
 
 	length := len(i.header)
-	f = make([]byte, protocol.SizeUint32)
+	f := make([]byte, protocol.SizeUint32)
 	binary.BigEndian.PutUint32(f, uint32(length))
-	sum.Write(f)
+	_, _ = sum.Write(f)
 
-	sum.Write([]byte{0, 0, 0, protoICMP6})
-	sum.Write(i.header)
+	_, _ = sum.Write([]byte{0, 0, 0, protoICMP6})
+	_, _ = sum.Write(i.header)
 	i.header.Field(csumOffset, csumBytes).SetValue(uint(sum))
 	return nil
 }
