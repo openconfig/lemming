@@ -206,10 +206,11 @@ func TestMPLSoverUDP(t *testing.T) {
 	}
 
 	ip := &layers.IPv6{
-		Version:  6,
-		SrcIP:    net.ParseIP("2003::9"),
-		DstIP:    net.ParseIP("2003::10"),
-		HopLimit: 255,
+		Version:    6,
+		NextHeader: layers.IPProtocolNoNextHeader,
+		SrcIP:      net.ParseIP("2003::9"),
+		DstIP:      net.ParseIP("2003::10"),
+		HopLimit:   255,
 	}
 	payload := gopacket.Payload([]byte("hello world"))
 
@@ -251,10 +252,11 @@ func TestMPLSoverUDP(t *testing.T) {
 		Label: 100,
 	}
 	wantInnerIP := &layers.IPv6{
-		Version:  6,
-		SrcIP:    net.ParseIP("2003::9"),
-		DstIP:    net.ParseIP("2003::10"),
-		HopLimit: 255,
+		Version:    6,
+		NextHeader: layers.IPProtocolNoNextHeader,
+		SrcIP:      net.ParseIP("2003::9"),
+		DstIP:      net.ParseIP("2003::10"),
+		HopLimit:   255,
 	}
 	buf = gopacket.NewSerializeBuffer()
 	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{FixLengths: true}, wantMPLS, wantInnerIP, payload); err != nil {
