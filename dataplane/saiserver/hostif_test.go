@@ -349,10 +349,11 @@ func createPacket(t testing.TB, nid uint64) fwdpacket.Packet {
 		EthernetType: layers.EthernetTypeIPv6,
 	}
 	ip := &layers.IPv6{
-		Version:  6,
-		SrcIP:    net.ParseIP("2003::9"),
-		DstIP:    net.ParseIP("2003::10"),
-		HopLimit: 255,
+		Version:    6,
+		SrcIP:      net.ParseIP("2003::9"),
+		DstIP:      net.ParseIP("2003::10"),
+		HopLimit:   255,
+		NextHeader: layers.IPProtocolUDP,
 	}
 	payload := gopacket.Payload([]byte("hello world"))
 	buf := gopacket.NewSerializeBuffer()

@@ -203,7 +203,8 @@ func (b ActionEntryBuilder) set(ed *fwdpb.EntryDesc) {
 
 // FlowEntryBuilder builds flow table entries.
 type FlowEntryBuilder struct {
-	fields []*PacketFieldMaskedBytesBuilder
+	fields   []*PacketFieldMaskedBytesBuilder
+	priority uint32
 }
 
 // FlowEntry creates a new flow entry builder.
@@ -213,8 +214,16 @@ func FlowEntry(fields ...*PacketFieldMaskedBytesBuilder) *FlowEntryBuilder {
 	}
 }
 
+// WithPriority sets the priority of the flow entry.
+func (eeb *FlowEntryBuilder) WithPriority(priority uint32) *FlowEntryBuilder {
+	eeb.priority = priority
+	return eeb
+}
+
 func (eeb FlowEntryBuilder) set(ed *fwdpb.EntryDesc) {
-	flow := &fwdpb.FlowEntryDesc{}
+	flow := &fwdpb.FlowEntryDesc{
+		Priority: eeb.priority,
+	}
 	for _, b := range eeb.fields {
 		flow.Fields = append(flow.Fields, b.Build())
 	}

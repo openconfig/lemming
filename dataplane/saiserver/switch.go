@@ -992,12 +992,42 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 				}
 				req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
 					AppendEntry(
-						fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(field).WithBytes(prefix.IP, prefix.Mask))),
+						fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(field).WithBytes(prefix.IP, prefix.Mask)).WithPriority(20)),
 						fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}),
 					).Build()
 				if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
 					return err
 				}
+			}
+		}
+
+		if table == invalidIngressV6Table {
+			// Drop Hop-by-Hop options with unicast destination if not already trapped (PACKET_ACTION == 1).
+			// Rule 1: Multicast (dst starts with 0xFF) -> Continue
+			reqHopByHopMC := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
+				AppendEntry(
+					fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+						fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).WithBytes([]byte{0}, []byte{0xFF}),
+						fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes([]byte{0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, []byte{0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+						fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{1}, []byte{0xFF}),
+					).WithPriority(10)),
+					fwdconfig.ContinueAction(),
+				).Build()
+			if _, err := sw.dataplane.TableEntryAdd(ctx, reqHopByHopMC); err != nil {
+				return err
+			}
+
+			// Rule 2: Unicast (any other dst) -> Drop
+			reqHopByHopUC := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
+				AppendEntry(
+					fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+						fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).WithBytes([]byte{0}, []byte{0xFF}),
+						fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{1}, []byte{0xFF}),
+					).WithPriority(5)),
+					fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}),
+				).Build()
+			if _, err := sw.dataplane.TableEntryAdd(ctx, reqHopByHopUC); err != nil {
+				return err
 			}
 		}
 		// Before the TTL is decremented and after the packets may be punted, drop packet with TTL == 1 or TTL == 0.
