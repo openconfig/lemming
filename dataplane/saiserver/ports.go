@@ -804,7 +804,11 @@ func (l *lag) CreateLagMember(ctx context.Context, req *saipb.CreateLagMemberReq
 }
 
 func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberRequest) (*saipb.RemoveLagMemberResponse, error) {
-	member := l.memberships[req.GetOid()]
+	member, ok := l.memberships[req.GetOid()]
+	if !ok {
+		slog.Warn("RemoveLagMember: member not found, ignoring", "oid", req.GetOid())
+		return &saipb.RemoveLagMemberResponse{}, nil
+	}
 
 	pReq := &fwdpb.PortUpdateRequest{
 		ContextId: &fwdpb.ContextId{Id: l.dataplane.ID()},
@@ -819,6 +823,14 @@ func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberReq
 	}
 	_, err := l.dataplane.PortUpdate(ctx, pReq)
 	return &saipb.RemoveLagMemberResponse{}, err
+}
+
+func (l *lag) RemoveLag(ctx context.Context, req *saipb.RemoveLagRequest) (*saipb.RemoveLagResponse, error) {
+	return &saipb.RemoveLagResponse{}, nil
+}
+
+func (l *lag) RemoveLagMembers(ctx context.Context, req *saipb.RemoveLagMembersRequest) (*saipb.RemoveLagMembersResponse, error) {
+	return &saipb.RemoveLagMembersResponse{}, nil
 }
 
 func (l *lag) SetLagAttribute(context.Context, *saipb.SetLagAttributeRequest) (*saipb.SetLagAttributeResponse, error) {
