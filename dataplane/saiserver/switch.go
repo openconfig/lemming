@@ -24,6 +24,8 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
@@ -45,6 +47,7 @@ type saiSwitch struct {
 	vlan            *vlan
 	stp             *stp
 	bridge          *bridge
+	fdb             *fdb
 	hostif          *hostif
 	hash            *hash
 	isolationGroup  *isolationGroup
@@ -1258,6 +1261,29 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 			slog.InfoContext(srv.Context(), "send port event", "event", resp)
 			err = srv.Send(resp)
 			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func (sw *saiSwitch) FdbEventNotification(_ *saipb.FdbEventNotificationRequest, srv grpc.ServerStreamingServer[saipb.FdbEventNotificationResponse]) error {
+	if sw.fdb == nil {
+		return status.Error(codes.Unimplemented, "FDB notification service unavailable")
+	}
+	ch := make(chan *saipb.FdbEventNotificationResponse, 100)
+	unsubscribe := sw.fdb.subscribe(ch)
+	defer unsubscribe()
+
+	for {
+		select {
+		case <-srv.Context().Done():
+			return srv.Context().Err()
+		case resp, ok := <-ch:
+			if !ok {
+				return nil
+			}
+			if err := srv.Send(resp); err != nil {
 				return err
 			}
 		}

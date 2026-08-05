@@ -17,10 +17,13 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
@@ -30,17 +33,46 @@ import (
 
 type fdb struct {
 	saipb.UnimplementedFdbServer
-	mgr       *attrmgr.AttrMgr
-	dataplane switchDataplaneAPI
+	mgr         *attrmgr.AttrMgr
+	dataplane   switchDataplaneAPI
+	mu          sync.RWMutex
+	subscribers map[chan *saipb.FdbEventNotificationResponse]struct{}
 }
 
 func newFdb(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) (*fdb, error) {
 	f := &fdb{
-		mgr:       mgr,
-		dataplane: dataplane,
+		mgr:         mgr,
+		dataplane:   dataplane,
+		subscribers: make(map[chan *saipb.FdbEventNotificationResponse]struct{}),
 	}
 	saipb.RegisterFdbServer(s, f)
 	return f, nil
+}
+
+func (f *fdb) subscribe(ch chan *saipb.FdbEventNotificationResponse) func() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.subscribers[ch] = struct{}{}
+	return func() {
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		delete(f.subscribers, ch)
+	}
+}
+
+func (f *fdb) sendNotification(data *saipb.FdbEventNotificationData) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	resp := &saipb.FdbEventNotificationResponse{
+		Data: []*saipb.FdbEventNotificationData{data},
+	}
+	for ch := range f.subscribers {
+		select {
+		case ch <- resp:
+		default:
+			slog.Warn("fdb notification channel full, dropping event")
+		}
+	}
 }
 
 func (f *fdb) FlushFdbEntries(ctx context.Context, req *saipb.FlushFdbEntriesRequest) (*saipb.FlushFdbEntriesResponse, error) {
@@ -88,6 +120,25 @@ func (f *fdb) CreateFdbEntry(ctx context.Context, req *saipb.CreateFdbEntryReque
 		return nil, fmt.Errorf("failed to add FDB entry to dataplane: %v", err)
 	}
 
+	f.sendNotification(&saipb.FdbEventNotificationData{
+		EventType: saipb.FdbEvent_FDB_EVENT_LEARNED,
+		FdbEntry: &saipb.FdbEntry{
+			SwitchId:   entry.GetSwitchId(),
+			MacAddress: mac,
+			BvId:       entry.GetBvId(),
+		},
+		Attrs: []*saipb.FdbEntryAttribute{
+			{
+				AttributeId: proto.Int32(int32(saipb.FdbEntryAttr_FDB_ENTRY_ATTR_BRIDGE_PORT_ID)),
+				Value: &saipb.AttributeValue{
+					Value: &saipb.AttributeValue_Oid{
+						Oid: portOID,
+					},
+				},
+			},
+		},
+	})
+
 	return &saipb.CreateFdbEntryResponse{}, nil
 }
 
@@ -111,6 +162,15 @@ func (f *fdb) RemoveFdbEntry(ctx context.Context, req *saipb.RemoveFdbEntryReque
 	if _, err := f.dataplane.TableEntryRemove(ctx, delReq); err != nil {
 		return nil, fmt.Errorf("failed to remove FDB entry from dataplane: %v", err)
 	}
+
+	f.sendNotification(&saipb.FdbEventNotificationData{
+		EventType: saipb.FdbEvent_FDB_EVENT_AGED,
+		FdbEntry: &saipb.FdbEntry{
+			SwitchId:   entry.GetSwitchId(),
+			MacAddress: mac,
+			BvId:       entry.GetBvId(),
+		},
+	})
 
 	return &saipb.RemoveFdbEntryResponse{}, nil
 }
