@@ -30,6 +30,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/bridge"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
@@ -462,6 +463,13 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}
 	if _, err := sw.dataplane.TableCreate(ctx, fdbReq); err != nil {
 		return nil, err
+	}
+	if fwdCtx, err := sw.dataplane.FindContext(&fwdpb.ContextId{Id: sw.dataplane.ID()}); err == nil {
+		if obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: FDBTable}); err == nil {
+			if brTable, ok := obj.(*bridge.Table); ok {
+				brTable.SetLearnCallback(sw.onBridgeLearn)
+			}
+		}
 	}
 	floodReq := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
@@ -1288,6 +1296,33 @@ func (sw *saiSwitch) FdbEventNotification(_ *saipb.FdbEventNotificationRequest, 
 			}
 		}
 	}
+}
+
+func (sw *saiSwitch) onBridgeLearn(mac []byte, portID string) {
+	if sw.fdb == nil {
+		return
+	}
+	portNum, err := strconv.ParseUint(portID, 10, 64)
+	if err != nil {
+		slog.Warn("onBridgeLearn: failed to parse numeric port ID", "portID", portID, "err", err)
+		return
+	}
+	sw.fdb.sendNotification(&saipb.FdbEventNotificationData{
+		EventType: saipb.FdbEvent_FDB_EVENT_LEARNED,
+		FdbEntry: &saipb.FdbEntry{
+			MacAddress: mac,
+		},
+		Attrs: []*saipb.FdbEntryAttribute{
+			{
+				AttributeId: proto.Int32(int32(saipb.FdbEntryAttr_FDB_ENTRY_ATTR_BRIDGE_PORT_ID)),
+				Value: &saipb.AttributeValue{
+					Value: &saipb.AttributeValue_Oid{
+						Oid: portNum,
+					},
+				},
+			},
+		},
+	})
 }
 
 func (sw *saiSwitch) Reset() {
