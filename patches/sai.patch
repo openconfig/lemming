@@ -220,3 +220,34 @@ index 1234567..89abcdef 100644
       * @brief End of attributes
       */
      SAI_SWITCH_ATTR_END,
+diff --git a/inc/saischeduler.h b/inc/saischeduler.h
+index 1baefc4..03b40b1 100644
+--- a/inc/saischeduler.h
++++ b/inc/saischeduler.h
+@@ -202,6 +202,10 @@ typedef struct _sai_scheduler_api_t
+     sai_create_scheduler_fn        create_scheduler;
+     sai_remove_scheduler_fn        remove_scheduler;
+     sai_set_scheduler_attribute_fn set_scheduler_attribute;
+     sai_get_scheduler_attribute_fn get_scheduler_attribute;
++    sai_bulk_object_create_fn        create_schedulers;
++    sai_bulk_object_remove_fn        remove_schedulers;
++    sai_bulk_object_set_attribute_fn set_schedulers_attribute;
++    sai_bulk_object_get_attribute_fn get_schedulers_attribute;
+ 
+ } sai_scheduler_api_t;
+diff --git a/inc/saischedulergroup.h b/inc/saischedulergroup.h
+index 1baefc4..03b40b1 100644
+--- a/inc/saischedulergroup.h
++++ b/inc/saischedulergroup.h
+@@ -180,6 +180,8 @@ typedef struct _sai_scheduler_group_api_t
+     sai_create_scheduler_group_fn          create_scheduler_group;
+     sai_remove_scheduler_group_fn          remove_scheduler_group;
+     sai_set_scheduler_group_attribute_fn   set_scheduler_group_attribute;
+     sai_get_scheduler_group_attribute_fn   get_scheduler_group_attribute;
++    sai_bulk_object_set_attribute_fn       set_scheduler_groups_attribute;
++    sai_bulk_object_get_attribute_fn       get_scheduler_groups_attribute;
+ 
+ } sai_scheduler_group_api_t;
+
+
+

@@ -29,6 +29,8 @@ const sai_queue_api_t l_queue = {
     .get_queue_stats = l_get_queue_stats,
     .get_queue_stats_ext = l_get_queue_stats_ext,
     .clear_queue_stats = l_clear_queue_stats,
+    .set_queues_attribute = l_set_queues_attribute,
+    .get_queues_attribute = l_get_queues_attribute,
 };
 
 lemming::dataplane::sai::CreateQueueRequest convert_create_queue(
@@ -338,3 +340,59 @@ sai_status_t l_clear_queue_stats(sai_object_id_t queue_id,
 
   return SAI_STATUS_SUCCESS;
 }
+
+sai_status_t l_set_queues_attribute(uint32_t object_count,
+                                    const sai_object_id_t* object_id,
+                                    const sai_attribute_t* attr_list,
+                                    sai_bulk_op_error_mode_t mode,
+                                    sai_status_t* object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  sai_status_t status;
+  sai_status_t overall_status = SAI_STATUS_SUCCESS;
+  bool error = false;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_NOT_EXECUTED;
+    if (!error) {
+      status = l_set_queue_attribute(object_id[i], &attr_list[i]);
+      object_statuses[i] = status;
+      if (status != SAI_STATUS_SUCCESS) {
+        overall_status = SAI_STATUS_FAILURE;
+        if (mode == SAI_BULK_OP_ERROR_MODE_STOP_ON_ERROR) {
+          error = true;
+        }
+      }
+    }
+  }
+
+  return overall_status;
+}
+
+sai_status_t l_get_queues_attribute(uint32_t object_count,
+                                    const sai_object_id_t* object_id,
+                                    const uint32_t* attr_count,
+                                    sai_attribute_t** attr_list,
+                                    sai_bulk_op_error_mode_t mode,
+                                    sai_status_t* object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  sai_status_t status;
+  sai_status_t overall_status = SAI_STATUS_SUCCESS;
+  bool error = false;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_NOT_EXECUTED;
+    if (!error) {
+      status = l_get_queue_attribute(object_id[i], attr_count[i], attr_list[i]);
+      object_statuses[i] = status;
+      if (status != SAI_STATUS_SUCCESS) {
+        overall_status = SAI_STATUS_FAILURE;
+        if (mode == SAI_BULK_OP_ERROR_MODE_STOP_ON_ERROR) {
+          error = true;
+        }
+      }
+    }
+  }
+
+  return overall_status;
+}
+

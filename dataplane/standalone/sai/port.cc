@@ -2367,7 +2367,25 @@ sai_status_t l_set_ports_attribute(uint32_t object_count,
                                    sai_bulk_op_error_mode_t mode,
                                    sai_status_t* object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  sai_status_t status;
+  sai_status_t overall_status = SAI_STATUS_SUCCESS;
+  bool error = false;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_NOT_EXECUTED;
+    if (!error) {
+      status = l_set_port_attribute(object_id[i], &attr_list[i]);
+      object_statuses[i] = status;
+      if (status != SAI_STATUS_SUCCESS) {
+        overall_status = SAI_STATUS_FAILURE;
+        if (mode == SAI_BULK_OP_ERROR_MODE_STOP_ON_ERROR) {
+          error = true;
+        }
+      }
+    }
+  }
+
+  return overall_status;
 }
 
 sai_status_t l_get_ports_attribute(uint32_t object_count,
@@ -2377,5 +2395,24 @@ sai_status_t l_get_ports_attribute(uint32_t object_count,
                                    sai_bulk_op_error_mode_t mode,
                                    sai_status_t* object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  sai_status_t status;
+  sai_status_t overall_status = SAI_STATUS_SUCCESS;
+  bool error = false;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_NOT_EXECUTED;
+    if (!error) {
+      status = l_get_port_attribute(object_id[i], attr_count[i], attr_list[i]);
+      object_statuses[i] = status;
+      if (status != SAI_STATUS_SUCCESS) {
+        overall_status = SAI_STATUS_FAILURE;
+        if (mode == SAI_BULK_OP_ERROR_MODE_STOP_ON_ERROR) {
+          error = true;
+        }
+      }
+    }
+  }
+
+  return overall_status;
 }
+
