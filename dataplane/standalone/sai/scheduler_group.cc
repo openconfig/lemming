@@ -26,6 +26,8 @@ const sai_scheduler_group_api_t l_scheduler_group = {
     .remove_scheduler_group = l_remove_scheduler_group,
     .set_scheduler_group_attribute = l_set_scheduler_group_attribute,
     .get_scheduler_group_attribute = l_get_scheduler_group_attribute,
+    .set_scheduler_groups_attribute = l_set_scheduler_groups_attribute,
+    .get_scheduler_groups_attribute = l_get_scheduler_groups_attribute,
 };
 
 lemming::dataplane::sai::CreateSchedulerGroupRequest
@@ -200,3 +202,60 @@ sai_status_t l_get_scheduler_group_attribute(sai_object_id_t scheduler_group_id,
 
   return SAI_STATUS_SUCCESS;
 }
+
+sai_status_t l_set_scheduler_groups_attribute(uint32_t object_count,
+                                              const sai_object_id_t* object_id,
+                                              const sai_attribute_t* attr_list,
+                                              sai_bulk_op_error_mode_t mode,
+                                              sai_status_t* object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  sai_status_t status;
+  sai_status_t overall_status = SAI_STATUS_SUCCESS;
+  bool error = false;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_NOT_EXECUTED;
+    if (!error) {
+      status = l_set_scheduler_group_attribute(object_id[i], &attr_list[i]);
+      object_statuses[i] = status;
+      if (status != SAI_STATUS_SUCCESS) {
+        overall_status = SAI_STATUS_FAILURE;
+        if (mode == SAI_BULK_OP_ERROR_MODE_STOP_ON_ERROR) {
+          error = true;
+        }
+      }
+    }
+  }
+
+  return overall_status;
+}
+
+sai_status_t l_get_scheduler_groups_attribute(uint32_t object_count,
+                                              const sai_object_id_t* object_id,
+                                              const uint32_t* attr_count,
+                                              sai_attribute_t** attr_list,
+                                              sai_bulk_op_error_mode_t mode,
+                                              sai_status_t* object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  sai_status_t status;
+  sai_status_t overall_status = SAI_STATUS_SUCCESS;
+  bool error = false;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_NOT_EXECUTED;
+    if (!error) {
+      status = l_get_scheduler_group_attribute(object_id[i], attr_count[i],
+                                               attr_list[i]);
+      object_statuses[i] = status;
+      if (status != SAI_STATUS_SUCCESS) {
+        overall_status = SAI_STATUS_FAILURE;
+        if (mode == SAI_BULK_OP_ERROR_MODE_STOP_ON_ERROR) {
+          error = true;
+        }
+      }
+    }
+  }
+
+  return overall_status;
+}
+
