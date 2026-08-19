@@ -1250,6 +1250,8 @@ func (vlan *vlan) memberByOid(oid uint64) *vlanMember {
 }
 
 func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
 	for _, v := range vlan.vlans {
 		for _, member := range v {
 			if member.PortID == oid {
@@ -1258,6 +1260,13 @@ func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
 		}
 	}
 	return nil
+}
+
+func (vlan *vlan) oidByVid(vid uint32) (uint64, bool) {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	oid, ok := vlan.oidByVId[vid]
+	return oid, ok
 }
 
 func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {

@@ -80,6 +80,7 @@ func (f *fdb) FlushFdbEntries(ctx context.Context, req *saipb.FlushFdbEntriesReq
 }
 
 func (f *fdb) CreateFdbEntry(ctx context.Context, req *saipb.CreateFdbEntryRequest) (*saipb.CreateFdbEntryResponse, error) {
+	slog.InfoContext(ctx, "CreateFdbEntry called", "mac", req.GetEntry().GetMacAddress(), "vlan", req.GetEntry().GetBvId(), "bridge_port", req.GetBridgePortId())
 	entry := req.GetEntry()
 	if entry == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "FDB entry is required")
@@ -129,12 +130,7 @@ func (f *fdb) CreateFdbEntry(ctx context.Context, req *saipb.CreateFdbEntryReque
 		},
 		Attrs: []*saipb.FdbEntryAttribute{
 			{
-				AttributeId: proto.Int32(int32(saipb.FdbEntryAttr_FDB_ENTRY_ATTR_BRIDGE_PORT_ID)),
-				Value: &saipb.AttributeValue{
-					Value: &saipb.AttributeValue_Oid{
-						Oid: portOID,
-					},
-				},
+				BridgePortId: proto.Uint64(portOID),
 			},
 		},
 	})
@@ -143,6 +139,7 @@ func (f *fdb) CreateFdbEntry(ctx context.Context, req *saipb.CreateFdbEntryReque
 }
 
 func (f *fdb) RemoveFdbEntry(ctx context.Context, req *saipb.RemoveFdbEntryRequest) (*saipb.RemoveFdbEntryResponse, error) {
+	slog.InfoContext(ctx, "RemoveFdbEntry called", "mac", req.GetEntry().GetMacAddress(), "vlan", req.GetEntry().GetBvId())
 	entry := req.GetEntry()
 	if entry == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "FDB entry is required")
