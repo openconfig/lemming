@@ -20,10 +20,14 @@ import (
 	"path/filepath"
 	"sort"
 
+	"time"
+
+	"golang.org/x/time/rate"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -60,8 +64,11 @@ func (r *LemmingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := log.FromContext(ctx)
 	lemming := &lemmingv1alpha1.Lemming{}
 	if err := r.Get(ctx, req.NamespacedName, lemming); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "unable to get lemming")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	secret, err := r.reconcileSecrets(ctx, lemming)
@@ -345,6 +352,12 @@ func (r *LemmingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.Secret{}).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 50}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 50,
+			RateLimiter: workqueue.NewMaxOfRateLimiter(
+				workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
+				&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(100), 200)},
+			),
+		}).
 		Complete(r)
 }
