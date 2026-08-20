@@ -16,11 +16,13 @@ go_library(
         "@io_k8s_apimachinery//pkg/types",
         "@io_k8s_apimachinery//pkg/util/intstr",
         "@io_k8s_client_go//util/cert",
+        "@io_k8s_client_go//util/workqueue",
         "@io_k8s_sigs_controller_runtime//:controller-runtime",
         "@io_k8s_sigs_controller_runtime//pkg/client",
         "@io_k8s_sigs_controller_runtime//pkg/controller",
         "@io_k8s_sigs_controller_runtime//pkg/log",
         "@io_k8s_utils//pointer",
+        "@org_golang_x_time//rate",
     ],
 )
 

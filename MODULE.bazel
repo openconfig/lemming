@@ -133,6 +133,7 @@ use_repo(
     "org_golang_google_protobuf",
     "org_golang_x_oauth2",
     "org_golang_x_sys",
+    "org_golang_x_time",
     "org_modernc_cc_v4",
     "org_uber_go_mock",
 )
