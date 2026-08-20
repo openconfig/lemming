@@ -2,7 +2,7 @@ module github.com/openconfig/lemming/operator
 
 go 1.25.0
 
-toolchain go1.26.2
+toolchain go1.26.6
 
 require (
 	github.com/google/go-cmp v0.7.0
