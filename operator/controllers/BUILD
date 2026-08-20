@@ -18,6 +18,7 @@ go_library(
         "@io_k8s_client_go//util/cert",
         "@io_k8s_sigs_controller_runtime//:controller-runtime",
         "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/controller",
         "@io_k8s_sigs_controller_runtime//pkg/log",
         "@io_k8s_utils//pointer",
     ],

@@ -34,6 +34,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 )
@@ -344,5 +345,6 @@ func (r *LemmingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.Secret{}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 50}).
 		Complete(r)
 }
