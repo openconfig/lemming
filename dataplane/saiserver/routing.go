@@ -1274,6 +1274,7 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 		return nil, fmt.Errorf("found existing VLAN %d", r.GetVlanId())
 	}
 	id := vlan.mgr.NextID()
+	vlan.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_VLAN)
 	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 
@@ -1398,6 +1399,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	member := vlan.memberByPortId(portID)
 
 	mOid := vlan.mgr.NextID()
+	vlan.mgr.SetType(fmt.Sprint(mOid), saipb.ObjectType_OBJECT_TYPE_VLAN_MEMBER)
 	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
 		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(portID)},
@@ -1549,6 +1551,7 @@ func newBridge(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 
 func (b *bridge) CreateBridge(ctx context.Context, req *saipb.CreateBridgeRequest) (*saipb.CreateBridgeResponse, error) {
 	id := b.mgr.NextID()
+	b.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_BRIDGE)
 	attrs := &saipb.BridgeAttribute{
 		PortList:                   []uint64{},
 		UnknownUnicastFloodGroup:   proto.Uint64(0),
@@ -1579,6 +1582,7 @@ func (b *bridge) GetBridgeStats(ctx context.Context, req *saipb.GetBridgeStatsRe
 
 func (b *bridge) CreateBridgePort(ctx context.Context, req *saipb.CreateBridgePortRequest) (*saipb.CreateBridgePortResponse, error) {
 	oid := b.mgr.NextID()
+	b.mgr.SetType(fmt.Sprint(oid), saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT)
 	adminState := req.GetAdminState()
 	attrs := &saipb.BridgePortAttribute{
 		AdminState: proto.Bool(adminState),
