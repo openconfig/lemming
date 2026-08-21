@@ -26,10 +26,24 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	fwdbridge "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/bridge"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
+
+type fdbEntryKey struct {
+	bvID uint64
+	mac  string
+}
+
+type fdbEntryRecord struct {
+	mac          []byte
+	bvID         uint64
+	bridgePortID uint64
+	entryType    saipb.FdbEntryType
+	switchID     uint64
+}
 
 type fdb struct {
 	saipb.UnimplementedFdbServer
@@ -37,6 +51,7 @@ type fdb struct {
 	dataplane   switchDataplaneAPI
 	mu          sync.RWMutex
 	subscribers map[chan *saipb.FdbEventNotificationResponse]struct{}
+	entries     map[fdbEntryKey]*fdbEntryRecord
 }
 
 func newFdb(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) (*fdb, error) {
@@ -44,6 +59,7 @@ func newFdb(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) 
 		mgr:         mgr,
 		dataplane:   dataplane,
 		subscribers: make(map[chan *saipb.FdbEventNotificationResponse]struct{}),
+		entries:     make(map[fdbEntryKey]*fdbEntryRecord),
 	}
 	saipb.RegisterFdbServer(s, f)
 	return f, nil
@@ -61,11 +77,48 @@ func (f *fdb) subscribe(ch chan *saipb.FdbEventNotificationResponse) func() {
 }
 
 func (f *fdb) sendNotification(data *saipb.FdbEventNotificationData) {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
+	if data == nil || data.GetFdbEntry() == nil {
+		return
+	}
+	f.mu.Lock()
+	if f.entries == nil {
+		f.entries = make(map[fdbEntryKey]*fdbEntryRecord)
+	}
+	key := fdbEntryKey{
+		bvID: data.GetFdbEntry().GetBvId(),
+		mac:  string(data.GetFdbEntry().GetMacAddress()),
+	}
+	switch data.GetEventType() {
+	case saipb.FdbEvent_FDB_EVENT_LEARNED:
+		rec := &fdbEntryRecord{
+			mac:       data.GetFdbEntry().GetMacAddress(),
+			bvID:      data.GetFdbEntry().GetBvId(),
+			switchID:  data.GetFdbEntry().GetSwitchId(),
+			entryType: saipb.FdbEntryType_FDB_ENTRY_TYPE_DYNAMIC,
+		}
+		for _, attr := range data.GetAttrs() {
+			if attr.BridgePortId != nil {
+				rec.bridgePortID = attr.GetBridgePortId()
+			}
+			if attr.Type != nil {
+				rec.entryType = attr.GetType()
+			}
+		}
+		f.entries[key] = rec
+	case saipb.FdbEvent_FDB_EVENT_AGED, saipb.FdbEvent_FDB_EVENT_FLUSHED:
+		delete(f.entries, key)
+	}
+	f.mu.Unlock()
+
+	f.broadcastNotification(data)
+}
+
+func (f *fdb) broadcastNotification(data *saipb.FdbEventNotificationData) {
 	resp := &saipb.FdbEventNotificationResponse{
 		Data: []*saipb.FdbEventNotificationData{data},
 	}
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 	for ch := range f.subscribers {
 		select {
 		case ch <- resp:
@@ -76,6 +129,72 @@ func (f *fdb) sendNotification(data *saipb.FdbEventNotificationData) {
 }
 
 func (f *fdb) FlushFdbEntries(ctx context.Context, req *saipb.FlushFdbEntriesRequest) (*saipb.FlushFdbEntriesResponse, error) {
+	slog.InfoContext(ctx, "FlushFdbEntries called", "bridgePortId", req.GetBridgePortId(), "bvId", req.GetBvId(), "entryType", req.GetEntryType())
+
+	f.mu.Lock()
+	var toFlush []*fdbEntryRecord
+	for key, entry := range f.entries {
+		if req.GetBridgePortId() != 0 && entry.bridgePortID != req.GetBridgePortId() {
+			continue
+		}
+		if req.GetBvId() != 0 && entry.bvID != req.GetBvId() {
+			continue
+		}
+		switch req.GetEntryType() {
+		case saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_DYNAMIC:
+			if entry.entryType != saipb.FdbEntryType_FDB_ENTRY_TYPE_DYNAMIC {
+				continue
+			}
+		case saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_STATIC:
+			if entry.entryType != saipb.FdbEntryType_FDB_ENTRY_TYPE_STATIC {
+				continue
+			}
+		}
+		toFlush = append(toFlush, entry)
+		delete(f.entries, key)
+	}
+	f.mu.Unlock()
+
+	for _, entry := range toFlush {
+		delReq := fwdconfig.TableEntryRemoveRequest(f.dataplane.ID(), FDBTable).AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithBytes(entry.mac),
+			)),
+		).Build()
+
+		if _, err := f.dataplane.TableEntryRemove(ctx, delReq); err != nil {
+			slog.WarnContext(ctx, "FlushFdbEntries: failed to remove entry from dataplane", "mac", fmt.Sprintf("%x", entry.mac), "err", err)
+		}
+
+		f.broadcastNotification(&saipb.FdbEventNotificationData{
+			EventType: saipb.FdbEvent_FDB_EVENT_AGED,
+			FdbEntry: &saipb.FdbEntry{
+				SwitchId:   entry.switchID,
+				MacAddress: entry.mac,
+				BvId:       entry.bvID,
+			},
+			Attrs: []*saipb.FdbEntryAttribute{
+				{
+					BridgePortId: proto.Uint64(entry.bridgePortID),
+				},
+				{
+					Type: entry.entryType.Enum(),
+				},
+			},
+		})
+	}
+
+	// If flushing all entries (or all dynamic entries across the whole switch), also ensure bridge table is cleared.
+	if req.GetBridgePortId() == 0 && req.GetBvId() == 0 && (req.GetEntryType() == saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_ALL || req.GetEntryType() == saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_UNSPECIFIED) {
+		if fwdCtx, err := f.dataplane.FindContext(&fwdpb.ContextId{Id: f.dataplane.ID()}); err == nil && fwdCtx != nil {
+			if obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: FDBTable}); err == nil {
+				if brTable, ok := obj.(*fwdbridge.Table); ok {
+					brTable.Clear()
+				}
+			}
+		}
+	}
+
 	return &saipb.FlushFdbEntriesResponse{}, nil
 }
 
@@ -121,6 +240,11 @@ func (f *fdb) CreateFdbEntry(ctx context.Context, req *saipb.CreateFdbEntryReque
 		return nil, fmt.Errorf("failed to add FDB entry to dataplane: %v", err)
 	}
 
+	entryType := req.GetType()
+	if entryType == saipb.FdbEntryType_FDB_ENTRY_TYPE_UNSPECIFIED {
+		entryType = saipb.FdbEntryType_FDB_ENTRY_TYPE_STATIC
+	}
+
 	f.sendNotification(&saipb.FdbEventNotificationData{
 		EventType: saipb.FdbEvent_FDB_EVENT_LEARNED,
 		FdbEntry: &saipb.FdbEntry{
@@ -131,6 +255,12 @@ func (f *fdb) CreateFdbEntry(ctx context.Context, req *saipb.CreateFdbEntryReque
 		Attrs: []*saipb.FdbEntryAttribute{
 			{
 				BridgePortId: proto.Uint64(portOID),
+			},
+			{
+				Type: entryType.Enum(),
+			},
+			{
+				PacketAction: req.GetPacketAction().Enum(),
 			},
 		},
 	})
@@ -160,6 +290,21 @@ func (f *fdb) RemoveFdbEntry(ctx context.Context, req *saipb.RemoveFdbEntryReque
 		return nil, fmt.Errorf("failed to remove FDB entry from dataplane: %v", err)
 	}
 
+	key := fdbEntryKey{
+		bvID: entry.GetBvId(),
+		mac:  string(mac),
+	}
+	f.mu.RLock()
+	rec := f.entries[key]
+	f.mu.RUnlock()
+
+	var bpID uint64
+	var entryType *saipb.FdbEntryType
+	if rec != nil {
+		bpID = rec.bridgePortID
+		entryType = rec.entryType.Enum()
+	}
+
 	f.sendNotification(&saipb.FdbEventNotificationData{
 		EventType: saipb.FdbEvent_FDB_EVENT_AGED,
 		FdbEntry: &saipb.FdbEntry{
@@ -167,7 +312,45 @@ func (f *fdb) RemoveFdbEntry(ctx context.Context, req *saipb.RemoveFdbEntryReque
 			MacAddress: mac,
 			BvId:       entry.GetBvId(),
 		},
+		Attrs: []*saipb.FdbEntryAttribute{
+			{
+				BridgePortId: proto.Uint64(bpID),
+			},
+			{
+				Type: entryType,
+			},
+		},
 	})
 
 	return &saipb.RemoveFdbEntryResponse{}, nil
+}
+
+func (f *fdb) CreateFdbEntries(ctx context.Context, req *saipb.CreateFdbEntriesRequest) (*saipb.CreateFdbEntriesResponse, error) {
+	resp := &saipb.CreateFdbEntriesResponse{}
+	for _, r := range req.GetReqs() {
+		entryResp, err := f.CreateFdbEntry(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, entryResp)
+	}
+	return resp, nil
+}
+
+func (f *fdb) RemoveFdbEntries(ctx context.Context, req *saipb.RemoveFdbEntriesRequest) (*saipb.RemoveFdbEntriesResponse, error) {
+	resp := &saipb.RemoveFdbEntriesResponse{}
+	for _, r := range req.GetReqs() {
+		entryResp, err := f.RemoveFdbEntry(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, entryResp)
+	}
+	return resp, nil
+}
+
+func (f *fdb) Reset() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.entries = make(map[fdbEntryKey]*fdbEntryRecord)
 }

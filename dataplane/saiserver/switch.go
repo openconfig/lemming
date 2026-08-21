@@ -1408,6 +1408,9 @@ func (sw *saiSwitch) Reset() {
 	sw.vlan.Reset()
 	sw.port.Reset()
 	sw.hostif.Reset()
+	if sw.fdb != nil {
+		sw.fdb.Reset()
+	}
 }
 
 // GetSwitchStats returns the statistics for the switch.
