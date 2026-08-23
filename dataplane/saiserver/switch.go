@@ -1322,30 +1322,16 @@ func (sw *saiSwitch) onBridgeLearn(mac []byte, portID string) {
 		return
 	}
 
-	// Find the Bridge Port OID that wraps this physical port.
 	var bridgePortOID uint64
-	bpOIDs := sw.mgr.GetOIDsByType(saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT)
-	for _, bpOID := range bpOIDs {
-		val := sw.mgr.GetAttribute(strconv.FormatUint(bpOID, 10), int32(saipb.BridgePortAttr_BRIDGE_PORT_ATTR_PORT_ID))
-		if val != nil {
-			if pID, ok := val.(uint64); ok && pID == portNum {
-				bridgePortOID = bpOID
-				break
-			}
-		}
-	}
-
-	if bridgePortOID == 0 {
-		slog.Warn("onBridgeLearn: failed to find bridge port for physical port", "portNum", portNum)
-		return
-	}
-
-	// Find the VLAN ID and VLAN OID for this port.
-	vlanID := uint32(DefaultVlanId)
 	var vlanOID uint64
+	var vlanID uint32 = uint32(DefaultVlanId)
+
 	if sw.vlan != nil {
 		if member := sw.vlan.memberByPortId(portNum); member != nil {
 			vlanID = member.Vid
+			if member.BridgePortID != 0 {
+				bridgePortOID = member.BridgePortID
+			}
 			if oid, ok := sw.vlan.oidByVid(vlanID); ok {
 				vlanOID = oid
 				slog.Info("onBridgeLearn: found VLAN for port", "portNum", portNum, "vlanID", vlanID, "vlanOID", vlanOID)
@@ -1357,6 +1343,28 @@ func (sw *saiSwitch) onBridgeLearn(mac []byte, portID string) {
 		}
 	} else {
 		slog.Warn("onBridgeLearn: vlan server is nil, using default vlan")
+	}
+
+	if bridgePortOID == 0 {
+		bpOIDs := sw.mgr.GetOIDsByType(saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT)
+		for _, bpOID := range bpOIDs {
+			req := &saipb.GetBridgePortAttributeRequest{
+				Oid:      bpOID,
+				AttrType: []saipb.BridgePortAttr{saipb.BridgePortAttr_BRIDGE_PORT_ATTR_PORT_ID},
+			}
+			resp := &saipb.GetBridgePortAttributeResponse{}
+			if err := sw.mgr.PopulateAttributes(req, resp); err == nil && resp.GetAttr() != nil && resp.GetAttr().PortId != nil {
+				if resp.GetAttr().GetPortId() == portNum {
+					bridgePortOID = bpOID
+					break
+				}
+			}
+		}
+	}
+
+	if bridgePortOID == 0 {
+		slog.Warn("onBridgeLearn: failed to find bridge port for physical port", "portNum", portNum)
+		return
 	}
 
 	swIDStr, ok := sw.mgr.GetSwitchID()

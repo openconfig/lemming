@@ -87,6 +87,11 @@ func (t *Table) Clear() {
 	t.Table.Clear()
 }
 
+// Remove removes the entry matching the given MAC from the table.
+func (t *Table) Remove(mac []byte) error {
+	return t.Table.RemoveKey(mac)
+}
+
 // Cleanup cleans up the exact match table and stops learning.
 func (t *Table) Cleanup() {
 	t.learn.Close()

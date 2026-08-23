@@ -131,6 +131,13 @@ func (f *fdb) broadcastNotification(data *saipb.FdbEventNotificationData) {
 func (f *fdb) FlushFdbEntries(ctx context.Context, req *saipb.FlushFdbEntriesRequest) (*saipb.FlushFdbEntriesResponse, error) {
 	slog.InfoContext(ctx, "FlushFdbEntries called", "bridgePortId", req.GetBridgePortId(), "bvId", req.GetBvId(), "entryType", req.GetEntryType())
 
+	var brTable *fwdbridge.Table
+	if fwdCtx, err := f.dataplane.FindContext(&fwdpb.ContextId{Id: f.dataplane.ID()}); err == nil && fwdCtx != nil {
+		if obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: FDBTable}); err == nil {
+			brTable, _ = obj.(*fwdbridge.Table)
+		}
+	}
+
 	f.mu.Lock()
 	var toFlush []*fdbEntryRecord
 	for key, entry := range f.entries {
@@ -156,6 +163,10 @@ func (f *fdb) FlushFdbEntries(ctx context.Context, req *saipb.FlushFdbEntriesReq
 	f.mu.Unlock()
 
 	for _, entry := range toFlush {
+		if brTable != nil {
+			_ = brTable.Remove(entry.mac)
+		}
+
 		delReq := fwdconfig.TableEntryRemoveRequest(f.dataplane.ID(), FDBTable).AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithBytes(entry.mac),
@@ -185,13 +196,9 @@ func (f *fdb) FlushFdbEntries(ctx context.Context, req *saipb.FlushFdbEntriesReq
 	}
 
 	// If flushing all entries (or all dynamic entries across the whole switch), also ensure bridge table is cleared.
-	if req.GetBridgePortId() == 0 && req.GetBvId() == 0 && (req.GetEntryType() == saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_ALL || req.GetEntryType() == saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_UNSPECIFIED) {
-		if fwdCtx, err := f.dataplane.FindContext(&fwdpb.ContextId{Id: f.dataplane.ID()}); err == nil && fwdCtx != nil {
-			if obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: FDBTable}); err == nil {
-				if brTable, ok := obj.(*fwdbridge.Table); ok {
-					brTable.Clear()
-				}
-			}
+	if req.GetBridgePortId() == 0 && req.GetBvId() == 0 && (req.GetEntryType() == saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_ALL || req.GetEntryType() == saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_DYNAMIC || req.GetEntryType() == saipb.FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_UNSPECIFIED) {
+		if brTable != nil {
+			brTable.Clear()
 		}
 	}
 
@@ -280,6 +287,14 @@ func (f *fdb) RemoveFdbEntry(ctx context.Context, req *saipb.RemoveFdbEntryReque
 		return nil, status.Errorf(codes.InvalidArgument, "MAC address is required")
 	}
 
+	if fwdCtx, err := f.dataplane.FindContext(&fwdpb.ContextId{Id: f.dataplane.ID()}); err == nil && fwdCtx != nil {
+		if obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: FDBTable}); err == nil {
+			if brTable, ok := obj.(*fwdbridge.Table); ok {
+				_ = brTable.Remove(mac)
+			}
+		}
+	}
+
 	delReq := fwdconfig.TableEntryRemoveRequest(f.dataplane.ID(), FDBTable).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 			fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithBytes(mac),
@@ -287,16 +302,17 @@ func (f *fdb) RemoveFdbEntry(ctx context.Context, req *saipb.RemoveFdbEntryReque
 	).Build()
 
 	if _, err := f.dataplane.TableEntryRemove(ctx, delReq); err != nil {
-		return nil, fmt.Errorf("failed to remove FDB entry from dataplane: %v", err)
+		slog.WarnContext(ctx, "failed to remove FDB entry from dataplane", "err", err)
 	}
 
 	key := fdbEntryKey{
 		bvID: entry.GetBvId(),
 		mac:  string(mac),
 	}
-	f.mu.RLock()
+	f.mu.Lock()
 	rec := f.entries[key]
-	f.mu.RUnlock()
+	delete(f.entries, key)
+	f.mu.Unlock()
 
 	var bpID uint64
 	var entryType *saipb.FdbEntryType

@@ -1203,10 +1203,11 @@ func (ri *routerInterface) RemoveRouterInterfaces(ctx context.Context, req *saip
 
 // vlanMember contains the info of a VLAN member.
 type vlanMember struct {
-	Oid    uint64
-	PortID uint64
-	Vid    uint32
-	Mode   saipb.VlanTaggingMode
+	Oid          uint64
+	PortID       uint64
+	Vid          uint32
+	Mode         saipb.VlanTaggingMode
+	BridgePortID uint64
 }
 
 type vlan struct {
@@ -1417,6 +1418,28 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
 		return nil, err
 	}
+	outputActions := []*fwdpb.ActionDesc{}
+	if r.GetVlanTaggingMode() == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED || r.GetVlanTaggingMode() == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_PRIORITY_TAGGED {
+		outputActions = []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+		}
+	}
+	portUpd := &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(portID)}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_Kernel{
+				Kernel: &fwdpb.KernelPortUpdateDesc{
+					Inputs:  getPreIngressPipeline(),
+					Outputs: outputActions,
+				},
+			},
+		},
+	}
+	if _, err := vlan.dataplane.PortUpdate(ctx, portUpd); err != nil {
+		return nil, err
+	}
+
 	floodID := fmt.Sprintf("vlan_flood_%d", vId)
 	_, _ = vlan.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
 		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
@@ -1439,7 +1462,13 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
 	vlan.mgr.StoreAttributes(vOid, vlanAttrResp.GetAttr())
 	vlan.mu.Lock()
-	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: portID, Vid: vId, Mode: r.GetVlanTaggingMode()}
+	vlan.vlans[vOid][mOid] = &vlanMember{
+		Oid:          mOid,
+		PortID:       portID,
+		Vid:          vId,
+		Mode:         r.GetVlanTaggingMode(),
+		BridgePortID: r.GetBridgePortId(),
+	}
 	vlan.mu.Unlock()
 
 	// Fetch the original vlan from the old vlan member and remove the member from that vlan
