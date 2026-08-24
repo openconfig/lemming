@@ -15,6 +15,7 @@
 package ccgen
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"text/template"
@@ -29,12 +30,20 @@ var unsupportedEnum = map[string]struct{}{
 }
 
 // GenClient generates the C++ code for the SAI library.
-func GenClient(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoOutDir, ccOutDir string) (map[string]string, error) {
+func GenClient(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoOutDir, ccOutDir string, virtualAttrs map[string][]*docparser.AttrTypeName) (map[string]string, error) {
 	files := make(map[string]string)
 	enums := enumFile{
 		ProtoOutDir: protoOutDir,
 		CCOutDir:    ccOutDir,
 	}
+	for api, attrs := range virtualAttrs {
+		castType := fmt.Sprintf("sai_%s_attr_t", strings.ToLower(api))
+		for _, attr := range attrs {
+			enums.VirtualDefines = append(enums.VirtualDefines, fmt.Sprintf("#define %s (%s)%d", attr.EnumName, castType, attr.Value))
+		}
+	}
+	slices.Sort(enums.VirtualDefines)
+
 	d, err := typeinfo.Data(doc, sai, "", "", ccOutDir, protoOutDir)
 	if err != nil {
 		return nil, err
@@ -208,9 +217,9 @@ switch ({{ .Var }}) {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "{{ .CCOutDir }}/{{ .Header }}"
-#include "{{ .CCOutDir }}/common.h"
-#include "{{ .CCOutDir }}/enum.h"
+#include "{{ .Header }}"
+#include "common.h"
+#include "enum.h"
 #include "{{ .ProtoOutDir }}/common.pb.h"
 #include "{{ .ProtoOutDir }}/{{ .ProtoInclude }}.h"
 #include <glog/logging.h>
@@ -477,6 +486,10 @@ extern "C" {
 #include "experimental/saiextensions.h"
 }
 
+{{ range .VirtualDefines }}
+{{ . }}
+{{ end }}
+
 {{ range .Enums }}
 lemming::dataplane::sai::{{ .ProtoName }} convert_{{ .SAIName }}_to_proto(const sai_int32_t val);
 {{ .SAIName }} convert_{{ .SAIName }}_to_sai(lemming::dataplane::sai::{{ .ProtoName }} val);
@@ -501,7 +514,7 @@ void convert_list_{{ .SAIName }}_to_sai(int32_t *list, const google::protobuf::R
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "{{ .CCOutDir }}/enum.h"
+#include "enum.h"
 
 {{ range .Enums }}
 {{$enum := .}}
@@ -516,9 +529,9 @@ lemming::dataplane::sai::{{ .ProtoName }} convert_{{ .SAIName }}_to_proto(const 
 {{ .SAIName }} convert_{{ .SAIName }}_to_sai(lemming::dataplane::sai::{{ .ProtoName }} val) {
     switch (val) {
     {{ range .Elems }}
-        case lemming::dataplane::sai::{{ .ProtoName}}: return {{ .SAIName}};
+        case lemming::dataplane::sai::{{ .ProtoName}}: return static_cast<{{ $enum.SAIName }}>({{ .SAIName}});
     {{ end }}
-        default: return {{ $enum.DefaultReturn }};
+        default: return static_cast<{{ $enum.SAIName }}>({{ $enum.DefaultReturn }});
     }
 }
 
@@ -541,10 +554,11 @@ void convert_list_{{ .SAIName }}_to_sai(int32_t *list, const google::protobuf::R
 )
 
 type enumFile struct {
-	ProtoIncludes []string
-	Enums         []enum
-	ProtoOutDir   string
-	CCOutDir      string
+	ProtoIncludes  []string
+	Enums          []enum
+	ProtoOutDir    string
+	CCOutDir       string
+	VirtualDefines []string
 }
 
 type enum struct {

@@ -18,8 +18,15 @@ cc_library(
 
 cc_binary(
     name = "sai",
+    additional_linker_inputs = [
+        ":libsai.map",
+    ],
+    linkopts = [
+        "-Wl,--version-script,$(location :libsai.map)",
+    ],
     linkshared = True,
     linkstatic = True,
+    visibility = ["//visibility:public"],
     deps = [
         ":entrypoint",
     ],
@@ -27,10 +34,11 @@ cc_binary(
 
 cc_binary(
     name = "sai-dynamic",
+    additional_linker_inputs = [
+        ":libsai.map",
+    ],
     linkopts = [
-        "-lprotobuf",
-        "-lgrpc++",
-        "-lglog",
+        "-Wl,--version-script,$(location :libsai.map)",
     ],
     linkshared = True,
     linkstatic = True,

@@ -19,13 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Hash_CreateHash_FullMethodName                       = "/lemming.dataplane.sai.Hash/CreateHash"
-	Hash_RemoveHash_FullMethodName                       = "/lemming.dataplane.sai.Hash/RemoveHash"
-	Hash_SetHashAttribute_FullMethodName                 = "/lemming.dataplane.sai.Hash/SetHashAttribute"
-	Hash_GetHashAttribute_FullMethodName                 = "/lemming.dataplane.sai.Hash/GetHashAttribute"
-	Hash_CreateFineGrainedHashField_FullMethodName       = "/lemming.dataplane.sai.Hash/CreateFineGrainedHashField"
-	Hash_RemoveFineGrainedHashField_FullMethodName       = "/lemming.dataplane.sai.Hash/RemoveFineGrainedHashField"
-	Hash_GetFineGrainedHashFieldAttribute_FullMethodName = "/lemming.dataplane.sai.Hash/GetFineGrainedHashFieldAttribute"
+	Hash_CreateHash_FullMethodName       = "/lemming.dataplane.sai.Hash/CreateHash"
+	Hash_RemoveHash_FullMethodName       = "/lemming.dataplane.sai.Hash/RemoveHash"
+	Hash_SetHashAttribute_FullMethodName = "/lemming.dataplane.sai.Hash/SetHashAttribute"
+	Hash_GetHashAttribute_FullMethodName = "/lemming.dataplane.sai.Hash/GetHashAttribute"
 )
 
 // HashClient is the client API for Hash service.
@@ -36,9 +33,6 @@ type HashClient interface {
 	RemoveHash(ctx context.Context, in *RemoveHashRequest, opts ...grpc.CallOption) (*RemoveHashResponse, error)
 	SetHashAttribute(ctx context.Context, in *SetHashAttributeRequest, opts ...grpc.CallOption) (*SetHashAttributeResponse, error)
 	GetHashAttribute(ctx context.Context, in *GetHashAttributeRequest, opts ...grpc.CallOption) (*GetHashAttributeResponse, error)
-	CreateFineGrainedHashField(ctx context.Context, in *CreateFineGrainedHashFieldRequest, opts ...grpc.CallOption) (*CreateFineGrainedHashFieldResponse, error)
-	RemoveFineGrainedHashField(ctx context.Context, in *RemoveFineGrainedHashFieldRequest, opts ...grpc.CallOption) (*RemoveFineGrainedHashFieldResponse, error)
-	GetFineGrainedHashFieldAttribute(ctx context.Context, in *GetFineGrainedHashFieldAttributeRequest, opts ...grpc.CallOption) (*GetFineGrainedHashFieldAttributeResponse, error)
 }
 
 type hashClient struct {
@@ -89,36 +83,6 @@ func (c *hashClient) GetHashAttribute(ctx context.Context, in *GetHashAttributeR
 	return out, nil
 }
 
-func (c *hashClient) CreateFineGrainedHashField(ctx context.Context, in *CreateFineGrainedHashFieldRequest, opts ...grpc.CallOption) (*CreateFineGrainedHashFieldResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateFineGrainedHashFieldResponse)
-	err := c.cc.Invoke(ctx, Hash_CreateFineGrainedHashField_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *hashClient) RemoveFineGrainedHashField(ctx context.Context, in *RemoveFineGrainedHashFieldRequest, opts ...grpc.CallOption) (*RemoveFineGrainedHashFieldResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RemoveFineGrainedHashFieldResponse)
-	err := c.cc.Invoke(ctx, Hash_RemoveFineGrainedHashField_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *hashClient) GetFineGrainedHashFieldAttribute(ctx context.Context, in *GetFineGrainedHashFieldAttributeRequest, opts ...grpc.CallOption) (*GetFineGrainedHashFieldAttributeResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetFineGrainedHashFieldAttributeResponse)
-	err := c.cc.Invoke(ctx, Hash_GetFineGrainedHashFieldAttribute_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // HashServer is the server API for Hash service.
 // All implementations should embed UnimplementedHashServer
 // for forward compatibility.
@@ -127,9 +91,6 @@ type HashServer interface {
 	RemoveHash(context.Context, *RemoveHashRequest) (*RemoveHashResponse, error)
 	SetHashAttribute(context.Context, *SetHashAttributeRequest) (*SetHashAttributeResponse, error)
 	GetHashAttribute(context.Context, *GetHashAttributeRequest) (*GetHashAttributeResponse, error)
-	CreateFineGrainedHashField(context.Context, *CreateFineGrainedHashFieldRequest) (*CreateFineGrainedHashFieldResponse, error)
-	RemoveFineGrainedHashField(context.Context, *RemoveFineGrainedHashFieldRequest) (*RemoveFineGrainedHashFieldResponse, error)
-	GetFineGrainedHashFieldAttribute(context.Context, *GetFineGrainedHashFieldAttributeRequest) (*GetFineGrainedHashFieldAttributeResponse, error)
 }
 
 // UnimplementedHashServer should be embedded to have
@@ -150,15 +111,6 @@ func (UnimplementedHashServer) SetHashAttribute(context.Context, *SetHashAttribu
 }
 func (UnimplementedHashServer) GetHashAttribute(context.Context, *GetHashAttributeRequest) (*GetHashAttributeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetHashAttribute not implemented")
-}
-func (UnimplementedHashServer) CreateFineGrainedHashField(context.Context, *CreateFineGrainedHashFieldRequest) (*CreateFineGrainedHashFieldResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateFineGrainedHashField not implemented")
-}
-func (UnimplementedHashServer) RemoveFineGrainedHashField(context.Context, *RemoveFineGrainedHashFieldRequest) (*RemoveFineGrainedHashFieldResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveFineGrainedHashField not implemented")
-}
-func (UnimplementedHashServer) GetFineGrainedHashFieldAttribute(context.Context, *GetFineGrainedHashFieldAttributeRequest) (*GetFineGrainedHashFieldAttributeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFineGrainedHashFieldAttribute not implemented")
 }
 func (UnimplementedHashServer) testEmbeddedByValue() {}
 
@@ -252,60 +204,6 @@ func _Hash_GetHashAttribute_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Hash_CreateFineGrainedHashField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateFineGrainedHashFieldRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(HashServer).CreateFineGrainedHashField(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Hash_CreateFineGrainedHashField_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HashServer).CreateFineGrainedHashField(ctx, req.(*CreateFineGrainedHashFieldRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Hash_RemoveFineGrainedHashField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveFineGrainedHashFieldRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(HashServer).RemoveFineGrainedHashField(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Hash_RemoveFineGrainedHashField_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HashServer).RemoveFineGrainedHashField(ctx, req.(*RemoveFineGrainedHashFieldRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Hash_GetFineGrainedHashFieldAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetFineGrainedHashFieldAttributeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(HashServer).GetFineGrainedHashFieldAttribute(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Hash_GetFineGrainedHashFieldAttribute_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HashServer).GetFineGrainedHashFieldAttribute(ctx, req.(*GetFineGrainedHashFieldAttributeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Hash_ServiceDesc is the grpc.ServiceDesc for Hash service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -328,18 +226,6 @@ var Hash_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetHashAttribute",
 			Handler:    _Hash_GetHashAttribute_Handler,
-		},
-		{
-			MethodName: "CreateFineGrainedHashField",
-			Handler:    _Hash_CreateFineGrainedHashField_Handler,
-		},
-		{
-			MethodName: "RemoveFineGrainedHashField",
-			Handler:    _Hash_RemoveFineGrainedHashField_Handler,
-		},
-		{
-			MethodName: "GetFineGrainedHashFieldAttribute",
-			Handler:    _Hash_GetFineGrainedHashFieldAttribute_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

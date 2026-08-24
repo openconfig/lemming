@@ -21,6 +21,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
+	"strings"
 
 	"github.com/openconfig/lemming/dataplane/apigen/ccgen"
 	"github.com/openconfig/lemming/dataplane/apigen/docparser"
@@ -58,14 +60,42 @@ func parse(headers []string, includePaths ...string) (*cc.AST, error) {
 }
 
 var (
-	saiPath        = flag.String("sai_path", "bazel-lemming/external/com_github_opencomputeproject_sai", "Path to SAI repo")
-	clientOutDir   = flag.String("client_out_dir", "dataplane/standalone/sai", "Output directory for C++ client code")
-	serverOutDir   = flag.String("server_out_dir", "dataplane/standalone/saiserver", "Output directory for C++ server code")
-	protoOutDir    = flag.String("proto_out_dir", "dataplane/proto/sai", "Output dirrectory for proto code")
-	protoPackage   = flag.String("proto_package", "lemming.dataplane.sai", "Package for generated proto code")
-	protoGoPackage = flag.String("proto_go_package", "github.com/openconfig/lemming/dataplane/proto/sai", "Go package option in proto code")
-	xmlPath        = flag.String("xml_path", "dataplane/apigen/xml", "Path to generate SAI doxygen XML files.")
+	saiPath         = flag.String("sai_path", "bazel-lemming/external/com_github_opencomputeproject_sai", "Path to SAI repo")
+	clientOutDir    = flag.String("client_out_dir", "dataplane/standalone/sai", "Output directory for C++ client code")
+	serverOutDir    = flag.String("server_out_dir", "dataplane/standalone/saiserver", "Output directory for C++ server code")
+	protoOutDir     = flag.String("proto_out_dir", "dataplane/proto/sai", "Output dirrectory for proto code")
+	protoImportPath = flag.String("proto_import_path", "", "Proto import path inside generated includes (falls back to -proto_out_dir if empty)")
+	protoPackage    = flag.String("proto_package", "lemming.dataplane.sai", "Package for generated proto code")
+	protoGoPackage  = flag.String("proto_go_package", "github.com/openconfig/lemming/dataplane/proto/sai", "Go package option in proto code")
+	xmlPath         = flag.String("xml_path", "dataplane/apigen/xml", "Path to generate SAI doxygen XML files.")
+	apis            = flag.String("apis", "", "Comma-separated list of APIs to generate. If empty, generate all.")
 )
+
+var virtualAttributes = map[string][]*docparser.AttrTypeName{
+	"SWITCH": {
+		{
+			EnumName:   "SAI_SWITCH_ATTR_SUPPORTED_DEBUG_COUNTER_TYPE_LIST",
+			MemberName: "supported_debug_counter_type_list",
+			SaiType:    "sai_s32_list_t sai_debug_counter_type_t",
+			Comment:    "Supported debug counter types",
+			Value:      2112,
+		},
+		{
+			EnumName:   "SAI_SWITCH_ATTR_SUPPORTED_INGRESS_DROP_REASON_LIST",
+			MemberName: "supported_ingress_drop_reason_list",
+			SaiType:    "sai_s32_list_t sai_in_drop_reason_t",
+			Comment:    "Supported ingress drop reasons",
+			Value:      2113,
+		},
+		{
+			EnumName:   "SAI_SWITCH_ATTR_AVAILABLE_SWITCH_INGRESS_DROP_COUNTERS",
+			MemberName: "available_switch_ingress_drop_counters",
+			SaiType:    "sai_uint32_t",
+			Comment:    "Available ingress drop counters",
+			Value:      2118,
+		},
+	},
+}
 
 func generate() error {
 	saiHeaderFile, err := filepath.Abs(filepath.Join(*saiPath, "inc/sai.h"))
@@ -89,20 +119,48 @@ func generate() error {
 		return err
 	}
 	sai := saiast.Get(ast)
+	var allAPIs []string
+	for _, iface := range sai.Ifaces {
+		allAPIs = append(allAPIs, strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t"))
+	}
+	slices.SortFunc(allAPIs, func(a, b string) int {
+		return len(b) - len(a)
+	})
+
+	var apiList []string
+	if *apis != "" {
+		for _, api := range strings.Split(*apis, ",") {
+			apiList = append(apiList, strings.TrimSpace(api))
+		}
+		sai.Filter(apiList)
+	}
 	xmlInfo, err := docparser.ParseSAIXMLDir(*xmlPath)
 	if err != nil {
 		return err
 	}
+	if *apis != "" {
+		xmlInfo.Filter(apiList, allAPIs)
+	}
 
-	protos, err := protogen.Generate(xmlInfo, sai, *protoPackage, *protoGoPackage, *protoOutDir)
+	for api, attrs := range virtualAttributes {
+		xmlInfo.Attrs[api].ReadFields = append(xmlInfo.Attrs[api].ReadFields, attrs...)
+	}
+
+	// Use proto_import_path to set the include path prefix for generated C++ headers.
+	// Fall back to proto_out_dir if not specified (e.g. for standalone builds).
+	importPath := *protoImportPath
+	if importPath == "" {
+		importPath = *protoOutDir
+	}
+	protos, err := protogen.Generate(xmlInfo, sai, *protoPackage, *protoGoPackage, importPath)
 	if err != nil {
 		return err
 	}
-	clientFiles, err := ccgen.GenClient(xmlInfo, sai, *protoOutDir, *clientOutDir)
+	clientFiles, err := ccgen.GenClient(xmlInfo, sai, importPath, *clientOutDir, virtualAttributes)
 	if err != nil {
 		return err
 	}
-	serverFiles, err := ccgen.GenServer(xmlInfo, sai, *protoOutDir, *serverOutDir)
+	serverFiles, err := ccgen.GenServer(xmlInfo, sai, importPath, *serverOutDir)
 	if err != nil {
 		return err
 	}

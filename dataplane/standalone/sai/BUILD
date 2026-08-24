@@ -1,10 +1,12 @@
 cc_library(
     name = "sai",
-    srcs = glob(["*.cc"]),
-    hdrs = glob(
-        ["*.h"],
-        exclude = ["entry.h"],
-    ),
+    srcs = [
+        "common.cc",
+    ] + ["//dataplane/proto/sai:sai_client_sources"],
+    hdrs = [
+        "common.h",
+    ] + ["//dataplane/proto/sai:sai_client_headers"],
+    includes = ["."],
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/proto/sai:sai_cc_grpc",

@@ -34,8 +34,9 @@ type SAIInfo struct {
 }
 
 type Enum struct {
-	Name  string
-	Value int
+	Name       string
+	Value      int
+	SourceFile string
 }
 
 // attrInfo holds values and types for an attribute enum.
@@ -75,6 +76,11 @@ type MemberDef struct {
 	Name       string      `xml:"name"`
 	EnumValues []EnumValue `xml:"enumvalue"`
 	Kind       string      `xml:"kind,attr"`
+	Location   Location    `xml:"location"`
+}
+
+type Location struct {
+	File string `xml:"file,attr"`
 }
 
 // EnumValue is a single values in a enum.
@@ -113,7 +119,8 @@ func ParseSAIXMLDir(xmlPath string) (*SAIInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	members := []MemberDef{}
+	seen := make(map[string]bool)
+	var members []MemberDef
 	for _, file := range files {
 		if !strings.HasSuffix(file.Name(), "xml") {
 			continue
@@ -132,7 +139,18 @@ func ParseSAIXMLDir(xmlPath string) (*SAIInfo, error) {
 			return nil, err
 		}
 		for _, section := range dox.CompoundDef.SectionDef {
-			members = append(members, section.MemberDef...)
+			for _, m := range section.MemberDef {
+				if m.Name == "" {
+					continue
+				}
+				key := m.Name + "#" + m.Kind
+				// Deduplicate members by Name and Kind to avoid duplicate attribute registrations.
+				if seen[key] {
+					continue
+				}
+				seen[key] = true
+				members = append(members, m)
+			}
 		}
 	}
 	if err := parseXMLEntries(members, i); err != nil {
@@ -148,7 +166,15 @@ var typeNameExpr = regexp.MustCompile("sai_(.*)_attr.*")
 // their types, and if they createable, readable, and/or writable.
 func memberToAttrInfo(enum MemberDef) (*Attr, error) {
 	info := &Attr{}
-	trimStr := strings.TrimSuffix(strings.TrimPrefix(enum.Name, "_"), "_t") + "_"
+	// Trim custom and extension suffixes so that the base name matches the standard SAI API naming convention,
+	// allowing custom fields to map correctly to their base API attribute types.
+	name := strings.TrimPrefix(enum.Name, "_")
+	name = strings.TrimSuffix(name, "_t")
+	name = strings.TrimSuffix(name, "_extensions")
+	name = strings.TrimSuffix(name, "extensions")
+	name = strings.TrimSuffix(name, "_custom")
+	name = strings.TrimSuffix(name, "custom")
+	trimStr := name + "_"
 
 	for i, value := range enum.EnumValues {
 		tagRegex := regexp.MustCompile(`<[^>]*>`)
@@ -215,23 +241,34 @@ var saiConsts = map[string]int{
 	"SAI_ACL_USER_DEFINED_FIELD_ATTR_ID_RANGE": 0xff,
 }
 
+// resolveConst recursively resolves a named constant to its integer value from the enum list or global cache.
+func resolveConst(name string, vals []EnumValue) (int, error) {
+	for i, eV := range vals {
+		if eV.Name == name {
+			return parseInitializer(i, vals)
+		}
+	}
+	if v, ok := saiConsts[name]; ok {
+		return v, nil
+	}
+	return 0, fmt.Errorf("constant %q not found", name)
+}
+
+// parseInitializer parses an enum value's initializer string (including arithmetic expressions like A + B, shifts like A << B, or variable references) and returns its evaluated integer value.
 func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
+	if i < 0 || i >= len(vals) {
+		return 0, fmt.Errorf("index out of bounds: %d", i)
+	}
 	defer func() {
 		if rerr == nil {
 			saiConsts[vals[i].Name] = val
 		}
 	}()
 
-	findIndex := func(val string, vals []EnumValue) int {
-		for i, eV := range vals {
-			if eV.Name == val {
-				return i
-			}
-		}
-		return -1
-	}
-
 	init := strings.TrimSpace(strings.TrimPrefix(vals[i].Initializer, "= "))
+	// Remove enclosing parentheses to simplify arithmetic parsing (e.g. (SAI_CONST + 1) -> SAI_CONST + 1).
+	init = strings.ReplaceAll(init, "(", "")
+	init = strings.ReplaceAll(init, ")", "")
 	if init == "" {
 		if i == 0 {
 			return 0, nil
@@ -239,6 +276,7 @@ func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
 		prev, err := parseInitializer(i-1, vals)
 		return prev + 1, err
 	}
+	// Parse addition (e.g. CONSTANT + OFFSET).
 	if strings.Contains(init, "+") {
 		splits := strings.Split(init, "+")
 		if len(splits) != 2 {
@@ -246,20 +284,21 @@ func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
 		}
 		lhs := strings.TrimSpace(splits[0])
 		rhs := strings.TrimSpace(splits[1])
-		rv, err := strconv.ParseUint(rhs, 0, 64)
-		if err != nil {
-			saiConst, ok := saiConsts[rhs]
-			if !ok {
-				return 0, err
-			}
-			rv = uint64(saiConst)
-		}
-		lv, err := parseInitializer(findIndex(lhs, vals), vals)
+		lv, err := resolveConst(lhs, vals)
 		if err != nil {
 			return 0, err
 		}
-		return lv + int(rv), nil
+		rv, err := resolveConst(rhs, vals)
+		if err != nil {
+			if parsed, pErr := strconv.ParseUint(rhs, 0, 64); pErr == nil {
+				rv = int(parsed)
+			} else {
+				return 0, fmt.Errorf("failed to parse RHS %q for enum %q: %w", rhs, vals[i].Name, err)
+			}
+		}
+		return lv + rv, nil
 	}
+	// Parse bit-shifts (e.g. 1 << 2).
 	if strings.Contains(init, "<<") {
 		splits := strings.Split(init, "<<")
 		if len(splits) != 2 {
@@ -278,19 +317,15 @@ func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
 		return int(lv << rv), nil
 	}
 
+	// Parse simple numeric values directly.
 	if v, err := strconv.ParseUint(init, 0, 64); err == nil {
 		return int(v), nil
 	}
-	if v, ok := saiConsts[init]; ok {
-		return v, nil
-	}
-	if idx := findIndex(init, vals); idx != -1 {
-		return parseInitializer(idx, vals)
-	}
-	return 0, fmt.Errorf("failed to parse intialiazer for enum %v", vals[i].Name)
+	// Fall back to resolving as a named constant.
+	return resolveConst(init, vals)
 }
 
-func memberToEnumValueStrings(enum MemberDef) ([]*Enum, error) {
+func memberToEnumValueStrings(enum MemberDef, sourceFile string) ([]*Enum, error) {
 	res := []*Enum{}
 	for i, value := range enum.EnumValues {
 		val, err := parseInitializer(i, enum.EnumValues)
@@ -298,8 +333,9 @@ func memberToEnumValueStrings(enum MemberDef) ([]*Enum, error) {
 			return nil, err
 		}
 		res = append(res, &Enum{
-			Name:  value.Name,
-			Value: val,
+			Name:       value.Name,
+			Value:      val,
+			SourceFile: sourceFile,
 		})
 	}
 	return res, nil
@@ -313,7 +349,7 @@ func parseXMLEntries(members []MemberDef, xmlInfo *SAIInfo) error {
 		if enum.Kind != "enum" {
 			return nil
 		}
-		if strings.Contains(enum.Name, "attr_t") {
+		if typeNameExpr.MatchString(enum.Name) {
 			matches := typeNameExpr.FindStringSubmatch(enum.Name)
 			if len(matches) != 2 {
 				return fmt.Errorf("unexpected number of matches: got %v", matches)
@@ -322,9 +358,18 @@ func parseXMLEntries(members []MemberDef, xmlInfo *SAIInfo) error {
 			if err != nil {
 				return err
 			}
-			xmlInfo.Attrs[strings.ToUpper(matches[1])] = info
+			key := strings.ToUpper(matches[1])
+			// Merge attributes (create, read, and set fields) with any existing attributes under the same API key.
+			// This prevents custom and extension enums from overwriting the standard attributes.
+			if existing, ok := xmlInfo.Attrs[key]; ok {
+				existing.CreateFields = append(existing.CreateFields, info.CreateFields...)
+				existing.ReadFields = append(existing.ReadFields, info.ReadFields...)
+				existing.SetFields = append(existing.SetFields, info.SetFields...)
+			} else {
+				xmlInfo.Attrs[key] = info
+			}
 		} else {
-			enums, err := memberToEnumValueStrings(enum)
+			enums, err := memberToEnumValueStrings(enum, filepath.Base(enum.Location.File))
 			if err != nil {
 				return err
 			}
@@ -348,4 +393,69 @@ func parseXMLEntries(members []MemberDef, xmlInfo *SAIInfo) error {
 	}
 
 	return nil
+}
+
+// Filter prunes both Attrs and Enums to keep only those belonging to supported APIs.
+func (info *SAIInfo) Filter(supportedAPIs []string, allAPIs []string) {
+	supportedMap := make(map[string]bool)
+	for _, api := range supportedAPIs {
+		supportedMap[strings.TrimSpace(api)] = true
+	}
+
+	commonScopes := map[string]bool{
+		"types":  true,
+		"status": true,
+		"object": true,
+	}
+
+	// Match a name against allAPIs to find the exact base API it belongs to.
+	getAPIName := func(name string) string {
+		name = strings.TrimPrefix(name, "sai_")
+		name = strings.ToLower(name)
+
+		for _, api := range allAPIs {
+			if strings.HasPrefix(name, api+"_") || name == api {
+				return api
+			}
+		}
+		return ""
+	}
+
+	getAPINameFromHeader := func(header string) string {
+		header = strings.TrimSuffix(strings.TrimPrefix(header, "sai"), ".h")
+		header = strings.ToLower(header)
+		header = strings.TrimPrefix(header, "experimental")
+
+		if commonScopes[header] {
+			return header
+		}
+
+		for _, api := range allAPIs {
+			apiCleaned := strings.ReplaceAll(api, "_", "")
+			if strings.HasPrefix(header, apiCleaned) {
+				return api
+			}
+		}
+		return ""
+	}
+
+	// Filter Attrs
+	for key := range info.Attrs {
+		api := getAPIName(key)
+		if api == "" || !supportedMap[api] {
+			delete(info.Attrs, key)
+		}
+	}
+
+	// Filter Enums
+	for key, enums := range info.Enums {
+		if len(enums) == 0 {
+			delete(info.Enums, key)
+			continue
+		}
+		api := getAPINameFromHeader(enums[0].SourceFile)
+		if api == "" || (!supportedMap[api] && !commonScopes[api]) {
+			delete(info.Enums, key)
+		}
+	}
 }

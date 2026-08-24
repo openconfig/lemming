@@ -19,7 +19,7 @@
 #include <string>
 
 #include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/standalone/sai/enum.h"
+#include "dataplane/proto/sai/enum.h"
 
 std::string convert_from_ip_addr(sai_ip_addr_family_t addr_family,
                                  const sai_ip_addr_t& addr) {

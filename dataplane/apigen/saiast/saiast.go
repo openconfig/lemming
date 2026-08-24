@@ -18,6 +18,7 @@ package saiast
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"modernc.org/cc/v4"
@@ -204,4 +205,16 @@ func handleIfaces(name string, decl *cc.Declaration) *SAIInterface {
 		})
 	}
 	return si
+}
+
+// Filter prunes the interfaces list to keep only those belonging to the supported APIs.
+func (sai *SAIAPI) Filter(supportedAPIs []string) {
+	filterMap := make(map[string]bool)
+	for _, api := range supportedAPIs {
+		rawName := fmt.Sprintf("sai_%s_api_t", strings.TrimSpace(api))
+		filterMap[rawName] = true
+	}
+	sai.Ifaces = slices.DeleteFunc(sai.Ifaces, func(iface *SAIInterface) bool {
+		return !filterMap[iface.Name]
+	})
 }
