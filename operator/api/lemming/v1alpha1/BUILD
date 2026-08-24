@@ -14,6 +14,5 @@ go_library(
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/runtime",
         "@io_k8s_apimachinery//pkg/runtime/schema",
-        "@io_k8s_sigs_controller_runtime//pkg/scheme",
     ],
 )
