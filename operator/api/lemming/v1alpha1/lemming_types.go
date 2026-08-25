@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -123,6 +124,11 @@ type LemmingList struct {
 	Items           []Lemming `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Lemming{}, &LemmingList{})
+func addKnownTypes(scheme *runtime.Scheme) error {
+	scheme.AddKnownTypes(GroupVersion,
+		&Lemming{},
+		&LemmingList{},
+	)
+	metav1.AddToGroupVersion(scheme, GroupVersion)
+	return nil
 }

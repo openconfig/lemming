@@ -310,7 +310,8 @@ func (r *LemmingReconciler) reconcileService(ctx context.Context, lemming *lemmi
 			},
 		}
 		service.Spec = corev1.ServiceSpec{
-			Type: corev1.ServiceTypeLoadBalancer,
+			Type:                          corev1.ServiceTypeLoadBalancer,
+			AllocateLoadBalancerNodePorts: pointer.Bool(false),
 			Selector: map[string]string{
 				"app":  lemming.Name,
 				"topo": lemming.Namespace,

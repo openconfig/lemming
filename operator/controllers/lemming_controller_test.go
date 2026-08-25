@@ -97,7 +97,8 @@ func TestReconcile(t *testing.T) {
 					"app":  "lemming",
 					"topo": "fake",
 				},
-				Type: corev1.ServiceTypeLoadBalancer,
+				Type:                          corev1.ServiceTypeLoadBalancer,
+				AllocateLoadBalancerNodePorts: pointer.Bool(false),
 				Ports: []corev1.ServicePort{{
 					Name:       "gnmi",
 					Protocol:   corev1.ProtocolTCP,
