@@ -1,9 +1,25 @@
-FROM us-west1-docker.pkg.dev/openconfig-lemming/internal/builder@sha256:6a960d06bfd63c9cd8cff1f2ab3b3cc21e578b570979b5574d232be644dd0bf9
-WORKDIR /build
-RUN apt-get update && apt-get install -y wget git && \
-    wget -q -O /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 && \
+FROM debian:bookworm
+
+# Install required build packages and development libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    clang \
+    git \
+    wget \
+    unzip \
+    ca-certificates \
+    libnl-genl-3-dev \
+    libnl-3-dev \
+    libpcap-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Bazelisk
+RUN wget -q -O /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 && \
     chmod +x /usr/local/bin/bazel
 
+WORKDIR /build
 COPY . .
 
-RUN bazel build --lockfile_mode=off --dynamic_mode=off //dataplane/standalone:sai
+RUN bazel build --lockfile_mode=off --dynamic_mode=off //dataplane/standalone:sai && \
+    cp bazel-bin/dataplane/standalone/libsai.so /build/libsai.so

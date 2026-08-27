@@ -111,5 +111,5 @@ lucius-libsai: libsai.so
 lucius-libsai-bullseye:
 	DOCKER_BUILDKIT=1 docker build . -f Dockerfile.saibuilder -t lemming-libsai:latest
 	docker create --name libsai-temp lemming-libsai:latest
-	docker cp libsai-temp:/build/bazel-bin/dataplane/standalone/libsai.so ./libsai.so
+	docker cp libsai-temp:/build/libsai.so ./libsai.so
 	docker rm libsai-temp
