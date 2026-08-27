@@ -140,6 +140,9 @@ func (ip *IP4) Payload() (fwdpb.PacketHeaderId, int64) {
 
 // SetPayload sets the payload.
 func (ip *IP4) SetPayload(id fwdpb.PacketHeaderId, length int64) {
+	if ipVersion(ip.header).Value() != 0x4 {
+		return
+	}
 	proto, ok := headerProto[id]
 	if !ok {
 		proto = protoReserved

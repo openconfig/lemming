@@ -159,6 +159,9 @@ func (ip *IP6) Payload() (fwdpb.PacketHeaderId, int64) {
 
 // SetPayload sets the payload.
 func (ip *IP6) SetPayload(id fwdpb.PacketHeaderId, length int64) {
+	if ipVersion(ip.header).Value() != 0x6 {
+		return
+	}
 	proto, ok := headerProto[id]
 	if !ok {
 		proto = protoReserved
