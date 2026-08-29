@@ -321,3 +321,98 @@ sai_acl_field_data_t convert_to_acl_field_data_ip_type(
   out.data.s32 = convert_sai_acl_ip_type_t_to_sai(type);
   return out;
 }
+lemming::dataplane::sai::FdbEntry convert_from_fdb_entry(
+    const sai_fdb_entry_t& entry) {
+  lemming::dataplane::sai::FdbEntry proto;
+  proto.set_switch_id(entry.switch_id);
+  proto.set_mac_address(entry.mac_address, sizeof(sai_mac_t));
+  proto.set_bv_id(entry.bv_id);
+  return proto;
+}
+
+sai_fdb_entry_t convert_to_fdb_entry(
+    const lemming::dataplane::sai::FdbEntry& proto) {
+  sai_fdb_entry_t entry;
+  entry.switch_id = proto.switch_id();
+  if (proto.mac_address().size() == sizeof(sai_mac_t)) {
+    memcpy(entry.mac_address, proto.mac_address().data(), sizeof(sai_mac_t));
+  } else {
+    memset(entry.mac_address, 0, sizeof(sai_mac_t));
+  }
+  entry.bv_id = proto.bv_id();
+  return entry;
+}
+
+std::vector<sai_attribute_t> convert_to_fdb_attributes(
+    const google::protobuf::RepeatedPtrField<lemming::dataplane::sai::FdbEntryAttribute>& proto_attrs) {
+  std::vector<sai_attribute_t> attrs;
+  for (const auto& proto_attr : proto_attrs) {
+    if (proto_attr.has_type()) {
+      sai_attribute_t attr;
+      attr.id = SAI_FDB_ENTRY_ATTR_TYPE;
+      attr.value.s32 = convert_sai_fdb_entry_type_t_to_sai(proto_attr.type());
+      attrs.push_back(attr);
+    }
+    if (proto_attr.has_packet_action()) {
+      sai_attribute_t attr;
+      attr.id = SAI_FDB_ENTRY_ATTR_PACKET_ACTION;
+      attr.value.s32 = convert_sai_packet_action_t_to_sai(proto_attr.packet_action());
+      attrs.push_back(attr);
+    }
+    if (proto_attr.has_user_trap_id()) {
+      sai_attribute_t attr;
+      attr.id = SAI_FDB_ENTRY_ATTR_USER_TRAP_ID;
+      attr.value.oid = proto_attr.user_trap_id();
+      attrs.push_back(attr);
+    }
+    if (proto_attr.has_bridge_port_id()) {
+      sai_attribute_t attr;
+      attr.id = SAI_FDB_ENTRY_ATTR_BRIDGE_PORT_ID;
+      attr.value.oid = proto_attr.bridge_port_id();
+      attrs.push_back(attr);
+    }
+    if (proto_attr.has_meta_data()) {
+      sai_attribute_t attr;
+      attr.id = SAI_FDB_ENTRY_ATTR_META_DATA;
+      attr.value.u32 = proto_attr.meta_data();
+      attrs.push_back(attr);
+    }
+    if (proto_attr.has_endpoint_ip()) {
+      sai_attribute_t attr;
+      attr.id = SAI_FDB_ENTRY_ATTR_ENDPOINT_IP;
+      attr.value.ipaddr = convert_to_ip_address(proto_attr.endpoint_ip());
+      attrs.push_back(attr);
+    }
+    if (proto_attr.has_counter_id()) {
+      sai_attribute_t attr;
+      attr.id = SAI_FDB_ENTRY_ATTR_COUNTER_ID;
+      attr.value.oid = proto_attr.counter_id();
+      attrs.push_back(attr);
+    }
+    if (proto_attr.has_allow_mac_move()) {
+      sai_attribute_t attr;
+      attr.id = SAI_FDB_ENTRY_ATTR_ALLOW_MAC_MOVE;
+      attr.value.booldata = proto_attr.allow_mac_move();
+      attrs.push_back(attr);
+    }
+  }
+  return attrs;
+}
+
+FdbNotificationDataHolder convert_to_fdb_event(
+    const lemming::dataplane::sai::FdbEventNotificationResponse& resp) {
+  FdbNotificationDataHolder holder;
+  for (const auto& d : resp.data()) {
+    sai_fdb_event_notification_data_t event;
+    event.event_type = convert_sai_fdb_event_t_to_sai(d.event_type());
+    event.fdb_entry = convert_to_fdb_entry(d.fdb_entry());
+    
+    holder.attributes_storage.push_back(convert_to_fdb_attributes(d.attrs()));
+    
+    event.attr_count = holder.attributes_storage.back().size();
+    event.attr = holder.attributes_storage.back().data();
+    
+    holder.events.push_back(event);
+  }
+  return holder;
+}

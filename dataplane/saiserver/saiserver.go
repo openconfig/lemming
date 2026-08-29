@@ -200,6 +200,7 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	if err != nil {
 		return nil, err
 	}
+	sw.fdb = fdb
 
 	srv := &Server{
 		mgr:               mgr,

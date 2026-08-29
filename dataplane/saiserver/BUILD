@@ -23,6 +23,7 @@ go_library(
     deps = [
         "//dataplane/dplaneopts",
         "//dataplane/forwarding",
+        "//dataplane/forwarding/fwdtable/bridge",
         "//dataplane/forwarding/fwdconfig",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/proto/packetio",
