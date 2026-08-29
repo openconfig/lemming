@@ -33,6 +33,7 @@
 #include "dataplane/proto/sai/dtel.grpc.pb.h"
 #include "dataplane/proto/sai/fdb.grpc.pb.h"
 #include "dataplane/proto/sai/generic_programmable.grpc.pb.h"
+#include "dataplane/proto/sai/icmp_echo.grpc.pb.h"
 #include "dataplane/proto/sai/hash.grpc.pb.h"
 #include "dataplane/proto/sai/hostif.grpc.pb.h"
 #include "dataplane/proto/sai/ipmc.grpc.pb.h"
@@ -83,6 +84,7 @@
 #include "dataplane/standalone/sai/generic_programmable.h"
 #include "dataplane/standalone/sai/hash.h"
 #include "dataplane/standalone/sai/hostif.h"
+#include "dataplane/standalone/sai/icmp_echo.h"
 #include "dataplane/standalone/sai/ipmc.h"
 #include "dataplane/standalone/sai/ipmc_group.h"
 #include "dataplane/standalone/sai/ipsec.h"
@@ -138,6 +140,7 @@ std::unique_ptr<lemming::dataplane::sai::Dtel::Stub> dtel;
 std::unique_ptr<lemming::dataplane::sai::Fdb::Stub> fdb;
 std::unique_ptr<lemming::dataplane::sai::Hash::Stub> hash;
 std::unique_ptr<lemming::dataplane::sai::Hostif::Stub> hostif;
+std::unique_ptr<lemming::dataplane::sai::IcmpEcho::Stub> icmp_echo;
 std::unique_ptr<lemming::dataplane::sai::IpmcGroup::Stub> ipmc_group;
 std::unique_ptr<lemming::dataplane::sai::Ipmc::Stub> ipmc;
 std::unique_ptr<lemming::dataplane::sai::Ipsec::Stub> ipsec;
@@ -203,6 +206,7 @@ sai_status_t sai_api_initialize(
   fdb = std::make_unique<lemming::dataplane::sai::Fdb::Stub>(chan);
   hash = std::make_unique<lemming::dataplane::sai::Hash::Stub>(chan);
   hostif = std::make_unique<lemming::dataplane::sai::Hostif::Stub>(chan);
+  icmp_echo = std::make_unique<lemming::dataplane::sai::IcmpEcho::Stub>(chan);
   ipmc_group = std::make_unique<lemming::dataplane::sai::IpmcGroup::Stub>(chan);
   ipmc = std::make_unique<lemming::dataplane::sai::Ipmc::Stub>(chan);
   ipsec = std::make_unique<lemming::dataplane::sai::Ipsec::Stub>(chan);
@@ -463,6 +467,10 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       *api_method_table = const_cast<sai_bmtor_api_t *>(&l_bmtor);
       break;
     }
+    case SAI_API_ICMP_ECHO: {
+      *api_method_table = const_cast<sai_icmp_echo_api_t *>(&l_icmp_echo);
+      break;
+    }
     default:
       LOG(WARNING) << "unknown API type " << api;
       return SAI_STATUS_NOT_IMPLEMENTED;
@@ -487,6 +495,25 @@ sai_object_type_t sai_object_type_query(_In_ sai_object_id_t object_id) {
   }
   LOG(WARNING) << "type query done " << resp.type();
   return static_cast<sai_object_type_t>(resp.type() - 1);
+}
+
+sai_object_id_t sai_switch_id_query(_In_ sai_object_id_t object_id) {
+  if (object_id == SAI_NULL_OBJECT_ID) {
+    return SAI_NULL_OBJECT_ID;
+  }
+  return 1;
+}
+
+sai_status_t sai_query_api_version(_Out_ sai_api_version_t *version) {
+  if (!version) {
+    return SAI_STATUS_INVALID_PARAMETER;
+  }
+#ifdef SAI_API_VERSION
+  *version = SAI_API_VERSION;
+#else
+  *version = 1010500;
+#endif
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t sai_query_attribute_capability(

@@ -69,14 +69,27 @@ func (req *learnRequest) DebugString(port fwdport.Port) string {
 // is buffered.
 type Table struct {
 	*exact.Table                     // exact table containing mac entries
-	learn        *queue.Queue        // unbounded queue for learn requests
-	ctx          *fwdcontext.Context // context for finding objects
-	notify       chan bool           // if not nil, a notification is generated when an entry is learned (test only)
+	learn         *queue.Queue        // unbounded queue for learn requests
+	ctx           *fwdcontext.Context // context for finding objects
+	notify        chan bool           // if not nil, a notification is generated when an entry is learned (test only)
+	LearnCallback func(mac []byte, portID string)
+}
+
+// SetLearnCallback sets a callback invoked when a new MAC entry is dynamically learned.
+func (t *Table) SetLearnCallback(cb func(mac []byte, portID string)) {
+	t.ctx.Lock()
+	defer t.ctx.Unlock()
+	t.LearnCallback = cb
 }
 
 // Clear clears the table by deleting all its entries.
 func (t *Table) Clear() {
 	t.Table.Clear()
+}
+
+// Remove removes the entry matching the given MAC from the table.
+func (t *Table) Remove(mac []byte) error {
+	return t.Table.RemoveKey(mac)
 }
 
 // Cleanup cleans up the exact match table and stops learning.
@@ -152,6 +165,8 @@ func (t *Table) processLearn(v interface{}) {
 	// we try to learn a mac address that has a static entry.
 	if err := t.AddEntry(desc, []*fwdpb.ActionDesc{&ad}); err != nil {
 		log.Infof("bridge: Skipping learn for %v %v.", req.DebugString(port), err)
+	} else if t.LearnCallback != nil {
+		t.LearnCallback(req.mac, string(fwdport.GetID(port).GetObjectId().GetId()))
 	}
 }
 

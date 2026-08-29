@@ -18,6 +18,10 @@ cc_library(
 
 cc_binary(
     name = "sai",
+    linkopts = [
+        "-static-libstdc++",
+        "-static-libgcc",
+    ],
     linkshared = True,
     linkstatic = True,
     deps = [
