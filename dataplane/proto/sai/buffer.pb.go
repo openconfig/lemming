@@ -91,67 +91,6 @@ func (BufferPoolAttr) EnumDescriptor() ([]byte, []int) {
 	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{0}
 }
 
-type IngressPriorityGroupAttr int32
-
-const (
-	IngressPriorityGroupAttr_INGRESS_PRIORITY_GROUP_ATTR_UNSPECIFIED            IngressPriorityGroupAttr = 0
-	IngressPriorityGroupAttr_INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE         IngressPriorityGroupAttr = 1
-	IngressPriorityGroupAttr_INGRESS_PRIORITY_GROUP_ATTR_PORT                   IngressPriorityGroupAttr = 2
-	IngressPriorityGroupAttr_INGRESS_PRIORITY_GROUP_ATTR_TAM                    IngressPriorityGroupAttr = 3
-	IngressPriorityGroupAttr_INGRESS_PRIORITY_GROUP_ATTR_INDEX                  IngressPriorityGroupAttr = 4
-	IngressPriorityGroupAttr_INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE       IngressPriorityGroupAttr = 5
-	IngressPriorityGroupAttr_INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST IngressPriorityGroupAttr = 6
-)
-
-// Enum value maps for IngressPriorityGroupAttr.
-var (
-	IngressPriorityGroupAttr_name = map[int32]string{
-		0: "INGRESS_PRIORITY_GROUP_ATTR_UNSPECIFIED",
-		1: "INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE",
-		2: "INGRESS_PRIORITY_GROUP_ATTR_PORT",
-		3: "INGRESS_PRIORITY_GROUP_ATTR_TAM",
-		4: "INGRESS_PRIORITY_GROUP_ATTR_INDEX",
-		5: "INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE",
-		6: "INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST",
-	}
-	IngressPriorityGroupAttr_value = map[string]int32{
-		"INGRESS_PRIORITY_GROUP_ATTR_UNSPECIFIED":            0,
-		"INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE":         1,
-		"INGRESS_PRIORITY_GROUP_ATTR_PORT":                   2,
-		"INGRESS_PRIORITY_GROUP_ATTR_TAM":                    3,
-		"INGRESS_PRIORITY_GROUP_ATTR_INDEX":                  4,
-		"INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE":       5,
-		"INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST": 6,
-	}
-)
-
-func (x IngressPriorityGroupAttr) Enum() *IngressPriorityGroupAttr {
-	p := new(IngressPriorityGroupAttr)
-	*p = x
-	return p
-}
-
-func (x IngressPriorityGroupAttr) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (IngressPriorityGroupAttr) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_buffer_proto_enumTypes[1].Descriptor()
-}
-
-func (IngressPriorityGroupAttr) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_buffer_proto_enumTypes[1]
-}
-
-func (x IngressPriorityGroupAttr) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use IngressPriorityGroupAttr.Descriptor instead.
-func (IngressPriorityGroupAttr) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{1}
-}
-
 type BufferProfileAttr int32
 
 const (
@@ -203,11 +142,11 @@ func (x BufferProfileAttr) String() string {
 }
 
 func (BufferProfileAttr) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_buffer_proto_enumTypes[2].Descriptor()
+	return file_dataplane_proto_sai_buffer_proto_enumTypes[1].Descriptor()
 }
 
 func (BufferProfileAttr) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_buffer_proto_enumTypes[2]
+	return &file_dataplane_proto_sai_buffer_proto_enumTypes[1]
 }
 
 func (x BufferProfileAttr) Number() protoreflect.EnumNumber {
@@ -216,7 +155,7 @@ func (x BufferProfileAttr) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BufferProfileAttr.Descriptor instead.
 func (BufferProfileAttr) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{2}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{1}
 }
 
 type CreateBufferPoolRequest struct {
@@ -771,526 +710,6 @@ func (x *GetBufferPoolStatsResponse) GetValues() []uint64 {
 	return nil
 }
 
-type CreateIngressPriorityGroupRequest struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Switch               uint64                 `protobuf:"varint,1,opt,name=switch,proto3" json:"switch,omitempty"`
-	BufferProfile        *uint64                `protobuf:"varint,2,opt,name=buffer_profile,json=bufferProfile,proto3,oneof" json:"buffer_profile,omitempty"`
-	Port                 *uint64                `protobuf:"varint,3,opt,name=port,proto3,oneof" json:"port,omitempty"`
-	Tam                  []uint64               `protobuf:"varint,4,rep,packed,name=tam,proto3" json:"tam,omitempty"`
-	Index                *uint32                `protobuf:"varint,5,opt,name=index,proto3,oneof" json:"index,omitempty"`
-	StatsCountMode       *StatsCountMode        `protobuf:"varint,6,opt,name=stats_count_mode,json=statsCountMode,proto3,enum=lemming.dataplane.sai.StatsCountMode,oneof" json:"stats_count_mode,omitempty"`
-	SelectiveCounterList []uint64               `protobuf:"varint,7,rep,packed,name=selective_counter_list,json=selectiveCounterList,proto3" json:"selective_counter_list,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
-}
-
-func (x *CreateIngressPriorityGroupRequest) Reset() {
-	*x = CreateIngressPriorityGroupRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateIngressPriorityGroupRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateIngressPriorityGroupRequest) ProtoMessage() {}
-
-func (x *CreateIngressPriorityGroupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateIngressPriorityGroupRequest.ProtoReflect.Descriptor instead.
-func (*CreateIngressPriorityGroupRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *CreateIngressPriorityGroupRequest) GetSwitch() uint64 {
-	if x != nil {
-		return x.Switch
-	}
-	return 0
-}
-
-func (x *CreateIngressPriorityGroupRequest) GetBufferProfile() uint64 {
-	if x != nil && x.BufferProfile != nil {
-		return *x.BufferProfile
-	}
-	return 0
-}
-
-func (x *CreateIngressPriorityGroupRequest) GetPort() uint64 {
-	if x != nil && x.Port != nil {
-		return *x.Port
-	}
-	return 0
-}
-
-func (x *CreateIngressPriorityGroupRequest) GetTam() []uint64 {
-	if x != nil {
-		return x.Tam
-	}
-	return nil
-}
-
-func (x *CreateIngressPriorityGroupRequest) GetIndex() uint32 {
-	if x != nil && x.Index != nil {
-		return *x.Index
-	}
-	return 0
-}
-
-func (x *CreateIngressPriorityGroupRequest) GetStatsCountMode() StatsCountMode {
-	if x != nil && x.StatsCountMode != nil {
-		return *x.StatsCountMode
-	}
-	return StatsCountMode_STATS_COUNT_MODE_UNSPECIFIED
-}
-
-func (x *CreateIngressPriorityGroupRequest) GetSelectiveCounterList() []uint64 {
-	if x != nil {
-		return x.SelectiveCounterList
-	}
-	return nil
-}
-
-type CreateIngressPriorityGroupResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Oid           uint64                 `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateIngressPriorityGroupResponse) Reset() {
-	*x = CreateIngressPriorityGroupResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateIngressPriorityGroupResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateIngressPriorityGroupResponse) ProtoMessage() {}
-
-func (x *CreateIngressPriorityGroupResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateIngressPriorityGroupResponse.ProtoReflect.Descriptor instead.
-func (*CreateIngressPriorityGroupResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *CreateIngressPriorityGroupResponse) GetOid() uint64 {
-	if x != nil {
-		return x.Oid
-	}
-	return 0
-}
-
-type RemoveIngressPriorityGroupRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Oid           uint64                 `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveIngressPriorityGroupRequest) Reset() {
-	*x = RemoveIngressPriorityGroupRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveIngressPriorityGroupRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveIngressPriorityGroupRequest) ProtoMessage() {}
-
-func (x *RemoveIngressPriorityGroupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveIngressPriorityGroupRequest.ProtoReflect.Descriptor instead.
-func (*RemoveIngressPriorityGroupRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *RemoveIngressPriorityGroupRequest) GetOid() uint64 {
-	if x != nil {
-		return x.Oid
-	}
-	return 0
-}
-
-type RemoveIngressPriorityGroupResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveIngressPriorityGroupResponse) Reset() {
-	*x = RemoveIngressPriorityGroupResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveIngressPriorityGroupResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveIngressPriorityGroupResponse) ProtoMessage() {}
-
-func (x *RemoveIngressPriorityGroupResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveIngressPriorityGroupResponse.ProtoReflect.Descriptor instead.
-func (*RemoveIngressPriorityGroupResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{13}
-}
-
-type SetIngressPriorityGroupAttributeRequest struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Oid                  uint64                 `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
-	BufferProfile        *uint64                `protobuf:"varint,2,opt,name=buffer_profile,json=bufferProfile,proto3,oneof" json:"buffer_profile,omitempty"`
-	Tam                  []uint64               `protobuf:"varint,3,rep,packed,name=tam,proto3" json:"tam,omitempty"`
-	StatsCountMode       *StatsCountMode        `protobuf:"varint,4,opt,name=stats_count_mode,json=statsCountMode,proto3,enum=lemming.dataplane.sai.StatsCountMode,oneof" json:"stats_count_mode,omitempty"`
-	SelectiveCounterList []uint64               `protobuf:"varint,5,rep,packed,name=selective_counter_list,json=selectiveCounterList,proto3" json:"selective_counter_list,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
-}
-
-func (x *SetIngressPriorityGroupAttributeRequest) Reset() {
-	*x = SetIngressPriorityGroupAttributeRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetIngressPriorityGroupAttributeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetIngressPriorityGroupAttributeRequest) ProtoMessage() {}
-
-func (x *SetIngressPriorityGroupAttributeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetIngressPriorityGroupAttributeRequest.ProtoReflect.Descriptor instead.
-func (*SetIngressPriorityGroupAttributeRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *SetIngressPriorityGroupAttributeRequest) GetOid() uint64 {
-	if x != nil {
-		return x.Oid
-	}
-	return 0
-}
-
-func (x *SetIngressPriorityGroupAttributeRequest) GetBufferProfile() uint64 {
-	if x != nil && x.BufferProfile != nil {
-		return *x.BufferProfile
-	}
-	return 0
-}
-
-func (x *SetIngressPriorityGroupAttributeRequest) GetTam() []uint64 {
-	if x != nil {
-		return x.Tam
-	}
-	return nil
-}
-
-func (x *SetIngressPriorityGroupAttributeRequest) GetStatsCountMode() StatsCountMode {
-	if x != nil && x.StatsCountMode != nil {
-		return *x.StatsCountMode
-	}
-	return StatsCountMode_STATS_COUNT_MODE_UNSPECIFIED
-}
-
-func (x *SetIngressPriorityGroupAttributeRequest) GetSelectiveCounterList() []uint64 {
-	if x != nil {
-		return x.SelectiveCounterList
-	}
-	return nil
-}
-
-type SetIngressPriorityGroupAttributeResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SetIngressPriorityGroupAttributeResponse) Reset() {
-	*x = SetIngressPriorityGroupAttributeResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetIngressPriorityGroupAttributeResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetIngressPriorityGroupAttributeResponse) ProtoMessage() {}
-
-func (x *SetIngressPriorityGroupAttributeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetIngressPriorityGroupAttributeResponse.ProtoReflect.Descriptor instead.
-func (*SetIngressPriorityGroupAttributeResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{15}
-}
-
-type GetIngressPriorityGroupAttributeRequest struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Oid           uint64                     `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
-	AttrType      []IngressPriorityGroupAttr `protobuf:"varint,2,rep,packed,name=attr_type,json=attrType,proto3,enum=lemming.dataplane.sai.IngressPriorityGroupAttr" json:"attr_type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetIngressPriorityGroupAttributeRequest) Reset() {
-	*x = GetIngressPriorityGroupAttributeRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetIngressPriorityGroupAttributeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetIngressPriorityGroupAttributeRequest) ProtoMessage() {}
-
-func (x *GetIngressPriorityGroupAttributeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetIngressPriorityGroupAttributeRequest.ProtoReflect.Descriptor instead.
-func (*GetIngressPriorityGroupAttributeRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *GetIngressPriorityGroupAttributeRequest) GetOid() uint64 {
-	if x != nil {
-		return x.Oid
-	}
-	return 0
-}
-
-func (x *GetIngressPriorityGroupAttributeRequest) GetAttrType() []IngressPriorityGroupAttr {
-	if x != nil {
-		return x.AttrType
-	}
-	return nil
-}
-
-type GetIngressPriorityGroupAttributeResponse struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	Attr          *IngressPriorityGroupAttribute `protobuf:"bytes,1,opt,name=attr,proto3" json:"attr,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetIngressPriorityGroupAttributeResponse) Reset() {
-	*x = GetIngressPriorityGroupAttributeResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetIngressPriorityGroupAttributeResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetIngressPriorityGroupAttributeResponse) ProtoMessage() {}
-
-func (x *GetIngressPriorityGroupAttributeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetIngressPriorityGroupAttributeResponse.ProtoReflect.Descriptor instead.
-func (*GetIngressPriorityGroupAttributeResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *GetIngressPriorityGroupAttributeResponse) GetAttr() *IngressPriorityGroupAttribute {
-	if x != nil {
-		return x.Attr
-	}
-	return nil
-}
-
-type GetIngressPriorityGroupStatsRequest struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Oid           uint64                     `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
-	CounterIds    []IngressPriorityGroupStat `protobuf:"varint,2,rep,packed,name=counter_ids,json=counterIds,proto3,enum=lemming.dataplane.sai.IngressPriorityGroupStat" json:"counter_ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetIngressPriorityGroupStatsRequest) Reset() {
-	*x = GetIngressPriorityGroupStatsRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetIngressPriorityGroupStatsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetIngressPriorityGroupStatsRequest) ProtoMessage() {}
-
-func (x *GetIngressPriorityGroupStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetIngressPriorityGroupStatsRequest.ProtoReflect.Descriptor instead.
-func (*GetIngressPriorityGroupStatsRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *GetIngressPriorityGroupStatsRequest) GetOid() uint64 {
-	if x != nil {
-		return x.Oid
-	}
-	return 0
-}
-
-func (x *GetIngressPriorityGroupStatsRequest) GetCounterIds() []IngressPriorityGroupStat {
-	if x != nil {
-		return x.CounterIds
-	}
-	return nil
-}
-
-type GetIngressPriorityGroupStatsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        []uint64               `protobuf:"varint,1,rep,packed,name=values,proto3" json:"values,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetIngressPriorityGroupStatsResponse) Reset() {
-	*x = GetIngressPriorityGroupStatsResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[19]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetIngressPriorityGroupStatsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetIngressPriorityGroupStatsResponse) ProtoMessage() {}
-
-func (x *GetIngressPriorityGroupStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[19]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetIngressPriorityGroupStatsResponse.ProtoReflect.Descriptor instead.
-func (*GetIngressPriorityGroupStatsResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{19}
-}
-
-func (x *GetIngressPriorityGroupStatsResponse) GetValues() []uint64 {
-	if x != nil {
-		return x.Values
-	}
-	return nil
-}
-
 type CreateBufferProfileRequest struct {
 	state              protoimpl.MessageState      `protogen:"open.v1"`
 	Switch             uint64                      `protobuf:"varint,1,opt,name=switch,proto3" json:"switch,omitempty"`
@@ -1308,7 +727,7 @@ type CreateBufferProfileRequest struct {
 
 func (x *CreateBufferProfileRequest) Reset() {
 	*x = CreateBufferProfileRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[20]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1320,7 +739,7 @@ func (x *CreateBufferProfileRequest) String() string {
 func (*CreateBufferProfileRequest) ProtoMessage() {}
 
 func (x *CreateBufferProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[20]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1333,7 +752,7 @@ func (x *CreateBufferProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBufferProfileRequest.ProtoReflect.Descriptor instead.
 func (*CreateBufferProfileRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{20}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CreateBufferProfileRequest) GetSwitch() uint64 {
@@ -1408,7 +827,7 @@ type CreateBufferProfileResponse struct {
 
 func (x *CreateBufferProfileResponse) Reset() {
 	*x = CreateBufferProfileResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[21]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1420,7 +839,7 @@ func (x *CreateBufferProfileResponse) String() string {
 func (*CreateBufferProfileResponse) ProtoMessage() {}
 
 func (x *CreateBufferProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[21]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1433,7 +852,7 @@ func (x *CreateBufferProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBufferProfileResponse.ProtoReflect.Descriptor instead.
 func (*CreateBufferProfileResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{21}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CreateBufferProfileResponse) GetOid() uint64 {
@@ -1452,7 +871,7 @@ type RemoveBufferProfileRequest struct {
 
 func (x *RemoveBufferProfileRequest) Reset() {
 	*x = RemoveBufferProfileRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[22]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1464,7 +883,7 @@ func (x *RemoveBufferProfileRequest) String() string {
 func (*RemoveBufferProfileRequest) ProtoMessage() {}
 
 func (x *RemoveBufferProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[22]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1477,7 +896,7 @@ func (x *RemoveBufferProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveBufferProfileRequest.ProtoReflect.Descriptor instead.
 func (*RemoveBufferProfileRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{22}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RemoveBufferProfileRequest) GetOid() uint64 {
@@ -1495,7 +914,7 @@ type RemoveBufferProfileResponse struct {
 
 func (x *RemoveBufferProfileResponse) Reset() {
 	*x = RemoveBufferProfileResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[23]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1507,7 +926,7 @@ func (x *RemoveBufferProfileResponse) String() string {
 func (*RemoveBufferProfileResponse) ProtoMessage() {}
 
 func (x *RemoveBufferProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[23]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1520,7 +939,7 @@ func (x *RemoveBufferProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveBufferProfileResponse.ProtoReflect.Descriptor instead.
 func (*RemoveBufferProfileResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{23}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{13}
 }
 
 type SetBufferProfileAttributeRequest struct {
@@ -1538,7 +957,7 @@ type SetBufferProfileAttributeRequest struct {
 
 func (x *SetBufferProfileAttributeRequest) Reset() {
 	*x = SetBufferProfileAttributeRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[24]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1550,7 +969,7 @@ func (x *SetBufferProfileAttributeRequest) String() string {
 func (*SetBufferProfileAttributeRequest) ProtoMessage() {}
 
 func (x *SetBufferProfileAttributeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[24]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1563,7 +982,7 @@ func (x *SetBufferProfileAttributeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetBufferProfileAttributeRequest.ProtoReflect.Descriptor instead.
 func (*SetBufferProfileAttributeRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{24}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SetBufferProfileAttributeRequest) GetOid() uint64 {
@@ -1623,7 +1042,7 @@ type SetBufferProfileAttributeResponse struct {
 
 func (x *SetBufferProfileAttributeResponse) Reset() {
 	*x = SetBufferProfileAttributeResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[25]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1635,7 +1054,7 @@ func (x *SetBufferProfileAttributeResponse) String() string {
 func (*SetBufferProfileAttributeResponse) ProtoMessage() {}
 
 func (x *SetBufferProfileAttributeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[25]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1648,7 +1067,7 @@ func (x *SetBufferProfileAttributeResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use SetBufferProfileAttributeResponse.ProtoReflect.Descriptor instead.
 func (*SetBufferProfileAttributeResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{25}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{15}
 }
 
 type GetBufferProfileAttributeRequest struct {
@@ -1661,7 +1080,7 @@ type GetBufferProfileAttributeRequest struct {
 
 func (x *GetBufferProfileAttributeRequest) Reset() {
 	*x = GetBufferProfileAttributeRequest{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[26]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1673,7 +1092,7 @@ func (x *GetBufferProfileAttributeRequest) String() string {
 func (*GetBufferProfileAttributeRequest) ProtoMessage() {}
 
 func (x *GetBufferProfileAttributeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[26]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1686,7 +1105,7 @@ func (x *GetBufferProfileAttributeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBufferProfileAttributeRequest.ProtoReflect.Descriptor instead.
 func (*GetBufferProfileAttributeRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{26}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetBufferProfileAttributeRequest) GetOid() uint64 {
@@ -1712,7 +1131,7 @@ type GetBufferProfileAttributeResponse struct {
 
 func (x *GetBufferProfileAttributeResponse) Reset() {
 	*x = GetBufferProfileAttributeResponse{}
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[27]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1724,7 +1143,7 @@ func (x *GetBufferProfileAttributeResponse) String() string {
 func (*GetBufferProfileAttributeResponse) ProtoMessage() {}
 
 func (x *GetBufferProfileAttributeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[27]
+	mi := &file_dataplane_proto_sai_buffer_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1737,7 +1156,7 @@ func (x *GetBufferProfileAttributeResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetBufferProfileAttributeResponse.ProtoReflect.Descriptor instead.
 func (*GetBufferProfileAttributeResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{27}
+	return file_dataplane_proto_sai_buffer_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetBufferProfileAttributeResponse) GetAttr() *BufferProfileAttribute {
@@ -1798,43 +1217,6 @@ const file_dataplane_proto_sai_buffer_proto_rawDesc = "" +
 	"\vcounter_ids\x18\x02 \x03(\x0e2%.lemming.dataplane.sai.BufferPoolStatR\n" +
 	"counterIds\"4\n" +
 	"\x1aGetBufferPoolStatsResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\x04R\x06values\"\xac\x03\n" +
-	"!CreateIngressPriorityGroupRequest\x12\x16\n" +
-	"\x06switch\x18\x01 \x01(\x04R\x06switch\x122\n" +
-	"\x0ebuffer_profile\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x01H\x00R\rbufferProfile\x88\x01\x01\x12\x1f\n" +
-	"\x04port\x18\x03 \x01(\x04B\x06\xf0ܓ\xad\x0f\x02H\x01R\x04port\x88\x01\x01\x12\x18\n" +
-	"\x03tam\x18\x04 \x03(\x04B\x06\xf0ܓ\xad\x0f\x03R\x03tam\x12!\n" +
-	"\x05index\x18\x05 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x02R\x05index\x88\x01\x01\x12\\\n" +
-	"\x10stats_count_mode\x18\x06 \x01(\x0e2%.lemming.dataplane.sai.StatsCountModeB\x06\xf0ܓ\xad\x0f\x05H\x03R\x0estatsCountMode\x88\x01\x01\x12<\n" +
-	"\x16selective_counter_list\x18\a \x03(\x04B\x06\xf0ܓ\xad\x0f\x06R\x14selectiveCounterList:\x06\xa0\xa9\x90\xad\x0f\x1bB\x11\n" +
-	"\x0f_buffer_profileB\a\n" +
-	"\x05_portB\b\n" +
-	"\x06_indexB\x13\n" +
-	"\x11_stats_count_mode\"6\n" +
-	"\"CreateIngressPriorityGroupResponse\x12\x10\n" +
-	"\x03oid\x18\x01 \x01(\x04R\x03oid\"5\n" +
-	"!RemoveIngressPriorityGroupRequest\x12\x10\n" +
-	"\x03oid\x18\x01 \x01(\x04R\x03oid\"$\n" +
-	"\"RemoveIngressPriorityGroupResponse\"\xcd\x02\n" +
-	"'SetIngressPriorityGroupAttributeRequest\x12\x10\n" +
-	"\x03oid\x18\x01 \x01(\x04R\x03oid\x122\n" +
-	"\x0ebuffer_profile\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x01H\x00R\rbufferProfile\x88\x01\x01\x12\x18\n" +
-	"\x03tam\x18\x03 \x03(\x04B\x06\xf0ܓ\xad\x0f\x03R\x03tam\x12\\\n" +
-	"\x10stats_count_mode\x18\x04 \x01(\x0e2%.lemming.dataplane.sai.StatsCountModeB\x06\xf0ܓ\xad\x0f\x05H\x01R\x0estatsCountMode\x88\x01\x01\x12<\n" +
-	"\x16selective_counter_list\x18\x05 \x03(\x04B\x06\xf0ܓ\xad\x0f\x06R\x14selectiveCounterListB\x11\n" +
-	"\x0f_buffer_profileB\x13\n" +
-	"\x11_stats_count_mode\"*\n" +
-	"(SetIngressPriorityGroupAttributeResponse\"\x89\x01\n" +
-	"'GetIngressPriorityGroupAttributeRequest\x12\x10\n" +
-	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12L\n" +
-	"\tattr_type\x18\x02 \x03(\x0e2/.lemming.dataplane.sai.IngressPriorityGroupAttrR\battrType\"t\n" +
-	"(GetIngressPriorityGroupAttributeResponse\x12H\n" +
-	"\x04attr\x18\x01 \x01(\v24.lemming.dataplane.sai.IngressPriorityGroupAttributeR\x04attr\"\x89\x01\n" +
-	"#GetIngressPriorityGroupStatsRequest\x12\x10\n" +
-	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12P\n" +
-	"\vcounter_ids\x18\x02 \x03(\x0e2/.lemming.dataplane.sai.IngressPriorityGroupStatR\n" +
-	"counterIds\">\n" +
-	"$GetIngressPriorityGroupStatsResponse\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\x04R\x06values\"\xff\x04\n" +
 	"\x1aCreateBufferProfileRequest\x12\x16\n" +
 	"\x06switch\x18\x01 \x01(\x04R\x06switch\x12$\n" +
@@ -1892,15 +1274,7 @@ const file_dataplane_proto_sai_buffer_proto_rawDesc = "" +
 	"\x1aBUFFER_POOL_ATTR_XOFF_SIZE\x10\x06\x12$\n" +
 	" BUFFER_POOL_ATTR_WRED_PROFILE_ID\x10\a\x12%\n" +
 	"!BUFFER_POOL_ATTR_STATS_COUNT_MODE\x10\b\x12+\n" +
-	"'BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST\x10\t*\xd3\x02\n" +
-	"\x18IngressPriorityGroupAttr\x12+\n" +
-	"'INGRESS_PRIORITY_GROUP_ATTR_UNSPECIFIED\x10\x00\x12.\n" +
-	"*INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE\x10\x01\x12$\n" +
-	" INGRESS_PRIORITY_GROUP_ATTR_PORT\x10\x02\x12#\n" +
-	"\x1fINGRESS_PRIORITY_GROUP_ATTR_TAM\x10\x03\x12%\n" +
-	"!INGRESS_PRIORITY_GROUP_ATTR_INDEX\x10\x04\x120\n" +
-	",INGRESS_PRIORITY_GROUP_ATTR_STATS_COUNT_MODE\x10\x05\x126\n" +
-	"2INGRESS_PRIORITY_GROUP_ATTR_SELECTIVE_COUNTER_LIST\x10\x06*\xec\x02\n" +
+	"'BUFFER_POOL_ATTR_SELECTIVE_COUNTER_LIST\x10\t*\xec\x02\n" +
 	"\x11BufferProfileAttr\x12#\n" +
 	"\x1fBUFFER_PROFILE_ATTR_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bBUFFER_PROFILE_ATTR_POOL_ID\x10\x01\x12,\n" +
@@ -1910,18 +1284,13 @@ const file_dataplane_proto_sai_buffer_proto_rawDesc = "" +
 	"$BUFFER_PROFILE_ATTR_SHARED_STATIC_TH\x10\x05\x12\x1f\n" +
 	"\x1bBUFFER_PROFILE_ATTR_XOFF_TH\x10\x06\x12\x1e\n" +
 	"\x1aBUFFER_PROFILE_ATTR_XON_TH\x10\a\x12%\n" +
-	"!BUFFER_PROFILE_ATTR_XON_OFFSET_TH\x10\b2\xc5\x0f\n" +
+	"!BUFFER_PROFILE_ATTR_XON_OFFSET_TH\x10\b2\xad\t\n" +
 	"\x06Buffer\x12u\n" +
 	"\x10CreateBufferPool\x12..lemming.dataplane.sai.CreateBufferPoolRequest\x1a/.lemming.dataplane.sai.CreateBufferPoolResponse\"\x00\x12u\n" +
 	"\x10RemoveBufferPool\x12..lemming.dataplane.sai.RemoveBufferPoolRequest\x1a/.lemming.dataplane.sai.RemoveBufferPoolResponse\"\x00\x12\x87\x01\n" +
 	"\x16SetBufferPoolAttribute\x124.lemming.dataplane.sai.SetBufferPoolAttributeRequest\x1a5.lemming.dataplane.sai.SetBufferPoolAttributeResponse\"\x00\x12\x87\x01\n" +
 	"\x16GetBufferPoolAttribute\x124.lemming.dataplane.sai.GetBufferPoolAttributeRequest\x1a5.lemming.dataplane.sai.GetBufferPoolAttributeResponse\"\x00\x12{\n" +
-	"\x12GetBufferPoolStats\x120.lemming.dataplane.sai.GetBufferPoolStatsRequest\x1a1.lemming.dataplane.sai.GetBufferPoolStatsResponse\"\x00\x12\x93\x01\n" +
-	"\x1aCreateIngressPriorityGroup\x128.lemming.dataplane.sai.CreateIngressPriorityGroupRequest\x1a9.lemming.dataplane.sai.CreateIngressPriorityGroupResponse\"\x00\x12\x93\x01\n" +
-	"\x1aRemoveIngressPriorityGroup\x128.lemming.dataplane.sai.RemoveIngressPriorityGroupRequest\x1a9.lemming.dataplane.sai.RemoveIngressPriorityGroupResponse\"\x00\x12\xa5\x01\n" +
-	" SetIngressPriorityGroupAttribute\x12>.lemming.dataplane.sai.SetIngressPriorityGroupAttributeRequest\x1a?.lemming.dataplane.sai.SetIngressPriorityGroupAttributeResponse\"\x00\x12\xa5\x01\n" +
-	" GetIngressPriorityGroupAttribute\x12>.lemming.dataplane.sai.GetIngressPriorityGroupAttributeRequest\x1a?.lemming.dataplane.sai.GetIngressPriorityGroupAttributeResponse\"\x00\x12\x99\x01\n" +
-	"\x1cGetIngressPriorityGroupStats\x12:.lemming.dataplane.sai.GetIngressPriorityGroupStatsRequest\x1a;.lemming.dataplane.sai.GetIngressPriorityGroupStatsResponse\"\x00\x12~\n" +
+	"\x12GetBufferPoolStats\x120.lemming.dataplane.sai.GetBufferPoolStatsRequest\x1a1.lemming.dataplane.sai.GetBufferPoolStatsResponse\"\x00\x12~\n" +
 	"\x13CreateBufferProfile\x121.lemming.dataplane.sai.CreateBufferProfileRequest\x1a2.lemming.dataplane.sai.CreateBufferProfileResponse\"\x00\x12~\n" +
 	"\x13RemoveBufferProfile\x121.lemming.dataplane.sai.RemoveBufferProfileRequest\x1a2.lemming.dataplane.sai.RemoveBufferProfileResponse\"\x00\x12\x90\x01\n" +
 	"\x19SetBufferProfileAttribute\x127.lemming.dataplane.sai.SetBufferProfileAttributeRequest\x1a8.lemming.dataplane.sai.SetBufferProfileAttributeResponse\"\x00\x12\x90\x01\n" +
@@ -1939,99 +1308,71 @@ func file_dataplane_proto_sai_buffer_proto_rawDescGZIP() []byte {
 	return file_dataplane_proto_sai_buffer_proto_rawDescData
 }
 
-var file_dataplane_proto_sai_buffer_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_dataplane_proto_sai_buffer_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_dataplane_proto_sai_buffer_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_dataplane_proto_sai_buffer_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_dataplane_proto_sai_buffer_proto_goTypes = []any{
-	(BufferPoolAttr)(0),                              // 0: lemming.dataplane.sai.BufferPoolAttr
-	(IngressPriorityGroupAttr)(0),                    // 1: lemming.dataplane.sai.IngressPriorityGroupAttr
-	(BufferProfileAttr)(0),                           // 2: lemming.dataplane.sai.BufferProfileAttr
-	(*CreateBufferPoolRequest)(nil),                  // 3: lemming.dataplane.sai.CreateBufferPoolRequest
-	(*CreateBufferPoolResponse)(nil),                 // 4: lemming.dataplane.sai.CreateBufferPoolResponse
-	(*RemoveBufferPoolRequest)(nil),                  // 5: lemming.dataplane.sai.RemoveBufferPoolRequest
-	(*RemoveBufferPoolResponse)(nil),                 // 6: lemming.dataplane.sai.RemoveBufferPoolResponse
-	(*SetBufferPoolAttributeRequest)(nil),            // 7: lemming.dataplane.sai.SetBufferPoolAttributeRequest
-	(*SetBufferPoolAttributeResponse)(nil),           // 8: lemming.dataplane.sai.SetBufferPoolAttributeResponse
-	(*GetBufferPoolAttributeRequest)(nil),            // 9: lemming.dataplane.sai.GetBufferPoolAttributeRequest
-	(*GetBufferPoolAttributeResponse)(nil),           // 10: lemming.dataplane.sai.GetBufferPoolAttributeResponse
-	(*GetBufferPoolStatsRequest)(nil),                // 11: lemming.dataplane.sai.GetBufferPoolStatsRequest
-	(*GetBufferPoolStatsResponse)(nil),               // 12: lemming.dataplane.sai.GetBufferPoolStatsResponse
-	(*CreateIngressPriorityGroupRequest)(nil),        // 13: lemming.dataplane.sai.CreateIngressPriorityGroupRequest
-	(*CreateIngressPriorityGroupResponse)(nil),       // 14: lemming.dataplane.sai.CreateIngressPriorityGroupResponse
-	(*RemoveIngressPriorityGroupRequest)(nil),        // 15: lemming.dataplane.sai.RemoveIngressPriorityGroupRequest
-	(*RemoveIngressPriorityGroupResponse)(nil),       // 16: lemming.dataplane.sai.RemoveIngressPriorityGroupResponse
-	(*SetIngressPriorityGroupAttributeRequest)(nil),  // 17: lemming.dataplane.sai.SetIngressPriorityGroupAttributeRequest
-	(*SetIngressPriorityGroupAttributeResponse)(nil), // 18: lemming.dataplane.sai.SetIngressPriorityGroupAttributeResponse
-	(*GetIngressPriorityGroupAttributeRequest)(nil),  // 19: lemming.dataplane.sai.GetIngressPriorityGroupAttributeRequest
-	(*GetIngressPriorityGroupAttributeResponse)(nil), // 20: lemming.dataplane.sai.GetIngressPriorityGroupAttributeResponse
-	(*GetIngressPriorityGroupStatsRequest)(nil),      // 21: lemming.dataplane.sai.GetIngressPriorityGroupStatsRequest
-	(*GetIngressPriorityGroupStatsResponse)(nil),     // 22: lemming.dataplane.sai.GetIngressPriorityGroupStatsResponse
-	(*CreateBufferProfileRequest)(nil),               // 23: lemming.dataplane.sai.CreateBufferProfileRequest
-	(*CreateBufferProfileResponse)(nil),              // 24: lemming.dataplane.sai.CreateBufferProfileResponse
-	(*RemoveBufferProfileRequest)(nil),               // 25: lemming.dataplane.sai.RemoveBufferProfileRequest
-	(*RemoveBufferProfileResponse)(nil),              // 26: lemming.dataplane.sai.RemoveBufferProfileResponse
-	(*SetBufferProfileAttributeRequest)(nil),         // 27: lemming.dataplane.sai.SetBufferProfileAttributeRequest
-	(*SetBufferProfileAttributeResponse)(nil),        // 28: lemming.dataplane.sai.SetBufferProfileAttributeResponse
-	(*GetBufferProfileAttributeRequest)(nil),         // 29: lemming.dataplane.sai.GetBufferProfileAttributeRequest
-	(*GetBufferProfileAttributeResponse)(nil),        // 30: lemming.dataplane.sai.GetBufferProfileAttributeResponse
-	(BufferPoolType)(0),                              // 31: lemming.dataplane.sai.BufferPoolType
-	(BufferPoolThresholdMode)(0),                     // 32: lemming.dataplane.sai.BufferPoolThresholdMode
-	(StatsCountMode)(0),                              // 33: lemming.dataplane.sai.StatsCountMode
-	(*BufferPoolAttribute)(nil),                      // 34: lemming.dataplane.sai.BufferPoolAttribute
-	(BufferPoolStat)(0),                              // 35: lemming.dataplane.sai.BufferPoolStat
-	(*IngressPriorityGroupAttribute)(nil),            // 36: lemming.dataplane.sai.IngressPriorityGroupAttribute
-	(IngressPriorityGroupStat)(0),                    // 37: lemming.dataplane.sai.IngressPriorityGroupStat
-	(BufferProfileThresholdMode)(0),                  // 38: lemming.dataplane.sai.BufferProfileThresholdMode
-	(*BufferProfileAttribute)(nil),                   // 39: lemming.dataplane.sai.BufferProfileAttribute
+	(BufferPoolAttr)(0),                       // 0: lemming.dataplane.sai.BufferPoolAttr
+	(BufferProfileAttr)(0),                    // 1: lemming.dataplane.sai.BufferProfileAttr
+	(*CreateBufferPoolRequest)(nil),           // 2: lemming.dataplane.sai.CreateBufferPoolRequest
+	(*CreateBufferPoolResponse)(nil),          // 3: lemming.dataplane.sai.CreateBufferPoolResponse
+	(*RemoveBufferPoolRequest)(nil),           // 4: lemming.dataplane.sai.RemoveBufferPoolRequest
+	(*RemoveBufferPoolResponse)(nil),          // 5: lemming.dataplane.sai.RemoveBufferPoolResponse
+	(*SetBufferPoolAttributeRequest)(nil),     // 6: lemming.dataplane.sai.SetBufferPoolAttributeRequest
+	(*SetBufferPoolAttributeResponse)(nil),    // 7: lemming.dataplane.sai.SetBufferPoolAttributeResponse
+	(*GetBufferPoolAttributeRequest)(nil),     // 8: lemming.dataplane.sai.GetBufferPoolAttributeRequest
+	(*GetBufferPoolAttributeResponse)(nil),    // 9: lemming.dataplane.sai.GetBufferPoolAttributeResponse
+	(*GetBufferPoolStatsRequest)(nil),         // 10: lemming.dataplane.sai.GetBufferPoolStatsRequest
+	(*GetBufferPoolStatsResponse)(nil),        // 11: lemming.dataplane.sai.GetBufferPoolStatsResponse
+	(*CreateBufferProfileRequest)(nil),        // 12: lemming.dataplane.sai.CreateBufferProfileRequest
+	(*CreateBufferProfileResponse)(nil),       // 13: lemming.dataplane.sai.CreateBufferProfileResponse
+	(*RemoveBufferProfileRequest)(nil),        // 14: lemming.dataplane.sai.RemoveBufferProfileRequest
+	(*RemoveBufferProfileResponse)(nil),       // 15: lemming.dataplane.sai.RemoveBufferProfileResponse
+	(*SetBufferProfileAttributeRequest)(nil),  // 16: lemming.dataplane.sai.SetBufferProfileAttributeRequest
+	(*SetBufferProfileAttributeResponse)(nil), // 17: lemming.dataplane.sai.SetBufferProfileAttributeResponse
+	(*GetBufferProfileAttributeRequest)(nil),  // 18: lemming.dataplane.sai.GetBufferProfileAttributeRequest
+	(*GetBufferProfileAttributeResponse)(nil), // 19: lemming.dataplane.sai.GetBufferProfileAttributeResponse
+	(BufferPoolType)(0),                       // 20: lemming.dataplane.sai.BufferPoolType
+	(BufferPoolThresholdMode)(0),              // 21: lemming.dataplane.sai.BufferPoolThresholdMode
+	(StatsCountMode)(0),                       // 22: lemming.dataplane.sai.StatsCountMode
+	(*BufferPoolAttribute)(nil),               // 23: lemming.dataplane.sai.BufferPoolAttribute
+	(BufferPoolStat)(0),                       // 24: lemming.dataplane.sai.BufferPoolStat
+	(BufferProfileThresholdMode)(0),           // 25: lemming.dataplane.sai.BufferProfileThresholdMode
+	(*BufferProfileAttribute)(nil),            // 26: lemming.dataplane.sai.BufferProfileAttribute
 }
 var file_dataplane_proto_sai_buffer_proto_depIdxs = []int32{
-	31, // 0: lemming.dataplane.sai.CreateBufferPoolRequest.type:type_name -> lemming.dataplane.sai.BufferPoolType
-	32, // 1: lemming.dataplane.sai.CreateBufferPoolRequest.threshold_mode:type_name -> lemming.dataplane.sai.BufferPoolThresholdMode
-	33, // 2: lemming.dataplane.sai.CreateBufferPoolRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	33, // 3: lemming.dataplane.sai.SetBufferPoolAttributeRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	20, // 0: lemming.dataplane.sai.CreateBufferPoolRequest.type:type_name -> lemming.dataplane.sai.BufferPoolType
+	21, // 1: lemming.dataplane.sai.CreateBufferPoolRequest.threshold_mode:type_name -> lemming.dataplane.sai.BufferPoolThresholdMode
+	22, // 2: lemming.dataplane.sai.CreateBufferPoolRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	22, // 3: lemming.dataplane.sai.SetBufferPoolAttributeRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
 	0,  // 4: lemming.dataplane.sai.GetBufferPoolAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.BufferPoolAttr
-	34, // 5: lemming.dataplane.sai.GetBufferPoolAttributeResponse.attr:type_name -> lemming.dataplane.sai.BufferPoolAttribute
-	35, // 6: lemming.dataplane.sai.GetBufferPoolStatsRequest.counter_ids:type_name -> lemming.dataplane.sai.BufferPoolStat
-	33, // 7: lemming.dataplane.sai.CreateIngressPriorityGroupRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	33, // 8: lemming.dataplane.sai.SetIngressPriorityGroupAttributeRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	1,  // 9: lemming.dataplane.sai.GetIngressPriorityGroupAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.IngressPriorityGroupAttr
-	36, // 10: lemming.dataplane.sai.GetIngressPriorityGroupAttributeResponse.attr:type_name -> lemming.dataplane.sai.IngressPriorityGroupAttribute
-	37, // 11: lemming.dataplane.sai.GetIngressPriorityGroupStatsRequest.counter_ids:type_name -> lemming.dataplane.sai.IngressPriorityGroupStat
-	38, // 12: lemming.dataplane.sai.CreateBufferProfileRequest.threshold_mode:type_name -> lemming.dataplane.sai.BufferProfileThresholdMode
-	2,  // 13: lemming.dataplane.sai.GetBufferProfileAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.BufferProfileAttr
-	39, // 14: lemming.dataplane.sai.GetBufferProfileAttributeResponse.attr:type_name -> lemming.dataplane.sai.BufferProfileAttribute
-	3,  // 15: lemming.dataplane.sai.Buffer.CreateBufferPool:input_type -> lemming.dataplane.sai.CreateBufferPoolRequest
-	5,  // 16: lemming.dataplane.sai.Buffer.RemoveBufferPool:input_type -> lemming.dataplane.sai.RemoveBufferPoolRequest
-	7,  // 17: lemming.dataplane.sai.Buffer.SetBufferPoolAttribute:input_type -> lemming.dataplane.sai.SetBufferPoolAttributeRequest
-	9,  // 18: lemming.dataplane.sai.Buffer.GetBufferPoolAttribute:input_type -> lemming.dataplane.sai.GetBufferPoolAttributeRequest
-	11, // 19: lemming.dataplane.sai.Buffer.GetBufferPoolStats:input_type -> lemming.dataplane.sai.GetBufferPoolStatsRequest
-	13, // 20: lemming.dataplane.sai.Buffer.CreateIngressPriorityGroup:input_type -> lemming.dataplane.sai.CreateIngressPriorityGroupRequest
-	15, // 21: lemming.dataplane.sai.Buffer.RemoveIngressPriorityGroup:input_type -> lemming.dataplane.sai.RemoveIngressPriorityGroupRequest
-	17, // 22: lemming.dataplane.sai.Buffer.SetIngressPriorityGroupAttribute:input_type -> lemming.dataplane.sai.SetIngressPriorityGroupAttributeRequest
-	19, // 23: lemming.dataplane.sai.Buffer.GetIngressPriorityGroupAttribute:input_type -> lemming.dataplane.sai.GetIngressPriorityGroupAttributeRequest
-	21, // 24: lemming.dataplane.sai.Buffer.GetIngressPriorityGroupStats:input_type -> lemming.dataplane.sai.GetIngressPriorityGroupStatsRequest
-	23, // 25: lemming.dataplane.sai.Buffer.CreateBufferProfile:input_type -> lemming.dataplane.sai.CreateBufferProfileRequest
-	25, // 26: lemming.dataplane.sai.Buffer.RemoveBufferProfile:input_type -> lemming.dataplane.sai.RemoveBufferProfileRequest
-	27, // 27: lemming.dataplane.sai.Buffer.SetBufferProfileAttribute:input_type -> lemming.dataplane.sai.SetBufferProfileAttributeRequest
-	29, // 28: lemming.dataplane.sai.Buffer.GetBufferProfileAttribute:input_type -> lemming.dataplane.sai.GetBufferProfileAttributeRequest
-	4,  // 29: lemming.dataplane.sai.Buffer.CreateBufferPool:output_type -> lemming.dataplane.sai.CreateBufferPoolResponse
-	6,  // 30: lemming.dataplane.sai.Buffer.RemoveBufferPool:output_type -> lemming.dataplane.sai.RemoveBufferPoolResponse
-	8,  // 31: lemming.dataplane.sai.Buffer.SetBufferPoolAttribute:output_type -> lemming.dataplane.sai.SetBufferPoolAttributeResponse
-	10, // 32: lemming.dataplane.sai.Buffer.GetBufferPoolAttribute:output_type -> lemming.dataplane.sai.GetBufferPoolAttributeResponse
-	12, // 33: lemming.dataplane.sai.Buffer.GetBufferPoolStats:output_type -> lemming.dataplane.sai.GetBufferPoolStatsResponse
-	14, // 34: lemming.dataplane.sai.Buffer.CreateIngressPriorityGroup:output_type -> lemming.dataplane.sai.CreateIngressPriorityGroupResponse
-	16, // 35: lemming.dataplane.sai.Buffer.RemoveIngressPriorityGroup:output_type -> lemming.dataplane.sai.RemoveIngressPriorityGroupResponse
-	18, // 36: lemming.dataplane.sai.Buffer.SetIngressPriorityGroupAttribute:output_type -> lemming.dataplane.sai.SetIngressPriorityGroupAttributeResponse
-	20, // 37: lemming.dataplane.sai.Buffer.GetIngressPriorityGroupAttribute:output_type -> lemming.dataplane.sai.GetIngressPriorityGroupAttributeResponse
-	22, // 38: lemming.dataplane.sai.Buffer.GetIngressPriorityGroupStats:output_type -> lemming.dataplane.sai.GetIngressPriorityGroupStatsResponse
-	24, // 39: lemming.dataplane.sai.Buffer.CreateBufferProfile:output_type -> lemming.dataplane.sai.CreateBufferProfileResponse
-	26, // 40: lemming.dataplane.sai.Buffer.RemoveBufferProfile:output_type -> lemming.dataplane.sai.RemoveBufferProfileResponse
-	28, // 41: lemming.dataplane.sai.Buffer.SetBufferProfileAttribute:output_type -> lemming.dataplane.sai.SetBufferProfileAttributeResponse
-	30, // 42: lemming.dataplane.sai.Buffer.GetBufferProfileAttribute:output_type -> lemming.dataplane.sai.GetBufferProfileAttributeResponse
-	29, // [29:43] is the sub-list for method output_type
-	15, // [15:29] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	23, // 5: lemming.dataplane.sai.GetBufferPoolAttributeResponse.attr:type_name -> lemming.dataplane.sai.BufferPoolAttribute
+	24, // 6: lemming.dataplane.sai.GetBufferPoolStatsRequest.counter_ids:type_name -> lemming.dataplane.sai.BufferPoolStat
+	25, // 7: lemming.dataplane.sai.CreateBufferProfileRequest.threshold_mode:type_name -> lemming.dataplane.sai.BufferProfileThresholdMode
+	1,  // 8: lemming.dataplane.sai.GetBufferProfileAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.BufferProfileAttr
+	26, // 9: lemming.dataplane.sai.GetBufferProfileAttributeResponse.attr:type_name -> lemming.dataplane.sai.BufferProfileAttribute
+	2,  // 10: lemming.dataplane.sai.Buffer.CreateBufferPool:input_type -> lemming.dataplane.sai.CreateBufferPoolRequest
+	4,  // 11: lemming.dataplane.sai.Buffer.RemoveBufferPool:input_type -> lemming.dataplane.sai.RemoveBufferPoolRequest
+	6,  // 12: lemming.dataplane.sai.Buffer.SetBufferPoolAttribute:input_type -> lemming.dataplane.sai.SetBufferPoolAttributeRequest
+	8,  // 13: lemming.dataplane.sai.Buffer.GetBufferPoolAttribute:input_type -> lemming.dataplane.sai.GetBufferPoolAttributeRequest
+	10, // 14: lemming.dataplane.sai.Buffer.GetBufferPoolStats:input_type -> lemming.dataplane.sai.GetBufferPoolStatsRequest
+	12, // 15: lemming.dataplane.sai.Buffer.CreateBufferProfile:input_type -> lemming.dataplane.sai.CreateBufferProfileRequest
+	14, // 16: lemming.dataplane.sai.Buffer.RemoveBufferProfile:input_type -> lemming.dataplane.sai.RemoveBufferProfileRequest
+	16, // 17: lemming.dataplane.sai.Buffer.SetBufferProfileAttribute:input_type -> lemming.dataplane.sai.SetBufferProfileAttributeRequest
+	18, // 18: lemming.dataplane.sai.Buffer.GetBufferProfileAttribute:input_type -> lemming.dataplane.sai.GetBufferProfileAttributeRequest
+	3,  // 19: lemming.dataplane.sai.Buffer.CreateBufferPool:output_type -> lemming.dataplane.sai.CreateBufferPoolResponse
+	5,  // 20: lemming.dataplane.sai.Buffer.RemoveBufferPool:output_type -> lemming.dataplane.sai.RemoveBufferPoolResponse
+	7,  // 21: lemming.dataplane.sai.Buffer.SetBufferPoolAttribute:output_type -> lemming.dataplane.sai.SetBufferPoolAttributeResponse
+	9,  // 22: lemming.dataplane.sai.Buffer.GetBufferPoolAttribute:output_type -> lemming.dataplane.sai.GetBufferPoolAttributeResponse
+	11, // 23: lemming.dataplane.sai.Buffer.GetBufferPoolStats:output_type -> lemming.dataplane.sai.GetBufferPoolStatsResponse
+	13, // 24: lemming.dataplane.sai.Buffer.CreateBufferProfile:output_type -> lemming.dataplane.sai.CreateBufferProfileResponse
+	15, // 25: lemming.dataplane.sai.Buffer.RemoveBufferProfile:output_type -> lemming.dataplane.sai.RemoveBufferProfileResponse
+	17, // 26: lemming.dataplane.sai.Buffer.SetBufferProfileAttribute:output_type -> lemming.dataplane.sai.SetBufferProfileAttributeResponse
+	19, // 27: lemming.dataplane.sai.Buffer.GetBufferProfileAttribute:output_type -> lemming.dataplane.sai.GetBufferProfileAttributeResponse
+	19, // [19:28] is the sub-list for method output_type
+	10, // [10:19] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_dataplane_proto_sai_buffer_proto_init() }
@@ -2044,15 +1385,13 @@ func file_dataplane_proto_sai_buffer_proto_init() {
 	file_dataplane_proto_sai_buffer_proto_msgTypes[4].OneofWrappers = []any{}
 	file_dataplane_proto_sai_buffer_proto_msgTypes[10].OneofWrappers = []any{}
 	file_dataplane_proto_sai_buffer_proto_msgTypes[14].OneofWrappers = []any{}
-	file_dataplane_proto_sai_buffer_proto_msgTypes[20].OneofWrappers = []any{}
-	file_dataplane_proto_sai_buffer_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dataplane_proto_sai_buffer_proto_rawDesc), len(file_dataplane_proto_sai_buffer_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   28,
+			NumEnums:      2,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

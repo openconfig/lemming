@@ -82,73 +82,6 @@ func (Srv6SidlistAttr) EnumDescriptor() ([]byte, []int) {
 	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{0}
 }
 
-type MySidEntryAttr int32
-
-const (
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_UNSPECIFIED              MySidEntryAttr = 0
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR        MySidEntryAttr = 1
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR MySidEntryAttr = 2
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_PACKET_ACTION            MySidEntryAttr = 3
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_TRAP_PRIORITY            MySidEntryAttr = 4
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_NEXT_HOP_ID              MySidEntryAttr = 5
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_TUNNEL_ID                MySidEntryAttr = 6
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_VRF                      MySidEntryAttr = 7
-	MySidEntryAttr_MY_SID_ENTRY_ATTR_COUNTER_ID               MySidEntryAttr = 8
-)
-
-// Enum value maps for MySidEntryAttr.
-var (
-	MySidEntryAttr_name = map[int32]string{
-		0: "MY_SID_ENTRY_ATTR_UNSPECIFIED",
-		1: "MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR",
-		2: "MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR",
-		3: "MY_SID_ENTRY_ATTR_PACKET_ACTION",
-		4: "MY_SID_ENTRY_ATTR_TRAP_PRIORITY",
-		5: "MY_SID_ENTRY_ATTR_NEXT_HOP_ID",
-		6: "MY_SID_ENTRY_ATTR_TUNNEL_ID",
-		7: "MY_SID_ENTRY_ATTR_VRF",
-		8: "MY_SID_ENTRY_ATTR_COUNTER_ID",
-	}
-	MySidEntryAttr_value = map[string]int32{
-		"MY_SID_ENTRY_ATTR_UNSPECIFIED":              0,
-		"MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR":        1,
-		"MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR": 2,
-		"MY_SID_ENTRY_ATTR_PACKET_ACTION":            3,
-		"MY_SID_ENTRY_ATTR_TRAP_PRIORITY":            4,
-		"MY_SID_ENTRY_ATTR_NEXT_HOP_ID":              5,
-		"MY_SID_ENTRY_ATTR_TUNNEL_ID":                6,
-		"MY_SID_ENTRY_ATTR_VRF":                      7,
-		"MY_SID_ENTRY_ATTR_COUNTER_ID":               8,
-	}
-)
-
-func (x MySidEntryAttr) Enum() *MySidEntryAttr {
-	p := new(MySidEntryAttr)
-	*p = x
-	return p
-}
-
-func (x MySidEntryAttr) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (MySidEntryAttr) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_srv6_proto_enumTypes[1].Descriptor()
-}
-
-func (MySidEntryAttr) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_srv6_proto_enumTypes[1]
-}
-
-func (x MySidEntryAttr) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use MySidEntryAttr.Descriptor instead.
-func (MySidEntryAttr) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{1}
-}
-
 type CreateSrv6SidlistRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	Switch               uint64                 `protobuf:"varint,1,opt,name=switch,proto3" json:"switch,omitempty"`
@@ -853,646 +786,6 @@ func (x *GetSrv6SidlistStatsResponse) GetValues() []uint64 {
 	return nil
 }
 
-type CreateMySidEntryRequest struct {
-	state                  protoimpl.MessageState            `protogen:"open.v1"`
-	Entry                  *MySidEntry                       `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
-	EndpointBehavior       *MySidEntryEndpointBehavior       `protobuf:"varint,2,opt,name=endpoint_behavior,json=endpointBehavior,proto3,enum=lemming.dataplane.sai.MySidEntryEndpointBehavior,oneof" json:"endpoint_behavior,omitempty"`
-	EndpointBehaviorFlavor *MySidEntryEndpointBehaviorFlavor `protobuf:"varint,3,opt,name=endpoint_behavior_flavor,json=endpointBehaviorFlavor,proto3,enum=lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor,oneof" json:"endpoint_behavior_flavor,omitempty"`
-	PacketAction           *PacketAction                     `protobuf:"varint,4,opt,name=packet_action,json=packetAction,proto3,enum=lemming.dataplane.sai.PacketAction,oneof" json:"packet_action,omitempty"`
-	TrapPriority           *uint32                           `protobuf:"varint,5,opt,name=trap_priority,json=trapPriority,proto3,oneof" json:"trap_priority,omitempty"`
-	NextHopId              *uint64                           `protobuf:"varint,6,opt,name=next_hop_id,json=nextHopId,proto3,oneof" json:"next_hop_id,omitempty"`
-	TunnelId               *uint64                           `protobuf:"varint,7,opt,name=tunnel_id,json=tunnelId,proto3,oneof" json:"tunnel_id,omitempty"`
-	Vrf                    *uint64                           `protobuf:"varint,8,opt,name=vrf,proto3,oneof" json:"vrf,omitempty"`
-	CounterId              *uint64                           `protobuf:"varint,9,opt,name=counter_id,json=counterId,proto3,oneof" json:"counter_id,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
-}
-
-func (x *CreateMySidEntryRequest) Reset() {
-	*x = CreateMySidEntryRequest{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateMySidEntryRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateMySidEntryRequest) ProtoMessage() {}
-
-func (x *CreateMySidEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateMySidEntryRequest.ProtoReflect.Descriptor instead.
-func (*CreateMySidEntryRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *CreateMySidEntryRequest) GetEntry() *MySidEntry {
-	if x != nil {
-		return x.Entry
-	}
-	return nil
-}
-
-func (x *CreateMySidEntryRequest) GetEndpointBehavior() MySidEntryEndpointBehavior {
-	if x != nil && x.EndpointBehavior != nil {
-		return *x.EndpointBehavior
-	}
-	return MySidEntryEndpointBehavior_MY_SID_ENTRY_ENDPOINT_BEHAVIOR_UNSPECIFIED
-}
-
-func (x *CreateMySidEntryRequest) GetEndpointBehaviorFlavor() MySidEntryEndpointBehaviorFlavor {
-	if x != nil && x.EndpointBehaviorFlavor != nil {
-		return *x.EndpointBehaviorFlavor
-	}
-	return MySidEntryEndpointBehaviorFlavor_MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_UNSPECIFIED
-}
-
-func (x *CreateMySidEntryRequest) GetPacketAction() PacketAction {
-	if x != nil && x.PacketAction != nil {
-		return *x.PacketAction
-	}
-	return PacketAction_PACKET_ACTION_UNSPECIFIED
-}
-
-func (x *CreateMySidEntryRequest) GetTrapPriority() uint32 {
-	if x != nil && x.TrapPriority != nil {
-		return *x.TrapPriority
-	}
-	return 0
-}
-
-func (x *CreateMySidEntryRequest) GetNextHopId() uint64 {
-	if x != nil && x.NextHopId != nil {
-		return *x.NextHopId
-	}
-	return 0
-}
-
-func (x *CreateMySidEntryRequest) GetTunnelId() uint64 {
-	if x != nil && x.TunnelId != nil {
-		return *x.TunnelId
-	}
-	return 0
-}
-
-func (x *CreateMySidEntryRequest) GetVrf() uint64 {
-	if x != nil && x.Vrf != nil {
-		return *x.Vrf
-	}
-	return 0
-}
-
-func (x *CreateMySidEntryRequest) GetCounterId() uint64 {
-	if x != nil && x.CounterId != nil {
-		return *x.CounterId
-	}
-	return 0
-}
-
-type CreateMySidEntryResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateMySidEntryResponse) Reset() {
-	*x = CreateMySidEntryResponse{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateMySidEntryResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateMySidEntryResponse) ProtoMessage() {}
-
-func (x *CreateMySidEntryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateMySidEntryResponse.ProtoReflect.Descriptor instead.
-func (*CreateMySidEntryResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{15}
-}
-
-type RemoveMySidEntryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entry         *MySidEntry            `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveMySidEntryRequest) Reset() {
-	*x = RemoveMySidEntryRequest{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveMySidEntryRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveMySidEntryRequest) ProtoMessage() {}
-
-func (x *RemoveMySidEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveMySidEntryRequest.ProtoReflect.Descriptor instead.
-func (*RemoveMySidEntryRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *RemoveMySidEntryRequest) GetEntry() *MySidEntry {
-	if x != nil {
-		return x.Entry
-	}
-	return nil
-}
-
-type RemoveMySidEntryResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveMySidEntryResponse) Reset() {
-	*x = RemoveMySidEntryResponse{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveMySidEntryResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveMySidEntryResponse) ProtoMessage() {}
-
-func (x *RemoveMySidEntryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveMySidEntryResponse.ProtoReflect.Descriptor instead.
-func (*RemoveMySidEntryResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{17}
-}
-
-type SetMySidEntryAttributeRequest struct {
-	state                  protoimpl.MessageState            `protogen:"open.v1"`
-	Entry                  *MySidEntry                       `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
-	EndpointBehavior       *MySidEntryEndpointBehavior       `protobuf:"varint,2,opt,name=endpoint_behavior,json=endpointBehavior,proto3,enum=lemming.dataplane.sai.MySidEntryEndpointBehavior,oneof" json:"endpoint_behavior,omitempty"`
-	EndpointBehaviorFlavor *MySidEntryEndpointBehaviorFlavor `protobuf:"varint,3,opt,name=endpoint_behavior_flavor,json=endpointBehaviorFlavor,proto3,enum=lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor,oneof" json:"endpoint_behavior_flavor,omitempty"`
-	PacketAction           *PacketAction                     `protobuf:"varint,4,opt,name=packet_action,json=packetAction,proto3,enum=lemming.dataplane.sai.PacketAction,oneof" json:"packet_action,omitempty"`
-	TrapPriority           *uint32                           `protobuf:"varint,5,opt,name=trap_priority,json=trapPriority,proto3,oneof" json:"trap_priority,omitempty"`
-	NextHopId              *uint64                           `protobuf:"varint,6,opt,name=next_hop_id,json=nextHopId,proto3,oneof" json:"next_hop_id,omitempty"`
-	TunnelId               *uint64                           `protobuf:"varint,7,opt,name=tunnel_id,json=tunnelId,proto3,oneof" json:"tunnel_id,omitempty"`
-	Vrf                    *uint64                           `protobuf:"varint,8,opt,name=vrf,proto3,oneof" json:"vrf,omitempty"`
-	CounterId              *uint64                           `protobuf:"varint,9,opt,name=counter_id,json=counterId,proto3,oneof" json:"counter_id,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
-}
-
-func (x *SetMySidEntryAttributeRequest) Reset() {
-	*x = SetMySidEntryAttributeRequest{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetMySidEntryAttributeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetMySidEntryAttributeRequest) ProtoMessage() {}
-
-func (x *SetMySidEntryAttributeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetMySidEntryAttributeRequest.ProtoReflect.Descriptor instead.
-func (*SetMySidEntryAttributeRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *SetMySidEntryAttributeRequest) GetEntry() *MySidEntry {
-	if x != nil {
-		return x.Entry
-	}
-	return nil
-}
-
-func (x *SetMySidEntryAttributeRequest) GetEndpointBehavior() MySidEntryEndpointBehavior {
-	if x != nil && x.EndpointBehavior != nil {
-		return *x.EndpointBehavior
-	}
-	return MySidEntryEndpointBehavior_MY_SID_ENTRY_ENDPOINT_BEHAVIOR_UNSPECIFIED
-}
-
-func (x *SetMySidEntryAttributeRequest) GetEndpointBehaviorFlavor() MySidEntryEndpointBehaviorFlavor {
-	if x != nil && x.EndpointBehaviorFlavor != nil {
-		return *x.EndpointBehaviorFlavor
-	}
-	return MySidEntryEndpointBehaviorFlavor_MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_UNSPECIFIED
-}
-
-func (x *SetMySidEntryAttributeRequest) GetPacketAction() PacketAction {
-	if x != nil && x.PacketAction != nil {
-		return *x.PacketAction
-	}
-	return PacketAction_PACKET_ACTION_UNSPECIFIED
-}
-
-func (x *SetMySidEntryAttributeRequest) GetTrapPriority() uint32 {
-	if x != nil && x.TrapPriority != nil {
-		return *x.TrapPriority
-	}
-	return 0
-}
-
-func (x *SetMySidEntryAttributeRequest) GetNextHopId() uint64 {
-	if x != nil && x.NextHopId != nil {
-		return *x.NextHopId
-	}
-	return 0
-}
-
-func (x *SetMySidEntryAttributeRequest) GetTunnelId() uint64 {
-	if x != nil && x.TunnelId != nil {
-		return *x.TunnelId
-	}
-	return 0
-}
-
-func (x *SetMySidEntryAttributeRequest) GetVrf() uint64 {
-	if x != nil && x.Vrf != nil {
-		return *x.Vrf
-	}
-	return 0
-}
-
-func (x *SetMySidEntryAttributeRequest) GetCounterId() uint64 {
-	if x != nil && x.CounterId != nil {
-		return *x.CounterId
-	}
-	return 0
-}
-
-type SetMySidEntryAttributeResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SetMySidEntryAttributeResponse) Reset() {
-	*x = SetMySidEntryAttributeResponse{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[19]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetMySidEntryAttributeResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetMySidEntryAttributeResponse) ProtoMessage() {}
-
-func (x *SetMySidEntryAttributeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[19]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetMySidEntryAttributeResponse.ProtoReflect.Descriptor instead.
-func (*SetMySidEntryAttributeResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{19}
-}
-
-type GetMySidEntryAttributeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entry         *MySidEntry            `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
-	AttrType      []MySidEntryAttr       `protobuf:"varint,2,rep,packed,name=attr_type,json=attrType,proto3,enum=lemming.dataplane.sai.MySidEntryAttr" json:"attr_type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetMySidEntryAttributeRequest) Reset() {
-	*x = GetMySidEntryAttributeRequest{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[20]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetMySidEntryAttributeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetMySidEntryAttributeRequest) ProtoMessage() {}
-
-func (x *GetMySidEntryAttributeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[20]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetMySidEntryAttributeRequest.ProtoReflect.Descriptor instead.
-func (*GetMySidEntryAttributeRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{20}
-}
-
-func (x *GetMySidEntryAttributeRequest) GetEntry() *MySidEntry {
-	if x != nil {
-		return x.Entry
-	}
-	return nil
-}
-
-func (x *GetMySidEntryAttributeRequest) GetAttrType() []MySidEntryAttr {
-	if x != nil {
-		return x.AttrType
-	}
-	return nil
-}
-
-type GetMySidEntryAttributeResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Attr          *MySidEntryAttribute   `protobuf:"bytes,1,opt,name=attr,proto3" json:"attr,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetMySidEntryAttributeResponse) Reset() {
-	*x = GetMySidEntryAttributeResponse{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[21]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetMySidEntryAttributeResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetMySidEntryAttributeResponse) ProtoMessage() {}
-
-func (x *GetMySidEntryAttributeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[21]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetMySidEntryAttributeResponse.ProtoReflect.Descriptor instead.
-func (*GetMySidEntryAttributeResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{21}
-}
-
-func (x *GetMySidEntryAttributeResponse) GetAttr() *MySidEntryAttribute {
-	if x != nil {
-		return x.Attr
-	}
-	return nil
-}
-
-type CreateMySidEntriesRequest struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Reqs          []*CreateMySidEntryRequest `protobuf:"bytes,1,rep,name=reqs,proto3" json:"reqs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateMySidEntriesRequest) Reset() {
-	*x = CreateMySidEntriesRequest{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateMySidEntriesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateMySidEntriesRequest) ProtoMessage() {}
-
-func (x *CreateMySidEntriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[22]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateMySidEntriesRequest.ProtoReflect.Descriptor instead.
-func (*CreateMySidEntriesRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{22}
-}
-
-func (x *CreateMySidEntriesRequest) GetReqs() []*CreateMySidEntryRequest {
-	if x != nil {
-		return x.Reqs
-	}
-	return nil
-}
-
-type CreateMySidEntriesResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Resps         []*CreateMySidEntryResponse `protobuf:"bytes,1,rep,name=resps,proto3" json:"resps,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateMySidEntriesResponse) Reset() {
-	*x = CreateMySidEntriesResponse{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateMySidEntriesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateMySidEntriesResponse) ProtoMessage() {}
-
-func (x *CreateMySidEntriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateMySidEntriesResponse.ProtoReflect.Descriptor instead.
-func (*CreateMySidEntriesResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *CreateMySidEntriesResponse) GetResps() []*CreateMySidEntryResponse {
-	if x != nil {
-		return x.Resps
-	}
-	return nil
-}
-
-type RemoveMySidEntriesRequest struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Reqs          []*RemoveMySidEntryRequest `protobuf:"bytes,1,rep,name=reqs,proto3" json:"reqs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveMySidEntriesRequest) Reset() {
-	*x = RemoveMySidEntriesRequest{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[24]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveMySidEntriesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveMySidEntriesRequest) ProtoMessage() {}
-
-func (x *RemoveMySidEntriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[24]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveMySidEntriesRequest.ProtoReflect.Descriptor instead.
-func (*RemoveMySidEntriesRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{24}
-}
-
-func (x *RemoveMySidEntriesRequest) GetReqs() []*RemoveMySidEntryRequest {
-	if x != nil {
-		return x.Reqs
-	}
-	return nil
-}
-
-type RemoveMySidEntriesResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Resps         []*RemoveMySidEntryResponse `protobuf:"bytes,1,rep,name=resps,proto3" json:"resps,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveMySidEntriesResponse) Reset() {
-	*x = RemoveMySidEntriesResponse{}
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveMySidEntriesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveMySidEntriesResponse) ProtoMessage() {}
-
-func (x *RemoveMySidEntriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_srv6_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveMySidEntriesResponse.ProtoReflect.Descriptor instead.
-func (*RemoveMySidEntriesResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_srv6_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *RemoveMySidEntriesResponse) GetResps() []*RemoveMySidEntryResponse {
-	if x != nil {
-		return x.Resps
-	}
-	return nil
-}
-
 var File_dataplane_proto_sai_srv6_proto protoreflect.FileDescriptor
 
 const file_dataplane_proto_sai_srv6_proto_rawDesc = "" +
@@ -1542,65 +835,7 @@ const file_dataplane_proto_sai_srv6_proto_rawDesc = "" +
 	"\vcounter_ids\x18\x02 \x03(\x0e2&.lemming.dataplane.sai.Srv6SidlistStatR\n" +
 	"counterIds\"5\n" +
 	"\x1bGetSrv6SidlistStatsResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\x04R\x06values\"\xfe\x05\n" +
-	"\x17CreateMySidEntryRequest\x127\n" +
-	"\x05entry\x18\x01 \x01(\v2!.lemming.dataplane.sai.MySidEntryR\x05entry\x12k\n" +
-	"\x11endpoint_behavior\x18\x02 \x01(\x0e21.lemming.dataplane.sai.MySidEntryEndpointBehaviorB\x06\xf0ܓ\xad\x0f\x01H\x00R\x10endpointBehavior\x88\x01\x01\x12~\n" +
-	"\x18endpoint_behavior_flavor\x18\x03 \x01(\x0e27.lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavorB\x06\xf0ܓ\xad\x0f\x02H\x01R\x16endpointBehaviorFlavor\x88\x01\x01\x12U\n" +
-	"\rpacket_action\x18\x04 \x01(\x0e2#.lemming.dataplane.sai.PacketActionB\x06\xf0ܓ\xad\x0f\x03H\x02R\fpacketAction\x88\x01\x01\x120\n" +
-	"\rtrap_priority\x18\x05 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x03R\ftrapPriority\x88\x01\x01\x12+\n" +
-	"\vnext_hop_id\x18\x06 \x01(\x04B\x06\xf0ܓ\xad\x0f\x05H\x04R\tnextHopId\x88\x01\x01\x12(\n" +
-	"\ttunnel_id\x18\a \x01(\x04B\x06\xf0ܓ\xad\x0f\x06H\x05R\btunnelId\x88\x01\x01\x12\x1d\n" +
-	"\x03vrf\x18\b \x01(\x04B\x06\xf0ܓ\xad\x0f\aH\x06R\x03vrf\x88\x01\x01\x12*\n" +
-	"\n" +
-	"counter_id\x18\t \x01(\x04B\x06\xf0ܓ\xad\x0f\bH\aR\tcounterId\x88\x01\x01:\x06\xa0\xa9\x90\xad\x0faB\x14\n" +
-	"\x12_endpoint_behaviorB\x1b\n" +
-	"\x19_endpoint_behavior_flavorB\x10\n" +
-	"\x0e_packet_actionB\x10\n" +
-	"\x0e_trap_priorityB\x0e\n" +
-	"\f_next_hop_idB\f\n" +
-	"\n" +
-	"_tunnel_idB\x06\n" +
-	"\x04_vrfB\r\n" +
-	"\v_counter_id\"\x1a\n" +
-	"\x18CreateMySidEntryResponse\"R\n" +
-	"\x17RemoveMySidEntryRequest\x127\n" +
-	"\x05entry\x18\x01 \x01(\v2!.lemming.dataplane.sai.MySidEntryR\x05entry\"\x1a\n" +
-	"\x18RemoveMySidEntryResponse\"\xfc\x05\n" +
-	"\x1dSetMySidEntryAttributeRequest\x127\n" +
-	"\x05entry\x18\x01 \x01(\v2!.lemming.dataplane.sai.MySidEntryR\x05entry\x12k\n" +
-	"\x11endpoint_behavior\x18\x02 \x01(\x0e21.lemming.dataplane.sai.MySidEntryEndpointBehaviorB\x06\xf0ܓ\xad\x0f\x01H\x00R\x10endpointBehavior\x88\x01\x01\x12~\n" +
-	"\x18endpoint_behavior_flavor\x18\x03 \x01(\x0e27.lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavorB\x06\xf0ܓ\xad\x0f\x02H\x01R\x16endpointBehaviorFlavor\x88\x01\x01\x12U\n" +
-	"\rpacket_action\x18\x04 \x01(\x0e2#.lemming.dataplane.sai.PacketActionB\x06\xf0ܓ\xad\x0f\x03H\x02R\fpacketAction\x88\x01\x01\x120\n" +
-	"\rtrap_priority\x18\x05 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x03R\ftrapPriority\x88\x01\x01\x12+\n" +
-	"\vnext_hop_id\x18\x06 \x01(\x04B\x06\xf0ܓ\xad\x0f\x05H\x04R\tnextHopId\x88\x01\x01\x12(\n" +
-	"\ttunnel_id\x18\a \x01(\x04B\x06\xf0ܓ\xad\x0f\x06H\x05R\btunnelId\x88\x01\x01\x12\x1d\n" +
-	"\x03vrf\x18\b \x01(\x04B\x06\xf0ܓ\xad\x0f\aH\x06R\x03vrf\x88\x01\x01\x12*\n" +
-	"\n" +
-	"counter_id\x18\t \x01(\x04B\x06\xf0ܓ\xad\x0f\bH\aR\tcounterId\x88\x01\x01B\x14\n" +
-	"\x12_endpoint_behaviorB\x1b\n" +
-	"\x19_endpoint_behavior_flavorB\x10\n" +
-	"\x0e_packet_actionB\x10\n" +
-	"\x0e_trap_priorityB\x0e\n" +
-	"\f_next_hop_idB\f\n" +
-	"\n" +
-	"_tunnel_idB\x06\n" +
-	"\x04_vrfB\r\n" +
-	"\v_counter_id\" \n" +
-	"\x1eSetMySidEntryAttributeResponse\"\x9c\x01\n" +
-	"\x1dGetMySidEntryAttributeRequest\x127\n" +
-	"\x05entry\x18\x01 \x01(\v2!.lemming.dataplane.sai.MySidEntryR\x05entry\x12B\n" +
-	"\tattr_type\x18\x02 \x03(\x0e2%.lemming.dataplane.sai.MySidEntryAttrR\battrType\"`\n" +
-	"\x1eGetMySidEntryAttributeResponse\x12>\n" +
-	"\x04attr\x18\x01 \x01(\v2*.lemming.dataplane.sai.MySidEntryAttributeR\x04attr\"_\n" +
-	"\x19CreateMySidEntriesRequest\x12B\n" +
-	"\x04reqs\x18\x01 \x03(\v2..lemming.dataplane.sai.CreateMySidEntryRequestR\x04reqs\"c\n" +
-	"\x1aCreateMySidEntriesResponse\x12E\n" +
-	"\x05resps\x18\x01 \x03(\v2/.lemming.dataplane.sai.CreateMySidEntryResponseR\x05resps\"_\n" +
-	"\x19RemoveMySidEntriesRequest\x12B\n" +
-	"\x04reqs\x18\x01 \x03(\v2..lemming.dataplane.sai.RemoveMySidEntryRequestR\x04reqs\"c\n" +
-	"\x1aRemoveMySidEntriesResponse\x12E\n" +
-	"\x05resps\x18\x01 \x03(\v2/.lemming.dataplane.sai.RemoveMySidEntryResponseR\x05resps*\x8d\x02\n" +
+	"\x06values\x18\x01 \x03(\x04R\x06values*\x8d\x02\n" +
 	"\x0fSrv6SidlistAttr\x12!\n" +
 	"\x1dSRV6_SIDLIST_ATTR_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16SRV6_SIDLIST_ATTR_TYPE\x10\x01\x12\x1e\n" +
@@ -1608,17 +843,7 @@ const file_dataplane_proto_sai_srv6_proto_rawDesc = "" +
 	"\x1eSRV6_SIDLIST_ATTR_SEGMENT_LIST\x10\x03\x12!\n" +
 	"\x1dSRV6_SIDLIST_ATTR_NEXT_HOP_ID\x10\x04\x12&\n" +
 	"\"SRV6_SIDLIST_ATTR_STATS_COUNT_MODE\x10\x05\x12,\n" +
-	"(SRV6_SIDLIST_ATTR_SELECTIVE_COUNTER_LIST\x10\x06*\xd7\x02\n" +
-	"\x0eMySidEntryAttr\x12!\n" +
-	"\x1dMY_SID_ENTRY_ATTR_UNSPECIFIED\x10\x00\x12'\n" +
-	"#MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR\x10\x01\x12.\n" +
-	"*MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR\x10\x02\x12#\n" +
-	"\x1fMY_SID_ENTRY_ATTR_PACKET_ACTION\x10\x03\x12#\n" +
-	"\x1fMY_SID_ENTRY_ATTR_TRAP_PRIORITY\x10\x04\x12!\n" +
-	"\x1dMY_SID_ENTRY_ATTR_NEXT_HOP_ID\x10\x05\x12\x1f\n" +
-	"\x1bMY_SID_ENTRY_ATTR_TUNNEL_ID\x10\x06\x12\x19\n" +
-	"\x15MY_SID_ENTRY_ATTR_VRF\x10\a\x12 \n" +
-	"\x1cMY_SID_ENTRY_ATTR_COUNTER_ID\x10\b2\x8a\r\n" +
+	"(SRV6_SIDLIST_ATTR_SELECTIVE_COUNTER_LIST\x10\x062\x8e\a\n" +
 	"\x04Srv6\x12x\n" +
 	"\x11CreateSrv6Sidlist\x12/.lemming.dataplane.sai.CreateSrv6SidlistRequest\x1a0.lemming.dataplane.sai.CreateSrv6SidlistResponse\"\x00\x12x\n" +
 	"\x11RemoveSrv6Sidlist\x12/.lemming.dataplane.sai.RemoveSrv6SidlistRequest\x1a0.lemming.dataplane.sai.RemoveSrv6SidlistResponse\"\x00\x12\x8a\x01\n" +
@@ -1626,13 +851,7 @@ const file_dataplane_proto_sai_srv6_proto_rawDesc = "" +
 	"\x17GetSrv6SidlistAttribute\x125.lemming.dataplane.sai.GetSrv6SidlistAttributeRequest\x1a6.lemming.dataplane.sai.GetSrv6SidlistAttributeResponse\"\x00\x12{\n" +
 	"\x12CreateSrv6Sidlists\x120.lemming.dataplane.sai.CreateSrv6SidlistsRequest\x1a1.lemming.dataplane.sai.CreateSrv6SidlistsResponse\"\x00\x12{\n" +
 	"\x12RemoveSrv6Sidlists\x120.lemming.dataplane.sai.RemoveSrv6SidlistsRequest\x1a1.lemming.dataplane.sai.RemoveSrv6SidlistsResponse\"\x00\x12~\n" +
-	"\x13GetSrv6SidlistStats\x121.lemming.dataplane.sai.GetSrv6SidlistStatsRequest\x1a2.lemming.dataplane.sai.GetSrv6SidlistStatsResponse\"\x00\x12u\n" +
-	"\x10CreateMySidEntry\x12..lemming.dataplane.sai.CreateMySidEntryRequest\x1a/.lemming.dataplane.sai.CreateMySidEntryResponse\"\x00\x12u\n" +
-	"\x10RemoveMySidEntry\x12..lemming.dataplane.sai.RemoveMySidEntryRequest\x1a/.lemming.dataplane.sai.RemoveMySidEntryResponse\"\x00\x12\x87\x01\n" +
-	"\x16SetMySidEntryAttribute\x124.lemming.dataplane.sai.SetMySidEntryAttributeRequest\x1a5.lemming.dataplane.sai.SetMySidEntryAttributeResponse\"\x00\x12\x87\x01\n" +
-	"\x16GetMySidEntryAttribute\x124.lemming.dataplane.sai.GetMySidEntryAttributeRequest\x1a5.lemming.dataplane.sai.GetMySidEntryAttributeResponse\"\x00\x12{\n" +
-	"\x12CreateMySidEntries\x120.lemming.dataplane.sai.CreateMySidEntriesRequest\x1a1.lemming.dataplane.sai.CreateMySidEntriesResponse\"\x00\x12{\n" +
-	"\x12RemoveMySidEntries\x120.lemming.dataplane.sai.RemoveMySidEntriesRequest\x1a1.lemming.dataplane.sai.RemoveMySidEntriesResponse\"\x00B3Z1github.com/openconfig/lemming/dataplane/proto/saib\x06proto3"
+	"\x13GetSrv6SidlistStats\x121.lemming.dataplane.sai.GetSrv6SidlistStatsRequest\x1a2.lemming.dataplane.sai.GetSrv6SidlistStatsResponse\"\x00B3Z1github.com/openconfig/lemming/dataplane/proto/saib\x06proto3"
 
 var (
 	file_dataplane_proto_sai_srv6_proto_rawDescOnce sync.Once
@@ -1646,108 +865,62 @@ func file_dataplane_proto_sai_srv6_proto_rawDescGZIP() []byte {
 	return file_dataplane_proto_sai_srv6_proto_rawDescData
 }
 
-var file_dataplane_proto_sai_srv6_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_dataplane_proto_sai_srv6_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_dataplane_proto_sai_srv6_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_dataplane_proto_sai_srv6_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_dataplane_proto_sai_srv6_proto_goTypes = []any{
 	(Srv6SidlistAttr)(0),                    // 0: lemming.dataplane.sai.Srv6SidlistAttr
-	(MySidEntryAttr)(0),                     // 1: lemming.dataplane.sai.MySidEntryAttr
-	(*CreateSrv6SidlistRequest)(nil),        // 2: lemming.dataplane.sai.CreateSrv6SidlistRequest
-	(*CreateSrv6SidlistResponse)(nil),       // 3: lemming.dataplane.sai.CreateSrv6SidlistResponse
-	(*RemoveSrv6SidlistRequest)(nil),        // 4: lemming.dataplane.sai.RemoveSrv6SidlistRequest
-	(*RemoveSrv6SidlistResponse)(nil),       // 5: lemming.dataplane.sai.RemoveSrv6SidlistResponse
-	(*SetSrv6SidlistAttributeRequest)(nil),  // 6: lemming.dataplane.sai.SetSrv6SidlistAttributeRequest
-	(*SetSrv6SidlistAttributeResponse)(nil), // 7: lemming.dataplane.sai.SetSrv6SidlistAttributeResponse
-	(*GetSrv6SidlistAttributeRequest)(nil),  // 8: lemming.dataplane.sai.GetSrv6SidlistAttributeRequest
-	(*GetSrv6SidlistAttributeResponse)(nil), // 9: lemming.dataplane.sai.GetSrv6SidlistAttributeResponse
-	(*CreateSrv6SidlistsRequest)(nil),       // 10: lemming.dataplane.sai.CreateSrv6SidlistsRequest
-	(*CreateSrv6SidlistsResponse)(nil),      // 11: lemming.dataplane.sai.CreateSrv6SidlistsResponse
-	(*RemoveSrv6SidlistsRequest)(nil),       // 12: lemming.dataplane.sai.RemoveSrv6SidlistsRequest
-	(*RemoveSrv6SidlistsResponse)(nil),      // 13: lemming.dataplane.sai.RemoveSrv6SidlistsResponse
-	(*GetSrv6SidlistStatsRequest)(nil),      // 14: lemming.dataplane.sai.GetSrv6SidlistStatsRequest
-	(*GetSrv6SidlistStatsResponse)(nil),     // 15: lemming.dataplane.sai.GetSrv6SidlistStatsResponse
-	(*CreateMySidEntryRequest)(nil),         // 16: lemming.dataplane.sai.CreateMySidEntryRequest
-	(*CreateMySidEntryResponse)(nil),        // 17: lemming.dataplane.sai.CreateMySidEntryResponse
-	(*RemoveMySidEntryRequest)(nil),         // 18: lemming.dataplane.sai.RemoveMySidEntryRequest
-	(*RemoveMySidEntryResponse)(nil),        // 19: lemming.dataplane.sai.RemoveMySidEntryResponse
-	(*SetMySidEntryAttributeRequest)(nil),   // 20: lemming.dataplane.sai.SetMySidEntryAttributeRequest
-	(*SetMySidEntryAttributeResponse)(nil),  // 21: lemming.dataplane.sai.SetMySidEntryAttributeResponse
-	(*GetMySidEntryAttributeRequest)(nil),   // 22: lemming.dataplane.sai.GetMySidEntryAttributeRequest
-	(*GetMySidEntryAttributeResponse)(nil),  // 23: lemming.dataplane.sai.GetMySidEntryAttributeResponse
-	(*CreateMySidEntriesRequest)(nil),       // 24: lemming.dataplane.sai.CreateMySidEntriesRequest
-	(*CreateMySidEntriesResponse)(nil),      // 25: lemming.dataplane.sai.CreateMySidEntriesResponse
-	(*RemoveMySidEntriesRequest)(nil),       // 26: lemming.dataplane.sai.RemoveMySidEntriesRequest
-	(*RemoveMySidEntriesResponse)(nil),      // 27: lemming.dataplane.sai.RemoveMySidEntriesResponse
-	(Srv6SidlistType)(0),                    // 28: lemming.dataplane.sai.Srv6SidlistType
-	(*TLVEntry)(nil),                        // 29: lemming.dataplane.sai.TLVEntry
-	(StatsCountMode)(0),                     // 30: lemming.dataplane.sai.StatsCountMode
-	(*Srv6SidlistAttribute)(nil),            // 31: lemming.dataplane.sai.Srv6SidlistAttribute
-	(Srv6SidlistStat)(0),                    // 32: lemming.dataplane.sai.Srv6SidlistStat
-	(*MySidEntry)(nil),                      // 33: lemming.dataplane.sai.MySidEntry
-	(MySidEntryEndpointBehavior)(0),         // 34: lemming.dataplane.sai.MySidEntryEndpointBehavior
-	(MySidEntryEndpointBehaviorFlavor)(0),   // 35: lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor
-	(PacketAction)(0),                       // 36: lemming.dataplane.sai.PacketAction
-	(*MySidEntryAttribute)(nil),             // 37: lemming.dataplane.sai.MySidEntryAttribute
+	(*CreateSrv6SidlistRequest)(nil),        // 1: lemming.dataplane.sai.CreateSrv6SidlistRequest
+	(*CreateSrv6SidlistResponse)(nil),       // 2: lemming.dataplane.sai.CreateSrv6SidlistResponse
+	(*RemoveSrv6SidlistRequest)(nil),        // 3: lemming.dataplane.sai.RemoveSrv6SidlistRequest
+	(*RemoveSrv6SidlistResponse)(nil),       // 4: lemming.dataplane.sai.RemoveSrv6SidlistResponse
+	(*SetSrv6SidlistAttributeRequest)(nil),  // 5: lemming.dataplane.sai.SetSrv6SidlistAttributeRequest
+	(*SetSrv6SidlistAttributeResponse)(nil), // 6: lemming.dataplane.sai.SetSrv6SidlistAttributeResponse
+	(*GetSrv6SidlistAttributeRequest)(nil),  // 7: lemming.dataplane.sai.GetSrv6SidlistAttributeRequest
+	(*GetSrv6SidlistAttributeResponse)(nil), // 8: lemming.dataplane.sai.GetSrv6SidlistAttributeResponse
+	(*CreateSrv6SidlistsRequest)(nil),       // 9: lemming.dataplane.sai.CreateSrv6SidlistsRequest
+	(*CreateSrv6SidlistsResponse)(nil),      // 10: lemming.dataplane.sai.CreateSrv6SidlistsResponse
+	(*RemoveSrv6SidlistsRequest)(nil),       // 11: lemming.dataplane.sai.RemoveSrv6SidlistsRequest
+	(*RemoveSrv6SidlistsResponse)(nil),      // 12: lemming.dataplane.sai.RemoveSrv6SidlistsResponse
+	(*GetSrv6SidlistStatsRequest)(nil),      // 13: lemming.dataplane.sai.GetSrv6SidlistStatsRequest
+	(*GetSrv6SidlistStatsResponse)(nil),     // 14: lemming.dataplane.sai.GetSrv6SidlistStatsResponse
+	(Srv6SidlistType)(0),                    // 15: lemming.dataplane.sai.Srv6SidlistType
+	(*TLVEntry)(nil),                        // 16: lemming.dataplane.sai.TLVEntry
+	(StatsCountMode)(0),                     // 17: lemming.dataplane.sai.StatsCountMode
+	(*Srv6SidlistAttribute)(nil),            // 18: lemming.dataplane.sai.Srv6SidlistAttribute
+	(Srv6SidlistStat)(0),                    // 19: lemming.dataplane.sai.Srv6SidlistStat
 }
 var file_dataplane_proto_sai_srv6_proto_depIdxs = []int32{
-	28, // 0: lemming.dataplane.sai.CreateSrv6SidlistRequest.type:type_name -> lemming.dataplane.sai.Srv6SidlistType
-	29, // 1: lemming.dataplane.sai.CreateSrv6SidlistRequest.tlv_list:type_name -> lemming.dataplane.sai.TLVEntry
-	30, // 2: lemming.dataplane.sai.CreateSrv6SidlistRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	29, // 3: lemming.dataplane.sai.SetSrv6SidlistAttributeRequest.tlv_list:type_name -> lemming.dataplane.sai.TLVEntry
-	30, // 4: lemming.dataplane.sai.SetSrv6SidlistAttributeRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	15, // 0: lemming.dataplane.sai.CreateSrv6SidlistRequest.type:type_name -> lemming.dataplane.sai.Srv6SidlistType
+	16, // 1: lemming.dataplane.sai.CreateSrv6SidlistRequest.tlv_list:type_name -> lemming.dataplane.sai.TLVEntry
+	17, // 2: lemming.dataplane.sai.CreateSrv6SidlistRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	16, // 3: lemming.dataplane.sai.SetSrv6SidlistAttributeRequest.tlv_list:type_name -> lemming.dataplane.sai.TLVEntry
+	17, // 4: lemming.dataplane.sai.SetSrv6SidlistAttributeRequest.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
 	0,  // 5: lemming.dataplane.sai.GetSrv6SidlistAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.Srv6SidlistAttr
-	31, // 6: lemming.dataplane.sai.GetSrv6SidlistAttributeResponse.attr:type_name -> lemming.dataplane.sai.Srv6SidlistAttribute
-	2,  // 7: lemming.dataplane.sai.CreateSrv6SidlistsRequest.reqs:type_name -> lemming.dataplane.sai.CreateSrv6SidlistRequest
-	3,  // 8: lemming.dataplane.sai.CreateSrv6SidlistsResponse.resps:type_name -> lemming.dataplane.sai.CreateSrv6SidlistResponse
-	4,  // 9: lemming.dataplane.sai.RemoveSrv6SidlistsRequest.reqs:type_name -> lemming.dataplane.sai.RemoveSrv6SidlistRequest
-	5,  // 10: lemming.dataplane.sai.RemoveSrv6SidlistsResponse.resps:type_name -> lemming.dataplane.sai.RemoveSrv6SidlistResponse
-	32, // 11: lemming.dataplane.sai.GetSrv6SidlistStatsRequest.counter_ids:type_name -> lemming.dataplane.sai.Srv6SidlistStat
-	33, // 12: lemming.dataplane.sai.CreateMySidEntryRequest.entry:type_name -> lemming.dataplane.sai.MySidEntry
-	34, // 13: lemming.dataplane.sai.CreateMySidEntryRequest.endpoint_behavior:type_name -> lemming.dataplane.sai.MySidEntryEndpointBehavior
-	35, // 14: lemming.dataplane.sai.CreateMySidEntryRequest.endpoint_behavior_flavor:type_name -> lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor
-	36, // 15: lemming.dataplane.sai.CreateMySidEntryRequest.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	33, // 16: lemming.dataplane.sai.RemoveMySidEntryRequest.entry:type_name -> lemming.dataplane.sai.MySidEntry
-	33, // 17: lemming.dataplane.sai.SetMySidEntryAttributeRequest.entry:type_name -> lemming.dataplane.sai.MySidEntry
-	34, // 18: lemming.dataplane.sai.SetMySidEntryAttributeRequest.endpoint_behavior:type_name -> lemming.dataplane.sai.MySidEntryEndpointBehavior
-	35, // 19: lemming.dataplane.sai.SetMySidEntryAttributeRequest.endpoint_behavior_flavor:type_name -> lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor
-	36, // 20: lemming.dataplane.sai.SetMySidEntryAttributeRequest.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	33, // 21: lemming.dataplane.sai.GetMySidEntryAttributeRequest.entry:type_name -> lemming.dataplane.sai.MySidEntry
-	1,  // 22: lemming.dataplane.sai.GetMySidEntryAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.MySidEntryAttr
-	37, // 23: lemming.dataplane.sai.GetMySidEntryAttributeResponse.attr:type_name -> lemming.dataplane.sai.MySidEntryAttribute
-	16, // 24: lemming.dataplane.sai.CreateMySidEntriesRequest.reqs:type_name -> lemming.dataplane.sai.CreateMySidEntryRequest
-	17, // 25: lemming.dataplane.sai.CreateMySidEntriesResponse.resps:type_name -> lemming.dataplane.sai.CreateMySidEntryResponse
-	18, // 26: lemming.dataplane.sai.RemoveMySidEntriesRequest.reqs:type_name -> lemming.dataplane.sai.RemoveMySidEntryRequest
-	19, // 27: lemming.dataplane.sai.RemoveMySidEntriesResponse.resps:type_name -> lemming.dataplane.sai.RemoveMySidEntryResponse
-	2,  // 28: lemming.dataplane.sai.Srv6.CreateSrv6Sidlist:input_type -> lemming.dataplane.sai.CreateSrv6SidlistRequest
-	4,  // 29: lemming.dataplane.sai.Srv6.RemoveSrv6Sidlist:input_type -> lemming.dataplane.sai.RemoveSrv6SidlistRequest
-	6,  // 30: lemming.dataplane.sai.Srv6.SetSrv6SidlistAttribute:input_type -> lemming.dataplane.sai.SetSrv6SidlistAttributeRequest
-	8,  // 31: lemming.dataplane.sai.Srv6.GetSrv6SidlistAttribute:input_type -> lemming.dataplane.sai.GetSrv6SidlistAttributeRequest
-	10, // 32: lemming.dataplane.sai.Srv6.CreateSrv6Sidlists:input_type -> lemming.dataplane.sai.CreateSrv6SidlistsRequest
-	12, // 33: lemming.dataplane.sai.Srv6.RemoveSrv6Sidlists:input_type -> lemming.dataplane.sai.RemoveSrv6SidlistsRequest
-	14, // 34: lemming.dataplane.sai.Srv6.GetSrv6SidlistStats:input_type -> lemming.dataplane.sai.GetSrv6SidlistStatsRequest
-	16, // 35: lemming.dataplane.sai.Srv6.CreateMySidEntry:input_type -> lemming.dataplane.sai.CreateMySidEntryRequest
-	18, // 36: lemming.dataplane.sai.Srv6.RemoveMySidEntry:input_type -> lemming.dataplane.sai.RemoveMySidEntryRequest
-	20, // 37: lemming.dataplane.sai.Srv6.SetMySidEntryAttribute:input_type -> lemming.dataplane.sai.SetMySidEntryAttributeRequest
-	22, // 38: lemming.dataplane.sai.Srv6.GetMySidEntryAttribute:input_type -> lemming.dataplane.sai.GetMySidEntryAttributeRequest
-	24, // 39: lemming.dataplane.sai.Srv6.CreateMySidEntries:input_type -> lemming.dataplane.sai.CreateMySidEntriesRequest
-	26, // 40: lemming.dataplane.sai.Srv6.RemoveMySidEntries:input_type -> lemming.dataplane.sai.RemoveMySidEntriesRequest
-	3,  // 41: lemming.dataplane.sai.Srv6.CreateSrv6Sidlist:output_type -> lemming.dataplane.sai.CreateSrv6SidlistResponse
-	5,  // 42: lemming.dataplane.sai.Srv6.RemoveSrv6Sidlist:output_type -> lemming.dataplane.sai.RemoveSrv6SidlistResponse
-	7,  // 43: lemming.dataplane.sai.Srv6.SetSrv6SidlistAttribute:output_type -> lemming.dataplane.sai.SetSrv6SidlistAttributeResponse
-	9,  // 44: lemming.dataplane.sai.Srv6.GetSrv6SidlistAttribute:output_type -> lemming.dataplane.sai.GetSrv6SidlistAttributeResponse
-	11, // 45: lemming.dataplane.sai.Srv6.CreateSrv6Sidlists:output_type -> lemming.dataplane.sai.CreateSrv6SidlistsResponse
-	13, // 46: lemming.dataplane.sai.Srv6.RemoveSrv6Sidlists:output_type -> lemming.dataplane.sai.RemoveSrv6SidlistsResponse
-	15, // 47: lemming.dataplane.sai.Srv6.GetSrv6SidlistStats:output_type -> lemming.dataplane.sai.GetSrv6SidlistStatsResponse
-	17, // 48: lemming.dataplane.sai.Srv6.CreateMySidEntry:output_type -> lemming.dataplane.sai.CreateMySidEntryResponse
-	19, // 49: lemming.dataplane.sai.Srv6.RemoveMySidEntry:output_type -> lemming.dataplane.sai.RemoveMySidEntryResponse
-	21, // 50: lemming.dataplane.sai.Srv6.SetMySidEntryAttribute:output_type -> lemming.dataplane.sai.SetMySidEntryAttributeResponse
-	23, // 51: lemming.dataplane.sai.Srv6.GetMySidEntryAttribute:output_type -> lemming.dataplane.sai.GetMySidEntryAttributeResponse
-	25, // 52: lemming.dataplane.sai.Srv6.CreateMySidEntries:output_type -> lemming.dataplane.sai.CreateMySidEntriesResponse
-	27, // 53: lemming.dataplane.sai.Srv6.RemoveMySidEntries:output_type -> lemming.dataplane.sai.RemoveMySidEntriesResponse
-	41, // [41:54] is the sub-list for method output_type
-	28, // [28:41] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	18, // 6: lemming.dataplane.sai.GetSrv6SidlistAttributeResponse.attr:type_name -> lemming.dataplane.sai.Srv6SidlistAttribute
+	1,  // 7: lemming.dataplane.sai.CreateSrv6SidlistsRequest.reqs:type_name -> lemming.dataplane.sai.CreateSrv6SidlistRequest
+	2,  // 8: lemming.dataplane.sai.CreateSrv6SidlistsResponse.resps:type_name -> lemming.dataplane.sai.CreateSrv6SidlistResponse
+	3,  // 9: lemming.dataplane.sai.RemoveSrv6SidlistsRequest.reqs:type_name -> lemming.dataplane.sai.RemoveSrv6SidlistRequest
+	4,  // 10: lemming.dataplane.sai.RemoveSrv6SidlistsResponse.resps:type_name -> lemming.dataplane.sai.RemoveSrv6SidlistResponse
+	19, // 11: lemming.dataplane.sai.GetSrv6SidlistStatsRequest.counter_ids:type_name -> lemming.dataplane.sai.Srv6SidlistStat
+	1,  // 12: lemming.dataplane.sai.Srv6.CreateSrv6Sidlist:input_type -> lemming.dataplane.sai.CreateSrv6SidlistRequest
+	3,  // 13: lemming.dataplane.sai.Srv6.RemoveSrv6Sidlist:input_type -> lemming.dataplane.sai.RemoveSrv6SidlistRequest
+	5,  // 14: lemming.dataplane.sai.Srv6.SetSrv6SidlistAttribute:input_type -> lemming.dataplane.sai.SetSrv6SidlistAttributeRequest
+	7,  // 15: lemming.dataplane.sai.Srv6.GetSrv6SidlistAttribute:input_type -> lemming.dataplane.sai.GetSrv6SidlistAttributeRequest
+	9,  // 16: lemming.dataplane.sai.Srv6.CreateSrv6Sidlists:input_type -> lemming.dataplane.sai.CreateSrv6SidlistsRequest
+	11, // 17: lemming.dataplane.sai.Srv6.RemoveSrv6Sidlists:input_type -> lemming.dataplane.sai.RemoveSrv6SidlistsRequest
+	13, // 18: lemming.dataplane.sai.Srv6.GetSrv6SidlistStats:input_type -> lemming.dataplane.sai.GetSrv6SidlistStatsRequest
+	2,  // 19: lemming.dataplane.sai.Srv6.CreateSrv6Sidlist:output_type -> lemming.dataplane.sai.CreateSrv6SidlistResponse
+	4,  // 20: lemming.dataplane.sai.Srv6.RemoveSrv6Sidlist:output_type -> lemming.dataplane.sai.RemoveSrv6SidlistResponse
+	6,  // 21: lemming.dataplane.sai.Srv6.SetSrv6SidlistAttribute:output_type -> lemming.dataplane.sai.SetSrv6SidlistAttributeResponse
+	8,  // 22: lemming.dataplane.sai.Srv6.GetSrv6SidlistAttribute:output_type -> lemming.dataplane.sai.GetSrv6SidlistAttributeResponse
+	10, // 23: lemming.dataplane.sai.Srv6.CreateSrv6Sidlists:output_type -> lemming.dataplane.sai.CreateSrv6SidlistsResponse
+	12, // 24: lemming.dataplane.sai.Srv6.RemoveSrv6Sidlists:output_type -> lemming.dataplane.sai.RemoveSrv6SidlistsResponse
+	14, // 25: lemming.dataplane.sai.Srv6.GetSrv6SidlistStats:output_type -> lemming.dataplane.sai.GetSrv6SidlistStatsResponse
+	19, // [19:26] is the sub-list for method output_type
+	12, // [12:19] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_dataplane_proto_sai_srv6_proto_init() }
@@ -1758,15 +931,13 @@ func file_dataplane_proto_sai_srv6_proto_init() {
 	file_dataplane_proto_sai_common_proto_init()
 	file_dataplane_proto_sai_srv6_proto_msgTypes[0].OneofWrappers = []any{}
 	file_dataplane_proto_sai_srv6_proto_msgTypes[4].OneofWrappers = []any{}
-	file_dataplane_proto_sai_srv6_proto_msgTypes[14].OneofWrappers = []any{}
-	file_dataplane_proto_sai_srv6_proto_msgTypes[18].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dataplane_proto_sai_srv6_proto_rawDesc), len(file_dataplane_proto_sai_srv6_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   26,
+			NumEnums:      1,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -772,7 +772,8 @@ func CreateAttrs(startIdx int, typeName string, xmlInfo *docparser.SAIInfo, attr
 		}
 		typ, repeated, err := SaiTypeToProtoType(attr.SaiType, xmlInfo)
 		if err != nil {
-			return nil, err
+			fmt.Printf("skipping attribute %s due to unknown type error: %v\n", attr.MemberName, err)
+			continue
 		}
 		for i, val := range xmlInfo.Attrs[typeName].ReadFields {
 			if val == attr {
