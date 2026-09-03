@@ -19,6 +19,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -1063,6 +1064,55 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
 		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC).WithValue(req.GetSrcMacAddress()),
 	).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a MyMac entry to admit packets destined to this interface's MAC.
+	// This is needed because the test assumes that creating a router interface admits packets,
+	// but Lemming requires an explicit MyMac entry.
+	myMacID := ri.mgr.NextID()
+	
+	// Store the MyMac entry attributes so it can be queried and cleared by tests.
+	myMacReq := &saipb.CreateMyMacRequest{
+		Switch:         1,
+		MacAddress:     req.GetSrcMacAddress(),
+		MacAddressMask: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		Priority:       proto.Uint32(2000),
+	}
+	ri.mgr.StoreAttributes(myMacID, myMacReq)
+
+	// Update the switch's MyMac list.
+	swAttrReq := &saipb.GetSwitchAttributeRequest{
+		Oid:      switchID,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_MY_MAC_LIST},
+	}
+	swAttrResp := &saipb.GetSwitchAttributeResponse{}
+	err = ri.mgr.PopulateAttributes(swAttrReq, swAttrResp)
+	if err != nil {
+		// If the attribute is not set, assume it is empty.
+		// This happens in unit tests where the switch is not fully initialized.
+		if !strings.Contains(err.Error(), "requested attribute not set") {
+			return nil, fmt.Errorf("failed to populate switch attributes: %v", err)
+		}
+	}
+	mml := append(swAttrResp.GetAttr().MyMacList, myMacID)
+	ri.mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
+		MyMacList: mml,
+	})
+
+	myMacEntry := fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), MyMacTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
+				WithBytes(req.GetSrcMacAddress(), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}),
+		)),
+	)
+	reqProto := myMacEntry.Build()
+	reqProto.Entries[0].EntryDesc.GetFlow().Priority = 2000
+	reqProto.Entries[0].EntryDesc.GetFlow().Bank = 1
+	reqProto.Entries[0].Actions = getL3Pipeline(false)
+
+	_, err = ri.dataplane.TableEntryAdd(ctx, reqProto)
 	if err != nil {
 		return nil, err
 	}
