@@ -19,15 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Buffer_CreateBufferPool_FullMethodName          = "/lemming.dataplane.sai.Buffer/CreateBufferPool"
-	Buffer_RemoveBufferPool_FullMethodName          = "/lemming.dataplane.sai.Buffer/RemoveBufferPool"
-	Buffer_SetBufferPoolAttribute_FullMethodName    = "/lemming.dataplane.sai.Buffer/SetBufferPoolAttribute"
-	Buffer_GetBufferPoolAttribute_FullMethodName    = "/lemming.dataplane.sai.Buffer/GetBufferPoolAttribute"
-	Buffer_GetBufferPoolStats_FullMethodName        = "/lemming.dataplane.sai.Buffer/GetBufferPoolStats"
-	Buffer_CreateBufferProfile_FullMethodName       = "/lemming.dataplane.sai.Buffer/CreateBufferProfile"
-	Buffer_RemoveBufferProfile_FullMethodName       = "/lemming.dataplane.sai.Buffer/RemoveBufferProfile"
-	Buffer_SetBufferProfileAttribute_FullMethodName = "/lemming.dataplane.sai.Buffer/SetBufferProfileAttribute"
-	Buffer_GetBufferProfileAttribute_FullMethodName = "/lemming.dataplane.sai.Buffer/GetBufferProfileAttribute"
+	Buffer_CreateBufferPool_FullMethodName                 = "/lemming.dataplane.sai.Buffer/CreateBufferPool"
+	Buffer_RemoveBufferPool_FullMethodName                 = "/lemming.dataplane.sai.Buffer/RemoveBufferPool"
+	Buffer_SetBufferPoolAttribute_FullMethodName           = "/lemming.dataplane.sai.Buffer/SetBufferPoolAttribute"
+	Buffer_GetBufferPoolAttribute_FullMethodName           = "/lemming.dataplane.sai.Buffer/GetBufferPoolAttribute"
+	Buffer_GetBufferPoolStats_FullMethodName               = "/lemming.dataplane.sai.Buffer/GetBufferPoolStats"
+	Buffer_CreateIngressPriorityGroup_FullMethodName       = "/lemming.dataplane.sai.Buffer/CreateIngressPriorityGroup"
+	Buffer_RemoveIngressPriorityGroup_FullMethodName       = "/lemming.dataplane.sai.Buffer/RemoveIngressPriorityGroup"
+	Buffer_SetIngressPriorityGroupAttribute_FullMethodName = "/lemming.dataplane.sai.Buffer/SetIngressPriorityGroupAttribute"
+	Buffer_GetIngressPriorityGroupAttribute_FullMethodName = "/lemming.dataplane.sai.Buffer/GetIngressPriorityGroupAttribute"
+	Buffer_GetIngressPriorityGroupStats_FullMethodName     = "/lemming.dataplane.sai.Buffer/GetIngressPriorityGroupStats"
+	Buffer_CreateBufferProfile_FullMethodName              = "/lemming.dataplane.sai.Buffer/CreateBufferProfile"
+	Buffer_RemoveBufferProfile_FullMethodName              = "/lemming.dataplane.sai.Buffer/RemoveBufferProfile"
+	Buffer_SetBufferProfileAttribute_FullMethodName        = "/lemming.dataplane.sai.Buffer/SetBufferProfileAttribute"
+	Buffer_GetBufferProfileAttribute_FullMethodName        = "/lemming.dataplane.sai.Buffer/GetBufferProfileAttribute"
 )
 
 // BufferClient is the client API for Buffer service.
@@ -39,6 +44,11 @@ type BufferClient interface {
 	SetBufferPoolAttribute(ctx context.Context, in *SetBufferPoolAttributeRequest, opts ...grpc.CallOption) (*SetBufferPoolAttributeResponse, error)
 	GetBufferPoolAttribute(ctx context.Context, in *GetBufferPoolAttributeRequest, opts ...grpc.CallOption) (*GetBufferPoolAttributeResponse, error)
 	GetBufferPoolStats(ctx context.Context, in *GetBufferPoolStatsRequest, opts ...grpc.CallOption) (*GetBufferPoolStatsResponse, error)
+	CreateIngressPriorityGroup(ctx context.Context, in *CreateIngressPriorityGroupRequest, opts ...grpc.CallOption) (*CreateIngressPriorityGroupResponse, error)
+	RemoveIngressPriorityGroup(ctx context.Context, in *RemoveIngressPriorityGroupRequest, opts ...grpc.CallOption) (*RemoveIngressPriorityGroupResponse, error)
+	SetIngressPriorityGroupAttribute(ctx context.Context, in *SetIngressPriorityGroupAttributeRequest, opts ...grpc.CallOption) (*SetIngressPriorityGroupAttributeResponse, error)
+	GetIngressPriorityGroupAttribute(ctx context.Context, in *GetIngressPriorityGroupAttributeRequest, opts ...grpc.CallOption) (*GetIngressPriorityGroupAttributeResponse, error)
+	GetIngressPriorityGroupStats(ctx context.Context, in *GetIngressPriorityGroupStatsRequest, opts ...grpc.CallOption) (*GetIngressPriorityGroupStatsResponse, error)
 	CreateBufferProfile(ctx context.Context, in *CreateBufferProfileRequest, opts ...grpc.CallOption) (*CreateBufferProfileResponse, error)
 	RemoveBufferProfile(ctx context.Context, in *RemoveBufferProfileRequest, opts ...grpc.CallOption) (*RemoveBufferProfileResponse, error)
 	SetBufferProfileAttribute(ctx context.Context, in *SetBufferProfileAttributeRequest, opts ...grpc.CallOption) (*SetBufferProfileAttributeResponse, error)
@@ -103,6 +113,56 @@ func (c *bufferClient) GetBufferPoolStats(ctx context.Context, in *GetBufferPool
 	return out, nil
 }
 
+func (c *bufferClient) CreateIngressPriorityGroup(ctx context.Context, in *CreateIngressPriorityGroupRequest, opts ...grpc.CallOption) (*CreateIngressPriorityGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateIngressPriorityGroupResponse)
+	err := c.cc.Invoke(ctx, Buffer_CreateIngressPriorityGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bufferClient) RemoveIngressPriorityGroup(ctx context.Context, in *RemoveIngressPriorityGroupRequest, opts ...grpc.CallOption) (*RemoveIngressPriorityGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveIngressPriorityGroupResponse)
+	err := c.cc.Invoke(ctx, Buffer_RemoveIngressPriorityGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bufferClient) SetIngressPriorityGroupAttribute(ctx context.Context, in *SetIngressPriorityGroupAttributeRequest, opts ...grpc.CallOption) (*SetIngressPriorityGroupAttributeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetIngressPriorityGroupAttributeResponse)
+	err := c.cc.Invoke(ctx, Buffer_SetIngressPriorityGroupAttribute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bufferClient) GetIngressPriorityGroupAttribute(ctx context.Context, in *GetIngressPriorityGroupAttributeRequest, opts ...grpc.CallOption) (*GetIngressPriorityGroupAttributeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIngressPriorityGroupAttributeResponse)
+	err := c.cc.Invoke(ctx, Buffer_GetIngressPriorityGroupAttribute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bufferClient) GetIngressPriorityGroupStats(ctx context.Context, in *GetIngressPriorityGroupStatsRequest, opts ...grpc.CallOption) (*GetIngressPriorityGroupStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIngressPriorityGroupStatsResponse)
+	err := c.cc.Invoke(ctx, Buffer_GetIngressPriorityGroupStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *bufferClient) CreateBufferProfile(ctx context.Context, in *CreateBufferProfileRequest, opts ...grpc.CallOption) (*CreateBufferProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateBufferProfileResponse)
@@ -152,6 +212,11 @@ type BufferServer interface {
 	SetBufferPoolAttribute(context.Context, *SetBufferPoolAttributeRequest) (*SetBufferPoolAttributeResponse, error)
 	GetBufferPoolAttribute(context.Context, *GetBufferPoolAttributeRequest) (*GetBufferPoolAttributeResponse, error)
 	GetBufferPoolStats(context.Context, *GetBufferPoolStatsRequest) (*GetBufferPoolStatsResponse, error)
+	CreateIngressPriorityGroup(context.Context, *CreateIngressPriorityGroupRequest) (*CreateIngressPriorityGroupResponse, error)
+	RemoveIngressPriorityGroup(context.Context, *RemoveIngressPriorityGroupRequest) (*RemoveIngressPriorityGroupResponse, error)
+	SetIngressPriorityGroupAttribute(context.Context, *SetIngressPriorityGroupAttributeRequest) (*SetIngressPriorityGroupAttributeResponse, error)
+	GetIngressPriorityGroupAttribute(context.Context, *GetIngressPriorityGroupAttributeRequest) (*GetIngressPriorityGroupAttributeResponse, error)
+	GetIngressPriorityGroupStats(context.Context, *GetIngressPriorityGroupStatsRequest) (*GetIngressPriorityGroupStatsResponse, error)
 	CreateBufferProfile(context.Context, *CreateBufferProfileRequest) (*CreateBufferProfileResponse, error)
 	RemoveBufferProfile(context.Context, *RemoveBufferProfileRequest) (*RemoveBufferProfileResponse, error)
 	SetBufferProfileAttribute(context.Context, *SetBufferProfileAttributeRequest) (*SetBufferProfileAttributeResponse, error)
@@ -179,6 +244,21 @@ func (UnimplementedBufferServer) GetBufferPoolAttribute(context.Context, *GetBuf
 }
 func (UnimplementedBufferServer) GetBufferPoolStats(context.Context, *GetBufferPoolStatsRequest) (*GetBufferPoolStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBufferPoolStats not implemented")
+}
+func (UnimplementedBufferServer) CreateIngressPriorityGroup(context.Context, *CreateIngressPriorityGroupRequest) (*CreateIngressPriorityGroupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateIngressPriorityGroup not implemented")
+}
+func (UnimplementedBufferServer) RemoveIngressPriorityGroup(context.Context, *RemoveIngressPriorityGroupRequest) (*RemoveIngressPriorityGroupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveIngressPriorityGroup not implemented")
+}
+func (UnimplementedBufferServer) SetIngressPriorityGroupAttribute(context.Context, *SetIngressPriorityGroupAttributeRequest) (*SetIngressPriorityGroupAttributeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetIngressPriorityGroupAttribute not implemented")
+}
+func (UnimplementedBufferServer) GetIngressPriorityGroupAttribute(context.Context, *GetIngressPriorityGroupAttributeRequest) (*GetIngressPriorityGroupAttributeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIngressPriorityGroupAttribute not implemented")
+}
+func (UnimplementedBufferServer) GetIngressPriorityGroupStats(context.Context, *GetIngressPriorityGroupStatsRequest) (*GetIngressPriorityGroupStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIngressPriorityGroupStats not implemented")
 }
 func (UnimplementedBufferServer) CreateBufferProfile(context.Context, *CreateBufferProfileRequest) (*CreateBufferProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBufferProfile not implemented")
@@ -302,6 +382,96 @@ func _Buffer_GetBufferPoolStats_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Buffer_CreateIngressPriorityGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateIngressPriorityGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BufferServer).CreateIngressPriorityGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Buffer_CreateIngressPriorityGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BufferServer).CreateIngressPriorityGroup(ctx, req.(*CreateIngressPriorityGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Buffer_RemoveIngressPriorityGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveIngressPriorityGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BufferServer).RemoveIngressPriorityGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Buffer_RemoveIngressPriorityGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BufferServer).RemoveIngressPriorityGroup(ctx, req.(*RemoveIngressPriorityGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Buffer_SetIngressPriorityGroupAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetIngressPriorityGroupAttributeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BufferServer).SetIngressPriorityGroupAttribute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Buffer_SetIngressPriorityGroupAttribute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BufferServer).SetIngressPriorityGroupAttribute(ctx, req.(*SetIngressPriorityGroupAttributeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Buffer_GetIngressPriorityGroupAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIngressPriorityGroupAttributeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BufferServer).GetIngressPriorityGroupAttribute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Buffer_GetIngressPriorityGroupAttribute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BufferServer).GetIngressPriorityGroupAttribute(ctx, req.(*GetIngressPriorityGroupAttributeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Buffer_GetIngressPriorityGroupStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIngressPriorityGroupStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BufferServer).GetIngressPriorityGroupStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Buffer_GetIngressPriorityGroupStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BufferServer).GetIngressPriorityGroupStats(ctx, req.(*GetIngressPriorityGroupStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Buffer_CreateBufferProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateBufferProfileRequest)
 	if err := dec(in); err != nil {
@@ -400,6 +570,26 @@ var Buffer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBufferPoolStats",
 			Handler:    _Buffer_GetBufferPoolStats_Handler,
+		},
+		{
+			MethodName: "CreateIngressPriorityGroup",
+			Handler:    _Buffer_CreateIngressPriorityGroup_Handler,
+		},
+		{
+			MethodName: "RemoveIngressPriorityGroup",
+			Handler:    _Buffer_RemoveIngressPriorityGroup_Handler,
+		},
+		{
+			MethodName: "SetIngressPriorityGroupAttribute",
+			Handler:    _Buffer_SetIngressPriorityGroupAttribute_Handler,
+		},
+		{
+			MethodName: "GetIngressPriorityGroupAttribute",
+			Handler:    _Buffer_GetIngressPriorityGroupAttribute_Handler,
+		},
+		{
+			MethodName: "GetIngressPriorityGroupStats",
+			Handler:    _Buffer_GetIngressPriorityGroupStats_Handler,
 		},
 		{
 			MethodName: "CreateBufferProfile",

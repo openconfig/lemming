@@ -73,6 +73,61 @@ func (HashAttr) EnumDescriptor() ([]byte, []int) {
 	return file_dataplane_proto_sai_hash_proto_rawDescGZIP(), []int{0}
 }
 
+type FineGrainedHashFieldAttr int32
+
+const (
+	FineGrainedHashFieldAttr_FINE_GRAINED_HASH_FIELD_ATTR_UNSPECIFIED       FineGrainedHashFieldAttr = 0
+	FineGrainedHashFieldAttr_FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD FineGrainedHashFieldAttr = 1
+	FineGrainedHashFieldAttr_FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK         FineGrainedHashFieldAttr = 2
+	FineGrainedHashFieldAttr_FINE_GRAINED_HASH_FIELD_ATTR_IPV6_MASK         FineGrainedHashFieldAttr = 3
+	FineGrainedHashFieldAttr_FINE_GRAINED_HASH_FIELD_ATTR_SEQUENCE_ID       FineGrainedHashFieldAttr = 4
+)
+
+// Enum value maps for FineGrainedHashFieldAttr.
+var (
+	FineGrainedHashFieldAttr_name = map[int32]string{
+		0: "FINE_GRAINED_HASH_FIELD_ATTR_UNSPECIFIED",
+		1: "FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD",
+		2: "FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK",
+		3: "FINE_GRAINED_HASH_FIELD_ATTR_IPV6_MASK",
+		4: "FINE_GRAINED_HASH_FIELD_ATTR_SEQUENCE_ID",
+	}
+	FineGrainedHashFieldAttr_value = map[string]int32{
+		"FINE_GRAINED_HASH_FIELD_ATTR_UNSPECIFIED":       0,
+		"FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD": 1,
+		"FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK":         2,
+		"FINE_GRAINED_HASH_FIELD_ATTR_IPV6_MASK":         3,
+		"FINE_GRAINED_HASH_FIELD_ATTR_SEQUENCE_ID":       4,
+	}
+)
+
+func (x FineGrainedHashFieldAttr) Enum() *FineGrainedHashFieldAttr {
+	p := new(FineGrainedHashFieldAttr)
+	*p = x
+	return p
+}
+
+func (x FineGrainedHashFieldAttr) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FineGrainedHashFieldAttr) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_hash_proto_enumTypes[1].Descriptor()
+}
+
+func (FineGrainedHashFieldAttr) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_hash_proto_enumTypes[1]
+}
+
+func (x FineGrainedHashFieldAttr) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FineGrainedHashFieldAttr.Descriptor instead.
+func (FineGrainedHashFieldAttr) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_hash_proto_rawDescGZIP(), []int{1}
+}
+
 type CreateHashRequest struct {
 	state                    protoimpl.MessageState `protogen:"open.v1"`
 	Switch                   uint64                 `protobuf:"varint,1,opt,name=switch,proto3" json:"switch,omitempty"`
@@ -465,6 +520,302 @@ func (x *GetHashAttributeResponse) GetAttr() *HashAttribute {
 	return nil
 }
 
+type CreateFineGrainedHashFieldRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Switch          uint64                 `protobuf:"varint,1,opt,name=switch,proto3" json:"switch,omitempty"`
+	NativeHashField *NativeHashField       `protobuf:"varint,2,opt,name=native_hash_field,json=nativeHashField,proto3,enum=lemming.dataplane.sai.NativeHashField,oneof" json:"native_hash_field,omitempty"`
+	Ipv4Mask        []byte                 `protobuf:"bytes,3,opt,name=ipv4_mask,json=ipv4Mask,proto3,oneof" json:"ipv4_mask,omitempty"`
+	Ipv6Mask        []byte                 `protobuf:"bytes,4,opt,name=ipv6_mask,json=ipv6Mask,proto3,oneof" json:"ipv6_mask,omitempty"`
+	SequenceId      *uint32                `protobuf:"varint,5,opt,name=sequence_id,json=sequenceId,proto3,oneof" json:"sequence_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CreateFineGrainedHashFieldRequest) Reset() {
+	*x = CreateFineGrainedHashFieldRequest{}
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateFineGrainedHashFieldRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateFineGrainedHashFieldRequest) ProtoMessage() {}
+
+func (x *CreateFineGrainedHashFieldRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateFineGrainedHashFieldRequest.ProtoReflect.Descriptor instead.
+func (*CreateFineGrainedHashFieldRequest) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_hash_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CreateFineGrainedHashFieldRequest) GetSwitch() uint64 {
+	if x != nil {
+		return x.Switch
+	}
+	return 0
+}
+
+func (x *CreateFineGrainedHashFieldRequest) GetNativeHashField() NativeHashField {
+	if x != nil && x.NativeHashField != nil {
+		return *x.NativeHashField
+	}
+	return NativeHashField_NATIVE_HASH_FIELD_UNSPECIFIED
+}
+
+func (x *CreateFineGrainedHashFieldRequest) GetIpv4Mask() []byte {
+	if x != nil {
+		return x.Ipv4Mask
+	}
+	return nil
+}
+
+func (x *CreateFineGrainedHashFieldRequest) GetIpv6Mask() []byte {
+	if x != nil {
+		return x.Ipv6Mask
+	}
+	return nil
+}
+
+func (x *CreateFineGrainedHashFieldRequest) GetSequenceId() uint32 {
+	if x != nil && x.SequenceId != nil {
+		return *x.SequenceId
+	}
+	return 0
+}
+
+type CreateFineGrainedHashFieldResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Oid           uint64                 `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateFineGrainedHashFieldResponse) Reset() {
+	*x = CreateFineGrainedHashFieldResponse{}
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateFineGrainedHashFieldResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateFineGrainedHashFieldResponse) ProtoMessage() {}
+
+func (x *CreateFineGrainedHashFieldResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateFineGrainedHashFieldResponse.ProtoReflect.Descriptor instead.
+func (*CreateFineGrainedHashFieldResponse) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_hash_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CreateFineGrainedHashFieldResponse) GetOid() uint64 {
+	if x != nil {
+		return x.Oid
+	}
+	return 0
+}
+
+type RemoveFineGrainedHashFieldRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Oid           uint64                 `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveFineGrainedHashFieldRequest) Reset() {
+	*x = RemoveFineGrainedHashFieldRequest{}
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveFineGrainedHashFieldRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveFineGrainedHashFieldRequest) ProtoMessage() {}
+
+func (x *RemoveFineGrainedHashFieldRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveFineGrainedHashFieldRequest.ProtoReflect.Descriptor instead.
+func (*RemoveFineGrainedHashFieldRequest) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_hash_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RemoveFineGrainedHashFieldRequest) GetOid() uint64 {
+	if x != nil {
+		return x.Oid
+	}
+	return 0
+}
+
+type RemoveFineGrainedHashFieldResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveFineGrainedHashFieldResponse) Reset() {
+	*x = RemoveFineGrainedHashFieldResponse{}
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveFineGrainedHashFieldResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveFineGrainedHashFieldResponse) ProtoMessage() {}
+
+func (x *RemoveFineGrainedHashFieldResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveFineGrainedHashFieldResponse.ProtoReflect.Descriptor instead.
+func (*RemoveFineGrainedHashFieldResponse) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_hash_proto_rawDescGZIP(), []int{11}
+}
+
+type GetFineGrainedHashFieldAttributeRequest struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	Oid           uint64                     `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
+	AttrType      []FineGrainedHashFieldAttr `protobuf:"varint,2,rep,packed,name=attr_type,json=attrType,proto3,enum=lemming.dataplane.sai.FineGrainedHashFieldAttr" json:"attr_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFineGrainedHashFieldAttributeRequest) Reset() {
+	*x = GetFineGrainedHashFieldAttributeRequest{}
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFineGrainedHashFieldAttributeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFineGrainedHashFieldAttributeRequest) ProtoMessage() {}
+
+func (x *GetFineGrainedHashFieldAttributeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFineGrainedHashFieldAttributeRequest.ProtoReflect.Descriptor instead.
+func (*GetFineGrainedHashFieldAttributeRequest) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_hash_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetFineGrainedHashFieldAttributeRequest) GetOid() uint64 {
+	if x != nil {
+		return x.Oid
+	}
+	return 0
+}
+
+func (x *GetFineGrainedHashFieldAttributeRequest) GetAttrType() []FineGrainedHashFieldAttr {
+	if x != nil {
+		return x.AttrType
+	}
+	return nil
+}
+
+type GetFineGrainedHashFieldAttributeResponse struct {
+	state         protoimpl.MessageState         `protogen:"open.v1"`
+	Attr          *FineGrainedHashFieldAttribute `protobuf:"bytes,1,opt,name=attr,proto3" json:"attr,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFineGrainedHashFieldAttributeResponse) Reset() {
+	*x = GetFineGrainedHashFieldAttributeResponse{}
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFineGrainedHashFieldAttributeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFineGrainedHashFieldAttributeResponse) ProtoMessage() {}
+
+func (x *GetFineGrainedHashFieldAttributeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_hash_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFineGrainedHashFieldAttributeResponse.ProtoReflect.Descriptor instead.
+func (*GetFineGrainedHashFieldAttributeResponse) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_hash_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetFineGrainedHashFieldAttributeResponse) GetAttr() *FineGrainedHashFieldAttribute {
+	if x != nil {
+		return x.Attr
+	}
+	return nil
+}
+
 var File_dataplane_proto_sai_hash_proto protoreflect.FileDescriptor
 
 const file_dataplane_proto_sai_hash_proto_rawDesc = "" +
@@ -490,19 +841,51 @@ const file_dataplane_proto_sai_hash_proto_rawDesc = "" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12<\n" +
 	"\tattr_type\x18\x02 \x03(\x0e2\x1f.lemming.dataplane.sai.HashAttrR\battrType\"T\n" +
 	"\x18GetHashAttributeResponse\x128\n" +
-	"\x04attr\x18\x01 \x01(\v2$.lemming.dataplane.sai.HashAttributeR\x04attr*\x95\x01\n" +
+	"\x04attr\x18\x01 \x01(\v2$.lemming.dataplane.sai.HashAttributeR\x04attr\"\xe8\x02\n" +
+	"!CreateFineGrainedHashFieldRequest\x12\x16\n" +
+	"\x06switch\x18\x01 \x01(\x04R\x06switch\x12_\n" +
+	"\x11native_hash_field\x18\x02 \x01(\x0e2&.lemming.dataplane.sai.NativeHashFieldB\x06\xf0ܓ\xad\x0f\x01H\x00R\x0fnativeHashField\x88\x01\x01\x12(\n" +
+	"\tipv4_mask\x18\x03 \x01(\fB\x06\xf0ܓ\xad\x0f\x02H\x01R\bipv4Mask\x88\x01\x01\x12(\n" +
+	"\tipv6_mask\x18\x04 \x01(\fB\x06\xf0ܓ\xad\x0f\x03H\x02R\bipv6Mask\x88\x01\x01\x12,\n" +
+	"\vsequence_id\x18\x05 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x03R\n" +
+	"sequenceId\x88\x01\x01:\x06\xa0\xa9\x90\xad\x0f_B\x14\n" +
+	"\x12_native_hash_fieldB\f\n" +
+	"\n" +
+	"_ipv4_maskB\f\n" +
+	"\n" +
+	"_ipv6_maskB\x0e\n" +
+	"\f_sequence_id\"6\n" +
+	"\"CreateFineGrainedHashFieldResponse\x12\x10\n" +
+	"\x03oid\x18\x01 \x01(\x04R\x03oid\"5\n" +
+	"!RemoveFineGrainedHashFieldRequest\x12\x10\n" +
+	"\x03oid\x18\x01 \x01(\x04R\x03oid\"$\n" +
+	"\"RemoveFineGrainedHashFieldResponse\"\x89\x01\n" +
+	"'GetFineGrainedHashFieldAttributeRequest\x12\x10\n" +
+	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12L\n" +
+	"\tattr_type\x18\x02 \x03(\x0e2/.lemming.dataplane.sai.FineGrainedHashFieldAttrR\battrType\"t\n" +
+	"(GetFineGrainedHashFieldAttributeResponse\x12H\n" +
+	"\x04attr\x18\x01 \x01(\v24.lemming.dataplane.sai.FineGrainedHashFieldAttributeR\x04attr*\x95\x01\n" +
 	"\bHashAttr\x12\x19\n" +
 	"\x15HASH_ATTR_UNSPECIFIED\x10\x00\x12$\n" +
 	" HASH_ATTR_NATIVE_HASH_FIELD_LIST\x10\x01\x12\x1c\n" +
 	"\x18HASH_ATTR_UDF_GROUP_LIST\x10\x02\x12*\n" +
-	"&HASH_ATTR_FINE_GRAINED_HASH_FIELD_LIST\x10\x032\xbe\x03\n" +
+	"&HASH_ATTR_FINE_GRAINED_HASH_FIELD_LIST\x10\x03*\x82\x02\n" +
+	"\x18FineGrainedHashFieldAttr\x12,\n" +
+	"(FINE_GRAINED_HASH_FIELD_ATTR_UNSPECIFIED\x10\x00\x122\n" +
+	".FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD\x10\x01\x12*\n" +
+	"&FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK\x10\x02\x12*\n" +
+	"&FINE_GRAINED_HASH_FIELD_ATTR_IPV6_MASK\x10\x03\x12,\n" +
+	"(FINE_GRAINED_HASH_FIELD_ATTR_SEQUENCE_ID\x10\x042\x92\a\n" +
 	"\x04Hash\x12c\n" +
 	"\n" +
 	"CreateHash\x12(.lemming.dataplane.sai.CreateHashRequest\x1a).lemming.dataplane.sai.CreateHashResponse\"\x00\x12c\n" +
 	"\n" +
 	"RemoveHash\x12(.lemming.dataplane.sai.RemoveHashRequest\x1a).lemming.dataplane.sai.RemoveHashResponse\"\x00\x12u\n" +
 	"\x10SetHashAttribute\x12..lemming.dataplane.sai.SetHashAttributeRequest\x1a/.lemming.dataplane.sai.SetHashAttributeResponse\"\x00\x12u\n" +
-	"\x10GetHashAttribute\x12..lemming.dataplane.sai.GetHashAttributeRequest\x1a/.lemming.dataplane.sai.GetHashAttributeResponse\"\x00B3Z1github.com/openconfig/lemming/dataplane/proto/saib\x06proto3"
+	"\x10GetHashAttribute\x12..lemming.dataplane.sai.GetHashAttributeRequest\x1a/.lemming.dataplane.sai.GetHashAttributeResponse\"\x00\x12\x93\x01\n" +
+	"\x1aCreateFineGrainedHashField\x128.lemming.dataplane.sai.CreateFineGrainedHashFieldRequest\x1a9.lemming.dataplane.sai.CreateFineGrainedHashFieldResponse\"\x00\x12\x93\x01\n" +
+	"\x1aRemoveFineGrainedHashField\x128.lemming.dataplane.sai.RemoveFineGrainedHashFieldRequest\x1a9.lemming.dataplane.sai.RemoveFineGrainedHashFieldResponse\"\x00\x12\xa5\x01\n" +
+	" GetFineGrainedHashFieldAttribute\x12>.lemming.dataplane.sai.GetFineGrainedHashFieldAttributeRequest\x1a?.lemming.dataplane.sai.GetFineGrainedHashFieldAttributeResponse\"\x00B3Z1github.com/openconfig/lemming/dataplane/proto/saib\x06proto3"
 
 var (
 	file_dataplane_proto_sai_hash_proto_rawDescOnce sync.Once
@@ -516,39 +899,56 @@ func file_dataplane_proto_sai_hash_proto_rawDescGZIP() []byte {
 	return file_dataplane_proto_sai_hash_proto_rawDescData
 }
 
-var file_dataplane_proto_sai_hash_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_dataplane_proto_sai_hash_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_dataplane_proto_sai_hash_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_dataplane_proto_sai_hash_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_dataplane_proto_sai_hash_proto_goTypes = []any{
-	(HashAttr)(0),                    // 0: lemming.dataplane.sai.HashAttr
-	(*CreateHashRequest)(nil),        // 1: lemming.dataplane.sai.CreateHashRequest
-	(*CreateHashResponse)(nil),       // 2: lemming.dataplane.sai.CreateHashResponse
-	(*RemoveHashRequest)(nil),        // 3: lemming.dataplane.sai.RemoveHashRequest
-	(*RemoveHashResponse)(nil),       // 4: lemming.dataplane.sai.RemoveHashResponse
-	(*SetHashAttributeRequest)(nil),  // 5: lemming.dataplane.sai.SetHashAttributeRequest
-	(*SetHashAttributeResponse)(nil), // 6: lemming.dataplane.sai.SetHashAttributeResponse
-	(*GetHashAttributeRequest)(nil),  // 7: lemming.dataplane.sai.GetHashAttributeRequest
-	(*GetHashAttributeResponse)(nil), // 8: lemming.dataplane.sai.GetHashAttributeResponse
-	(NativeHashField)(0),             // 9: lemming.dataplane.sai.NativeHashField
-	(*HashAttribute)(nil),            // 10: lemming.dataplane.sai.HashAttribute
+	(HashAttr)(0),                                    // 0: lemming.dataplane.sai.HashAttr
+	(FineGrainedHashFieldAttr)(0),                    // 1: lemming.dataplane.sai.FineGrainedHashFieldAttr
+	(*CreateHashRequest)(nil),                        // 2: lemming.dataplane.sai.CreateHashRequest
+	(*CreateHashResponse)(nil),                       // 3: lemming.dataplane.sai.CreateHashResponse
+	(*RemoveHashRequest)(nil),                        // 4: lemming.dataplane.sai.RemoveHashRequest
+	(*RemoveHashResponse)(nil),                       // 5: lemming.dataplane.sai.RemoveHashResponse
+	(*SetHashAttributeRequest)(nil),                  // 6: lemming.dataplane.sai.SetHashAttributeRequest
+	(*SetHashAttributeResponse)(nil),                 // 7: lemming.dataplane.sai.SetHashAttributeResponse
+	(*GetHashAttributeRequest)(nil),                  // 8: lemming.dataplane.sai.GetHashAttributeRequest
+	(*GetHashAttributeResponse)(nil),                 // 9: lemming.dataplane.sai.GetHashAttributeResponse
+	(*CreateFineGrainedHashFieldRequest)(nil),        // 10: lemming.dataplane.sai.CreateFineGrainedHashFieldRequest
+	(*CreateFineGrainedHashFieldResponse)(nil),       // 11: lemming.dataplane.sai.CreateFineGrainedHashFieldResponse
+	(*RemoveFineGrainedHashFieldRequest)(nil),        // 12: lemming.dataplane.sai.RemoveFineGrainedHashFieldRequest
+	(*RemoveFineGrainedHashFieldResponse)(nil),       // 13: lemming.dataplane.sai.RemoveFineGrainedHashFieldResponse
+	(*GetFineGrainedHashFieldAttributeRequest)(nil),  // 14: lemming.dataplane.sai.GetFineGrainedHashFieldAttributeRequest
+	(*GetFineGrainedHashFieldAttributeResponse)(nil), // 15: lemming.dataplane.sai.GetFineGrainedHashFieldAttributeResponse
+	(NativeHashField)(0),                             // 16: lemming.dataplane.sai.NativeHashField
+	(*HashAttribute)(nil),                            // 17: lemming.dataplane.sai.HashAttribute
+	(*FineGrainedHashFieldAttribute)(nil),            // 18: lemming.dataplane.sai.FineGrainedHashFieldAttribute
 }
 var file_dataplane_proto_sai_hash_proto_depIdxs = []int32{
-	9,  // 0: lemming.dataplane.sai.CreateHashRequest.native_hash_field_list:type_name -> lemming.dataplane.sai.NativeHashField
-	9,  // 1: lemming.dataplane.sai.SetHashAttributeRequest.native_hash_field_list:type_name -> lemming.dataplane.sai.NativeHashField
+	16, // 0: lemming.dataplane.sai.CreateHashRequest.native_hash_field_list:type_name -> lemming.dataplane.sai.NativeHashField
+	16, // 1: lemming.dataplane.sai.SetHashAttributeRequest.native_hash_field_list:type_name -> lemming.dataplane.sai.NativeHashField
 	0,  // 2: lemming.dataplane.sai.GetHashAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.HashAttr
-	10, // 3: lemming.dataplane.sai.GetHashAttributeResponse.attr:type_name -> lemming.dataplane.sai.HashAttribute
-	1,  // 4: lemming.dataplane.sai.Hash.CreateHash:input_type -> lemming.dataplane.sai.CreateHashRequest
-	3,  // 5: lemming.dataplane.sai.Hash.RemoveHash:input_type -> lemming.dataplane.sai.RemoveHashRequest
-	5,  // 6: lemming.dataplane.sai.Hash.SetHashAttribute:input_type -> lemming.dataplane.sai.SetHashAttributeRequest
-	7,  // 7: lemming.dataplane.sai.Hash.GetHashAttribute:input_type -> lemming.dataplane.sai.GetHashAttributeRequest
-	2,  // 8: lemming.dataplane.sai.Hash.CreateHash:output_type -> lemming.dataplane.sai.CreateHashResponse
-	4,  // 9: lemming.dataplane.sai.Hash.RemoveHash:output_type -> lemming.dataplane.sai.RemoveHashResponse
-	6,  // 10: lemming.dataplane.sai.Hash.SetHashAttribute:output_type -> lemming.dataplane.sai.SetHashAttributeResponse
-	8,  // 11: lemming.dataplane.sai.Hash.GetHashAttribute:output_type -> lemming.dataplane.sai.GetHashAttributeResponse
-	8,  // [8:12] is the sub-list for method output_type
-	4,  // [4:8] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	17, // 3: lemming.dataplane.sai.GetHashAttributeResponse.attr:type_name -> lemming.dataplane.sai.HashAttribute
+	16, // 4: lemming.dataplane.sai.CreateFineGrainedHashFieldRequest.native_hash_field:type_name -> lemming.dataplane.sai.NativeHashField
+	1,  // 5: lemming.dataplane.sai.GetFineGrainedHashFieldAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.FineGrainedHashFieldAttr
+	18, // 6: lemming.dataplane.sai.GetFineGrainedHashFieldAttributeResponse.attr:type_name -> lemming.dataplane.sai.FineGrainedHashFieldAttribute
+	2,  // 7: lemming.dataplane.sai.Hash.CreateHash:input_type -> lemming.dataplane.sai.CreateHashRequest
+	4,  // 8: lemming.dataplane.sai.Hash.RemoveHash:input_type -> lemming.dataplane.sai.RemoveHashRequest
+	6,  // 9: lemming.dataplane.sai.Hash.SetHashAttribute:input_type -> lemming.dataplane.sai.SetHashAttributeRequest
+	8,  // 10: lemming.dataplane.sai.Hash.GetHashAttribute:input_type -> lemming.dataplane.sai.GetHashAttributeRequest
+	10, // 11: lemming.dataplane.sai.Hash.CreateFineGrainedHashField:input_type -> lemming.dataplane.sai.CreateFineGrainedHashFieldRequest
+	12, // 12: lemming.dataplane.sai.Hash.RemoveFineGrainedHashField:input_type -> lemming.dataplane.sai.RemoveFineGrainedHashFieldRequest
+	14, // 13: lemming.dataplane.sai.Hash.GetFineGrainedHashFieldAttribute:input_type -> lemming.dataplane.sai.GetFineGrainedHashFieldAttributeRequest
+	3,  // 14: lemming.dataplane.sai.Hash.CreateHash:output_type -> lemming.dataplane.sai.CreateHashResponse
+	5,  // 15: lemming.dataplane.sai.Hash.RemoveHash:output_type -> lemming.dataplane.sai.RemoveHashResponse
+	7,  // 16: lemming.dataplane.sai.Hash.SetHashAttribute:output_type -> lemming.dataplane.sai.SetHashAttributeResponse
+	9,  // 17: lemming.dataplane.sai.Hash.GetHashAttribute:output_type -> lemming.dataplane.sai.GetHashAttributeResponse
+	11, // 18: lemming.dataplane.sai.Hash.CreateFineGrainedHashField:output_type -> lemming.dataplane.sai.CreateFineGrainedHashFieldResponse
+	13, // 19: lemming.dataplane.sai.Hash.RemoveFineGrainedHashField:output_type -> lemming.dataplane.sai.RemoveFineGrainedHashFieldResponse
+	15, // 20: lemming.dataplane.sai.Hash.GetFineGrainedHashFieldAttribute:output_type -> lemming.dataplane.sai.GetFineGrainedHashFieldAttributeResponse
+	14, // [14:21] is the sub-list for method output_type
+	7,  // [7:14] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_dataplane_proto_sai_hash_proto_init() }
@@ -557,13 +957,14 @@ func file_dataplane_proto_sai_hash_proto_init() {
 		return
 	}
 	file_dataplane_proto_sai_common_proto_init()
+	file_dataplane_proto_sai_hash_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dataplane_proto_sai_hash_proto_rawDesc), len(file_dataplane_proto_sai_hash_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   8,
+			NumEnums:      2,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

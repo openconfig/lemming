@@ -854,6 +854,308 @@ func (AclTableSupportedMatchType) EnumDescriptor() ([]byte, []int) {
 	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{11}
 }
 
+type ApiExtensions int32
+
+const (
+	ApiExtensions_API_EXTENSIONS_UNSPECIFIED ApiExtensions = 0
+	ApiExtensions_API_EXTENSIONS_RANGE_START ApiExtensions = 536870913
+	ApiExtensions_API_BMTOR                  ApiExtensions = 536870913
+	ApiExtensions_API_DASH_ACL               ApiExtensions = 536870914
+	ApiExtensions_API_DASH_DIRECTION_LOOKUP  ApiExtensions = 536870915
+	ApiExtensions_API_DASH_ENI               ApiExtensions = 536870916
+	ApiExtensions_API_DASH_INBOUND_ROUTING   ApiExtensions = 536870917
+	ApiExtensions_API_DASH_METER             ApiExtensions = 536870918
+	ApiExtensions_API_DASH_OUTBOUND_CA_TO_PA ApiExtensions = 536870919
+	ApiExtensions_API_DASH_OUTBOUND_ROUTING  ApiExtensions = 536870920
+	ApiExtensions_API_DASH_VNET              ApiExtensions = 536870921
+	ApiExtensions_API_DASH_PA_VALIDATION     ApiExtensions = 536870922
+	ApiExtensions_API_DASH_VIP               ApiExtensions = 536870923
+	ApiExtensions_API_DASH_HA                ApiExtensions = 536870924
+	ApiExtensions_API_DASH_TUNNEL            ApiExtensions = 536870925
+	ApiExtensions_API_DASH_FLOW              ApiExtensions = 536870926
+	ApiExtensions_API_DASH_APPLIANCE         ApiExtensions = 536870927
+	ApiExtensions_API_EXTENSIONS_RANGE_END   ApiExtensions = 536870928
+)
+
+// Enum value maps for ApiExtensions.
+var (
+	ApiExtensions_name = map[int32]string{
+		0:         "API_EXTENSIONS_UNSPECIFIED",
+		536870913: "API_EXTENSIONS_RANGE_START",
+		// Duplicate value: 536870913: "API_BMTOR",
+		536870914: "API_DASH_ACL",
+		536870915: "API_DASH_DIRECTION_LOOKUP",
+		536870916: "API_DASH_ENI",
+		536870917: "API_DASH_INBOUND_ROUTING",
+		536870918: "API_DASH_METER",
+		536870919: "API_DASH_OUTBOUND_CA_TO_PA",
+		536870920: "API_DASH_OUTBOUND_ROUTING",
+		536870921: "API_DASH_VNET",
+		536870922: "API_DASH_PA_VALIDATION",
+		536870923: "API_DASH_VIP",
+		536870924: "API_DASH_HA",
+		536870925: "API_DASH_TUNNEL",
+		536870926: "API_DASH_FLOW",
+		536870927: "API_DASH_APPLIANCE",
+		536870928: "API_EXTENSIONS_RANGE_END",
+	}
+	ApiExtensions_value = map[string]int32{
+		"API_EXTENSIONS_UNSPECIFIED": 0,
+		"API_EXTENSIONS_RANGE_START": 536870913,
+		"API_BMTOR":                  536870913,
+		"API_DASH_ACL":               536870914,
+		"API_DASH_DIRECTION_LOOKUP":  536870915,
+		"API_DASH_ENI":               536870916,
+		"API_DASH_INBOUND_ROUTING":   536870917,
+		"API_DASH_METER":             536870918,
+		"API_DASH_OUTBOUND_CA_TO_PA": 536870919,
+		"API_DASH_OUTBOUND_ROUTING":  536870920,
+		"API_DASH_VNET":              536870921,
+		"API_DASH_PA_VALIDATION":     536870922,
+		"API_DASH_VIP":               536870923,
+		"API_DASH_HA":                536870924,
+		"API_DASH_TUNNEL":            536870925,
+		"API_DASH_FLOW":              536870926,
+		"API_DASH_APPLIANCE":         536870927,
+		"API_EXTENSIONS_RANGE_END":   536870928,
+	}
+)
+
+func (x ApiExtensions) Enum() *ApiExtensions {
+	p := new(ApiExtensions)
+	*p = x
+	return p
+}
+
+func (x ApiExtensions) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ApiExtensions) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[12].Descriptor()
+}
+
+func (ApiExtensions) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[12]
+}
+
+func (x ApiExtensions) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ApiExtensions.Descriptor instead.
+func (ApiExtensions) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{12}
+}
+
+type Api int32
+
+const (
+	Api_API_UNSPECIFIED           Api = 0
+	Api_API_SAI_UNSPECIFIED       Api = 1
+	Api_API_SWITCH                Api = 2
+	Api_API_PORT                  Api = 3
+	Api_API_FDB                   Api = 4
+	Api_API_VLAN                  Api = 5
+	Api_API_VIRTUAL_ROUTER        Api = 6
+	Api_API_ROUTE                 Api = 7
+	Api_API_NEXT_HOP              Api = 8
+	Api_API_NEXT_HOP_GROUP        Api = 9
+	Api_API_ROUTER_INTERFACE      Api = 10
+	Api_API_NEIGHBOR              Api = 11
+	Api_API_ACL                   Api = 12
+	Api_API_HOSTIF                Api = 13
+	Api_API_MIRROR                Api = 14
+	Api_API_SAMPLEPACKET          Api = 15
+	Api_API_STP                   Api = 16
+	Api_API_LAG                   Api = 17
+	Api_API_POLICER               Api = 18
+	Api_API_WRED                  Api = 19
+	Api_API_QOS_MAP               Api = 20
+	Api_API_QUEUE                 Api = 21
+	Api_API_SCHEDULER             Api = 22
+	Api_API_SCHEDULER_GROUP       Api = 23
+	Api_API_BUFFER                Api = 24
+	Api_API_HASH                  Api = 25
+	Api_API_UDF                   Api = 26
+	Api_API_TUNNEL                Api = 27
+	Api_API_L2MC                  Api = 28
+	Api_API_IPMC                  Api = 29
+	Api_API_RPF_GROUP             Api = 30
+	Api_API_L2MC_GROUP            Api = 31
+	Api_API_IPMC_GROUP            Api = 32
+	Api_API_MCAST_FDB             Api = 33
+	Api_API_BRIDGE                Api = 34
+	Api_API_TAM                   Api = 35
+	Api_API_SRV6                  Api = 36
+	Api_API_MPLS                  Api = 37
+	Api_API_DTEL                  Api = 38
+	Api_API_BFD                   Api = 39
+	Api_API_ISOLATION_GROUP       Api = 40
+	Api_API_NAT                   Api = 41
+	Api_API_COUNTER               Api = 42
+	Api_API_DEBUG_COUNTER         Api = 43
+	Api_API_MACSEC                Api = 44
+	Api_API_SYSTEM_PORT           Api = 45
+	Api_API_MY_MAC                Api = 46
+	Api_API_IPSEC                 Api = 47
+	Api_API_GENERIC_PROGRAMMABLE  Api = 48
+	Api_API_ARS                   Api = 49
+	Api_API_ARS_PROFILE           Api = 50
+	Api_API_TWAMP                 Api = 51
+	Api_API_POE                   Api = 52
+	Api_API_ICMP_ECHO             Api = 53
+	Api_API_MAX                   Api = 54
+	Api_API_EXTENSIONS_RANGE_BASE Api = 536870913
+)
+
+// Enum value maps for Api.
+var (
+	Api_name = map[int32]string{
+		0:         "API_UNSPECIFIED",
+		1:         "API_SAI_UNSPECIFIED",
+		2:         "API_SWITCH",
+		3:         "API_PORT",
+		4:         "API_FDB",
+		5:         "API_VLAN",
+		6:         "API_VIRTUAL_ROUTER",
+		7:         "API_ROUTE",
+		8:         "API_NEXT_HOP",
+		9:         "API_NEXT_HOP_GROUP",
+		10:        "API_ROUTER_INTERFACE",
+		11:        "API_NEIGHBOR",
+		12:        "API_ACL",
+		13:        "API_HOSTIF",
+		14:        "API_MIRROR",
+		15:        "API_SAMPLEPACKET",
+		16:        "API_STP",
+		17:        "API_LAG",
+		18:        "API_POLICER",
+		19:        "API_WRED",
+		20:        "API_QOS_MAP",
+		21:        "API_QUEUE",
+		22:        "API_SCHEDULER",
+		23:        "API_SCHEDULER_GROUP",
+		24:        "API_BUFFER",
+		25:        "API_HASH",
+		26:        "API_UDF",
+		27:        "API_TUNNEL",
+		28:        "API_L2MC",
+		29:        "API_IPMC",
+		30:        "API_RPF_GROUP",
+		31:        "API_L2MC_GROUP",
+		32:        "API_IPMC_GROUP",
+		33:        "API_MCAST_FDB",
+		34:        "API_BRIDGE",
+		35:        "API_TAM",
+		36:        "API_SRV6",
+		37:        "API_MPLS",
+		38:        "API_DTEL",
+		39:        "API_BFD",
+		40:        "API_ISOLATION_GROUP",
+		41:        "API_NAT",
+		42:        "API_COUNTER",
+		43:        "API_DEBUG_COUNTER",
+		44:        "API_MACSEC",
+		45:        "API_SYSTEM_PORT",
+		46:        "API_MY_MAC",
+		47:        "API_IPSEC",
+		48:        "API_GENERIC_PROGRAMMABLE",
+		49:        "API_ARS",
+		50:        "API_ARS_PROFILE",
+		51:        "API_TWAMP",
+		52:        "API_POE",
+		53:        "API_ICMP_ECHO",
+		54:        "API_MAX",
+		536870913: "API_EXTENSIONS_RANGE_BASE",
+	}
+	Api_value = map[string]int32{
+		"API_UNSPECIFIED":           0,
+		"API_SAI_UNSPECIFIED":       1,
+		"API_SWITCH":                2,
+		"API_PORT":                  3,
+		"API_FDB":                   4,
+		"API_VLAN":                  5,
+		"API_VIRTUAL_ROUTER":        6,
+		"API_ROUTE":                 7,
+		"API_NEXT_HOP":              8,
+		"API_NEXT_HOP_GROUP":        9,
+		"API_ROUTER_INTERFACE":      10,
+		"API_NEIGHBOR":              11,
+		"API_ACL":                   12,
+		"API_HOSTIF":                13,
+		"API_MIRROR":                14,
+		"API_SAMPLEPACKET":          15,
+		"API_STP":                   16,
+		"API_LAG":                   17,
+		"API_POLICER":               18,
+		"API_WRED":                  19,
+		"API_QOS_MAP":               20,
+		"API_QUEUE":                 21,
+		"API_SCHEDULER":             22,
+		"API_SCHEDULER_GROUP":       23,
+		"API_BUFFER":                24,
+		"API_HASH":                  25,
+		"API_UDF":                   26,
+		"API_TUNNEL":                27,
+		"API_L2MC":                  28,
+		"API_IPMC":                  29,
+		"API_RPF_GROUP":             30,
+		"API_L2MC_GROUP":            31,
+		"API_IPMC_GROUP":            32,
+		"API_MCAST_FDB":             33,
+		"API_BRIDGE":                34,
+		"API_TAM":                   35,
+		"API_SRV6":                  36,
+		"API_MPLS":                  37,
+		"API_DTEL":                  38,
+		"API_BFD":                   39,
+		"API_ISOLATION_GROUP":       40,
+		"API_NAT":                   41,
+		"API_COUNTER":               42,
+		"API_DEBUG_COUNTER":         43,
+		"API_MACSEC":                44,
+		"API_SYSTEM_PORT":           45,
+		"API_MY_MAC":                46,
+		"API_IPSEC":                 47,
+		"API_GENERIC_PROGRAMMABLE":  48,
+		"API_ARS":                   49,
+		"API_ARS_PROFILE":           50,
+		"API_TWAMP":                 51,
+		"API_POE":                   52,
+		"API_ICMP_ECHO":             53,
+		"API_MAX":                   54,
+		"API_EXTENSIONS_RANGE_BASE": 536870913,
+	}
+)
+
+func (x Api) Enum() *Api {
+	p := new(Api)
+	*p = x
+	return p
+}
+
+func (x Api) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Api) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[13].Descriptor()
+}
+
+func (Api) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[13]
+}
+
+func (x Api) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Api.Descriptor instead.
+func (Api) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{13}
+}
+
 type BfdEncapsulationType int32
 
 const (
@@ -893,11 +1195,11 @@ func (x BfdEncapsulationType) String() string {
 }
 
 func (BfdEncapsulationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[12].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[14].Descriptor()
 }
 
 func (BfdEncapsulationType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[12]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[14]
 }
 
 func (x BfdEncapsulationType) Number() protoreflect.EnumNumber {
@@ -906,7 +1208,7 @@ func (x BfdEncapsulationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BfdEncapsulationType.Descriptor instead.
 func (BfdEncapsulationType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{12}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{14}
 }
 
 type BfdSessionOffloadType int32
@@ -945,11 +1247,11 @@ func (x BfdSessionOffloadType) String() string {
 }
 
 func (BfdSessionOffloadType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[13].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[15].Descriptor()
 }
 
 func (BfdSessionOffloadType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[13]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[15]
 }
 
 func (x BfdSessionOffloadType) Number() protoreflect.EnumNumber {
@@ -958,7 +1260,7 @@ func (x BfdSessionOffloadType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BfdSessionOffloadType.Descriptor instead.
 func (BfdSessionOffloadType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{13}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{15}
 }
 
 type BfdSessionStat int32
@@ -997,11 +1299,11 @@ func (x BfdSessionStat) String() string {
 }
 
 func (BfdSessionStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[14].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[16].Descriptor()
 }
 
 func (BfdSessionStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[14]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[16]
 }
 
 func (x BfdSessionStat) Number() protoreflect.EnumNumber {
@@ -1010,7 +1312,7 @@ func (x BfdSessionStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BfdSessionStat.Descriptor instead.
 func (BfdSessionStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{14}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{16}
 }
 
 type BfdSessionState int32
@@ -1052,11 +1354,11 @@ func (x BfdSessionState) String() string {
 }
 
 func (BfdSessionState) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[15].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[17].Descriptor()
 }
 
 func (BfdSessionState) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[15]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[17]
 }
 
 func (x BfdSessionState) Number() protoreflect.EnumNumber {
@@ -1065,7 +1367,7 @@ func (x BfdSessionState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BfdSessionState.Descriptor instead.
 func (BfdSessionState) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{15}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{17}
 }
 
 type BfdSessionType int32
@@ -1107,11 +1409,11 @@ func (x BfdSessionType) String() string {
 }
 
 func (BfdSessionType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[16].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[18].Descriptor()
 }
 
 func (BfdSessionType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[16]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[18]
 }
 
 func (x BfdSessionType) Number() protoreflect.EnumNumber {
@@ -1120,7 +1422,7 @@ func (x BfdSessionType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BfdSessionType.Descriptor instead.
 func (BfdSessionType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{16}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{18}
 }
 
 type BridgeFloodControlType int32
@@ -1162,11 +1464,11 @@ func (x BridgeFloodControlType) String() string {
 }
 
 func (BridgeFloodControlType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[17].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[19].Descriptor()
 }
 
 func (BridgeFloodControlType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[17]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[19]
 }
 
 func (x BridgeFloodControlType) Number() protoreflect.EnumNumber {
@@ -1175,7 +1477,7 @@ func (x BridgeFloodControlType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BridgeFloodControlType.Descriptor instead.
 func (BridgeFloodControlType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{17}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{19}
 }
 
 type BridgePortFdbLearningMode int32
@@ -1223,11 +1525,11 @@ func (x BridgePortFdbLearningMode) String() string {
 }
 
 func (BridgePortFdbLearningMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[18].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[20].Descriptor()
 }
 
 func (BridgePortFdbLearningMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[18]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[20]
 }
 
 func (x BridgePortFdbLearningMode) Number() protoreflect.EnumNumber {
@@ -1236,7 +1538,7 @@ func (x BridgePortFdbLearningMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BridgePortFdbLearningMode.Descriptor instead.
 func (BridgePortFdbLearningMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{18}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{20}
 }
 
 type BridgePortStat int32
@@ -1278,11 +1580,11 @@ func (x BridgePortStat) String() string {
 }
 
 func (BridgePortStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[19].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[21].Descriptor()
 }
 
 func (BridgePortStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[19]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[21]
 }
 
 func (x BridgePortStat) Number() protoreflect.EnumNumber {
@@ -1291,7 +1593,7 @@ func (x BridgePortStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BridgePortStat.Descriptor instead.
 func (BridgePortStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{19}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{21}
 }
 
 type BridgePortTaggingMode int32
@@ -1327,11 +1629,11 @@ func (x BridgePortTaggingMode) String() string {
 }
 
 func (BridgePortTaggingMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[20].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[22].Descriptor()
 }
 
 func (BridgePortTaggingMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[20]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[22]
 }
 
 func (x BridgePortTaggingMode) Number() protoreflect.EnumNumber {
@@ -1340,7 +1642,7 @@ func (x BridgePortTaggingMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BridgePortTaggingMode.Descriptor instead.
 func (BridgePortTaggingMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{20}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{22}
 }
 
 type BridgePortType int32
@@ -1385,11 +1687,11 @@ func (x BridgePortType) String() string {
 }
 
 func (BridgePortType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[21].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[23].Descriptor()
 }
 
 func (BridgePortType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[21]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[23]
 }
 
 func (x BridgePortType) Number() protoreflect.EnumNumber {
@@ -1398,7 +1700,7 @@ func (x BridgePortType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BridgePortType.Descriptor instead.
 func (BridgePortType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{21}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{23}
 }
 
 type BridgeStat int32
@@ -1440,11 +1742,11 @@ func (x BridgeStat) String() string {
 }
 
 func (BridgeStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[22].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[24].Descriptor()
 }
 
 func (BridgeStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[22]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[24]
 }
 
 func (x BridgeStat) Number() protoreflect.EnumNumber {
@@ -1453,7 +1755,7 @@ func (x BridgeStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BridgeStat.Descriptor instead.
 func (BridgeStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{22}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{24}
 }
 
 type BridgeType int32
@@ -1489,11 +1791,11 @@ func (x BridgeType) String() string {
 }
 
 func (BridgeType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[23].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[25].Descriptor()
 }
 
 func (BridgeType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[23]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[25]
 }
 
 func (x BridgeType) Number() protoreflect.EnumNumber {
@@ -1502,7 +1804,7 @@ func (x BridgeType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BridgeType.Descriptor instead.
 func (BridgeType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{23}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{25}
 }
 
 type BufferPoolStat int32
@@ -1598,11 +1900,11 @@ func (x BufferPoolStat) String() string {
 }
 
 func (BufferPoolStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[24].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[26].Descriptor()
 }
 
 func (BufferPoolStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[24]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[26]
 }
 
 func (x BufferPoolStat) Number() protoreflect.EnumNumber {
@@ -1611,7 +1913,7 @@ func (x BufferPoolStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BufferPoolStat.Descriptor instead.
 func (BufferPoolStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{24}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{26}
 }
 
 type BufferPoolThresholdMode int32
@@ -1647,11 +1949,11 @@ func (x BufferPoolThresholdMode) String() string {
 }
 
 func (BufferPoolThresholdMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[25].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[27].Descriptor()
 }
 
 func (BufferPoolThresholdMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[25]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[27]
 }
 
 func (x BufferPoolThresholdMode) Number() protoreflect.EnumNumber {
@@ -1660,7 +1962,7 @@ func (x BufferPoolThresholdMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BufferPoolThresholdMode.Descriptor instead.
 func (BufferPoolThresholdMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{25}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{27}
 }
 
 type BufferPoolType int32
@@ -1699,11 +2001,11 @@ func (x BufferPoolType) String() string {
 }
 
 func (BufferPoolType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[26].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[28].Descriptor()
 }
 
 func (BufferPoolType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[26]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[28]
 }
 
 func (x BufferPoolType) Number() protoreflect.EnumNumber {
@@ -1712,7 +2014,7 @@ func (x BufferPoolType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BufferPoolType.Descriptor instead.
 func (BufferPoolType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{26}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{28}
 }
 
 type BufferProfileThresholdMode int32
@@ -1748,11 +2050,11 @@ func (x BufferProfileThresholdMode) String() string {
 }
 
 func (BufferProfileThresholdMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[27].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[29].Descriptor()
 }
 
 func (BufferProfileThresholdMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[27]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[29]
 }
 
 func (x BufferProfileThresholdMode) Number() protoreflect.EnumNumber {
@@ -1761,7 +2063,7 @@ func (x BufferProfileThresholdMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BufferProfileThresholdMode.Descriptor instead.
 func (BufferProfileThresholdMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{27}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{29}
 }
 
 type BulkOpErrorMode int32
@@ -1797,11 +2099,11 @@ func (x BulkOpErrorMode) String() string {
 }
 
 func (BulkOpErrorMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[28].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[30].Descriptor()
 }
 
 func (BulkOpErrorMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[28]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[30]
 }
 
 func (x BulkOpErrorMode) Number() protoreflect.EnumNumber {
@@ -1810,7 +2112,7 @@ func (x BulkOpErrorMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BulkOpErrorMode.Descriptor instead.
 func (BulkOpErrorMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{28}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{30}
 }
 
 type CommonApi int32
@@ -1867,11 +2169,11 @@ func (x CommonApi) String() string {
 }
 
 func (CommonApi) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[29].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[31].Descriptor()
 }
 
 func (CommonApi) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[29]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[31]
 }
 
 func (x CommonApi) Number() protoreflect.EnumNumber {
@@ -1880,7 +2182,7 @@ func (x CommonApi) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CommonApi.Descriptor instead.
 func (CommonApi) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{29}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{31}
 }
 
 type CounterStat int32
@@ -1919,11 +2221,11 @@ func (x CounterStat) String() string {
 }
 
 func (CounterStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[30].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[32].Descriptor()
 }
 
 func (CounterStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[30]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[32]
 }
 
 func (x CounterStat) Number() protoreflect.EnumNumber {
@@ -1932,7 +2234,7 @@ func (x CounterStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CounterStat.Descriptor instead.
 func (CounterStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{30}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{32}
 }
 
 type CounterType int32
@@ -1968,11 +2270,11 @@ func (x CounterType) String() string {
 }
 
 func (CounterType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[31].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[33].Descriptor()
 }
 
 func (CounterType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[31]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[33]
 }
 
 func (x CounterType) Number() protoreflect.EnumNumber {
@@ -1981,7 +2283,7 @@ func (x CounterType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CounterType.Descriptor instead.
 func (CounterType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{31}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{33}
 }
 
 type DashCapsHaScopeLevel int32
@@ -2017,11 +2319,11 @@ func (x DashCapsHaScopeLevel) String() string {
 }
 
 func (DashCapsHaScopeLevel) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[32].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[34].Descriptor()
 }
 
 func (DashCapsHaScopeLevel) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[32]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[34]
 }
 
 func (x DashCapsHaScopeLevel) Number() protoreflect.EnumNumber {
@@ -2030,7 +2332,706 @@ func (x DashCapsHaScopeLevel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DashCapsHaScopeLevel.Descriptor instead.
 func (DashCapsHaScopeLevel) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{32}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{34}
+}
+
+type DashDirection int32
+
+const (
+	DashDirection_DASH_DIRECTION_UNSPECIFIED DashDirection = 0
+	DashDirection_DASH_DIRECTION_INVALID     DashDirection = 1
+	DashDirection_DASH_DIRECTION_OUTBOUND    DashDirection = 2
+	DashDirection_DASH_DIRECTION_INBOUND     DashDirection = 3
+)
+
+// Enum value maps for DashDirection.
+var (
+	DashDirection_name = map[int32]string{
+		0: "DASH_DIRECTION_UNSPECIFIED",
+		1: "DASH_DIRECTION_INVALID",
+		2: "DASH_DIRECTION_OUTBOUND",
+		3: "DASH_DIRECTION_INBOUND",
+	}
+	DashDirection_value = map[string]int32{
+		"DASH_DIRECTION_UNSPECIFIED": 0,
+		"DASH_DIRECTION_INVALID":     1,
+		"DASH_DIRECTION_OUTBOUND":    2,
+		"DASH_DIRECTION_INBOUND":     3,
+	}
+)
+
+func (x DashDirection) Enum() *DashDirection {
+	p := new(DashDirection)
+	*p = x
+	return p
+}
+
+func (x DashDirection) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashDirection) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[35].Descriptor()
+}
+
+func (DashDirection) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[35]
+}
+
+func (x DashDirection) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashDirection.Descriptor instead.
+func (DashDirection) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{35}
+}
+
+type DashEncapsulation int32
+
+const (
+	DashEncapsulation_DASH_ENCAPSULATION_UNSPECIFIED DashEncapsulation = 0
+	DashEncapsulation_DASH_ENCAPSULATION_INVALID     DashEncapsulation = 1
+	DashEncapsulation_DASH_ENCAPSULATION_VXLAN       DashEncapsulation = 2
+	DashEncapsulation_DASH_ENCAPSULATION_NVGRE       DashEncapsulation = 3
+)
+
+// Enum value maps for DashEncapsulation.
+var (
+	DashEncapsulation_name = map[int32]string{
+		0: "DASH_ENCAPSULATION_UNSPECIFIED",
+		1: "DASH_ENCAPSULATION_INVALID",
+		2: "DASH_ENCAPSULATION_VXLAN",
+		3: "DASH_ENCAPSULATION_NVGRE",
+	}
+	DashEncapsulation_value = map[string]int32{
+		"DASH_ENCAPSULATION_UNSPECIFIED": 0,
+		"DASH_ENCAPSULATION_INVALID":     1,
+		"DASH_ENCAPSULATION_VXLAN":       2,
+		"DASH_ENCAPSULATION_NVGRE":       3,
+	}
+)
+
+func (x DashEncapsulation) Enum() *DashEncapsulation {
+	p := new(DashEncapsulation)
+	*p = x
+	return p
+}
+
+func (x DashEncapsulation) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashEncapsulation) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[36].Descriptor()
+}
+
+func (DashEncapsulation) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[36]
+}
+
+func (x DashEncapsulation) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashEncapsulation.Descriptor instead.
+func (DashEncapsulation) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{36}
+}
+
+type DashEniMacOverrideType int32
+
+const (
+	DashEniMacOverrideType_DASH_ENI_MAC_OVERRIDE_TYPE_UNSPECIFIED DashEniMacOverrideType = 0
+	DashEniMacOverrideType_DASH_ENI_MAC_OVERRIDE_TYPE_NONE        DashEniMacOverrideType = 1
+	DashEniMacOverrideType_DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC     DashEniMacOverrideType = 2
+	DashEniMacOverrideType_DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC     DashEniMacOverrideType = 3
+)
+
+// Enum value maps for DashEniMacOverrideType.
+var (
+	DashEniMacOverrideType_name = map[int32]string{
+		0: "DASH_ENI_MAC_OVERRIDE_TYPE_UNSPECIFIED",
+		1: "DASH_ENI_MAC_OVERRIDE_TYPE_NONE",
+		2: "DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC",
+		3: "DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC",
+	}
+	DashEniMacOverrideType_value = map[string]int32{
+		"DASH_ENI_MAC_OVERRIDE_TYPE_UNSPECIFIED": 0,
+		"DASH_ENI_MAC_OVERRIDE_TYPE_NONE":        1,
+		"DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC":     2,
+		"DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC":     3,
+	}
+)
+
+func (x DashEniMacOverrideType) Enum() *DashEniMacOverrideType {
+	p := new(DashEniMacOverrideType)
+	*p = x
+	return p
+}
+
+func (x DashEniMacOverrideType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashEniMacOverrideType) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[37].Descriptor()
+}
+
+func (DashEniMacOverrideType) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[37]
+}
+
+func (x DashEniMacOverrideType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashEniMacOverrideType.Descriptor instead.
+func (DashEniMacOverrideType) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{37}
+}
+
+type DashFlowAction int32
+
+const (
+	DashFlowAction_DASH_FLOW_ACTION_UNSPECIFIED DashFlowAction = 0
+	DashFlowAction_DASH_FLOW_ACTION_NONE        DashFlowAction = 1
+)
+
+// Enum value maps for DashFlowAction.
+var (
+	DashFlowAction_name = map[int32]string{
+		0: "DASH_FLOW_ACTION_UNSPECIFIED",
+		1: "DASH_FLOW_ACTION_NONE",
+	}
+	DashFlowAction_value = map[string]int32{
+		"DASH_FLOW_ACTION_UNSPECIFIED": 0,
+		"DASH_FLOW_ACTION_NONE":        1,
+	}
+)
+
+func (x DashFlowAction) Enum() *DashFlowAction {
+	p := new(DashFlowAction)
+	*p = x
+	return p
+}
+
+func (x DashFlowAction) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashFlowAction) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[38].Descriptor()
+}
+
+func (DashFlowAction) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[38]
+}
+
+func (x DashFlowAction) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashFlowAction.Descriptor instead.
+func (DashFlowAction) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{38}
+}
+
+type DashFlowEnabledKey int32
+
+const (
+	DashFlowEnabledKey_DASH_FLOW_ENABLED_KEY_UNSPECIFIED DashFlowEnabledKey = 0
+	DashFlowEnabledKey_DASH_FLOW_ENABLED_KEY_ENI_MAC     DashFlowEnabledKey = 2
+	DashFlowEnabledKey_DASH_FLOW_ENABLED_KEY_VNI         DashFlowEnabledKey = 3
+	DashFlowEnabledKey_DASH_FLOW_ENABLED_KEY_PROTOCOL    DashFlowEnabledKey = 5
+	DashFlowEnabledKey_DASH_FLOW_ENABLED_KEY_SRC_IP      DashFlowEnabledKey = 9
+	DashFlowEnabledKey_DASH_FLOW_ENABLED_KEY_DST_IP      DashFlowEnabledKey = 17
+	DashFlowEnabledKey_DASH_FLOW_ENABLED_KEY_SRC_PORT    DashFlowEnabledKey = 33
+	DashFlowEnabledKey_DASH_FLOW_ENABLED_KEY_DST_PORT    DashFlowEnabledKey = 65
+)
+
+// Enum value maps for DashFlowEnabledKey.
+var (
+	DashFlowEnabledKey_name = map[int32]string{
+		0:  "DASH_FLOW_ENABLED_KEY_UNSPECIFIED",
+		2:  "DASH_FLOW_ENABLED_KEY_ENI_MAC",
+		3:  "DASH_FLOW_ENABLED_KEY_VNI",
+		5:  "DASH_FLOW_ENABLED_KEY_PROTOCOL",
+		9:  "DASH_FLOW_ENABLED_KEY_SRC_IP",
+		17: "DASH_FLOW_ENABLED_KEY_DST_IP",
+		33: "DASH_FLOW_ENABLED_KEY_SRC_PORT",
+		65: "DASH_FLOW_ENABLED_KEY_DST_PORT",
+	}
+	DashFlowEnabledKey_value = map[string]int32{
+		"DASH_FLOW_ENABLED_KEY_UNSPECIFIED": 0,
+		"DASH_FLOW_ENABLED_KEY_ENI_MAC":     2,
+		"DASH_FLOW_ENABLED_KEY_VNI":         3,
+		"DASH_FLOW_ENABLED_KEY_PROTOCOL":    5,
+		"DASH_FLOW_ENABLED_KEY_SRC_IP":      9,
+		"DASH_FLOW_ENABLED_KEY_DST_IP":      17,
+		"DASH_FLOW_ENABLED_KEY_SRC_PORT":    33,
+		"DASH_FLOW_ENABLED_KEY_DST_PORT":    65,
+	}
+)
+
+func (x DashFlowEnabledKey) Enum() *DashFlowEnabledKey {
+	p := new(DashFlowEnabledKey)
+	*p = x
+	return p
+}
+
+func (x DashFlowEnabledKey) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashFlowEnabledKey) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[39].Descriptor()
+}
+
+func (DashFlowEnabledKey) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[39]
+}
+
+func (x DashFlowEnabledKey) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashFlowEnabledKey.Descriptor instead.
+func (DashFlowEnabledKey) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{39}
+}
+
+type DashFlowEntryBulkGetSessionFilterKey int32
+
+const (
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_UNSPECIFIED   DashFlowEntryBulkGetSessionFilterKey = 0
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD       DashFlowEntryBulkGetSessionFilterKey = 1
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID DashFlowEntryBulkGetSessionFilterKey = 2
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR      DashFlowEntryBulkGetSessionFilterKey = 3
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL   DashFlowEntryBulkGetSessionFilterKey = 4
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR   DashFlowEntryBulkGetSessionFilterKey = 5
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR   DashFlowEntryBulkGetSessionFilterKey = 6
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT   DashFlowEntryBulkGetSessionFilterKey = 7
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT   DashFlowEntryBulkGetSessionFilterKey = 8
+	DashFlowEntryBulkGetSessionFilterKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION   DashFlowEntryBulkGetSessionFilterKey = 9
+)
+
+// Enum value maps for DashFlowEntryBulkGetSessionFilterKey.
+var (
+	DashFlowEntryBulkGetSessionFilterKey_name = map[int32]string{
+		0: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_UNSPECIFIED",
+		1: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD",
+		2: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID",
+		3: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR",
+		4: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL",
+		5: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR",
+		6: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR",
+		7: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT",
+		8: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT",
+		9: "DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION",
+	}
+	DashFlowEntryBulkGetSessionFilterKey_value = map[string]int32{
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_UNSPECIFIED":   0,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD":       1,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID": 2,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR":      3,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL":   4,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR":   5,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR":   6,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT":   7,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT":   8,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION":   9,
+	}
+)
+
+func (x DashFlowEntryBulkGetSessionFilterKey) Enum() *DashFlowEntryBulkGetSessionFilterKey {
+	p := new(DashFlowEntryBulkGetSessionFilterKey)
+	*p = x
+	return p
+}
+
+func (x DashFlowEntryBulkGetSessionFilterKey) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashFlowEntryBulkGetSessionFilterKey) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[40].Descriptor()
+}
+
+func (DashFlowEntryBulkGetSessionFilterKey) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[40]
+}
+
+func (x DashFlowEntryBulkGetSessionFilterKey) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashFlowEntryBulkGetSessionFilterKey.Descriptor instead.
+func (DashFlowEntryBulkGetSessionFilterKey) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{40}
+}
+
+type DashFlowEntryBulkGetSessionMode int32
+
+const (
+	DashFlowEntryBulkGetSessionMode_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_UNSPECIFIED                                                        DashFlowEntryBulkGetSessionMode = 0
+	DashFlowEntryBulkGetSessionMode_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC                     DashFlowEntryBulkGetSessionMode = 1
+	DashFlowEntryBulkGetSessionMode_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR                   DashFlowEntryBulkGetSessionMode = 2
+	DashFlowEntryBulkGetSessionMode_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT                    DashFlowEntryBulkGetSessionMode = 3
+	DashFlowEntryBulkGetSessionMode_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE DashFlowEntryBulkGetSessionMode = 4
+)
+
+// Enum value maps for DashFlowEntryBulkGetSessionMode.
+var (
+	DashFlowEntryBulkGetSessionMode_name = map[int32]string{
+		0: "DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_UNSPECIFIED",
+		1: "DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC",
+		2: "DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR",
+		3: "DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT",
+		4: "DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE",
+	}
+	DashFlowEntryBulkGetSessionMode_value = map[string]int32{
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_UNSPECIFIED":                                                        0,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC":                     1,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR":                   2,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT":                    3,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE": 4,
+	}
+)
+
+func (x DashFlowEntryBulkGetSessionMode) Enum() *DashFlowEntryBulkGetSessionMode {
+	p := new(DashFlowEntryBulkGetSessionMode)
+	*p = x
+	return p
+}
+
+func (x DashFlowEntryBulkGetSessionMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashFlowEntryBulkGetSessionMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[41].Descriptor()
+}
+
+func (DashFlowEntryBulkGetSessionMode) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[41]
+}
+
+func (x DashFlowEntryBulkGetSessionMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashFlowEntryBulkGetSessionMode.Descriptor instead.
+func (DashFlowEntryBulkGetSessionMode) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{41}
+}
+
+type DashFlowEntryBulkGetSessionOpKey int32
+
+const (
+	DashFlowEntryBulkGetSessionOpKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_UNSPECIFIED                        DashFlowEntryBulkGetSessionOpKey = 0
+	DashFlowEntryBulkGetSessionOpKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID                  DashFlowEntryBulkGetSessionOpKey = 1
+	DashFlowEntryBulkGetSessionOpKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO                 DashFlowEntryBulkGetSessionOpKey = 2
+	DashFlowEntryBulkGetSessionOpKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN             DashFlowEntryBulkGetSessionOpKey = 3
+	DashFlowEntryBulkGetSessionOpKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO DashFlowEntryBulkGetSessionOpKey = 4
+	DashFlowEntryBulkGetSessionOpKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN                DashFlowEntryBulkGetSessionOpKey = 5
+	DashFlowEntryBulkGetSessionOpKey_DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO    DashFlowEntryBulkGetSessionOpKey = 6
+)
+
+// Enum value maps for DashFlowEntryBulkGetSessionOpKey.
+var (
+	DashFlowEntryBulkGetSessionOpKey_name = map[int32]string{
+		0: "DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_UNSPECIFIED",
+		1: "DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID",
+		2: "DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO",
+		3: "DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN",
+		4: "DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO",
+		5: "DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN",
+		6: "DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO",
+	}
+	DashFlowEntryBulkGetSessionOpKey_value = map[string]int32{
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_UNSPECIFIED":                        0,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID":                  1,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO":                 2,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN":             3,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO": 4,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN":                5,
+		"DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO":    6,
+	}
+)
+
+func (x DashFlowEntryBulkGetSessionOpKey) Enum() *DashFlowEntryBulkGetSessionOpKey {
+	p := new(DashFlowEntryBulkGetSessionOpKey)
+	*p = x
+	return p
+}
+
+func (x DashFlowEntryBulkGetSessionOpKey) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashFlowEntryBulkGetSessionOpKey) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[42].Descriptor()
+}
+
+func (DashFlowEntryBulkGetSessionOpKey) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[42]
+}
+
+func (x DashFlowEntryBulkGetSessionOpKey) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashFlowEntryBulkGetSessionOpKey.Descriptor instead.
+func (DashFlowEntryBulkGetSessionOpKey) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{42}
+}
+
+type DashHaRole int32
+
+const (
+	DashHaRole_DASH_HA_ROLE_UNSPECIFIED         DashHaRole = 0
+	DashHaRole_DASH_HA_ROLE_DEAD                DashHaRole = 1
+	DashHaRole_DASH_HA_ROLE_ACTIVE              DashHaRole = 2
+	DashHaRole_DASH_HA_ROLE_STANDBY             DashHaRole = 3
+	DashHaRole_DASH_HA_ROLE_STANDALONE          DashHaRole = 4
+	DashHaRole_DASH_HA_ROLE_SWITCHING_TO_ACTIVE DashHaRole = 5
+)
+
+// Enum value maps for DashHaRole.
+var (
+	DashHaRole_name = map[int32]string{
+		0: "DASH_HA_ROLE_UNSPECIFIED",
+		1: "DASH_HA_ROLE_DEAD",
+		2: "DASH_HA_ROLE_ACTIVE",
+		3: "DASH_HA_ROLE_STANDBY",
+		4: "DASH_HA_ROLE_STANDALONE",
+		5: "DASH_HA_ROLE_SWITCHING_TO_ACTIVE",
+	}
+	DashHaRole_value = map[string]int32{
+		"DASH_HA_ROLE_UNSPECIFIED":         0,
+		"DASH_HA_ROLE_DEAD":                1,
+		"DASH_HA_ROLE_ACTIVE":              2,
+		"DASH_HA_ROLE_STANDBY":             3,
+		"DASH_HA_ROLE_STANDALONE":          4,
+		"DASH_HA_ROLE_SWITCHING_TO_ACTIVE": 5,
+	}
+)
+
+func (x DashHaRole) Enum() *DashHaRole {
+	p := new(DashHaRole)
+	*p = x
+	return p
+}
+
+func (x DashHaRole) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashHaRole) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[43].Descriptor()
+}
+
+func (DashHaRole) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[43]
+}
+
+func (x DashHaRole) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashHaRole.Descriptor instead.
+func (DashHaRole) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{43}
+}
+
+type DashHaState int32
+
+const (
+	DashHaState_DASH_HA_STATE_UNSPECIFIED                   DashHaState = 0
+	DashHaState_DASH_HA_STATE_DEAD                          DashHaState = 1
+	DashHaState_DASH_HA_STATE_CONNECTING                    DashHaState = 2
+	DashHaState_DASH_HA_STATE_CONNECTED                     DashHaState = 3
+	DashHaState_DASH_HA_STATE_INITIALIZING_TO_ACTIVE        DashHaState = 4
+	DashHaState_DASH_HA_STATE_INITIALIZING_TO_STANDBY       DashHaState = 5
+	DashHaState_DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION DashHaState = 6
+	DashHaState_DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION     DashHaState = 7
+	DashHaState_DASH_HA_STATE_PENDING_STANDBY_ACTIVATION    DashHaState = 8
+	DashHaState_DASH_HA_STATE_STANDALONE                    DashHaState = 9
+	DashHaState_DASH_HA_STATE_ACTIVE                        DashHaState = 10
+	DashHaState_DASH_HA_STATE_STANDBY                       DashHaState = 11
+	DashHaState_DASH_HA_STATE_DESTROYING                    DashHaState = 12
+	DashHaState_DASH_HA_STATE_SWITCHING_TO_STANDALONE       DashHaState = 13
+)
+
+// Enum value maps for DashHaState.
+var (
+	DashHaState_name = map[int32]string{
+		0:  "DASH_HA_STATE_UNSPECIFIED",
+		1:  "DASH_HA_STATE_DEAD",
+		2:  "DASH_HA_STATE_CONNECTING",
+		3:  "DASH_HA_STATE_CONNECTED",
+		4:  "DASH_HA_STATE_INITIALIZING_TO_ACTIVE",
+		5:  "DASH_HA_STATE_INITIALIZING_TO_STANDBY",
+		6:  "DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION",
+		7:  "DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION",
+		8:  "DASH_HA_STATE_PENDING_STANDBY_ACTIVATION",
+		9:  "DASH_HA_STATE_STANDALONE",
+		10: "DASH_HA_STATE_ACTIVE",
+		11: "DASH_HA_STATE_STANDBY",
+		12: "DASH_HA_STATE_DESTROYING",
+		13: "DASH_HA_STATE_SWITCHING_TO_STANDALONE",
+	}
+	DashHaState_value = map[string]int32{
+		"DASH_HA_STATE_UNSPECIFIED":                   0,
+		"DASH_HA_STATE_DEAD":                          1,
+		"DASH_HA_STATE_CONNECTING":                    2,
+		"DASH_HA_STATE_CONNECTED":                     3,
+		"DASH_HA_STATE_INITIALIZING_TO_ACTIVE":        4,
+		"DASH_HA_STATE_INITIALIZING_TO_STANDBY":       5,
+		"DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION": 6,
+		"DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION":     7,
+		"DASH_HA_STATE_PENDING_STANDBY_ACTIVATION":    8,
+		"DASH_HA_STATE_STANDALONE":                    9,
+		"DASH_HA_STATE_ACTIVE":                        10,
+		"DASH_HA_STATE_STANDBY":                       11,
+		"DASH_HA_STATE_DESTROYING":                    12,
+		"DASH_HA_STATE_SWITCHING_TO_STANDALONE":       13,
+	}
+)
+
+func (x DashHaState) Enum() *DashHaState {
+	p := new(DashHaState)
+	*p = x
+	return p
+}
+
+func (x DashHaState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashHaState) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[44].Descriptor()
+}
+
+func (DashHaState) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[44]
+}
+
+func (x DashHaState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashHaState.Descriptor instead.
+func (DashHaState) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{44}
+}
+
+type DashRoutingActions int32
+
+const (
+	DashRoutingActions_DASH_ROUTING_ACTIONS_UNSPECIFIED  DashRoutingActions = 0
+	DashRoutingActions_DASH_ROUTING_ACTIONS_STATIC_ENCAP DashRoutingActions = 2
+	DashRoutingActions_DASH_ROUTING_ACTIONS_NAT          DashRoutingActions = 3
+	DashRoutingActions_DASH_ROUTING_ACTIONS_NAT46        DashRoutingActions = 5
+	DashRoutingActions_DASH_ROUTING_ACTIONS_NAT64        DashRoutingActions = 9
+	DashRoutingActions_DASH_ROUTING_ACTIONS_NAT_PORT     DashRoutingActions = 17
+)
+
+// Enum value maps for DashRoutingActions.
+var (
+	DashRoutingActions_name = map[int32]string{
+		0:  "DASH_ROUTING_ACTIONS_UNSPECIFIED",
+		2:  "DASH_ROUTING_ACTIONS_STATIC_ENCAP",
+		3:  "DASH_ROUTING_ACTIONS_NAT",
+		5:  "DASH_ROUTING_ACTIONS_NAT46",
+		9:  "DASH_ROUTING_ACTIONS_NAT64",
+		17: "DASH_ROUTING_ACTIONS_NAT_PORT",
+	}
+	DashRoutingActions_value = map[string]int32{
+		"DASH_ROUTING_ACTIONS_UNSPECIFIED":  0,
+		"DASH_ROUTING_ACTIONS_STATIC_ENCAP": 2,
+		"DASH_ROUTING_ACTIONS_NAT":          3,
+		"DASH_ROUTING_ACTIONS_NAT46":        5,
+		"DASH_ROUTING_ACTIONS_NAT64":        9,
+		"DASH_ROUTING_ACTIONS_NAT_PORT":     17,
+	}
+)
+
+func (x DashRoutingActions) Enum() *DashRoutingActions {
+	p := new(DashRoutingActions)
+	*p = x
+	return p
+}
+
+func (x DashRoutingActions) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashRoutingActions) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[45].Descriptor()
+}
+
+func (DashRoutingActions) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[45]
+}
+
+func (x DashRoutingActions) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashRoutingActions.Descriptor instead.
+func (DashRoutingActions) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{45}
+}
+
+type DashTunnelDscpMode int32
+
+const (
+	DashTunnelDscpMode_DASH_TUNNEL_DSCP_MODE_UNSPECIFIED    DashTunnelDscpMode = 0
+	DashTunnelDscpMode_DASH_TUNNEL_DSCP_MODE_PRESERVE_MODEL DashTunnelDscpMode = 1
+	DashTunnelDscpMode_DASH_TUNNEL_DSCP_MODE_PIPE_MODEL     DashTunnelDscpMode = 2
+)
+
+// Enum value maps for DashTunnelDscpMode.
+var (
+	DashTunnelDscpMode_name = map[int32]string{
+		0: "DASH_TUNNEL_DSCP_MODE_UNSPECIFIED",
+		1: "DASH_TUNNEL_DSCP_MODE_PRESERVE_MODEL",
+		2: "DASH_TUNNEL_DSCP_MODE_PIPE_MODEL",
+	}
+	DashTunnelDscpMode_value = map[string]int32{
+		"DASH_TUNNEL_DSCP_MODE_UNSPECIFIED":    0,
+		"DASH_TUNNEL_DSCP_MODE_PRESERVE_MODEL": 1,
+		"DASH_TUNNEL_DSCP_MODE_PIPE_MODEL":     2,
+	}
+)
+
+func (x DashTunnelDscpMode) Enum() *DashTunnelDscpMode {
+	p := new(DashTunnelDscpMode)
+	*p = x
+	return p
+}
+
+func (x DashTunnelDscpMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DashTunnelDscpMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[46].Descriptor()
+}
+
+func (DashTunnelDscpMode) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[46]
+}
+
+func (x DashTunnelDscpMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DashTunnelDscpMode.Descriptor instead.
+func (DashTunnelDscpMode) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{46}
 }
 
 type DebugCounterBindMethod int32
@@ -2063,11 +3064,11 @@ func (x DebugCounterBindMethod) String() string {
 }
 
 func (DebugCounterBindMethod) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[33].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[47].Descriptor()
 }
 
 func (DebugCounterBindMethod) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[33]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[47]
 }
 
 func (x DebugCounterBindMethod) Number() protoreflect.EnumNumber {
@@ -2076,7 +3077,7 @@ func (x DebugCounterBindMethod) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DebugCounterBindMethod.Descriptor instead.
 func (DebugCounterBindMethod) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{33}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{47}
 }
 
 type DebugCounterType int32
@@ -2118,11 +3119,11 @@ func (x DebugCounterType) String() string {
 }
 
 func (DebugCounterType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[34].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[48].Descriptor()
 }
 
 func (DebugCounterType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[34]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[48]
 }
 
 func (x DebugCounterType) Number() protoreflect.EnumNumber {
@@ -2131,7 +3132,7 @@ func (x DebugCounterType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DebugCounterType.Descriptor instead.
 func (DebugCounterType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{34}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{48}
 }
 
 type DtelEventType int32
@@ -2182,11 +3183,11 @@ func (x DtelEventType) String() string {
 }
 
 func (DtelEventType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[35].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[49].Descriptor()
 }
 
 func (DtelEventType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[35]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[49]
 }
 
 func (x DtelEventType) Number() protoreflect.EnumNumber {
@@ -2195,7 +3196,7 @@ func (x DtelEventType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DtelEventType.Descriptor instead.
 func (DtelEventType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{35}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{49}
 }
 
 type EcnMarkMode int32
@@ -2249,11 +3250,11 @@ func (x EcnMarkMode) String() string {
 }
 
 func (EcnMarkMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[36].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[50].Descriptor()
 }
 
 func (EcnMarkMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[36]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[50]
 }
 
 func (x EcnMarkMode) Number() protoreflect.EnumNumber {
@@ -2262,7 +3263,7 @@ func (x EcnMarkMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use EcnMarkMode.Descriptor instead.
 func (EcnMarkMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{36}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{50}
 }
 
 type ErspanEncapsulationType int32
@@ -2295,11 +3296,11 @@ func (x ErspanEncapsulationType) String() string {
 }
 
 func (ErspanEncapsulationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[37].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[51].Descriptor()
 }
 
 func (ErspanEncapsulationType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[37]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[51]
 }
 
 func (x ErspanEncapsulationType) Number() protoreflect.EnumNumber {
@@ -2308,7 +3309,7 @@ func (x ErspanEncapsulationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ErspanEncapsulationType.Descriptor instead.
 func (ErspanEncapsulationType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{37}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{51}
 }
 
 type FdbEntryType int32
@@ -2344,11 +3345,11 @@ func (x FdbEntryType) String() string {
 }
 
 func (FdbEntryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[38].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[52].Descriptor()
 }
 
 func (FdbEntryType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[38]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[52]
 }
 
 func (x FdbEntryType) Number() protoreflect.EnumNumber {
@@ -2357,7 +3358,7 @@ func (x FdbEntryType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FdbEntryType.Descriptor instead.
 func (FdbEntryType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{38}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{52}
 }
 
 type FdbEvent int32
@@ -2399,11 +3400,11 @@ func (x FdbEvent) String() string {
 }
 
 func (FdbEvent) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[39].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[53].Descriptor()
 }
 
 func (FdbEvent) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[39]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[53]
 }
 
 func (x FdbEvent) Number() protoreflect.EnumNumber {
@@ -2412,7 +3413,7 @@ func (x FdbEvent) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FdbEvent.Descriptor instead.
 func (FdbEvent) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{39}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{53}
 }
 
 type FdbFlushEntryType int32
@@ -2451,11 +3452,11 @@ func (x FdbFlushEntryType) String() string {
 }
 
 func (FdbFlushEntryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[40].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[54].Descriptor()
 }
 
 func (FdbFlushEntryType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[40]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[54]
 }
 
 func (x FdbFlushEntryType) Number() protoreflect.EnumNumber {
@@ -2464,7 +3465,7 @@ func (x FdbFlushEntryType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FdbFlushEntryType.Descriptor instead.
 func (FdbFlushEntryType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{40}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{54}
 }
 
 type HaScopeEvent int32
@@ -2503,11 +3504,11 @@ func (x HaScopeEvent) String() string {
 }
 
 func (HaScopeEvent) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[41].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[55].Descriptor()
 }
 
 func (HaScopeEvent) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[41]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[55]
 }
 
 func (x HaScopeEvent) Number() protoreflect.EnumNumber {
@@ -2516,7 +3517,7 @@ func (x HaScopeEvent) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HaScopeEvent.Descriptor instead.
 func (HaScopeEvent) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{41}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{55}
 }
 
 type HaSetEvent int32
@@ -2552,11 +3553,11 @@ func (x HaSetEvent) String() string {
 }
 
 func (HaSetEvent) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[42].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[56].Descriptor()
 }
 
 func (HaSetEvent) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[42]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[56]
 }
 
 func (x HaSetEvent) Number() protoreflect.EnumNumber {
@@ -2565,7 +3566,7 @@ func (x HaSetEvent) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HaSetEvent.Descriptor instead.
 func (HaSetEvent) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{42}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{56}
 }
 
 type HashAlgorithm int32
@@ -2616,11 +3617,11 @@ func (x HashAlgorithm) String() string {
 }
 
 func (HashAlgorithm) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[43].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[57].Descriptor()
 }
 
 func (HashAlgorithm) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[43]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[57]
 }
 
 func (x HashAlgorithm) Number() protoreflect.EnumNumber {
@@ -2629,7 +3630,7 @@ func (x HashAlgorithm) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HashAlgorithm.Descriptor instead.
 func (HashAlgorithm) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{43}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{57}
 }
 
 type HealthDataType int32
@@ -2665,11 +3666,11 @@ func (x HealthDataType) String() string {
 }
 
 func (HealthDataType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[44].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[58].Descriptor()
 }
 
 func (HealthDataType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[44]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[58]
 }
 
 func (x HealthDataType) Number() protoreflect.EnumNumber {
@@ -2678,7 +3679,7 @@ func (x HealthDataType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HealthDataType.Descriptor instead.
 func (HealthDataType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{44}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{58}
 }
 
 type HostifTableEntryChannelType int32
@@ -2726,11 +3727,11 @@ func (x HostifTableEntryChannelType) String() string {
 }
 
 func (HostifTableEntryChannelType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[45].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[59].Descriptor()
 }
 
 func (HostifTableEntryChannelType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[45]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[59]
 }
 
 func (x HostifTableEntryChannelType) Number() protoreflect.EnumNumber {
@@ -2739,7 +3740,7 @@ func (x HostifTableEntryChannelType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HostifTableEntryChannelType.Descriptor instead.
 func (HostifTableEntryChannelType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{45}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{59}
 }
 
 type HostifTableEntryType int32
@@ -2784,11 +3785,11 @@ func (x HostifTableEntryType) String() string {
 }
 
 func (HostifTableEntryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[46].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[60].Descriptor()
 }
 
 func (HostifTableEntryType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[46]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[60]
 }
 
 func (x HostifTableEntryType) Number() protoreflect.EnumNumber {
@@ -2797,7 +3798,7 @@ func (x HostifTableEntryType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HostifTableEntryType.Descriptor instead.
 func (HostifTableEntryType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{46}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{60}
 }
 
 type HostifTrapType int32
@@ -3046,11 +4047,11 @@ func (x HostifTrapType) String() string {
 }
 
 func (HostifTrapType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[47].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[61].Descriptor()
 }
 
 func (HostifTrapType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[47]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[61]
 }
 
 func (x HostifTrapType) Number() protoreflect.EnumNumber {
@@ -3059,7 +4060,7 @@ func (x HostifTrapType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HostifTrapType.Descriptor instead.
 func (HostifTrapType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{47}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{61}
 }
 
 type HostifTxType int32
@@ -3098,11 +4099,11 @@ func (x HostifTxType) String() string {
 }
 
 func (HostifTxType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[48].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[62].Descriptor()
 }
 
 func (HostifTxType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[48]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[62]
 }
 
 func (x HostifTxType) Number() protoreflect.EnumNumber {
@@ -3111,7 +4112,7 @@ func (x HostifTxType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HostifTxType.Descriptor instead.
 func (HostifTxType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{48}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{62}
 }
 
 type HostifType int32
@@ -3150,11 +4151,11 @@ func (x HostifType) String() string {
 }
 
 func (HostifType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[49].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[63].Descriptor()
 }
 
 func (HostifType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[49]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[63]
 }
 
 func (x HostifType) Number() protoreflect.EnumNumber {
@@ -3163,7 +4164,7 @@ func (x HostifType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HostifType.Descriptor instead.
 func (HostifType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{49}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{63}
 }
 
 type HostifUserDefinedTrapType int32
@@ -3223,11 +4224,11 @@ func (x HostifUserDefinedTrapType) String() string {
 }
 
 func (HostifUserDefinedTrapType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[50].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[64].Descriptor()
 }
 
 func (HostifUserDefinedTrapType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[50]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[64]
 }
 
 func (x HostifUserDefinedTrapType) Number() protoreflect.EnumNumber {
@@ -3236,7 +4237,7 @@ func (x HostifUserDefinedTrapType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HostifUserDefinedTrapType.Descriptor instead.
 func (HostifUserDefinedTrapType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{50}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{64}
 }
 
 type HostifVlanTag int32
@@ -3275,11 +4276,11 @@ func (x HostifVlanTag) String() string {
 }
 
 func (HostifVlanTag) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[51].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[65].Descriptor()
 }
 
 func (HostifVlanTag) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[51]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[65]
 }
 
 func (x HostifVlanTag) Number() protoreflect.EnumNumber {
@@ -3288,7 +4289,7 @@ func (x HostifVlanTag) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use HostifVlanTag.Descriptor instead.
 func (HostifVlanTag) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{51}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{65}
 }
 
 type IcmpEchoSessionStat int32
@@ -3324,11 +4325,11 @@ func (x IcmpEchoSessionStat) String() string {
 }
 
 func (IcmpEchoSessionStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[52].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[66].Descriptor()
 }
 
 func (IcmpEchoSessionStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[52]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[66]
 }
 
 func (x IcmpEchoSessionStat) Number() protoreflect.EnumNumber {
@@ -3337,7 +4338,7 @@ func (x IcmpEchoSessionStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IcmpEchoSessionStat.Descriptor instead.
 func (IcmpEchoSessionStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{52}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{66}
 }
 
 type IcmpEchoSessionState int32
@@ -3373,11 +4374,11 @@ func (x IcmpEchoSessionState) String() string {
 }
 
 func (IcmpEchoSessionState) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[53].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[67].Descriptor()
 }
 
 func (IcmpEchoSessionState) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[53]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[67]
 }
 
 func (x IcmpEchoSessionState) Number() protoreflect.EnumNumber {
@@ -3386,7 +4387,7 @@ func (x IcmpEchoSessionState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IcmpEchoSessionState.Descriptor instead.
 func (IcmpEchoSessionState) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{53}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{67}
 }
 
 type InDropReason int32
@@ -3593,11 +4594,11 @@ func (x InDropReason) String() string {
 }
 
 func (InDropReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[54].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[68].Descriptor()
 }
 
 func (InDropReason) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[54]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[68]
 }
 
 func (x InDropReason) Number() protoreflect.EnumNumber {
@@ -3606,7 +4607,7 @@ func (x InDropReason) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use InDropReason.Descriptor instead.
 func (InDropReason) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{54}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{68}
 }
 
 type IngressPriorityGroupStat int32
@@ -3666,11 +4667,11 @@ func (x IngressPriorityGroupStat) String() string {
 }
 
 func (IngressPriorityGroupStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[55].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[69].Descriptor()
 }
 
 func (IngressPriorityGroupStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[55]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[69]
 }
 
 func (x IngressPriorityGroupStat) Number() protoreflect.EnumNumber {
@@ -3679,7 +4680,7 @@ func (x IngressPriorityGroupStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IngressPriorityGroupStat.Descriptor instead.
 func (IngressPriorityGroupStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{55}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{69}
 }
 
 type InsegEntryPopQosMode int32
@@ -3715,11 +4716,11 @@ func (x InsegEntryPopQosMode) String() string {
 }
 
 func (InsegEntryPopQosMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[56].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[70].Descriptor()
 }
 
 func (InsegEntryPopQosMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[56]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[70]
 }
 
 func (x InsegEntryPopQosMode) Number() protoreflect.EnumNumber {
@@ -3728,7 +4729,7 @@ func (x InsegEntryPopQosMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use InsegEntryPopQosMode.Descriptor instead.
 func (InsegEntryPopQosMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{56}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{70}
 }
 
 type InsegEntryPopTtlMode int32
@@ -3764,11 +4765,11 @@ func (x InsegEntryPopTtlMode) String() string {
 }
 
 func (InsegEntryPopTtlMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[57].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[71].Descriptor()
 }
 
 func (InsegEntryPopTtlMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[57]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[71]
 }
 
 func (x InsegEntryPopTtlMode) Number() protoreflect.EnumNumber {
@@ -3777,7 +4778,7 @@ func (x InsegEntryPopTtlMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use InsegEntryPopTtlMode.Descriptor instead.
 func (InsegEntryPopTtlMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{57}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{71}
 }
 
 type InsegEntryPscType int32
@@ -3813,11 +4814,11 @@ func (x InsegEntryPscType) String() string {
 }
 
 func (InsegEntryPscType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[58].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[72].Descriptor()
 }
 
 func (InsegEntryPscType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[58]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[72]
 }
 
 func (x InsegEntryPscType) Number() protoreflect.EnumNumber {
@@ -3826,7 +4827,7 @@ func (x InsegEntryPscType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use InsegEntryPscType.Descriptor instead.
 func (InsegEntryPscType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{58}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{72}
 }
 
 type IpAddrFamily int32
@@ -3862,11 +4863,11 @@ func (x IpAddrFamily) String() string {
 }
 
 func (IpAddrFamily) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[59].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[73].Descriptor()
 }
 
 func (IpAddrFamily) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[59]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[73]
 }
 
 func (x IpAddrFamily) Number() protoreflect.EnumNumber {
@@ -3875,7 +4876,7 @@ func (x IpAddrFamily) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IpAddrFamily.Descriptor instead.
 func (IpAddrFamily) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{59}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{73}
 }
 
 type IpmcEntryType int32
@@ -3911,11 +4912,11 @@ func (x IpmcEntryType) String() string {
 }
 
 func (IpmcEntryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[60].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[74].Descriptor()
 }
 
 func (IpmcEntryType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[60]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[74]
 }
 
 func (x IpmcEntryType) Number() protoreflect.EnumNumber {
@@ -3924,7 +4925,7 @@ func (x IpmcEntryType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IpmcEntryType.Descriptor instead.
 func (IpmcEntryType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{60}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{74}
 }
 
 type IpsecCipher int32
@@ -3966,11 +4967,11 @@ func (x IpsecCipher) String() string {
 }
 
 func (IpsecCipher) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[61].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[75].Descriptor()
 }
 
 func (IpsecCipher) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[61]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[75]
 }
 
 func (x IpsecCipher) Number() protoreflect.EnumNumber {
@@ -3979,7 +4980,7 @@ func (x IpsecCipher) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IpsecCipher.Descriptor instead.
 func (IpsecCipher) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{61}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{75}
 }
 
 type IpsecDirection int32
@@ -4015,11 +5016,11 @@ func (x IpsecDirection) String() string {
 }
 
 func (IpsecDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[62].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[76].Descriptor()
 }
 
 func (IpsecDirection) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[62]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[76]
 }
 
 func (x IpsecDirection) Number() protoreflect.EnumNumber {
@@ -4028,7 +5029,7 @@ func (x IpsecDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IpsecDirection.Descriptor instead.
 func (IpsecDirection) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{62}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{76}
 }
 
 type IpsecPortStat int32
@@ -4076,11 +5077,11 @@ func (x IpsecPortStat) String() string {
 }
 
 func (IpsecPortStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[63].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[77].Descriptor()
 }
 
 func (IpsecPortStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[63]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[77]
 }
 
 func (x IpsecPortStat) Number() protoreflect.EnumNumber {
@@ -4089,7 +5090,7 @@ func (x IpsecPortStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IpsecPortStat.Descriptor instead.
 func (IpsecPortStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{63}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{77}
 }
 
 type IpsecSaOctetCountStatus int32
@@ -4128,11 +5129,11 @@ func (x IpsecSaOctetCountStatus) String() string {
 }
 
 func (IpsecSaOctetCountStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[64].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[78].Descriptor()
 }
 
 func (IpsecSaOctetCountStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[64]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[78]
 }
 
 func (x IpsecSaOctetCountStatus) Number() protoreflect.EnumNumber {
@@ -4141,7 +5142,7 @@ func (x IpsecSaOctetCountStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IpsecSaOctetCountStatus.Descriptor instead.
 func (IpsecSaOctetCountStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{64}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{78}
 }
 
 type IpsecSaStat int32
@@ -4201,11 +5202,11 @@ func (x IpsecSaStat) String() string {
 }
 
 func (IpsecSaStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[65].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[79].Descriptor()
 }
 
 func (IpsecSaStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[65]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[79]
 }
 
 func (x IpsecSaStat) Number() protoreflect.EnumNumber {
@@ -4214,7 +5215,7 @@ func (x IpsecSaStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IpsecSaStat.Descriptor instead.
 func (IpsecSaStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{65}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{79}
 }
 
 type IsolationGroupType int32
@@ -4250,11 +5251,11 @@ func (x IsolationGroupType) String() string {
 }
 
 func (IsolationGroupType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[66].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[80].Descriptor()
 }
 
 func (IsolationGroupType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[66]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[80]
 }
 
 func (x IsolationGroupType) Number() protoreflect.EnumNumber {
@@ -4263,7 +5264,7 @@ func (x IsolationGroupType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use IsolationGroupType.Descriptor instead.
 func (IsolationGroupType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{66}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{80}
 }
 
 type L2McEntryType int32
@@ -4299,11 +5300,11 @@ func (x L2McEntryType) String() string {
 }
 
 func (L2McEntryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[67].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[81].Descriptor()
 }
 
 func (L2McEntryType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[67]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[81]
 }
 
 func (x L2McEntryType) Number() protoreflect.EnumNumber {
@@ -4312,7 +5313,68 @@ func (x L2McEntryType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use L2McEntryType.Descriptor instead.
 func (L2McEntryType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{67}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{81}
+}
+
+type LogLevel int32
+
+const (
+	LogLevel_LOG_LEVEL_UNSPECIFIED LogLevel = 0
+	LogLevel_LOG_LEVEL_DEBUG       LogLevel = 1
+	LogLevel_LOG_LEVEL_INFO        LogLevel = 2
+	LogLevel_LOG_LEVEL_NOTICE      LogLevel = 3
+	LogLevel_LOG_LEVEL_WARN        LogLevel = 4
+	LogLevel_LOG_LEVEL_ERROR       LogLevel = 5
+	LogLevel_LOG_LEVEL_CRITICAL    LogLevel = 6
+)
+
+// Enum value maps for LogLevel.
+var (
+	LogLevel_name = map[int32]string{
+		0: "LOG_LEVEL_UNSPECIFIED",
+		1: "LOG_LEVEL_DEBUG",
+		2: "LOG_LEVEL_INFO",
+		3: "LOG_LEVEL_NOTICE",
+		4: "LOG_LEVEL_WARN",
+		5: "LOG_LEVEL_ERROR",
+		6: "LOG_LEVEL_CRITICAL",
+	}
+	LogLevel_value = map[string]int32{
+		"LOG_LEVEL_UNSPECIFIED": 0,
+		"LOG_LEVEL_DEBUG":       1,
+		"LOG_LEVEL_INFO":        2,
+		"LOG_LEVEL_NOTICE":      3,
+		"LOG_LEVEL_WARN":        4,
+		"LOG_LEVEL_ERROR":       5,
+		"LOG_LEVEL_CRITICAL":    6,
+	}
+)
+
+func (x LogLevel) Enum() *LogLevel {
+	p := new(LogLevel)
+	*p = x
+	return p
+}
+
+func (x LogLevel) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LogLevel) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[82].Descriptor()
+}
+
+func (LogLevel) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[82]
+}
+
+func (x LogLevel) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LogLevel.Descriptor instead.
+func (LogLevel) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{82}
 }
 
 type MacsecCipherSuite int32
@@ -4354,11 +5416,11 @@ func (x MacsecCipherSuite) String() string {
 }
 
 func (MacsecCipherSuite) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[68].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[83].Descriptor()
 }
 
 func (MacsecCipherSuite) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[68]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[83]
 }
 
 func (x MacsecCipherSuite) Number() protoreflect.EnumNumber {
@@ -4367,7 +5429,7 @@ func (x MacsecCipherSuite) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MacsecCipherSuite.Descriptor instead.
 func (MacsecCipherSuite) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{68}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{83}
 }
 
 type MacsecDirection int32
@@ -4403,11 +5465,11 @@ func (x MacsecDirection) String() string {
 }
 
 func (MacsecDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[69].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[84].Descriptor()
 }
 
 func (MacsecDirection) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[69]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[84]
 }
 
 func (x MacsecDirection) Number() protoreflect.EnumNumber {
@@ -4416,7 +5478,7 @@ func (x MacsecDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MacsecDirection.Descriptor instead.
 func (MacsecDirection) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{69}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{84}
 }
 
 type MacsecFlowStat int32
@@ -4503,11 +5565,11 @@ func (x MacsecFlowStat) String() string {
 }
 
 func (MacsecFlowStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[70].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[85].Descriptor()
 }
 
 func (MacsecFlowStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[70]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[85]
 }
 
 func (x MacsecFlowStat) Number() protoreflect.EnumNumber {
@@ -4516,7 +5578,7 @@ func (x MacsecFlowStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MacsecFlowStat.Descriptor instead.
 func (MacsecFlowStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{70}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{85}
 }
 
 type MacsecMaxSecureAssociationsPerSc int32
@@ -4552,11 +5614,11 @@ func (x MacsecMaxSecureAssociationsPerSc) String() string {
 }
 
 func (MacsecMaxSecureAssociationsPerSc) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[71].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[86].Descriptor()
 }
 
 func (MacsecMaxSecureAssociationsPerSc) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[71]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[86]
 }
 
 func (x MacsecMaxSecureAssociationsPerSc) Number() protoreflect.EnumNumber {
@@ -4565,7 +5627,7 @@ func (x MacsecMaxSecureAssociationsPerSc) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MacsecMaxSecureAssociationsPerSc.Descriptor instead.
 func (MacsecMaxSecureAssociationsPerSc) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{71}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{86}
 }
 
 type MacsecPortStat int32
@@ -4604,11 +5666,11 @@ func (x MacsecPortStat) String() string {
 }
 
 func (MacsecPortStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[72].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[87].Descriptor()
 }
 
 func (MacsecPortStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[72]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[87]
 }
 
 func (x MacsecPortStat) Number() protoreflect.EnumNumber {
@@ -4617,7 +5679,7 @@ func (x MacsecPortStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MacsecPortStat.Descriptor instead.
 func (MacsecPortStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{72}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{87}
 }
 
 type MacsecSaStat int32
@@ -4683,11 +5745,11 @@ func (x MacsecSaStat) String() string {
 }
 
 func (MacsecSaStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[73].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[88].Descriptor()
 }
 
 func (MacsecSaStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[73]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[88]
 }
 
 func (x MacsecSaStat) Number() protoreflect.EnumNumber {
@@ -4696,7 +5758,7 @@ func (x MacsecSaStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MacsecSaStat.Descriptor instead.
 func (MacsecSaStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{73}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{88}
 }
 
 type MacsecScStat int32
@@ -4729,11 +5791,11 @@ func (x MacsecScStat) String() string {
 }
 
 func (MacsecScStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[74].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[89].Descriptor()
 }
 
 func (MacsecScStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[74]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[89]
 }
 
 func (x MacsecScStat) Number() protoreflect.EnumNumber {
@@ -4742,7 +5804,7 @@ func (x MacsecScStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MacsecScStat.Descriptor instead.
 func (MacsecScStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{74}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{89}
 }
 
 type MeterType int32
@@ -4781,11 +5843,11 @@ func (x MeterType) String() string {
 }
 
 func (MeterType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[75].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[90].Descriptor()
 }
 
 func (MeterType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[75]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[90]
 }
 
 func (x MeterType) Number() protoreflect.EnumNumber {
@@ -4794,7 +5856,7 @@ func (x MeterType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MeterType.Descriptor instead.
 func (MeterType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{75}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{90}
 }
 
 type MirrorSessionCongestionMode int32
@@ -4830,11 +5892,11 @@ func (x MirrorSessionCongestionMode) String() string {
 }
 
 func (MirrorSessionCongestionMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[76].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[91].Descriptor()
 }
 
 func (MirrorSessionCongestionMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[76]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[91]
 }
 
 func (x MirrorSessionCongestionMode) Number() protoreflect.EnumNumber {
@@ -4843,7 +5905,7 @@ func (x MirrorSessionCongestionMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MirrorSessionCongestionMode.Descriptor instead.
 func (MirrorSessionCongestionMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{76}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{91}
 }
 
 type MirrorSessionType int32
@@ -4885,11 +5947,11 @@ func (x MirrorSessionType) String() string {
 }
 
 func (MirrorSessionType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[77].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[92].Descriptor()
 }
 
 func (MirrorSessionType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[77]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[92]
 }
 
 func (x MirrorSessionType) Number() protoreflect.EnumNumber {
@@ -4898,7 +5960,7 @@ func (x MirrorSessionType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MirrorSessionType.Descriptor instead.
 func (MirrorSessionType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{77}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{92}
 }
 
 type MySidEntryEndpointBehaviorFlavor int32
@@ -4952,11 +6014,11 @@ func (x MySidEntryEndpointBehaviorFlavor) String() string {
 }
 
 func (MySidEntryEndpointBehaviorFlavor) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[78].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[93].Descriptor()
 }
 
 func (MySidEntryEndpointBehaviorFlavor) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[78]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[93]
 }
 
 func (x MySidEntryEndpointBehaviorFlavor) Number() protoreflect.EnumNumber {
@@ -4965,7 +6027,7 @@ func (x MySidEntryEndpointBehaviorFlavor) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MySidEntryEndpointBehaviorFlavor.Descriptor instead.
 func (MySidEntryEndpointBehaviorFlavor) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{78}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{93}
 }
 
 type MySidEntryEndpointBehavior int32
@@ -5043,11 +6105,11 @@ func (x MySidEntryEndpointBehavior) String() string {
 }
 
 func (MySidEntryEndpointBehavior) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[79].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[94].Descriptor()
 }
 
 func (MySidEntryEndpointBehavior) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[79]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[94]
 }
 
 func (x MySidEntryEndpointBehavior) Number() protoreflect.EnumNumber {
@@ -5056,7 +6118,7 @@ func (x MySidEntryEndpointBehavior) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MySidEntryEndpointBehavior.Descriptor instead.
 func (MySidEntryEndpointBehavior) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{79}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{94}
 }
 
 type NatEvent int32
@@ -5092,11 +6154,11 @@ func (x NatEvent) String() string {
 }
 
 func (NatEvent) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[80].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[95].Descriptor()
 }
 
 func (NatEvent) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[80]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[95]
 }
 
 func (x NatEvent) Number() protoreflect.EnumNumber {
@@ -5105,7 +6167,7 @@ func (x NatEvent) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NatEvent.Descriptor instead.
 func (NatEvent) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{80}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{95}
 }
 
 type NatType int32
@@ -5150,11 +6212,11 @@ func (x NatType) String() string {
 }
 
 func (NatType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[81].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[96].Descriptor()
 }
 
 func (NatType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[81]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[96]
 }
 
 func (x NatType) Number() protoreflect.EnumNumber {
@@ -5163,7 +6225,7 @@ func (x NatType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NatType.Descriptor instead.
 func (NatType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{81}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{96}
 }
 
 type NativeHashField int32
@@ -5295,11 +6357,11 @@ func (x NativeHashField) String() string {
 }
 
 func (NativeHashField) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[82].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[97].Descriptor()
 }
 
 func (NativeHashField) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[82]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[97]
 }
 
 func (x NativeHashField) Number() protoreflect.EnumNumber {
@@ -5308,7 +6370,7 @@ func (x NativeHashField) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NativeHashField.Descriptor instead.
 func (NativeHashField) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{82}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{97}
 }
 
 type NextHopGroupMapType int32
@@ -5341,11 +6403,11 @@ func (x NextHopGroupMapType) String() string {
 }
 
 func (NextHopGroupMapType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[83].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[98].Descriptor()
 }
 
 func (NextHopGroupMapType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[83]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[98]
 }
 
 func (x NextHopGroupMapType) Number() protoreflect.EnumNumber {
@@ -5354,7 +6416,7 @@ func (x NextHopGroupMapType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NextHopGroupMapType.Descriptor instead.
 func (NextHopGroupMapType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{83}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{98}
 }
 
 type NextHopGroupMemberConfiguredRole int32
@@ -5390,11 +6452,11 @@ func (x NextHopGroupMemberConfiguredRole) String() string {
 }
 
 func (NextHopGroupMemberConfiguredRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[84].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[99].Descriptor()
 }
 
 func (NextHopGroupMemberConfiguredRole) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[84]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[99]
 }
 
 func (x NextHopGroupMemberConfiguredRole) Number() protoreflect.EnumNumber {
@@ -5403,7 +6465,7 @@ func (x NextHopGroupMemberConfiguredRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NextHopGroupMemberConfiguredRole.Descriptor instead.
 func (NextHopGroupMemberConfiguredRole) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{84}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{99}
 }
 
 type NextHopGroupMemberObservedRole int32
@@ -5439,11 +6501,11 @@ func (x NextHopGroupMemberObservedRole) String() string {
 }
 
 func (NextHopGroupMemberObservedRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[85].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[100].Descriptor()
 }
 
 func (NextHopGroupMemberObservedRole) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[85]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[100]
 }
 
 func (x NextHopGroupMemberObservedRole) Number() protoreflect.EnumNumber {
@@ -5452,7 +6514,7 @@ func (x NextHopGroupMemberObservedRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NextHopGroupMemberObservedRole.Descriptor instead.
 func (NextHopGroupMemberObservedRole) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{85}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{100}
 }
 
 type NextHopGroupType int32
@@ -5506,11 +6568,11 @@ func (x NextHopGroupType) String() string {
 }
 
 func (NextHopGroupType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[86].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[101].Descriptor()
 }
 
 func (NextHopGroupType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[86]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[101]
 }
 
 func (x NextHopGroupType) Number() protoreflect.EnumNumber {
@@ -5519,7 +6581,7 @@ func (x NextHopGroupType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NextHopGroupType.Descriptor instead.
 func (NextHopGroupType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{86}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{101}
 }
 
 type NextHopType int32
@@ -5564,11 +6626,11 @@ func (x NextHopType) String() string {
 }
 
 func (NextHopType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[87].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[102].Descriptor()
 }
 
 func (NextHopType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[87]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[102]
 }
 
 func (x NextHopType) Number() protoreflect.EnumNumber {
@@ -5577,7 +6639,7 @@ func (x NextHopType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NextHopType.Descriptor instead.
 func (NextHopType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{87}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{102}
 }
 
 type ObjectStage int32
@@ -5616,11 +6678,11 @@ func (x ObjectStage) String() string {
 }
 
 func (ObjectStage) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[88].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[103].Descriptor()
 }
 
 func (ObjectStage) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[88]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[103]
 }
 
 func (x ObjectStage) Number() protoreflect.EnumNumber {
@@ -5629,7 +6691,134 @@ func (x ObjectStage) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ObjectStage.Descriptor instead.
 func (ObjectStage) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{88}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{103}
+}
+
+type ObjectTypeExtensions int32
+
+const (
+	ObjectTypeExtensions_OBJECT_TYPE_EXTENSIONS_UNSPECIFIED             ObjectTypeExtensions = 0
+	ObjectTypeExtensions_OBJECT_TYPE_EXTENSIONS_RANGE_START             ObjectTypeExtensions = 536870913
+	ObjectTypeExtensions_OBJECT_TYPE_TABLE_BITMAP_CLASSIFICATION_ENTRY  ObjectTypeExtensions = 536870913
+	ObjectTypeExtensions_OBJECT_TYPE_TABLE_BITMAP_ROUTER_ENTRY          ObjectTypeExtensions = 536870914
+	ObjectTypeExtensions_OBJECT_TYPE_TABLE_META_TUNNEL_ENTRY            ObjectTypeExtensions = 536870915
+	ObjectTypeExtensions_OBJECT_TYPE_DASH_ACL_GROUP                     ObjectTypeExtensions = 536870916
+	ObjectTypeExtensions_OBJECT_TYPE_DASH_ACL_RULE                      ObjectTypeExtensions = 536870917
+	ObjectTypeExtensions_OBJECT_TYPE_DIRECTION_LOOKUP_ENTRY             ObjectTypeExtensions = 536870918
+	ObjectTypeExtensions_OBJECT_TYPE_ENI_ETHER_ADDRESS_MAP_ENTRY        ObjectTypeExtensions = 536870919
+	ObjectTypeExtensions_OBJECT_TYPE_ENI                                ObjectTypeExtensions = 536870920
+	ObjectTypeExtensions_OBJECT_TYPE_INBOUND_ROUTING_ENTRY              ObjectTypeExtensions = 536870921
+	ObjectTypeExtensions_OBJECT_TYPE_METER_BUCKET_ENTRY                 ObjectTypeExtensions = 536870922
+	ObjectTypeExtensions_OBJECT_TYPE_METER_POLICY                       ObjectTypeExtensions = 536870923
+	ObjectTypeExtensions_OBJECT_TYPE_METER_RULE                         ObjectTypeExtensions = 536870924
+	ObjectTypeExtensions_OBJECT_TYPE_OUTBOUND_CA_TO_PA_ENTRY            ObjectTypeExtensions = 536870925
+	ObjectTypeExtensions_OBJECT_TYPE_OUTBOUND_ROUTING_ENTRY             ObjectTypeExtensions = 536870926
+	ObjectTypeExtensions_OBJECT_TYPE_VNET                               ObjectTypeExtensions = 536870927
+	ObjectTypeExtensions_OBJECT_TYPE_PA_VALIDATION_ENTRY                ObjectTypeExtensions = 536870928
+	ObjectTypeExtensions_OBJECT_TYPE_VIP_ENTRY                          ObjectTypeExtensions = 536870929
+	ObjectTypeExtensions_OBJECT_TYPE_HA_SET                             ObjectTypeExtensions = 536870930
+	ObjectTypeExtensions_OBJECT_TYPE_HA_SCOPE                           ObjectTypeExtensions = 536870931
+	ObjectTypeExtensions_OBJECT_TYPE_DASH_TUNNEL                        ObjectTypeExtensions = 536870932
+	ObjectTypeExtensions_OBJECT_TYPE_OUTBOUND_ROUTING_GROUP             ObjectTypeExtensions = 536870933
+	ObjectTypeExtensions_OBJECT_TYPE_FLOW_TABLE                         ObjectTypeExtensions = 536870934
+	ObjectTypeExtensions_OBJECT_TYPE_FLOW_ENTRY                         ObjectTypeExtensions = 536870935
+	ObjectTypeExtensions_OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER ObjectTypeExtensions = 536870936
+	ObjectTypeExtensions_OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION        ObjectTypeExtensions = 536870937
+	ObjectTypeExtensions_OBJECT_TYPE_DASH_APPLIANCE                     ObjectTypeExtensions = 536870938
+	ObjectTypeExtensions_OBJECT_TYPE_EXTENSIONS_RANGE_END               ObjectTypeExtensions = 536870939
+)
+
+// Enum value maps for ObjectTypeExtensions.
+var (
+	ObjectTypeExtensions_name = map[int32]string{
+		0:         "OBJECT_TYPE_EXTENSIONS_UNSPECIFIED",
+		536870913: "OBJECT_TYPE_EXTENSIONS_RANGE_START",
+		// Duplicate value: 536870913: "OBJECT_TYPE_TABLE_BITMAP_CLASSIFICATION_ENTRY",
+		536870914: "OBJECT_TYPE_TABLE_BITMAP_ROUTER_ENTRY",
+		536870915: "OBJECT_TYPE_TABLE_META_TUNNEL_ENTRY",
+		536870916: "OBJECT_TYPE_DASH_ACL_GROUP",
+		536870917: "OBJECT_TYPE_DASH_ACL_RULE",
+		536870918: "OBJECT_TYPE_DIRECTION_LOOKUP_ENTRY",
+		536870919: "OBJECT_TYPE_ENI_ETHER_ADDRESS_MAP_ENTRY",
+		536870920: "OBJECT_TYPE_ENI",
+		536870921: "OBJECT_TYPE_INBOUND_ROUTING_ENTRY",
+		536870922: "OBJECT_TYPE_METER_BUCKET_ENTRY",
+		536870923: "OBJECT_TYPE_METER_POLICY",
+		536870924: "OBJECT_TYPE_METER_RULE",
+		536870925: "OBJECT_TYPE_OUTBOUND_CA_TO_PA_ENTRY",
+		536870926: "OBJECT_TYPE_OUTBOUND_ROUTING_ENTRY",
+		536870927: "OBJECT_TYPE_VNET",
+		536870928: "OBJECT_TYPE_PA_VALIDATION_ENTRY",
+		536870929: "OBJECT_TYPE_VIP_ENTRY",
+		536870930: "OBJECT_TYPE_HA_SET",
+		536870931: "OBJECT_TYPE_HA_SCOPE",
+		536870932: "OBJECT_TYPE_DASH_TUNNEL",
+		536870933: "OBJECT_TYPE_OUTBOUND_ROUTING_GROUP",
+		536870934: "OBJECT_TYPE_FLOW_TABLE",
+		536870935: "OBJECT_TYPE_FLOW_ENTRY",
+		536870936: "OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER",
+		536870937: "OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION",
+		536870938: "OBJECT_TYPE_DASH_APPLIANCE",
+		536870939: "OBJECT_TYPE_EXTENSIONS_RANGE_END",
+	}
+	ObjectTypeExtensions_value = map[string]int32{
+		"OBJECT_TYPE_EXTENSIONS_UNSPECIFIED":             0,
+		"OBJECT_TYPE_EXTENSIONS_RANGE_START":             536870913,
+		"OBJECT_TYPE_TABLE_BITMAP_CLASSIFICATION_ENTRY":  536870913,
+		"OBJECT_TYPE_TABLE_BITMAP_ROUTER_ENTRY":          536870914,
+		"OBJECT_TYPE_TABLE_META_TUNNEL_ENTRY":            536870915,
+		"OBJECT_TYPE_DASH_ACL_GROUP":                     536870916,
+		"OBJECT_TYPE_DASH_ACL_RULE":                      536870917,
+		"OBJECT_TYPE_DIRECTION_LOOKUP_ENTRY":             536870918,
+		"OBJECT_TYPE_ENI_ETHER_ADDRESS_MAP_ENTRY":        536870919,
+		"OBJECT_TYPE_ENI":                                536870920,
+		"OBJECT_TYPE_INBOUND_ROUTING_ENTRY":              536870921,
+		"OBJECT_TYPE_METER_BUCKET_ENTRY":                 536870922,
+		"OBJECT_TYPE_METER_POLICY":                       536870923,
+		"OBJECT_TYPE_METER_RULE":                         536870924,
+		"OBJECT_TYPE_OUTBOUND_CA_TO_PA_ENTRY":            536870925,
+		"OBJECT_TYPE_OUTBOUND_ROUTING_ENTRY":             536870926,
+		"OBJECT_TYPE_VNET":                               536870927,
+		"OBJECT_TYPE_PA_VALIDATION_ENTRY":                536870928,
+		"OBJECT_TYPE_VIP_ENTRY":                          536870929,
+		"OBJECT_TYPE_HA_SET":                             536870930,
+		"OBJECT_TYPE_HA_SCOPE":                           536870931,
+		"OBJECT_TYPE_DASH_TUNNEL":                        536870932,
+		"OBJECT_TYPE_OUTBOUND_ROUTING_GROUP":             536870933,
+		"OBJECT_TYPE_FLOW_TABLE":                         536870934,
+		"OBJECT_TYPE_FLOW_ENTRY":                         536870935,
+		"OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER": 536870936,
+		"OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION":        536870937,
+		"OBJECT_TYPE_DASH_APPLIANCE":                     536870938,
+		"OBJECT_TYPE_EXTENSIONS_RANGE_END":               536870939,
+	}
+)
+
+func (x ObjectTypeExtensions) Enum() *ObjectTypeExtensions {
+	p := new(ObjectTypeExtensions)
+	*p = x
+	return p
+}
+
+func (x ObjectTypeExtensions) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ObjectTypeExtensions) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[104].Descriptor()
+}
+
+func (ObjectTypeExtensions) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[104]
+}
+
+func (x ObjectTypeExtensions) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ObjectTypeExtensions.Descriptor instead.
+func (ObjectTypeExtensions) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{104}
 }
 
 type ObjectType int32
@@ -6001,11 +7190,11 @@ func (x ObjectType) String() string {
 }
 
 func (ObjectType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[89].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[105].Descriptor()
 }
 
 func (ObjectType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[89]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[105]
 }
 
 func (x ObjectType) Number() protoreflect.EnumNumber {
@@ -6014,7 +7203,7 @@ func (x ObjectType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ObjectType.Descriptor instead.
 func (ObjectType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{89}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{105}
 }
 
 type OutDropReason int32
@@ -6071,11 +7260,11 @@ func (x OutDropReason) String() string {
 }
 
 func (OutDropReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[90].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[106].Descriptor()
 }
 
 func (OutDropReason) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[90]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[106]
 }
 
 func (x OutDropReason) Number() protoreflect.EnumNumber {
@@ -6084,7 +7273,7 @@ func (x OutDropReason) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use OutDropReason.Descriptor instead.
 func (OutDropReason) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{90}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{106}
 }
 
 type OutsegExpMode int32
@@ -6120,11 +7309,11 @@ func (x OutsegExpMode) String() string {
 }
 
 func (OutsegExpMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[91].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[107].Descriptor()
 }
 
 func (OutsegExpMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[91]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[107]
 }
 
 func (x OutsegExpMode) Number() protoreflect.EnumNumber {
@@ -6133,7 +7322,7 @@ func (x OutsegExpMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use OutsegExpMode.Descriptor instead.
 func (OutsegExpMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{91}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{107}
 }
 
 type OutsegTtlMode int32
@@ -6169,11 +7358,11 @@ func (x OutsegTtlMode) String() string {
 }
 
 func (OutsegTtlMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[92].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[108].Descriptor()
 }
 
 func (OutsegTtlMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[92]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[108]
 }
 
 func (x OutsegTtlMode) Number() protoreflect.EnumNumber {
@@ -6182,7 +7371,7 @@ func (x OutsegTtlMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use OutsegTtlMode.Descriptor instead.
 func (OutsegTtlMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{92}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{108}
 }
 
 type OutsegType int32
@@ -6218,11 +7407,11 @@ func (x OutsegType) String() string {
 }
 
 func (OutsegType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[93].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[109].Descriptor()
 }
 
 func (OutsegType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[93]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[109]
 }
 
 func (x OutsegType) Number() protoreflect.EnumNumber {
@@ -6231,7 +7420,7 @@ func (x OutsegType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use OutsegType.Descriptor instead.
 func (OutsegType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{93}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{109}
 }
 
 type PacketAction int32
@@ -6288,11 +7477,11 @@ func (x PacketAction) String() string {
 }
 
 func (PacketAction) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[94].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[110].Descriptor()
 }
 
 func (PacketAction) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[94]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[110]
 }
 
 func (x PacketAction) Number() protoreflect.EnumNumber {
@@ -6301,7 +7490,7 @@ func (x PacketAction) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PacketAction.Descriptor instead.
 func (PacketAction) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{94}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{110}
 }
 
 type PacketColor int32
@@ -6340,11 +7529,11 @@ func (x PacketColor) String() string {
 }
 
 func (PacketColor) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[95].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[111].Descriptor()
 }
 
 func (PacketColor) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[95]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[111]
 }
 
 func (x PacketColor) Number() protoreflect.EnumNumber {
@@ -6353,7 +7542,7 @@ func (x PacketColor) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PacketColor.Descriptor instead.
 func (PacketColor) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{95}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{111}
 }
 
 type PacketVlan int32
@@ -6392,11 +7581,11 @@ func (x PacketVlan) String() string {
 }
 
 func (PacketVlan) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[96].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[112].Descriptor()
 }
 
 func (PacketVlan) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[96]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[112]
 }
 
 func (x PacketVlan) Number() protoreflect.EnumNumber {
@@ -6405,7 +7594,7 @@ func (x PacketVlan) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PacketVlan.Descriptor instead.
 func (PacketVlan) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{96}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{112}
 }
 
 type PoePortActiveChannelType int32
@@ -6444,11 +7633,11 @@ func (x PoePortActiveChannelType) String() string {
 }
 
 func (PoePortActiveChannelType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[97].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[113].Descriptor()
 }
 
 func (PoePortActiveChannelType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[97]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[113]
 }
 
 func (x PoePortActiveChannelType) Number() protoreflect.EnumNumber {
@@ -6457,7 +7646,7 @@ func (x PoePortActiveChannelType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PoePortActiveChannelType.Descriptor instead.
 func (PoePortActiveChannelType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{97}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{113}
 }
 
 type PoePortClassMethodType int32
@@ -6493,11 +7682,11 @@ func (x PoePortClassMethodType) String() string {
 }
 
 func (PoePortClassMethodType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[98].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[114].Descriptor()
 }
 
 func (PoePortClassMethodType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[98]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[114]
 }
 
 func (x PoePortClassMethodType) Number() protoreflect.EnumNumber {
@@ -6506,7 +7695,7 @@ func (x PoePortClassMethodType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PoePortClassMethodType.Descriptor instead.
 func (PoePortClassMethodType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{98}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{114}
 }
 
 type PoePortSignatureType int32
@@ -6542,11 +7731,11 @@ func (x PoePortSignatureType) String() string {
 }
 
 func (PoePortSignatureType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[99].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[115].Descriptor()
 }
 
 func (PoePortSignatureType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[99]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[115]
 }
 
 func (x PoePortSignatureType) Number() protoreflect.EnumNumber {
@@ -6555,7 +7744,7 @@ func (x PoePortSignatureType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PoePortSignatureType.Descriptor instead.
 func (PoePortSignatureType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{99}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{115}
 }
 
 type PolicerColorSource int32
@@ -6594,11 +7783,11 @@ func (x PolicerColorSource) String() string {
 }
 
 func (PolicerColorSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[100].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[116].Descriptor()
 }
 
 func (PolicerColorSource) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[100]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[116]
 }
 
 func (x PolicerColorSource) Number() protoreflect.EnumNumber {
@@ -6607,7 +7796,7 @@ func (x PolicerColorSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PolicerColorSource.Descriptor instead.
 func (PolicerColorSource) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{100}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{116}
 }
 
 type PolicerMode int32
@@ -6649,11 +7838,11 @@ func (x PolicerMode) String() string {
 }
 
 func (PolicerMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[101].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[117].Descriptor()
 }
 
 func (PolicerMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[101]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[117]
 }
 
 func (x PolicerMode) Number() protoreflect.EnumNumber {
@@ -6662,7 +7851,7 @@ func (x PolicerMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PolicerMode.Descriptor instead.
 func (PolicerMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{101}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{117}
 }
 
 type PolicerStat int32
@@ -6719,11 +7908,11 @@ func (x PolicerStat) String() string {
 }
 
 func (PolicerStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[102].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[118].Descriptor()
 }
 
 func (PolicerStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[102]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[118]
 }
 
 func (x PolicerStat) Number() protoreflect.EnumNumber {
@@ -6732,7 +7921,56 @@ func (x PolicerStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PolicerStat.Descriptor instead.
 func (PolicerStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{102}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{118}
+}
+
+type PortAttrExtensions int32
+
+const (
+	PortAttrExtensions_PORT_ATTR_EXTENSIONS_UNSPECIFIED PortAttrExtensions = 0
+	PortAttrExtensions_PORT_ATTR_EXTENSIONS_RANGE_START PortAttrExtensions = 536870913
+	PortAttrExtensions_PORT_ATTR_EXTENSIONS_RANGE_END   PortAttrExtensions = 536870914
+)
+
+// Enum value maps for PortAttrExtensions.
+var (
+	PortAttrExtensions_name = map[int32]string{
+		0:         "PORT_ATTR_EXTENSIONS_UNSPECIFIED",
+		536870913: "PORT_ATTR_EXTENSIONS_RANGE_START",
+		536870914: "PORT_ATTR_EXTENSIONS_RANGE_END",
+	}
+	PortAttrExtensions_value = map[string]int32{
+		"PORT_ATTR_EXTENSIONS_UNSPECIFIED": 0,
+		"PORT_ATTR_EXTENSIONS_RANGE_START": 536870913,
+		"PORT_ATTR_EXTENSIONS_RANGE_END":   536870914,
+	}
+)
+
+func (x PortAttrExtensions) Enum() *PortAttrExtensions {
+	p := new(PortAttrExtensions)
+	*p = x
+	return p
+}
+
+func (x PortAttrExtensions) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PortAttrExtensions) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[119].Descriptor()
+}
+
+func (PortAttrExtensions) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[119]
+}
+
+func (x PortAttrExtensions) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PortAttrExtensions.Descriptor instead.
+func (PortAttrExtensions) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{119}
 }
 
 type PortAutoNegConfigMode int32
@@ -6774,11 +8012,11 @@ func (x PortAutoNegConfigMode) String() string {
 }
 
 func (PortAutoNegConfigMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[103].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[120].Descriptor()
 }
 
 func (PortAutoNegConfigMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[103]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[120]
 }
 
 func (x PortAutoNegConfigMode) Number() protoreflect.EnumNumber {
@@ -6787,7 +8025,7 @@ func (x PortAutoNegConfigMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortAutoNegConfigMode.Descriptor instead.
 func (PortAutoNegConfigMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{103}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{120}
 }
 
 type PortBreakoutModeType int32
@@ -6832,11 +8070,11 @@ func (x PortBreakoutModeType) String() string {
 }
 
 func (PortBreakoutModeType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[104].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[121].Descriptor()
 }
 
 func (PortBreakoutModeType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[104]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[121]
 }
 
 func (x PortBreakoutModeType) Number() protoreflect.EnumNumber {
@@ -6845,7 +8083,7 @@ func (x PortBreakoutModeType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortBreakoutModeType.Descriptor instead.
 func (PortBreakoutModeType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{104}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{121}
 }
 
 type PortCablePairState int32
@@ -6890,11 +8128,11 @@ func (x PortCablePairState) String() string {
 }
 
 func (PortCablePairState) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[105].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[122].Descriptor()
 }
 
 func (PortCablePairState) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[105]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[122]
 }
 
 func (x PortCablePairState) Number() protoreflect.EnumNumber {
@@ -6903,7 +8141,7 @@ func (x PortCablePairState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortCablePairState.Descriptor instead.
 func (PortCablePairState) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{105}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{122}
 }
 
 type PortCableType int32
@@ -6951,11 +8189,11 @@ func (x PortCableType) String() string {
 }
 
 func (PortCableType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[106].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[123].Descriptor()
 }
 
 func (PortCableType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[106]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[123]
 }
 
 func (x PortCableType) Number() protoreflect.EnumNumber {
@@ -6964,7 +8202,7 @@ func (x PortCableType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortCableType.Descriptor instead.
 func (PortCableType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{106}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{123}
 }
 
 type PortConnectorFailoverMode int32
@@ -7003,11 +8241,11 @@ func (x PortConnectorFailoverMode) String() string {
 }
 
 func (PortConnectorFailoverMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[107].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[124].Descriptor()
 }
 
 func (PortConnectorFailoverMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[107]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[124]
 }
 
 func (x PortConnectorFailoverMode) Number() protoreflect.EnumNumber {
@@ -7016,7 +8254,7 @@ func (x PortConnectorFailoverMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortConnectorFailoverMode.Descriptor instead.
 func (PortConnectorFailoverMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{107}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{124}
 }
 
 type PortDatapathEnable int32
@@ -7052,11 +8290,11 @@ func (x PortDatapathEnable) String() string {
 }
 
 func (PortDatapathEnable) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[108].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[125].Descriptor()
 }
 
 func (PortDatapathEnable) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[108]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[125]
 }
 
 func (x PortDatapathEnable) Number() protoreflect.EnumNumber {
@@ -7065,7 +8303,7 @@ func (x PortDatapathEnable) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortDatapathEnable.Descriptor instead.
 func (PortDatapathEnable) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{108}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{125}
 }
 
 type PortDualMedia int32
@@ -7110,11 +8348,11 @@ func (x PortDualMedia) String() string {
 }
 
 func (PortDualMedia) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[109].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[126].Descriptor()
 }
 
 func (PortDualMedia) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[109]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[126]
 }
 
 func (x PortDualMedia) Number() protoreflect.EnumNumber {
@@ -7123,7 +8361,7 @@ func (x PortDualMedia) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortDualMedia.Descriptor instead.
 func (PortDualMedia) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{109}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{126}
 }
 
 type PortErrStatus int32
@@ -7180,11 +8418,11 @@ func (x PortErrStatus) String() string {
 }
 
 func (PortErrStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[110].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[127].Descriptor()
 }
 
 func (PortErrStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[110]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[127]
 }
 
 func (x PortErrStatus) Number() protoreflect.EnumNumber {
@@ -7193,7 +8431,7 @@ func (x PortErrStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortErrStatus.Descriptor instead.
 func (PortErrStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{110}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{127}
 }
 
 type PortErrorStatus int32
@@ -7265,11 +8503,11 @@ func (x PortErrorStatus) String() string {
 }
 
 func (PortErrorStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[111].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[128].Descriptor()
 }
 
 func (PortErrorStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[111]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[128]
 }
 
 func (x PortErrorStatus) Number() protoreflect.EnumNumber {
@@ -7278,7 +8516,7 @@ func (x PortErrorStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortErrorStatus.Descriptor instead.
 func (PortErrorStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{111}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{128}
 }
 
 type PortFecModeExtended int32
@@ -7323,11 +8561,11 @@ func (x PortFecModeExtended) String() string {
 }
 
 func (PortFecModeExtended) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[112].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[129].Descriptor()
 }
 
 func (PortFecModeExtended) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[112]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[129]
 }
 
 func (x PortFecModeExtended) Number() protoreflect.EnumNumber {
@@ -7336,7 +8574,7 @@ func (x PortFecModeExtended) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortFecModeExtended.Descriptor instead.
 func (PortFecModeExtended) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{112}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{129}
 }
 
 type PortFecMode int32
@@ -7375,11 +8613,11 @@ func (x PortFecMode) String() string {
 }
 
 func (PortFecMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[113].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[130].Descriptor()
 }
 
 func (PortFecMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[113]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[130]
 }
 
 func (x PortFecMode) Number() protoreflect.EnumNumber {
@@ -7388,7 +8626,7 @@ func (x PortFecMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortFecMode.Descriptor instead.
 func (PortFecMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{113}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{130}
 }
 
 type PortFlowControlMode int32
@@ -7430,11 +8668,11 @@ func (x PortFlowControlMode) String() string {
 }
 
 func (PortFlowControlMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[114].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[131].Descriptor()
 }
 
 func (PortFlowControlMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[114]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[131]
 }
 
 func (x PortFlowControlMode) Number() protoreflect.EnumNumber {
@@ -7443,7 +8681,7 @@ func (x PortFlowControlMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortFlowControlMode.Descriptor instead.
 func (PortFlowControlMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{114}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{131}
 }
 
 type PortHostTxReadyStatus int32
@@ -7479,11 +8717,11 @@ func (x PortHostTxReadyStatus) String() string {
 }
 
 func (PortHostTxReadyStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[115].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[132].Descriptor()
 }
 
 func (PortHostTxReadyStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[115]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[132]
 }
 
 func (x PortHostTxReadyStatus) Number() protoreflect.EnumNumber {
@@ -7492,7 +8730,7 @@ func (x PortHostTxReadyStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortHostTxReadyStatus.Descriptor instead.
 func (PortHostTxReadyStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{115}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{132}
 }
 
 type PortInterfaceType int32
@@ -7600,11 +8838,11 @@ func (x PortInterfaceType) String() string {
 }
 
 func (PortInterfaceType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[116].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[133].Descriptor()
 }
 
 func (PortInterfaceType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[116]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[133]
 }
 
 func (x PortInterfaceType) Number() protoreflect.EnumNumber {
@@ -7613,7 +8851,7 @@ func (x PortInterfaceType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortInterfaceType.Descriptor instead.
 func (PortInterfaceType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{116}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{133}
 }
 
 type PortInternalLoopbackMode int32
@@ -7652,11 +8890,11 @@ func (x PortInternalLoopbackMode) String() string {
 }
 
 func (PortInternalLoopbackMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[117].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[134].Descriptor()
 }
 
 func (PortInternalLoopbackMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[117]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[134]
 }
 
 func (x PortInternalLoopbackMode) Number() protoreflect.EnumNumber {
@@ -7665,7 +8903,7 @@ func (x PortInternalLoopbackMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortInternalLoopbackMode.Descriptor instead.
 func (PortInternalLoopbackMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{117}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{134}
 }
 
 type PortLinkTrainingFailureStatus int32
@@ -7707,11 +8945,11 @@ func (x PortLinkTrainingFailureStatus) String() string {
 }
 
 func (PortLinkTrainingFailureStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[118].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[135].Descriptor()
 }
 
 func (PortLinkTrainingFailureStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[118]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[135]
 }
 
 func (x PortLinkTrainingFailureStatus) Number() protoreflect.EnumNumber {
@@ -7720,7 +8958,7 @@ func (x PortLinkTrainingFailureStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortLinkTrainingFailureStatus.Descriptor instead.
 func (PortLinkTrainingFailureStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{118}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{135}
 }
 
 type PortLinkTrainingRxStatus int32
@@ -7756,11 +8994,11 @@ func (x PortLinkTrainingRxStatus) String() string {
 }
 
 func (PortLinkTrainingRxStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[119].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[136].Descriptor()
 }
 
 func (PortLinkTrainingRxStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[119]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[136]
 }
 
 func (x PortLinkTrainingRxStatus) Number() protoreflect.EnumNumber {
@@ -7769,7 +9007,7 @@ func (x PortLinkTrainingRxStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortLinkTrainingRxStatus.Descriptor instead.
 func (PortLinkTrainingRxStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{119}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{136}
 }
 
 type PortLoopbackMode int32
@@ -7814,11 +9052,11 @@ func (x PortLoopbackMode) String() string {
 }
 
 func (PortLoopbackMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[120].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[137].Descriptor()
 }
 
 func (PortLoopbackMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[120]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[137]
 }
 
 func (x PortLoopbackMode) Number() protoreflect.EnumNumber {
@@ -7827,7 +9065,7 @@ func (x PortLoopbackMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortLoopbackMode.Descriptor instead.
 func (PortLoopbackMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{120}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{137}
 }
 
 type PortMdixModeConfig int32
@@ -7866,11 +9104,11 @@ func (x PortMdixModeConfig) String() string {
 }
 
 func (PortMdixModeConfig) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[121].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[138].Descriptor()
 }
 
 func (PortMdixModeConfig) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[121]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[138]
 }
 
 func (x PortMdixModeConfig) Number() protoreflect.EnumNumber {
@@ -7879,7 +9117,7 @@ func (x PortMdixModeConfig) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortMdixModeConfig.Descriptor instead.
 func (PortMdixModeConfig) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{121}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{138}
 }
 
 type PortMdixModeStatus int32
@@ -7915,11 +9153,11 @@ func (x PortMdixModeStatus) String() string {
 }
 
 func (PortMdixModeStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[122].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[139].Descriptor()
 }
 
 func (PortMdixModeStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[122]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[139]
 }
 
 func (x PortMdixModeStatus) Number() protoreflect.EnumNumber {
@@ -7928,7 +9166,7 @@ func (x PortMdixModeStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortMdixModeStatus.Descriptor instead.
 func (PortMdixModeStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{122}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{139}
 }
 
 type PortMediaType int32
@@ -7973,11 +9211,11 @@ func (x PortMediaType) String() string {
 }
 
 func (PortMediaType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[123].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[140].Descriptor()
 }
 
 func (PortMediaType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[123]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[140]
 }
 
 func (x PortMediaType) Number() protoreflect.EnumNumber {
@@ -7986,7 +9224,7 @@ func (x PortMediaType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortMediaType.Descriptor instead.
 func (PortMediaType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{123}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{140}
 }
 
 type PortModuleType int32
@@ -8025,11 +9263,11 @@ func (x PortModuleType) String() string {
 }
 
 func (PortModuleType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[124].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[141].Descriptor()
 }
 
 func (PortModuleType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[124]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[141]
 }
 
 func (x PortModuleType) Number() protoreflect.EnumNumber {
@@ -8038,7 +9276,7 @@ func (x PortModuleType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortModuleType.Descriptor instead.
 func (PortModuleType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{124}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{141}
 }
 
 type PortOperStatus int32
@@ -8083,11 +9321,11 @@ func (x PortOperStatus) String() string {
 }
 
 func (PortOperStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[125].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[142].Descriptor()
 }
 
 func (PortOperStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[125]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[142]
 }
 
 func (x PortOperStatus) Number() protoreflect.EnumNumber {
@@ -8096,7 +9334,7 @@ func (x PortOperStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortOperStatus.Descriptor instead.
 func (PortOperStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{125}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{142}
 }
 
 type PortPathTracingTimestampType int32
@@ -8138,11 +9376,11 @@ func (x PortPathTracingTimestampType) String() string {
 }
 
 func (PortPathTracingTimestampType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[126].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[143].Descriptor()
 }
 
 func (PortPathTracingTimestampType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[126]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[143]
 }
 
 func (x PortPathTracingTimestampType) Number() protoreflect.EnumNumber {
@@ -8151,7 +9389,7 @@ func (x PortPathTracingTimestampType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortPathTracingTimestampType.Descriptor instead.
 func (PortPathTracingTimestampType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{126}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{143}
 }
 
 type PortPoolStat int32
@@ -8247,11 +9485,11 @@ func (x PortPoolStat) String() string {
 }
 
 func (PortPoolStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[127].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[144].Descriptor()
 }
 
 func (PortPoolStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[127]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[144]
 }
 
 func (x PortPoolStat) Number() protoreflect.EnumNumber {
@@ -8260,7 +9498,7 @@ func (x PortPoolStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortPoolStat.Descriptor instead.
 func (PortPoolStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{127}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{144}
 }
 
 type PortPrbsConfig int32
@@ -8302,11 +9540,11 @@ func (x PortPrbsConfig) String() string {
 }
 
 func (PortPrbsConfig) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[128].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[145].Descriptor()
 }
 
 func (PortPrbsConfig) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[128]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[145]
 }
 
 func (x PortPrbsConfig) Number() protoreflect.EnumNumber {
@@ -8315,7 +9553,7 @@ func (x PortPrbsConfig) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortPrbsConfig.Descriptor instead.
 func (PortPrbsConfig) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{128}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{145}
 }
 
 type PortPrbsRxStatus int32
@@ -8357,11 +9595,11 @@ func (x PortPrbsRxStatus) String() string {
 }
 
 func (PortPrbsRxStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[129].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[146].Descriptor()
 }
 
 func (PortPrbsRxStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[129]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[146]
 }
 
 func (x PortPrbsRxStatus) Number() protoreflect.EnumNumber {
@@ -8370,7 +9608,7 @@ func (x PortPrbsRxStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortPrbsRxStatus.Descriptor instead.
 func (PortPrbsRxStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{129}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{146}
 }
 
 type PortPriorityFlowControlMode int32
@@ -8406,11 +9644,11 @@ func (x PortPriorityFlowControlMode) String() string {
 }
 
 func (PortPriorityFlowControlMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[130].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[147].Descriptor()
 }
 
 func (PortPriorityFlowControlMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[130]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[147]
 }
 
 func (x PortPriorityFlowControlMode) Number() protoreflect.EnumNumber {
@@ -8419,7 +9657,7 @@ func (x PortPriorityFlowControlMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortPriorityFlowControlMode.Descriptor instead.
 func (PortPriorityFlowControlMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{130}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{147}
 }
 
 type PortPtpMode int32
@@ -8458,11 +9696,11 @@ func (x PortPtpMode) String() string {
 }
 
 func (PortPtpMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[131].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[148].Descriptor()
 }
 
 func (PortPtpMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[131]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[148]
 }
 
 func (x PortPtpMode) Number() protoreflect.EnumNumber {
@@ -8471,7 +9709,7 @@ func (x PortPtpMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortPtpMode.Descriptor instead.
 func (PortPtpMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{131}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{148}
 }
 
 type PortStatExtensions int32
@@ -8537,11 +9775,11 @@ func (x PortStatExtensions) String() string {
 }
 
 func (PortStatExtensions) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[132].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[149].Descriptor()
 }
 
 func (PortStatExtensions) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[132]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[149]
 }
 
 func (x PortStatExtensions) Number() protoreflect.EnumNumber {
@@ -8550,7 +9788,7 @@ func (x PortStatExtensions) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortStatExtensions.Descriptor instead.
 func (PortStatExtensions) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{132}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{149}
 }
 
 type PortStat int32
@@ -9258,11 +10496,11 @@ func (x PortStat) String() string {
 }
 
 func (PortStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[133].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[150].Descriptor()
 }
 
 func (PortStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[133]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[150]
 }
 
 func (x PortStat) Number() protoreflect.EnumNumber {
@@ -9271,7 +10509,7 @@ func (x PortStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortStat.Descriptor instead.
 func (PortStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{133}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{150}
 }
 
 type PortType int32
@@ -9313,11 +10551,11 @@ func (x PortType) String() string {
 }
 
 func (PortType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[134].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[151].Descriptor()
 }
 
 func (PortType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[134]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[151]
 }
 
 func (x PortType) Number() protoreflect.EnumNumber {
@@ -9326,7 +10564,7 @@ func (x PortType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortType.Descriptor instead.
 func (PortType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{134}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{151}
 }
 
 type QosMapType int32
@@ -9404,11 +10642,11 @@ func (x QosMapType) String() string {
 }
 
 func (QosMapType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[135].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[152].Descriptor()
 }
 
 func (QosMapType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[135]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[152]
 }
 
 func (x QosMapType) Number() protoreflect.EnumNumber {
@@ -9417,7 +10655,7 @@ func (x QosMapType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use QosMapType.Descriptor instead.
 func (QosMapType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{135}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{152}
 }
 
 type QueuePfcContinuousDeadlockState int32
@@ -9456,11 +10694,11 @@ func (x QueuePfcContinuousDeadlockState) String() string {
 }
 
 func (QueuePfcContinuousDeadlockState) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[136].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[153].Descriptor()
 }
 
 func (QueuePfcContinuousDeadlockState) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[136]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[153]
 }
 
 func (x QueuePfcContinuousDeadlockState) Number() protoreflect.EnumNumber {
@@ -9469,7 +10707,7 @@ func (x QueuePfcContinuousDeadlockState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use QueuePfcContinuousDeadlockState.Descriptor instead.
 func (QueuePfcContinuousDeadlockState) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{136}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{153}
 }
 
 type QueuePfcDeadlockEventType int32
@@ -9505,11 +10743,11 @@ func (x QueuePfcDeadlockEventType) String() string {
 }
 
 func (QueuePfcDeadlockEventType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[137].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[154].Descriptor()
 }
 
 func (QueuePfcDeadlockEventType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[137]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[154]
 }
 
 func (x QueuePfcDeadlockEventType) Number() protoreflect.EnumNumber {
@@ -9518,7 +10756,7 @@ func (x QueuePfcDeadlockEventType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use QueuePfcDeadlockEventType.Descriptor instead.
 func (QueuePfcDeadlockEventType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{137}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{154}
 }
 
 type QueueStat int32
@@ -9671,11 +10909,11 @@ func (x QueueStat) String() string {
 }
 
 func (QueueStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[138].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[155].Descriptor()
 }
 
 func (QueueStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[138]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[155]
 }
 
 func (x QueueStat) Number() protoreflect.EnumNumber {
@@ -9684,7 +10922,7 @@ func (x QueueStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use QueueStat.Descriptor instead.
 func (QueueStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{138}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{155}
 }
 
 type QueueType int32
@@ -9735,11 +10973,11 @@ func (x QueueType) String() string {
 }
 
 func (QueueType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[139].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[156].Descriptor()
 }
 
 func (QueueType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[139]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[156]
 }
 
 func (x QueueType) Number() protoreflect.EnumNumber {
@@ -9748,7 +10986,7 @@ func (x QueueType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use QueueType.Descriptor instead.
 func (QueueType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{139}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{156}
 }
 
 type RouterInterfaceStat int32
@@ -9802,11 +11040,11 @@ func (x RouterInterfaceStat) String() string {
 }
 
 func (RouterInterfaceStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[140].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[157].Descriptor()
 }
 
 func (RouterInterfaceStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[140]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[157]
 }
 
 func (x RouterInterfaceStat) Number() protoreflect.EnumNumber {
@@ -9815,7 +11053,7 @@ func (x RouterInterfaceStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RouterInterfaceStat.Descriptor instead.
 func (RouterInterfaceStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{140}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{157}
 }
 
 type RouterInterfaceType int32
@@ -9866,11 +11104,11 @@ func (x RouterInterfaceType) String() string {
 }
 
 func (RouterInterfaceType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[141].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[158].Descriptor()
 }
 
 func (RouterInterfaceType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[141]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[158]
 }
 
 func (x RouterInterfaceType) Number() protoreflect.EnumNumber {
@@ -9879,7 +11117,7 @@ func (x RouterInterfaceType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RouterInterfaceType.Descriptor instead.
 func (RouterInterfaceType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{141}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{158}
 }
 
 type SamplepacketMode int32
@@ -9915,11 +11153,11 @@ func (x SamplepacketMode) String() string {
 }
 
 func (SamplepacketMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[142].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[159].Descriptor()
 }
 
 func (SamplepacketMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[142]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[159]
 }
 
 func (x SamplepacketMode) Number() protoreflect.EnumNumber {
@@ -9928,7 +11166,7 @@ func (x SamplepacketMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SamplepacketMode.Descriptor instead.
 func (SamplepacketMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{142}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{159}
 }
 
 type SamplepacketType int32
@@ -9964,11 +11202,11 @@ func (x SamplepacketType) String() string {
 }
 
 func (SamplepacketType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[143].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[160].Descriptor()
 }
 
 func (SamplepacketType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[143]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[160]
 }
 
 func (x SamplepacketType) Number() protoreflect.EnumNumber {
@@ -9977,7 +11215,7 @@ func (x SamplepacketType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SamplepacketType.Descriptor instead.
 func (SamplepacketType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{143}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{160}
 }
 
 type SchedulingType int32
@@ -10016,11 +11254,11 @@ func (x SchedulingType) String() string {
 }
 
 func (SchedulingType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[144].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[161].Descriptor()
 }
 
 func (SchedulingType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[144]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[161]
 }
 
 func (x SchedulingType) Number() protoreflect.EnumNumber {
@@ -10029,7 +11267,7 @@ func (x SchedulingType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SchedulingType.Descriptor instead.
 func (SchedulingType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{144}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{161}
 }
 
 type SerCorrectionType int32
@@ -10077,11 +11315,11 @@ func (x SerCorrectionType) String() string {
 }
 
 func (SerCorrectionType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[145].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[162].Descriptor()
 }
 
 func (SerCorrectionType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[145]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[162]
 }
 
 func (x SerCorrectionType) Number() protoreflect.EnumNumber {
@@ -10090,7 +11328,7 @@ func (x SerCorrectionType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SerCorrectionType.Descriptor instead.
 func (SerCorrectionType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{145}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{162}
 }
 
 type SerLogType int32
@@ -10138,11 +11376,11 @@ func (x SerLogType) String() string {
 }
 
 func (SerLogType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[146].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[163].Descriptor()
 }
 
 func (SerLogType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[146]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[163]
 }
 
 func (x SerLogType) Number() protoreflect.EnumNumber {
@@ -10151,7 +11389,7 @@ func (x SerLogType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SerLogType.Descriptor instead.
 func (SerLogType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{146}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{163}
 }
 
 type SerType int32
@@ -10193,11 +11431,11 @@ func (x SerType) String() string {
 }
 
 func (SerType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[147].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[164].Descriptor()
 }
 
 func (SerType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[147]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[164]
 }
 
 func (x SerType) Number() protoreflect.EnumNumber {
@@ -10206,7 +11444,7 @@ func (x SerType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SerType.Descriptor instead.
 func (SerType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{147}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{164}
 }
 
 type Srv6SidlistStat int32
@@ -10242,11 +11480,11 @@ func (x Srv6SidlistStat) String() string {
 }
 
 func (Srv6SidlistStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[148].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[165].Descriptor()
 }
 
 func (Srv6SidlistStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[148]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[165]
 }
 
 func (x Srv6SidlistStat) Number() protoreflect.EnumNumber {
@@ -10255,7 +11493,7 @@ func (x Srv6SidlistStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Srv6SidlistStat.Descriptor instead.
 func (Srv6SidlistStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{148}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{165}
 }
 
 type Srv6SidlistType int32
@@ -10300,11 +11538,11 @@ func (x Srv6SidlistType) String() string {
 }
 
 func (Srv6SidlistType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[149].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[166].Descriptor()
 }
 
 func (Srv6SidlistType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[149]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[166]
 }
 
 func (x Srv6SidlistType) Number() protoreflect.EnumNumber {
@@ -10313,7 +11551,7 @@ func (x Srv6SidlistType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Srv6SidlistType.Descriptor instead.
 func (Srv6SidlistType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{149}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{166}
 }
 
 type StatsCountMode int32
@@ -10355,11 +11593,11 @@ func (x StatsCountMode) String() string {
 }
 
 func (StatsCountMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[150].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[167].Descriptor()
 }
 
 func (StatsCountMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[150]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[167]
 }
 
 func (x StatsCountMode) Number() protoreflect.EnumNumber {
@@ -10368,7 +11606,7 @@ func (x StatsCountMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use StatsCountMode.Descriptor instead.
 func (StatsCountMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{150}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{167}
 }
 
 type StatsMode int32
@@ -10413,11 +11651,11 @@ func (x StatsMode) String() string {
 }
 
 func (StatsMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[151].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[168].Descriptor()
 }
 
 func (StatsMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[151]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[168]
 }
 
 func (x StatsMode) Number() protoreflect.EnumNumber {
@@ -10426,7 +11664,7 @@ func (x StatsMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use StatsMode.Descriptor instead.
 func (StatsMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{151}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{168}
 }
 
 type StpPortState int32
@@ -10465,11 +11703,11 @@ func (x StpPortState) String() string {
 }
 
 func (StpPortState) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[152].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[169].Descriptor()
 }
 
 func (StpPortState) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[152]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[169]
 }
 
 func (x StpPortState) Number() protoreflect.EnumNumber {
@@ -10478,7 +11716,7 @@ func (x StpPortState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use StpPortState.Descriptor instead.
 func (StpPortState) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{152}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{169}
 }
 
 type SwitchAsicSdkHealthCategory int32
@@ -10520,11 +11758,11 @@ func (x SwitchAsicSdkHealthCategory) String() string {
 }
 
 func (SwitchAsicSdkHealthCategory) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[153].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[170].Descriptor()
 }
 
 func (SwitchAsicSdkHealthCategory) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[153]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[170]
 }
 
 func (x SwitchAsicSdkHealthCategory) Number() protoreflect.EnumNumber {
@@ -10533,7 +11771,7 @@ func (x SwitchAsicSdkHealthCategory) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchAsicSdkHealthCategory.Descriptor instead.
 func (SwitchAsicSdkHealthCategory) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{153}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{170}
 }
 
 type SwitchAsicSdkHealthSeverity int32
@@ -10572,11 +11810,11 @@ func (x SwitchAsicSdkHealthSeverity) String() string {
 }
 
 func (SwitchAsicSdkHealthSeverity) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[154].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[171].Descriptor()
 }
 
 func (SwitchAsicSdkHealthSeverity) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[154]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[171]
 }
 
 func (x SwitchAsicSdkHealthSeverity) Number() protoreflect.EnumNumber {
@@ -10585,7 +11823,71 @@ func (x SwitchAsicSdkHealthSeverity) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchAsicSdkHealthSeverity.Descriptor instead.
 func (SwitchAsicSdkHealthSeverity) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{154}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{171}
+}
+
+type SwitchAttrExtensions int32
+
+const (
+	SwitchAttrExtensions_SWITCH_ATTR_EXTENSIONS_UNSPECIFIED                   SwitchAttrExtensions = 0
+	SwitchAttrExtensions_SWITCH_ATTR_EXTENSIONS_RANGE_START                   SwitchAttrExtensions = 536870913
+	SwitchAttrExtensions_SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI SwitchAttrExtensions = 536870913
+	SwitchAttrExtensions_SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL                 SwitchAttrExtensions = 536870914
+	SwitchAttrExtensions_SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED                SwitchAttrExtensions = 536870915
+	SwitchAttrExtensions_SWITCH_ATTR_HA_SET_EVENT_NOTIFY                      SwitchAttrExtensions = 536870916
+	SwitchAttrExtensions_SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY                    SwitchAttrExtensions = 536870917
+	SwitchAttrExtensions_SWITCH_ATTR_EXTENSIONS_RANGE_END                     SwitchAttrExtensions = 536870918
+)
+
+// Enum value maps for SwitchAttrExtensions.
+var (
+	SwitchAttrExtensions_name = map[int32]string{
+		0:         "SWITCH_ATTR_EXTENSIONS_UNSPECIFIED",
+		536870913: "SWITCH_ATTR_EXTENSIONS_RANGE_START",
+		// Duplicate value: 536870913: "SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI",
+		536870914: "SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL",
+		536870915: "SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED",
+		536870916: "SWITCH_ATTR_HA_SET_EVENT_NOTIFY",
+		536870917: "SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY",
+		536870918: "SWITCH_ATTR_EXTENSIONS_RANGE_END",
+	}
+	SwitchAttrExtensions_value = map[string]int32{
+		"SWITCH_ATTR_EXTENSIONS_UNSPECIFIED":                   0,
+		"SWITCH_ATTR_EXTENSIONS_RANGE_START":                   536870913,
+		"SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI": 536870913,
+		"SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL":                 536870914,
+		"SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED":                536870915,
+		"SWITCH_ATTR_HA_SET_EVENT_NOTIFY":                      536870916,
+		"SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY":                    536870917,
+		"SWITCH_ATTR_EXTENSIONS_RANGE_END":                     536870918,
+	}
+)
+
+func (x SwitchAttrExtensions) Enum() *SwitchAttrExtensions {
+	p := new(SwitchAttrExtensions)
+	*p = x
+	return p
+}
+
+func (x SwitchAttrExtensions) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SwitchAttrExtensions) Descriptor() protoreflect.EnumDescriptor {
+	return file_dataplane_proto_sai_common_proto_enumTypes[172].Descriptor()
+}
+
+func (SwitchAttrExtensions) Type() protoreflect.EnumType {
+	return &file_dataplane_proto_sai_common_proto_enumTypes[172]
+}
+
+func (x SwitchAttrExtensions) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SwitchAttrExtensions.Descriptor instead.
+func (SwitchAttrExtensions) EnumDescriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{172}
 }
 
 type SwitchFailoverConfigMode int32
@@ -10621,11 +11923,11 @@ func (x SwitchFailoverConfigMode) String() string {
 }
 
 func (SwitchFailoverConfigMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[155].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[173].Descriptor()
 }
 
 func (SwitchFailoverConfigMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[155]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[173]
 }
 
 func (x SwitchFailoverConfigMode) Number() protoreflect.EnumNumber {
@@ -10634,7 +11936,7 @@ func (x SwitchFailoverConfigMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchFailoverConfigMode.Descriptor instead.
 func (SwitchFailoverConfigMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{155}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{173}
 }
 
 type SwitchFirmwareLoadMethod int32
@@ -10673,11 +11975,11 @@ func (x SwitchFirmwareLoadMethod) String() string {
 }
 
 func (SwitchFirmwareLoadMethod) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[156].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[174].Descriptor()
 }
 
 func (SwitchFirmwareLoadMethod) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[156]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[174]
 }
 
 func (x SwitchFirmwareLoadMethod) Number() protoreflect.EnumNumber {
@@ -10686,7 +11988,7 @@ func (x SwitchFirmwareLoadMethod) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchFirmwareLoadMethod.Descriptor instead.
 func (SwitchFirmwareLoadMethod) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{156}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{174}
 }
 
 type SwitchFirmwareLoadType int32
@@ -10725,11 +12027,11 @@ func (x SwitchFirmwareLoadType) String() string {
 }
 
 func (SwitchFirmwareLoadType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[157].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[175].Descriptor()
 }
 
 func (SwitchFirmwareLoadType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[157]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[175]
 }
 
 func (x SwitchFirmwareLoadType) Number() protoreflect.EnumNumber {
@@ -10738,7 +12040,7 @@ func (x SwitchFirmwareLoadType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchFirmwareLoadType.Descriptor instead.
 func (SwitchFirmwareLoadType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{157}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{175}
 }
 
 type SwitchHardwareAccessBus int32
@@ -10777,11 +12079,11 @@ func (x SwitchHardwareAccessBus) String() string {
 }
 
 func (SwitchHardwareAccessBus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[158].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[176].Descriptor()
 }
 
 func (SwitchHardwareAccessBus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[158]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[176]
 }
 
 func (x SwitchHardwareAccessBus) Number() protoreflect.EnumNumber {
@@ -10790,7 +12092,7 @@ func (x SwitchHardwareAccessBus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchHardwareAccessBus.Descriptor instead.
 func (SwitchHardwareAccessBus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{158}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{176}
 }
 
 type SwitchHostifOperStatusUpdateMode int32
@@ -10826,11 +12128,11 @@ func (x SwitchHostifOperStatusUpdateMode) String() string {
 }
 
 func (SwitchHostifOperStatusUpdateMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[159].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[177].Descriptor()
 }
 
 func (SwitchHostifOperStatusUpdateMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[159]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[177]
 }
 
 func (x SwitchHostifOperStatusUpdateMode) Number() protoreflect.EnumNumber {
@@ -10839,7 +12141,7 @@ func (x SwitchHostifOperStatusUpdateMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchHostifOperStatusUpdateMode.Descriptor instead.
 func (SwitchHostifOperStatusUpdateMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{159}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{177}
 }
 
 type SwitchMcastSnoopingCapability int32
@@ -10881,11 +12183,11 @@ func (x SwitchMcastSnoopingCapability) String() string {
 }
 
 func (SwitchMcastSnoopingCapability) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[160].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[178].Descriptor()
 }
 
 func (SwitchMcastSnoopingCapability) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[160]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[178]
 }
 
 func (x SwitchMcastSnoopingCapability) Number() protoreflect.EnumNumber {
@@ -10894,7 +12196,7 @@ func (x SwitchMcastSnoopingCapability) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchMcastSnoopingCapability.Descriptor instead.
 func (SwitchMcastSnoopingCapability) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{160}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{178}
 }
 
 type SwitchOperStatus int32
@@ -10936,11 +12238,11 @@ func (x SwitchOperStatus) String() string {
 }
 
 func (SwitchOperStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[161].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[179].Descriptor()
 }
 
 func (SwitchOperStatus) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[161]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[179]
 }
 
 func (x SwitchOperStatus) Number() protoreflect.EnumNumber {
@@ -10949,7 +12251,7 @@ func (x SwitchOperStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchOperStatus.Descriptor instead.
 func (SwitchOperStatus) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{161}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{179}
 }
 
 type SwitchRestartType int32
@@ -10988,11 +12290,11 @@ func (x SwitchRestartType) String() string {
 }
 
 func (SwitchRestartType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[162].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[180].Descriptor()
 }
 
 func (SwitchRestartType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[162]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[180]
 }
 
 func (x SwitchRestartType) Number() protoreflect.EnumNumber {
@@ -11001,7 +12303,7 @@ func (x SwitchRestartType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchRestartType.Descriptor instead.
 func (SwitchRestartType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{162}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{180}
 }
 
 type SwitchStat int32
@@ -11112,11 +12414,11 @@ func (x SwitchStat) String() string {
 }
 
 func (SwitchStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[163].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[181].Descriptor()
 }
 
 func (SwitchStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[163]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[181]
 }
 
 func (x SwitchStat) Number() protoreflect.EnumNumber {
@@ -11125,7 +12427,7 @@ func (x SwitchStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchStat.Descriptor instead.
 func (SwitchStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{163}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{181}
 }
 
 type SwitchSwitchingMode int32
@@ -11161,11 +12463,11 @@ func (x SwitchSwitchingMode) String() string {
 }
 
 func (SwitchSwitchingMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[164].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[182].Descriptor()
 }
 
 func (SwitchSwitchingMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[164]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[182]
 }
 
 func (x SwitchSwitchingMode) Number() protoreflect.EnumNumber {
@@ -11174,7 +12476,7 @@ func (x SwitchSwitchingMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchSwitchingMode.Descriptor instead.
 func (SwitchSwitchingMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{164}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{182}
 }
 
 type SwitchType int32
@@ -11219,11 +12521,11 @@ func (x SwitchType) String() string {
 }
 
 func (SwitchType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[165].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[183].Descriptor()
 }
 
 func (SwitchType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[165]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[183]
 }
 
 func (x SwitchType) Number() protoreflect.EnumNumber {
@@ -11232,7 +12534,7 @@ func (x SwitchType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SwitchType.Descriptor instead.
 func (SwitchType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{165}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{183}
 }
 
 type SystemPortType int32
@@ -11268,11 +12570,11 @@ func (x SystemPortType) String() string {
 }
 
 func (SystemPortType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[166].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[184].Descriptor()
 }
 
 func (SystemPortType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[166]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[184]
 }
 
 func (x SystemPortType) Number() protoreflect.EnumNumber {
@@ -11281,7 +12583,7 @@ func (x SystemPortType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SystemPortType.Descriptor instead.
 func (SystemPortType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{166}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{184}
 }
 
 type TableBitmapClassificationEntryAction int32
@@ -11317,11 +12619,11 @@ func (x TableBitmapClassificationEntryAction) String() string {
 }
 
 func (TableBitmapClassificationEntryAction) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[167].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[185].Descriptor()
 }
 
 func (TableBitmapClassificationEntryAction) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[167]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[185]
 }
 
 func (x TableBitmapClassificationEntryAction) Number() protoreflect.EnumNumber {
@@ -11330,7 +12632,7 @@ func (x TableBitmapClassificationEntryAction) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TableBitmapClassificationEntryAction.Descriptor instead.
 func (TableBitmapClassificationEntryAction) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{167}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{185}
 }
 
 type TableBitmapClassificationEntryStat int32
@@ -11366,11 +12668,11 @@ func (x TableBitmapClassificationEntryStat) String() string {
 }
 
 func (TableBitmapClassificationEntryStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[168].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[186].Descriptor()
 }
 
 func (TableBitmapClassificationEntryStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[168]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[186]
 }
 
 func (x TableBitmapClassificationEntryStat) Number() protoreflect.EnumNumber {
@@ -11379,7 +12681,7 @@ func (x TableBitmapClassificationEntryStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TableBitmapClassificationEntryStat.Descriptor instead.
 func (TableBitmapClassificationEntryStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{168}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{186}
 }
 
 type TableBitmapRouterEntryAction int32
@@ -11424,11 +12726,11 @@ func (x TableBitmapRouterEntryAction) String() string {
 }
 
 func (TableBitmapRouterEntryAction) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[169].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[187].Descriptor()
 }
 
 func (TableBitmapRouterEntryAction) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[169]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[187]
 }
 
 func (x TableBitmapRouterEntryAction) Number() protoreflect.EnumNumber {
@@ -11437,7 +12739,7 @@ func (x TableBitmapRouterEntryAction) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TableBitmapRouterEntryAction.Descriptor instead.
 func (TableBitmapRouterEntryAction) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{169}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{187}
 }
 
 type TableBitmapRouterEntryStat int32
@@ -11473,11 +12775,11 @@ func (x TableBitmapRouterEntryStat) String() string {
 }
 
 func (TableBitmapRouterEntryStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[170].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[188].Descriptor()
 }
 
 func (TableBitmapRouterEntryStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[170]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[188]
 }
 
 func (x TableBitmapRouterEntryStat) Number() protoreflect.EnumNumber {
@@ -11486,7 +12788,7 @@ func (x TableBitmapRouterEntryStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TableBitmapRouterEntryStat.Descriptor instead.
 func (TableBitmapRouterEntryStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{170}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{188}
 }
 
 type TableMetaTunnelEntryAction int32
@@ -11522,11 +12824,11 @@ func (x TableMetaTunnelEntryAction) String() string {
 }
 
 func (TableMetaTunnelEntryAction) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[171].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[189].Descriptor()
 }
 
 func (TableMetaTunnelEntryAction) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[171]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[189]
 }
 
 func (x TableMetaTunnelEntryAction) Number() protoreflect.EnumNumber {
@@ -11535,7 +12837,7 @@ func (x TableMetaTunnelEntryAction) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TableMetaTunnelEntryAction.Descriptor instead.
 func (TableMetaTunnelEntryAction) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{171}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{189}
 }
 
 type TableMetaTunnelEntryStat int32
@@ -11571,11 +12873,11 @@ func (x TableMetaTunnelEntryStat) String() string {
 }
 
 func (TableMetaTunnelEntryStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[172].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[190].Descriptor()
 }
 
 func (TableMetaTunnelEntryStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[172]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[190]
 }
 
 func (x TableMetaTunnelEntryStat) Number() protoreflect.EnumNumber {
@@ -11584,7 +12886,7 @@ func (x TableMetaTunnelEntryStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TableMetaTunnelEntryStat.Descriptor instead.
 func (TableMetaTunnelEntryStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{172}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{190}
 }
 
 type TamBindPointType int32
@@ -11635,11 +12937,11 @@ func (x TamBindPointType) String() string {
 }
 
 func (TamBindPointType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[173].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[191].Descriptor()
 }
 
 func (TamBindPointType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[173]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[191]
 }
 
 func (x TamBindPointType) Number() protoreflect.EnumNumber {
@@ -11648,7 +12950,7 @@ func (x TamBindPointType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamBindPointType.Descriptor instead.
 func (TamBindPointType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{173}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{191}
 }
 
 type TamEventThresholdUnit int32
@@ -11699,11 +13001,11 @@ func (x TamEventThresholdUnit) String() string {
 }
 
 func (TamEventThresholdUnit) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[174].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[192].Descriptor()
 }
 
 func (TamEventThresholdUnit) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[174]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[192]
 }
 
 func (x TamEventThresholdUnit) Number() protoreflect.EnumNumber {
@@ -11712,7 +13014,7 @@ func (x TamEventThresholdUnit) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamEventThresholdUnit.Descriptor instead.
 func (TamEventThresholdUnit) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{174}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{192}
 }
 
 type TamEventType int32
@@ -11772,11 +13074,11 @@ func (x TamEventType) String() string {
 }
 
 func (TamEventType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[175].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[193].Descriptor()
 }
 
 func (TamEventType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[175]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[193]
 }
 
 func (x TamEventType) Number() protoreflect.EnumNumber {
@@ -11785,7 +13087,7 @@ func (x TamEventType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamEventType.Descriptor instead.
 func (TamEventType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{175}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{193}
 }
 
 type TamIntPresenceType int32
@@ -11827,11 +13129,11 @@ func (x TamIntPresenceType) String() string {
 }
 
 func (TamIntPresenceType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[176].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[194].Descriptor()
 }
 
 func (TamIntPresenceType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[176]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[194]
 }
 
 func (x TamIntPresenceType) Number() protoreflect.EnumNumber {
@@ -11840,7 +13142,7 @@ func (x TamIntPresenceType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamIntPresenceType.Descriptor instead.
 func (TamIntPresenceType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{176}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{194}
 }
 
 type TamIntType int32
@@ -11894,11 +13196,11 @@ func (x TamIntType) String() string {
 }
 
 func (TamIntType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[177].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[195].Descriptor()
 }
 
 func (TamIntType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[177]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[195]
 }
 
 func (x TamIntType) Number() protoreflect.EnumNumber {
@@ -11907,7 +13209,7 @@ func (x TamIntType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamIntType.Descriptor instead.
 func (TamIntType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{177}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{195}
 }
 
 type TamReportIntervalUnit int32
@@ -11946,11 +13248,11 @@ func (x TamReportIntervalUnit) String() string {
 }
 
 func (TamReportIntervalUnit) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[178].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[196].Descriptor()
 }
 
 func (TamReportIntervalUnit) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[178]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[196]
 }
 
 func (x TamReportIntervalUnit) Number() protoreflect.EnumNumber {
@@ -11959,7 +13261,7 @@ func (x TamReportIntervalUnit) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamReportIntervalUnit.Descriptor instead.
 func (TamReportIntervalUnit) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{178}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{196}
 }
 
 type TamReportMode int32
@@ -11995,11 +13297,11 @@ func (x TamReportMode) String() string {
 }
 
 func (TamReportMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[179].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[197].Descriptor()
 }
 
 func (TamReportMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[179]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[197]
 }
 
 func (x TamReportMode) Number() protoreflect.EnumNumber {
@@ -12008,7 +13310,7 @@ func (x TamReportMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamReportMode.Descriptor instead.
 func (TamReportMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{179}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{197}
 }
 
 type TamReportType int32
@@ -12068,11 +13370,11 @@ func (x TamReportType) String() string {
 }
 
 func (TamReportType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[180].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[198].Descriptor()
 }
 
 func (TamReportType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[180]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[198]
 }
 
 func (x TamReportType) Number() protoreflect.EnumNumber {
@@ -12081,7 +13383,7 @@ func (x TamReportType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamReportType.Descriptor instead.
 func (TamReportType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{180}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{198}
 }
 
 type TamReportingUnit int32
@@ -12123,11 +13425,11 @@ func (x TamReportingUnit) String() string {
 }
 
 func (TamReportingUnit) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[181].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[199].Descriptor()
 }
 
 func (TamReportingUnit) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[181]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[199]
 }
 
 func (x TamReportingUnit) Number() protoreflect.EnumNumber {
@@ -12136,7 +13438,7 @@ func (x TamReportingUnit) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamReportingUnit.Descriptor instead.
 func (TamReportingUnit) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{181}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{199}
 }
 
 type TamTelMathFuncType int32
@@ -12184,11 +13486,11 @@ func (x TamTelMathFuncType) String() string {
 }
 
 func (TamTelMathFuncType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[182].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[200].Descriptor()
 }
 
 func (TamTelMathFuncType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[182]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[200]
 }
 
 func (x TamTelMathFuncType) Number() protoreflect.EnumNumber {
@@ -12197,7 +13499,7 @@ func (x TamTelMathFuncType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamTelMathFuncType.Descriptor instead.
 func (TamTelMathFuncType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{182}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{200}
 }
 
 type TamTelemetryType int32
@@ -12245,11 +13547,11 @@ func (x TamTelemetryType) String() string {
 }
 
 func (TamTelemetryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[183].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[201].Descriptor()
 }
 
 func (TamTelemetryType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[183]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[201]
 }
 
 func (x TamTelemetryType) Number() protoreflect.EnumNumber {
@@ -12258,7 +13560,7 @@ func (x TamTelemetryType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamTelemetryType.Descriptor instead.
 func (TamTelemetryType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{183}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{201}
 }
 
 type TamTransportAuthType int32
@@ -12297,11 +13599,11 @@ func (x TamTransportAuthType) String() string {
 }
 
 func (TamTransportAuthType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[184].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[202].Descriptor()
 }
 
 func (TamTransportAuthType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[184]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[202]
 }
 
 func (x TamTransportAuthType) Number() protoreflect.EnumNumber {
@@ -12310,7 +13612,7 @@ func (x TamTransportAuthType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamTransportAuthType.Descriptor instead.
 func (TamTransportAuthType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{184}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{202}
 }
 
 type TamTransportType int32
@@ -12355,11 +13657,11 @@ func (x TamTransportType) String() string {
 }
 
 func (TamTransportType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[185].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[203].Descriptor()
 }
 
 func (TamTransportType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[185]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[203]
 }
 
 func (x TamTransportType) Number() protoreflect.EnumNumber {
@@ -12368,7 +13670,7 @@ func (x TamTransportType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TamTransportType.Descriptor instead.
 func (TamTransportType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{185}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{203}
 }
 
 type TlvType int32
@@ -12410,11 +13712,11 @@ func (x TlvType) String() string {
 }
 
 func (TlvType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[186].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[204].Descriptor()
 }
 
 func (TlvType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[186]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[204]
 }
 
 func (x TlvType) Number() protoreflect.EnumNumber {
@@ -12423,7 +13725,7 @@ func (x TlvType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TlvType.Descriptor instead.
 func (TlvType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{186}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{204}
 }
 
 type TunnelDecapEcnMode int32
@@ -12462,11 +13764,11 @@ func (x TunnelDecapEcnMode) String() string {
 }
 
 func (TunnelDecapEcnMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[187].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[205].Descriptor()
 }
 
 func (TunnelDecapEcnMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[187]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[205]
 }
 
 func (x TunnelDecapEcnMode) Number() protoreflect.EnumNumber {
@@ -12475,7 +13777,7 @@ func (x TunnelDecapEcnMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelDecapEcnMode.Descriptor instead.
 func (TunnelDecapEcnMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{187}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{205}
 }
 
 type TunnelDscpMode int32
@@ -12511,11 +13813,11 @@ func (x TunnelDscpMode) String() string {
 }
 
 func (TunnelDscpMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[188].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[206].Descriptor()
 }
 
 func (TunnelDscpMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[188]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[206]
 }
 
 func (x TunnelDscpMode) Number() protoreflect.EnumNumber {
@@ -12524,7 +13826,7 @@ func (x TunnelDscpMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelDscpMode.Descriptor instead.
 func (TunnelDscpMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{188}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{206}
 }
 
 type TunnelEncapEcnMode int32
@@ -12560,11 +13862,11 @@ func (x TunnelEncapEcnMode) String() string {
 }
 
 func (TunnelEncapEcnMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[189].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[207].Descriptor()
 }
 
 func (TunnelEncapEcnMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[189]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[207]
 }
 
 func (x TunnelEncapEcnMode) Number() protoreflect.EnumNumber {
@@ -12573,7 +13875,7 @@ func (x TunnelEncapEcnMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelEncapEcnMode.Descriptor instead.
 func (TunnelEncapEcnMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{189}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{207}
 }
 
 type TunnelMapType int32
@@ -12648,11 +13950,11 @@ func (x TunnelMapType) String() string {
 }
 
 func (TunnelMapType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[190].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[208].Descriptor()
 }
 
 func (TunnelMapType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[190]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[208]
 }
 
 func (x TunnelMapType) Number() protoreflect.EnumNumber {
@@ -12661,7 +13963,7 @@ func (x TunnelMapType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelMapType.Descriptor instead.
 func (TunnelMapType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{190}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{208}
 }
 
 type TunnelPeerMode int32
@@ -12697,11 +13999,11 @@ func (x TunnelPeerMode) String() string {
 }
 
 func (TunnelPeerMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[191].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[209].Descriptor()
 }
 
 func (TunnelPeerMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[191]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[209]
 }
 
 func (x TunnelPeerMode) Number() protoreflect.EnumNumber {
@@ -12710,7 +14012,7 @@ func (x TunnelPeerMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelPeerMode.Descriptor instead.
 func (TunnelPeerMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{191}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{209}
 }
 
 type TunnelStat int32
@@ -12752,11 +14054,11 @@ func (x TunnelStat) String() string {
 }
 
 func (TunnelStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[192].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[210].Descriptor()
 }
 
 func (TunnelStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[192]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[210]
 }
 
 func (x TunnelStat) Number() protoreflect.EnumNumber {
@@ -12765,7 +14067,7 @@ func (x TunnelStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelStat.Descriptor instead.
 func (TunnelStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{192}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{210}
 }
 
 type TunnelTermTableEntryType int32
@@ -12807,11 +14109,11 @@ func (x TunnelTermTableEntryType) String() string {
 }
 
 func (TunnelTermTableEntryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[193].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[211].Descriptor()
 }
 
 func (TunnelTermTableEntryType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[193]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[211]
 }
 
 func (x TunnelTermTableEntryType) Number() protoreflect.EnumNumber {
@@ -12820,7 +14122,7 @@ func (x TunnelTermTableEntryType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelTermTableEntryType.Descriptor instead.
 func (TunnelTermTableEntryType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{193}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{211}
 }
 
 type TunnelTtlMode int32
@@ -12856,11 +14158,11 @@ func (x TunnelTtlMode) String() string {
 }
 
 func (TunnelTtlMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[194].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[212].Descriptor()
 }
 
 func (TunnelTtlMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[194]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[212]
 }
 
 func (x TunnelTtlMode) Number() protoreflect.EnumNumber {
@@ -12869,7 +14171,7 @@ func (x TunnelTtlMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelTtlMode.Descriptor instead.
 func (TunnelTtlMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{194}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{212}
 }
 
 type TunnelType int32
@@ -12926,11 +14228,11 @@ func (x TunnelType) String() string {
 }
 
 func (TunnelType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[195].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[213].Descriptor()
 }
 
 func (TunnelType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[195]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[213]
 }
 
 func (x TunnelType) Number() protoreflect.EnumNumber {
@@ -12939,7 +14241,7 @@ func (x TunnelType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelType.Descriptor instead.
 func (TunnelType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{195}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{213}
 }
 
 type TunnelVxlanUdpSportMode int32
@@ -12975,11 +14277,11 @@ func (x TunnelVxlanUdpSportMode) String() string {
 }
 
 func (TunnelVxlanUdpSportMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[196].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[214].Descriptor()
 }
 
 func (TunnelVxlanUdpSportMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[196]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[214]
 }
 
 func (x TunnelVxlanUdpSportMode) Number() protoreflect.EnumNumber {
@@ -12988,7 +14290,7 @@ func (x TunnelVxlanUdpSportMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TunnelVxlanUdpSportMode.Descriptor instead.
 func (TunnelVxlanUdpSportMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{196}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{214}
 }
 
 type UdfBase int32
@@ -13027,11 +14329,11 @@ func (x UdfBase) String() string {
 }
 
 func (UdfBase) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[197].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[215].Descriptor()
 }
 
 func (UdfBase) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[197]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[215]
 }
 
 func (x UdfBase) Number() protoreflect.EnumNumber {
@@ -13040,7 +14342,7 @@ func (x UdfBase) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UdfBase.Descriptor instead.
 func (UdfBase) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{197}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{215}
 }
 
 type UdfGroupType int32
@@ -13082,11 +14384,11 @@ func (x UdfGroupType) String() string {
 }
 
 func (UdfGroupType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[198].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[216].Descriptor()
 }
 
 func (UdfGroupType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[198]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[216]
 }
 
 func (x UdfGroupType) Number() protoreflect.EnumNumber {
@@ -13095,7 +14397,7 @@ func (x UdfGroupType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UdfGroupType.Descriptor instead.
 func (UdfGroupType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{198}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{216}
 }
 
 type VlanFloodControlType int32
@@ -13137,11 +14439,11 @@ func (x VlanFloodControlType) String() string {
 }
 
 func (VlanFloodControlType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[199].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[217].Descriptor()
 }
 
 func (VlanFloodControlType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[199]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[217]
 }
 
 func (x VlanFloodControlType) Number() protoreflect.EnumNumber {
@@ -13150,7 +14452,7 @@ func (x VlanFloodControlType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use VlanFloodControlType.Descriptor instead.
 func (VlanFloodControlType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{199}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{217}
 }
 
 type VlanMcastLookupKeyType int32
@@ -13192,11 +14494,11 @@ func (x VlanMcastLookupKeyType) String() string {
 }
 
 func (VlanMcastLookupKeyType) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[200].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[218].Descriptor()
 }
 
 func (VlanMcastLookupKeyType) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[200]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[218]
 }
 
 func (x VlanMcastLookupKeyType) Number() protoreflect.EnumNumber {
@@ -13205,7 +14507,7 @@ func (x VlanMcastLookupKeyType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use VlanMcastLookupKeyType.Descriptor instead.
 func (VlanMcastLookupKeyType) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{200}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{218}
 }
 
 type VlanStat int32
@@ -13277,11 +14579,11 @@ func (x VlanStat) String() string {
 }
 
 func (VlanStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[201].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[219].Descriptor()
 }
 
 func (VlanStat) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[201]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[219]
 }
 
 func (x VlanStat) Number() protoreflect.EnumNumber {
@@ -13290,7 +14592,7 @@ func (x VlanStat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use VlanStat.Descriptor instead.
 func (VlanStat) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{201}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{219}
 }
 
 type VlanTaggingMode int32
@@ -13329,11 +14631,11 @@ func (x VlanTaggingMode) String() string {
 }
 
 func (VlanTaggingMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dataplane_proto_sai_common_proto_enumTypes[202].Descriptor()
+	return file_dataplane_proto_sai_common_proto_enumTypes[220].Descriptor()
 }
 
 func (VlanTaggingMode) Type() protoreflect.EnumType {
-	return &file_dataplane_proto_sai_common_proto_enumTypes[202]
+	return &file_dataplane_proto_sai_common_proto_enumTypes[220]
 }
 
 func (x VlanTaggingMode) Number() protoreflect.EnumNumber {
@@ -13342,7 +14644,7 @@ func (x VlanTaggingMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use VlanTaggingMode.Descriptor instead.
 func (VlanTaggingMode) EnumDescriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{202}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{220}
 }
 
 type AclActionData struct {
@@ -20317,6 +21619,74 @@ func (x *FdbFlushAttribute) GetEntryType() FdbFlushEntryType {
 	return FdbFlushEntryType_FDB_FLUSH_ENTRY_TYPE_UNSPECIFIED
 }
 
+type FineGrainedHashFieldAttribute struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	NativeHashField *NativeHashField       `protobuf:"varint,1,opt,name=native_hash_field,json=nativeHashField,proto3,enum=lemming.dataplane.sai.NativeHashField,oneof" json:"native_hash_field,omitempty"`
+	Ipv4Mask        []byte                 `protobuf:"bytes,2,opt,name=ipv4_mask,json=ipv4Mask,proto3,oneof" json:"ipv4_mask,omitempty"`
+	Ipv6Mask        []byte                 `protobuf:"bytes,3,opt,name=ipv6_mask,json=ipv6Mask,proto3,oneof" json:"ipv6_mask,omitempty"`
+	SequenceId      *uint32                `protobuf:"varint,4,opt,name=sequence_id,json=sequenceId,proto3,oneof" json:"sequence_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *FineGrainedHashFieldAttribute) Reset() {
+	*x = FineGrainedHashFieldAttribute{}
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FineGrainedHashFieldAttribute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FineGrainedHashFieldAttribute) ProtoMessage() {}
+
+func (x *FineGrainedHashFieldAttribute) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FineGrainedHashFieldAttribute.ProtoReflect.Descriptor instead.
+func (*FineGrainedHashFieldAttribute) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *FineGrainedHashFieldAttribute) GetNativeHashField() NativeHashField {
+	if x != nil && x.NativeHashField != nil {
+		return *x.NativeHashField
+	}
+	return NativeHashField_NATIVE_HASH_FIELD_UNSPECIFIED
+}
+
+func (x *FineGrainedHashFieldAttribute) GetIpv4Mask() []byte {
+	if x != nil {
+		return x.Ipv4Mask
+	}
+	return nil
+}
+
+func (x *FineGrainedHashFieldAttribute) GetIpv6Mask() []byte {
+	if x != nil {
+		return x.Ipv6Mask
+	}
+	return nil
+}
+
+func (x *FineGrainedHashFieldAttribute) GetSequenceId() uint32 {
+	if x != nil && x.SequenceId != nil {
+		return *x.SequenceId
+	}
+	return 0
+}
+
 type GenericProgrammableAttribute struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ObjectName    []int32                `protobuf:"varint,1,rep,packed,name=object_name,json=objectName,proto3" json:"object_name,omitempty"`
@@ -20328,7 +21698,7 @@ type GenericProgrammableAttribute struct {
 
 func (x *GenericProgrammableAttribute) Reset() {
 	*x = GenericProgrammableAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[60]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20340,7 +21710,7 @@ func (x *GenericProgrammableAttribute) String() string {
 func (*GenericProgrammableAttribute) ProtoMessage() {}
 
 func (x *GenericProgrammableAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[60]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20353,7 +21723,7 @@ func (x *GenericProgrammableAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenericProgrammableAttribute.ProtoReflect.Descriptor instead.
 func (*GenericProgrammableAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{60}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *GenericProgrammableAttribute) GetObjectName() []int32 {
@@ -20388,7 +21758,7 @@ type HashAttribute struct {
 
 func (x *HashAttribute) Reset() {
 	*x = HashAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[61]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20400,7 +21770,7 @@ func (x *HashAttribute) String() string {
 func (*HashAttribute) ProtoMessage() {}
 
 func (x *HashAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[61]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20413,7 +21783,7 @@ func (x *HashAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HashAttribute.ProtoReflect.Descriptor instead.
 func (*HashAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{61}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *HashAttribute) GetNativeHashFieldList() []NativeHashField {
@@ -20452,7 +21822,7 @@ type HostifAttribute struct {
 
 func (x *HostifAttribute) Reset() {
 	*x = HostifAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[62]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20464,7 +21834,7 @@ func (x *HostifAttribute) String() string {
 func (*HostifAttribute) ProtoMessage() {}
 
 func (x *HostifAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[62]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20477,7 +21847,7 @@ func (x *HostifAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostifAttribute.ProtoReflect.Descriptor instead.
 func (*HostifAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{62}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *HostifAttribute) GetType() HostifType {
@@ -20546,7 +21916,7 @@ type HostifPacketAttribute struct {
 
 func (x *HostifPacketAttribute) Reset() {
 	*x = HostifPacketAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[63]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20558,7 +21928,7 @@ func (x *HostifPacketAttribute) String() string {
 func (*HostifPacketAttribute) ProtoMessage() {}
 
 func (x *HostifPacketAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[63]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20571,7 +21941,7 @@ func (x *HostifPacketAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostifPacketAttribute.ProtoReflect.Descriptor instead.
 func (*HostifPacketAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{63}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *HostifPacketAttribute) GetHostifTrapId() uint64 {
@@ -20650,7 +22020,7 @@ type HostifTableEntryAttribute struct {
 
 func (x *HostifTableEntryAttribute) Reset() {
 	*x = HostifTableEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[64]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20662,7 +22032,7 @@ func (x *HostifTableEntryAttribute) String() string {
 func (*HostifTableEntryAttribute) ProtoMessage() {}
 
 func (x *HostifTableEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[64]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20675,7 +22045,7 @@ func (x *HostifTableEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostifTableEntryAttribute.ProtoReflect.Descriptor instead.
 func (*HostifTableEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{64}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *HostifTableEntryAttribute) GetType() HostifTableEntryType {
@@ -20728,7 +22098,7 @@ type HostifTrapAttribute struct {
 
 func (x *HostifTrapAttribute) Reset() {
 	*x = HostifTrapAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[65]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20740,7 +22110,7 @@ func (x *HostifTrapAttribute) String() string {
 func (*HostifTrapAttribute) ProtoMessage() {}
 
 func (x *HostifTrapAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[65]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20753,7 +22123,7 @@ func (x *HostifTrapAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostifTrapAttribute.ProtoReflect.Descriptor instead.
 func (*HostifTrapAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{65}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *HostifTrapAttribute) GetTrapType() HostifTrapType {
@@ -20817,7 +22187,7 @@ type HostifTrapGroupAttribute struct {
 
 func (x *HostifTrapGroupAttribute) Reset() {
 	*x = HostifTrapGroupAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[66]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20829,7 +22199,7 @@ func (x *HostifTrapGroupAttribute) String() string {
 func (*HostifTrapGroupAttribute) ProtoMessage() {}
 
 func (x *HostifTrapGroupAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[66]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20842,7 +22212,7 @@ func (x *HostifTrapGroupAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostifTrapGroupAttribute.ProtoReflect.Descriptor instead.
 func (*HostifTrapGroupAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{66}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *HostifTrapGroupAttribute) GetAdminState() bool {
@@ -20884,7 +22254,7 @@ type HostifUserDefinedTrapAttribute struct {
 
 func (x *HostifUserDefinedTrapAttribute) Reset() {
 	*x = HostifUserDefinedTrapAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[67]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20896,7 +22266,7 @@ func (x *HostifUserDefinedTrapAttribute) String() string {
 func (*HostifUserDefinedTrapAttribute) ProtoMessage() {}
 
 func (x *HostifUserDefinedTrapAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[67]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20909,7 +22279,7 @@ func (x *HostifUserDefinedTrapAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostifUserDefinedTrapAttribute.ProtoReflect.Descriptor instead.
 func (*HostifUserDefinedTrapAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{67}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *HostifUserDefinedTrapAttribute) GetType() HostifUserDefinedTrapType {
@@ -20960,7 +22330,7 @@ type IcmpEchoSessionAttribute struct {
 
 func (x *IcmpEchoSessionAttribute) Reset() {
 	*x = IcmpEchoSessionAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[68]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20972,7 +22342,7 @@ func (x *IcmpEchoSessionAttribute) String() string {
 func (*IcmpEchoSessionAttribute) ProtoMessage() {}
 
 func (x *IcmpEchoSessionAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[68]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20985,7 +22355,7 @@ func (x *IcmpEchoSessionAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IcmpEchoSessionAttribute.ProtoReflect.Descriptor instead.
 func (*IcmpEchoSessionAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{68}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *IcmpEchoSessionAttribute) GetHwLookupValid() bool {
@@ -21121,6 +22491,214 @@ func (x *IcmpEchoSessionAttribute) GetSelectiveCounterList() []uint64 {
 	return nil
 }
 
+type IngressPriorityGroupAttribute struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	BufferProfile        *uint64                `protobuf:"varint,1,opt,name=buffer_profile,json=bufferProfile,proto3,oneof" json:"buffer_profile,omitempty"`
+	Port                 *uint64                `protobuf:"varint,2,opt,name=port,proto3,oneof" json:"port,omitempty"`
+	Tam                  []uint64               `protobuf:"varint,3,rep,packed,name=tam,proto3" json:"tam,omitempty"`
+	Index                *uint32                `protobuf:"varint,4,opt,name=index,proto3,oneof" json:"index,omitempty"`
+	StatsCountMode       *StatsCountMode        `protobuf:"varint,5,opt,name=stats_count_mode,json=statsCountMode,proto3,enum=lemming.dataplane.sai.StatsCountMode,oneof" json:"stats_count_mode,omitempty"`
+	SelectiveCounterList []uint64               `protobuf:"varint,6,rep,packed,name=selective_counter_list,json=selectiveCounterList,proto3" json:"selective_counter_list,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *IngressPriorityGroupAttribute) Reset() {
+	*x = IngressPriorityGroupAttribute{}
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IngressPriorityGroupAttribute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IngressPriorityGroupAttribute) ProtoMessage() {}
+
+func (x *IngressPriorityGroupAttribute) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IngressPriorityGroupAttribute.ProtoReflect.Descriptor instead.
+func (*IngressPriorityGroupAttribute) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *IngressPriorityGroupAttribute) GetBufferProfile() uint64 {
+	if x != nil && x.BufferProfile != nil {
+		return *x.BufferProfile
+	}
+	return 0
+}
+
+func (x *IngressPriorityGroupAttribute) GetPort() uint64 {
+	if x != nil && x.Port != nil {
+		return *x.Port
+	}
+	return 0
+}
+
+func (x *IngressPriorityGroupAttribute) GetTam() []uint64 {
+	if x != nil {
+		return x.Tam
+	}
+	return nil
+}
+
+func (x *IngressPriorityGroupAttribute) GetIndex() uint32 {
+	if x != nil && x.Index != nil {
+		return *x.Index
+	}
+	return 0
+}
+
+func (x *IngressPriorityGroupAttribute) GetStatsCountMode() StatsCountMode {
+	if x != nil && x.StatsCountMode != nil {
+		return *x.StatsCountMode
+	}
+	return StatsCountMode_STATS_COUNT_MODE_UNSPECIFIED
+}
+
+func (x *IngressPriorityGroupAttribute) GetSelectiveCounterList() []uint64 {
+	if x != nil {
+		return x.SelectiveCounterList
+	}
+	return nil
+}
+
+type InsegEntryAttribute struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	NumOfPop          *uint32                `protobuf:"varint,1,opt,name=num_of_pop,json=numOfPop,proto3,oneof" json:"num_of_pop,omitempty"`
+	PacketAction      *PacketAction          `protobuf:"varint,2,opt,name=packet_action,json=packetAction,proto3,enum=lemming.dataplane.sai.PacketAction,oneof" json:"packet_action,omitempty"`
+	TrapPriority      *uint32                `protobuf:"varint,3,opt,name=trap_priority,json=trapPriority,proto3,oneof" json:"trap_priority,omitempty"`
+	NextHopId         *uint64                `protobuf:"varint,4,opt,name=next_hop_id,json=nextHopId,proto3,oneof" json:"next_hop_id,omitempty"`
+	PscType           *InsegEntryPscType     `protobuf:"varint,5,opt,name=psc_type,json=pscType,proto3,enum=lemming.dataplane.sai.InsegEntryPscType,oneof" json:"psc_type,omitempty"`
+	QosTc             *uint32                `protobuf:"varint,6,opt,name=qos_tc,json=qosTc,proto3,oneof" json:"qos_tc,omitempty"`
+	MplsExpToTcMap    *uint64                `protobuf:"varint,7,opt,name=mpls_exp_to_tc_map,json=mplsExpToTcMap,proto3,oneof" json:"mpls_exp_to_tc_map,omitempty"`
+	MplsExpToColorMap *uint64                `protobuf:"varint,8,opt,name=mpls_exp_to_color_map,json=mplsExpToColorMap,proto3,oneof" json:"mpls_exp_to_color_map,omitempty"`
+	PopTtlMode        *InsegEntryPopTtlMode  `protobuf:"varint,9,opt,name=pop_ttl_mode,json=popTtlMode,proto3,enum=lemming.dataplane.sai.InsegEntryPopTtlMode,oneof" json:"pop_ttl_mode,omitempty"`
+	PopQosMode        *InsegEntryPopQosMode  `protobuf:"varint,10,opt,name=pop_qos_mode,json=popQosMode,proto3,enum=lemming.dataplane.sai.InsegEntryPopQosMode,oneof" json:"pop_qos_mode,omitempty"`
+	CounterId         *uint64                `protobuf:"varint,11,opt,name=counter_id,json=counterId,proto3,oneof" json:"counter_id,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *InsegEntryAttribute) Reset() {
+	*x = InsegEntryAttribute{}
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InsegEntryAttribute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InsegEntryAttribute) ProtoMessage() {}
+
+func (x *InsegEntryAttribute) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InsegEntryAttribute.ProtoReflect.Descriptor instead.
+func (*InsegEntryAttribute) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *InsegEntryAttribute) GetNumOfPop() uint32 {
+	if x != nil && x.NumOfPop != nil {
+		return *x.NumOfPop
+	}
+	return 0
+}
+
+func (x *InsegEntryAttribute) GetPacketAction() PacketAction {
+	if x != nil && x.PacketAction != nil {
+		return *x.PacketAction
+	}
+	return PacketAction_PACKET_ACTION_UNSPECIFIED
+}
+
+func (x *InsegEntryAttribute) GetTrapPriority() uint32 {
+	if x != nil && x.TrapPriority != nil {
+		return *x.TrapPriority
+	}
+	return 0
+}
+
+func (x *InsegEntryAttribute) GetNextHopId() uint64 {
+	if x != nil && x.NextHopId != nil {
+		return *x.NextHopId
+	}
+	return 0
+}
+
+func (x *InsegEntryAttribute) GetPscType() InsegEntryPscType {
+	if x != nil && x.PscType != nil {
+		return *x.PscType
+	}
+	return InsegEntryPscType_INSEG_ENTRY_PSC_TYPE_UNSPECIFIED
+}
+
+func (x *InsegEntryAttribute) GetQosTc() uint32 {
+	if x != nil && x.QosTc != nil {
+		return *x.QosTc
+	}
+	return 0
+}
+
+func (x *InsegEntryAttribute) GetMplsExpToTcMap() uint64 {
+	if x != nil && x.MplsExpToTcMap != nil {
+		return *x.MplsExpToTcMap
+	}
+	return 0
+}
+
+func (x *InsegEntryAttribute) GetMplsExpToColorMap() uint64 {
+	if x != nil && x.MplsExpToColorMap != nil {
+		return *x.MplsExpToColorMap
+	}
+	return 0
+}
+
+func (x *InsegEntryAttribute) GetPopTtlMode() InsegEntryPopTtlMode {
+	if x != nil && x.PopTtlMode != nil {
+		return *x.PopTtlMode
+	}
+	return InsegEntryPopTtlMode_INSEG_ENTRY_POP_TTL_MODE_UNSPECIFIED
+}
+
+func (x *InsegEntryAttribute) GetPopQosMode() InsegEntryPopQosMode {
+	if x != nil && x.PopQosMode != nil {
+		return *x.PopQosMode
+	}
+	return InsegEntryPopQosMode_INSEG_ENTRY_POP_QOS_MODE_UNSPECIFIED
+}
+
+func (x *InsegEntryAttribute) GetCounterId() uint64 {
+	if x != nil && x.CounterId != nil {
+		return *x.CounterId
+	}
+	return 0
+}
+
 type IpmcEntryAttribute struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PacketAction  *PacketAction          `protobuf:"varint,1,opt,name=packet_action,json=packetAction,proto3,enum=lemming.dataplane.sai.PacketAction,oneof" json:"packet_action,omitempty"`
@@ -21133,7 +22711,7 @@ type IpmcEntryAttribute struct {
 
 func (x *IpmcEntryAttribute) Reset() {
 	*x = IpmcEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[69]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21145,7 +22723,7 @@ func (x *IpmcEntryAttribute) String() string {
 func (*IpmcEntryAttribute) ProtoMessage() {}
 
 func (x *IpmcEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[69]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21158,7 +22736,7 @@ func (x *IpmcEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IpmcEntryAttribute.ProtoReflect.Descriptor instead.
 func (*IpmcEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{69}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *IpmcEntryAttribute) GetPacketAction() PacketAction {
@@ -21199,7 +22777,7 @@ type IpmcGroupAttribute struct {
 
 func (x *IpmcGroupAttribute) Reset() {
 	*x = IpmcGroupAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[70]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21211,7 +22789,7 @@ func (x *IpmcGroupAttribute) String() string {
 func (*IpmcGroupAttribute) ProtoMessage() {}
 
 func (x *IpmcGroupAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[70]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21224,7 +22802,7 @@ func (x *IpmcGroupAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IpmcGroupAttribute.ProtoReflect.Descriptor instead.
 func (*IpmcGroupAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{70}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *IpmcGroupAttribute) GetIpmcOutputCount() uint32 {
@@ -21251,7 +22829,7 @@ type IpmcGroupMemberAttribute struct {
 
 func (x *IpmcGroupMemberAttribute) Reset() {
 	*x = IpmcGroupMemberAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[71]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21263,7 +22841,7 @@ func (x *IpmcGroupMemberAttribute) String() string {
 func (*IpmcGroupMemberAttribute) ProtoMessage() {}
 
 func (x *IpmcGroupMemberAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[71]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21276,7 +22854,7 @@ func (x *IpmcGroupMemberAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IpmcGroupMemberAttribute.ProtoReflect.Descriptor instead.
 func (*IpmcGroupMemberAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{71}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *IpmcGroupMemberAttribute) GetIpmcGroupId() uint64 {
@@ -21321,7 +22899,7 @@ type IpsecAttribute struct {
 
 func (x *IpsecAttribute) Reset() {
 	*x = IpsecAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[72]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21333,7 +22911,7 @@ func (x *IpsecAttribute) String() string {
 func (*IpsecAttribute) ProtoMessage() {}
 
 func (x *IpsecAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[72]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21346,7 +22924,7 @@ func (x *IpsecAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IpsecAttribute.ProtoReflect.Descriptor instead.
 func (*IpsecAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{72}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *IpsecAttribute) GetTermRemoteIpMatchSupported() bool {
@@ -21505,7 +23083,7 @@ type IpsecPortAttribute struct {
 
 func (x *IpsecPortAttribute) Reset() {
 	*x = IpsecPortAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[73]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21517,7 +23095,7 @@ func (x *IpsecPortAttribute) String() string {
 func (*IpsecPortAttribute) ProtoMessage() {}
 
 func (x *IpsecPortAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[73]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21530,7 +23108,7 @@ func (x *IpsecPortAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IpsecPortAttribute.ProtoReflect.Descriptor instead.
 func (*IpsecPortAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{73}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *IpsecPortAttribute) GetPortId() uint64 {
@@ -21620,7 +23198,7 @@ type IpsecSaAttribute struct {
 
 func (x *IpsecSaAttribute) Reset() {
 	*x = IpsecSaAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[74]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21632,7 +23210,7 @@ func (x *IpsecSaAttribute) String() string {
 func (*IpsecSaAttribute) ProtoMessage() {}
 
 func (x *IpsecSaAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[74]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21645,7 +23223,7 @@ func (x *IpsecSaAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IpsecSaAttribute.ProtoReflect.Descriptor instead.
 func (*IpsecSaAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{74}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *IpsecSaAttribute) GetIpsecDirection() IpsecDirection {
@@ -21819,7 +23397,7 @@ type IsolationGroupAttribute struct {
 
 func (x *IsolationGroupAttribute) Reset() {
 	*x = IsolationGroupAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[75]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21831,7 +23409,7 @@ func (x *IsolationGroupAttribute) String() string {
 func (*IsolationGroupAttribute) ProtoMessage() {}
 
 func (x *IsolationGroupAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[75]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21844,7 +23422,7 @@ func (x *IsolationGroupAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsolationGroupAttribute.ProtoReflect.Descriptor instead.
 func (*IsolationGroupAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{75}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *IsolationGroupAttribute) GetType() IsolationGroupType {
@@ -21871,7 +23449,7 @@ type IsolationGroupMemberAttribute struct {
 
 func (x *IsolationGroupMemberAttribute) Reset() {
 	*x = IsolationGroupMemberAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[76]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21883,7 +23461,7 @@ func (x *IsolationGroupMemberAttribute) String() string {
 func (*IsolationGroupMemberAttribute) ProtoMessage() {}
 
 func (x *IsolationGroupMemberAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[76]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21896,7 +23474,7 @@ func (x *IsolationGroupMemberAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsolationGroupMemberAttribute.ProtoReflect.Descriptor instead.
 func (*IsolationGroupMemberAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{76}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *IsolationGroupMemberAttribute) GetIsolationGroupId() uint64 {
@@ -21923,7 +23501,7 @@ type L2McEntryAttribute struct {
 
 func (x *L2McEntryAttribute) Reset() {
 	*x = L2McEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[77]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21935,7 +23513,7 @@ func (x *L2McEntryAttribute) String() string {
 func (*L2McEntryAttribute) ProtoMessage() {}
 
 func (x *L2McEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[77]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21948,7 +23526,7 @@ func (x *L2McEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use L2McEntryAttribute.ProtoReflect.Descriptor instead.
 func (*L2McEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{77}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *L2McEntryAttribute) GetPacketAction() PacketAction {
@@ -21975,7 +23553,7 @@ type L2McGroupAttribute struct {
 
 func (x *L2McGroupAttribute) Reset() {
 	*x = L2McGroupAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[78]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21987,7 +23565,7 @@ func (x *L2McGroupAttribute) String() string {
 func (*L2McGroupAttribute) ProtoMessage() {}
 
 func (x *L2McGroupAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[78]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22000,7 +23578,7 @@ func (x *L2McGroupAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use L2McGroupAttribute.ProtoReflect.Descriptor instead.
 func (*L2McGroupAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{78}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *L2McGroupAttribute) GetL2McOutputCount() uint32 {
@@ -22028,7 +23606,7 @@ type L2McGroupMemberAttribute struct {
 
 func (x *L2McGroupMemberAttribute) Reset() {
 	*x = L2McGroupMemberAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[79]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22040,7 +23618,7 @@ func (x *L2McGroupMemberAttribute) String() string {
 func (*L2McGroupMemberAttribute) ProtoMessage() {}
 
 func (x *L2McGroupMemberAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[79]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22053,7 +23631,7 @@ func (x *L2McGroupMemberAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use L2McGroupMemberAttribute.ProtoReflect.Descriptor instead.
 func (*L2McGroupMemberAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{79}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *L2McGroupMemberAttribute) GetL2McGroupId() uint64 {
@@ -22098,7 +23676,7 @@ type LagAttribute struct {
 
 func (x *LagAttribute) Reset() {
 	*x = LagAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[80]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22110,7 +23688,7 @@ func (x *LagAttribute) String() string {
 func (*LagAttribute) ProtoMessage() {}
 
 func (x *LagAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[80]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22123,7 +23701,7 @@ func (x *LagAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LagAttribute.ProtoReflect.Descriptor instead.
 func (*LagAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{80}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *LagAttribute) GetPortList() []uint64 {
@@ -22229,7 +23807,7 @@ type LagMemberAttribute struct {
 
 func (x *LagMemberAttribute) Reset() {
 	*x = LagMemberAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[81]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22241,7 +23819,7 @@ func (x *LagMemberAttribute) String() string {
 func (*LagMemberAttribute) ProtoMessage() {}
 
 func (x *LagMemberAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[81]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22254,7 +23832,7 @@ func (x *LagMemberAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LagMemberAttribute.ProtoReflect.Descriptor instead.
 func (*LagMemberAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{81}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *LagMemberAttribute) GetLagId() uint64 {
@@ -22319,7 +23897,7 @@ type MacsecAttribute struct {
 
 func (x *MacsecAttribute) Reset() {
 	*x = MacsecAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[82]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22331,7 +23909,7 @@ func (x *MacsecAttribute) String() string {
 func (*MacsecAttribute) ProtoMessage() {}
 
 func (x *MacsecAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[82]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22344,7 +23922,7 @@ func (x *MacsecAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MacsecAttribute.ProtoReflect.Descriptor instead.
 func (*MacsecAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{82}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *MacsecAttribute) GetDirection() MacsecDirection {
@@ -22542,7 +24120,7 @@ type MacsecFlowAttribute struct {
 
 func (x *MacsecFlowAttribute) Reset() {
 	*x = MacsecFlowAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[83]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22554,7 +24132,7 @@ func (x *MacsecFlowAttribute) String() string {
 func (*MacsecFlowAttribute) ProtoMessage() {}
 
 func (x *MacsecFlowAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[83]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22567,7 +24145,7 @@ func (x *MacsecFlowAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MacsecFlowAttribute.ProtoReflect.Descriptor instead.
 func (*MacsecFlowAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{83}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *MacsecFlowAttribute) GetMacsecDirection() MacsecDirection {
@@ -22620,7 +24198,7 @@ type MacsecPortAttribute struct {
 
 func (x *MacsecPortAttribute) Reset() {
 	*x = MacsecPortAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[84]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22632,7 +24210,7 @@ func (x *MacsecPortAttribute) String() string {
 func (*MacsecPortAttribute) ProtoMessage() {}
 
 func (x *MacsecPortAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[84]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22645,7 +24223,7 @@ func (x *MacsecPortAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MacsecPortAttribute.ProtoReflect.Descriptor instead.
 func (*MacsecPortAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{84}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *MacsecPortAttribute) GetMacsecDirection() MacsecDirection {
@@ -22715,7 +24293,7 @@ type MacsecSaAttribute struct {
 
 func (x *MacsecSaAttribute) Reset() {
 	*x = MacsecSaAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[85]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22727,7 +24305,7 @@ func (x *MacsecSaAttribute) String() string {
 func (*MacsecSaAttribute) ProtoMessage() {}
 
 func (x *MacsecSaAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[85]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22740,7 +24318,7 @@ func (x *MacsecSaAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MacsecSaAttribute.ProtoReflect.Descriptor instead.
 func (*MacsecSaAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{85}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *MacsecSaAttribute) GetMacsecDirection() MacsecDirection {
@@ -22832,7 +24410,7 @@ type MacsecScAttribute struct {
 
 func (x *MacsecScAttribute) Reset() {
 	*x = MacsecScAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[86]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22844,7 +24422,7 @@ func (x *MacsecScAttribute) String() string {
 func (*MacsecScAttribute) ProtoMessage() {}
 
 func (x *MacsecScAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[86]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22857,7 +24435,7 @@ func (x *MacsecScAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MacsecScAttribute.ProtoReflect.Descriptor instead.
 func (*MacsecScAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{86}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *MacsecScAttribute) GetMacsecDirection() MacsecDirection {
@@ -22948,7 +24526,7 @@ type McastFdbEntryAttribute struct {
 
 func (x *McastFdbEntryAttribute) Reset() {
 	*x = McastFdbEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[87]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22960,7 +24538,7 @@ func (x *McastFdbEntryAttribute) String() string {
 func (*McastFdbEntryAttribute) ProtoMessage() {}
 
 func (x *McastFdbEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[87]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22973,7 +24551,7 @@ func (x *McastFdbEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use McastFdbEntryAttribute.ProtoReflect.Descriptor instead.
 func (*McastFdbEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{87}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *McastFdbEntryAttribute) GetGroupId() uint64 {
@@ -23031,7 +24609,7 @@ type MirrorSessionAttribute struct {
 
 func (x *MirrorSessionAttribute) Reset() {
 	*x = MirrorSessionAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[88]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23043,7 +24621,7 @@ func (x *MirrorSessionAttribute) String() string {
 func (*MirrorSessionAttribute) ProtoMessage() {}
 
 func (x *MirrorSessionAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[88]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23056,7 +24634,7 @@ func (x *MirrorSessionAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MirrorSessionAttribute.ProtoReflect.Descriptor instead.
 func (*MirrorSessionAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{88}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *MirrorSessionAttribute) GetType() MirrorSessionType {
@@ -23254,7 +24832,7 @@ type MyMacAttribute struct {
 
 func (x *MyMacAttribute) Reset() {
 	*x = MyMacAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[89]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23266,7 +24844,7 @@ func (x *MyMacAttribute) String() string {
 func (*MyMacAttribute) ProtoMessage() {}
 
 func (x *MyMacAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[89]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23279,7 +24857,7 @@ func (x *MyMacAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyMacAttribute.ProtoReflect.Descriptor instead.
 func (*MyMacAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{89}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *MyMacAttribute) GetPriority() uint32 {
@@ -23317,6 +24895,106 @@ func (x *MyMacAttribute) GetMacAddressMask() []byte {
 	return nil
 }
 
+type MySidEntryAttribute struct {
+	state                  protoimpl.MessageState            `protogen:"open.v1"`
+	EndpointBehavior       *MySidEntryEndpointBehavior       `protobuf:"varint,1,opt,name=endpoint_behavior,json=endpointBehavior,proto3,enum=lemming.dataplane.sai.MySidEntryEndpointBehavior,oneof" json:"endpoint_behavior,omitempty"`
+	EndpointBehaviorFlavor *MySidEntryEndpointBehaviorFlavor `protobuf:"varint,2,opt,name=endpoint_behavior_flavor,json=endpointBehaviorFlavor,proto3,enum=lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor,oneof" json:"endpoint_behavior_flavor,omitempty"`
+	PacketAction           *PacketAction                     `protobuf:"varint,3,opt,name=packet_action,json=packetAction,proto3,enum=lemming.dataplane.sai.PacketAction,oneof" json:"packet_action,omitempty"`
+	TrapPriority           *uint32                           `protobuf:"varint,4,opt,name=trap_priority,json=trapPriority,proto3,oneof" json:"trap_priority,omitempty"`
+	NextHopId              *uint64                           `protobuf:"varint,5,opt,name=next_hop_id,json=nextHopId,proto3,oneof" json:"next_hop_id,omitempty"`
+	TunnelId               *uint64                           `protobuf:"varint,6,opt,name=tunnel_id,json=tunnelId,proto3,oneof" json:"tunnel_id,omitempty"`
+	Vrf                    *uint64                           `protobuf:"varint,7,opt,name=vrf,proto3,oneof" json:"vrf,omitempty"`
+	CounterId              *uint64                           `protobuf:"varint,8,opt,name=counter_id,json=counterId,proto3,oneof" json:"counter_id,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *MySidEntryAttribute) Reset() {
+	*x = MySidEntryAttribute{}
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[93]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MySidEntryAttribute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MySidEntryAttribute) ProtoMessage() {}
+
+func (x *MySidEntryAttribute) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[93]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MySidEntryAttribute.ProtoReflect.Descriptor instead.
+func (*MySidEntryAttribute) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{93}
+}
+
+func (x *MySidEntryAttribute) GetEndpointBehavior() MySidEntryEndpointBehavior {
+	if x != nil && x.EndpointBehavior != nil {
+		return *x.EndpointBehavior
+	}
+	return MySidEntryEndpointBehavior_MY_SID_ENTRY_ENDPOINT_BEHAVIOR_UNSPECIFIED
+}
+
+func (x *MySidEntryAttribute) GetEndpointBehaviorFlavor() MySidEntryEndpointBehaviorFlavor {
+	if x != nil && x.EndpointBehaviorFlavor != nil {
+		return *x.EndpointBehaviorFlavor
+	}
+	return MySidEntryEndpointBehaviorFlavor_MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_UNSPECIFIED
+}
+
+func (x *MySidEntryAttribute) GetPacketAction() PacketAction {
+	if x != nil && x.PacketAction != nil {
+		return *x.PacketAction
+	}
+	return PacketAction_PACKET_ACTION_UNSPECIFIED
+}
+
+func (x *MySidEntryAttribute) GetTrapPriority() uint32 {
+	if x != nil && x.TrapPriority != nil {
+		return *x.TrapPriority
+	}
+	return 0
+}
+
+func (x *MySidEntryAttribute) GetNextHopId() uint64 {
+	if x != nil && x.NextHopId != nil {
+		return *x.NextHopId
+	}
+	return 0
+}
+
+func (x *MySidEntryAttribute) GetTunnelId() uint64 {
+	if x != nil && x.TunnelId != nil {
+		return *x.TunnelId
+	}
+	return 0
+}
+
+func (x *MySidEntryAttribute) GetVrf() uint64 {
+	if x != nil && x.Vrf != nil {
+		return *x.Vrf
+	}
+	return 0
+}
+
+func (x *MySidEntryAttribute) GetCounterId() uint64 {
+	if x != nil && x.CounterId != nil {
+		return *x.CounterId
+	}
+	return 0
+}
+
 type NatEntryAttribute struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	NatType           *NatType               `protobuf:"varint,1,opt,name=nat_type,json=natType,proto3,enum=lemming.dataplane.sai.NatType,oneof" json:"nat_type,omitempty"`
@@ -23340,7 +25018,7 @@ type NatEntryAttribute struct {
 
 func (x *NatEntryAttribute) Reset() {
 	*x = NatEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[90]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23352,7 +25030,7 @@ func (x *NatEntryAttribute) String() string {
 func (*NatEntryAttribute) ProtoMessage() {}
 
 func (x *NatEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[90]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23365,7 +25043,7 @@ func (x *NatEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NatEntryAttribute.ProtoReflect.Descriptor instead.
 func (*NatEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{90}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *NatEntryAttribute) GetNatType() NatType {
@@ -23489,7 +25167,7 @@ type NatZoneCounterAttribute struct {
 
 func (x *NatZoneCounterAttribute) Reset() {
 	*x = NatZoneCounterAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[91]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23501,7 +25179,7 @@ func (x *NatZoneCounterAttribute) String() string {
 func (*NatZoneCounterAttribute) ProtoMessage() {}
 
 func (x *NatZoneCounterAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[91]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23514,7 +25192,7 @@ func (x *NatZoneCounterAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NatZoneCounterAttribute.ProtoReflect.Descriptor instead.
 func (*NatZoneCounterAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{91}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *NatZoneCounterAttribute) GetNatType() NatType {
@@ -23591,7 +25269,7 @@ type NeighborEntryAttribute struct {
 
 func (x *NeighborEntryAttribute) Reset() {
 	*x = NeighborEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[92]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23603,7 +25281,7 @@ func (x *NeighborEntryAttribute) String() string {
 func (*NeighborEntryAttribute) ProtoMessage() {}
 
 func (x *NeighborEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[92]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23616,7 +25294,7 @@ func (x *NeighborEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NeighborEntryAttribute.ProtoReflect.Descriptor instead.
 func (*NeighborEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{92}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *NeighborEntryAttribute) GetDstMacAddress() []byte {
@@ -23716,7 +25394,7 @@ type NextHopAttribute struct {
 
 func (x *NextHopAttribute) Reset() {
 	*x = NextHopAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[93]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23728,7 +25406,7 @@ func (x *NextHopAttribute) String() string {
 func (*NextHopAttribute) ProtoMessage() {}
 
 func (x *NextHopAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[93]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23741,7 +25419,7 @@ func (x *NextHopAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextHopAttribute.ProtoReflect.Descriptor instead.
 func (*NextHopAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{93}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *NextHopAttribute) GetType() NextHopType {
@@ -23901,7 +25579,7 @@ type NextHopGroupAttribute struct {
 
 func (x *NextHopGroupAttribute) Reset() {
 	*x = NextHopGroupAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[94]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23913,7 +25591,7 @@ func (x *NextHopGroupAttribute) String() string {
 func (*NextHopGroupAttribute) ProtoMessage() {}
 
 func (x *NextHopGroupAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[94]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23926,7 +25604,7 @@ func (x *NextHopGroupAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextHopGroupAttribute.ProtoReflect.Descriptor instead.
 func (*NextHopGroupAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{94}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *NextHopGroupAttribute) GetNextHopCount() uint32 {
@@ -24051,7 +25729,7 @@ type NextHopGroupMapAttribute struct {
 
 func (x *NextHopGroupMapAttribute) Reset() {
 	*x = NextHopGroupMapAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[95]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24063,7 +25741,7 @@ func (x *NextHopGroupMapAttribute) String() string {
 func (*NextHopGroupMapAttribute) ProtoMessage() {}
 
 func (x *NextHopGroupMapAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[95]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24076,7 +25754,7 @@ func (x *NextHopGroupMapAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextHopGroupMapAttribute.ProtoReflect.Descriptor instead.
 func (*NextHopGroupMapAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{95}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *NextHopGroupMapAttribute) GetType() NextHopGroupMapType {
@@ -24111,7 +25789,7 @@ type NextHopGroupMemberAttribute struct {
 
 func (x *NextHopGroupMemberAttribute) Reset() {
 	*x = NextHopGroupMemberAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[96]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24123,7 +25801,7 @@ func (x *NextHopGroupMemberAttribute) String() string {
 func (*NextHopGroupMemberAttribute) ProtoMessage() {}
 
 func (x *NextHopGroupMemberAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[96]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24136,7 +25814,7 @@ func (x *NextHopGroupMemberAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextHopGroupMemberAttribute.ProtoReflect.Descriptor instead.
 func (*NextHopGroupMemberAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{96}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *NextHopGroupMemberAttribute) GetNextHopGroupId() uint64 {
@@ -24231,7 +25909,7 @@ type PolicerAttribute struct {
 
 func (x *PolicerAttribute) Reset() {
 	*x = PolicerAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[97]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24243,7 +25921,7 @@ func (x *PolicerAttribute) String() string {
 func (*PolicerAttribute) ProtoMessage() {}
 
 func (x *PolicerAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[97]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24256,7 +25934,7 @@ func (x *PolicerAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PolicerAttribute.ProtoReflect.Descriptor instead.
 func (*PolicerAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{97}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *PolicerAttribute) GetMeterType() MeterType {
@@ -24548,7 +26226,7 @@ type PortAttribute struct {
 
 func (x *PortAttribute) Reset() {
 	*x = PortAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[98]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24560,7 +26238,7 @@ func (x *PortAttribute) String() string {
 func (*PortAttribute) ProtoMessage() {}
 
 func (x *PortAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[98]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24573,7 +26251,7 @@ func (x *PortAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortAttribute.ProtoReflect.Descriptor instead.
 func (*PortAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{98}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *PortAttribute) GetType() PortType {
@@ -25870,7 +27548,7 @@ type PortConnectorAttribute struct {
 
 func (x *PortConnectorAttribute) Reset() {
 	*x = PortConnectorAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[99]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25882,7 +27560,7 @@ func (x *PortConnectorAttribute) String() string {
 func (*PortConnectorAttribute) ProtoMessage() {}
 
 func (x *PortConnectorAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[99]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25895,7 +27573,7 @@ func (x *PortConnectorAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortConnectorAttribute.ProtoReflect.Descriptor instead.
 func (*PortConnectorAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{99}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *PortConnectorAttribute) GetSystemSidePortId() uint64 {
@@ -25944,7 +27622,7 @@ type PortPoolAttribute struct {
 
 func (x *PortPoolAttribute) Reset() {
 	*x = PortPoolAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[100]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25956,7 +27634,7 @@ func (x *PortPoolAttribute) String() string {
 func (*PortPoolAttribute) ProtoMessage() {}
 
 func (x *PortPoolAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[100]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25969,7 +27647,7 @@ func (x *PortPoolAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortPoolAttribute.ProtoReflect.Descriptor instead.
 func (*PortPoolAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{100}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *PortPoolAttribute) GetPortId() uint64 {
@@ -26021,7 +27699,7 @@ type PortSerdesAttribute struct {
 
 func (x *PortSerdesAttribute) Reset() {
 	*x = PortSerdesAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[101]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26033,7 +27711,7 @@ func (x *PortSerdesAttribute) String() string {
 func (*PortSerdesAttribute) ProtoMessage() {}
 
 func (x *PortSerdesAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[101]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26046,7 +27724,7 @@ func (x *PortSerdesAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortSerdesAttribute.ProtoReflect.Descriptor instead.
 func (*PortSerdesAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{101}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *PortSerdesAttribute) GetPortId() uint64 {
@@ -26199,7 +27877,7 @@ type QosMapAttribute struct {
 
 func (x *QosMapAttribute) Reset() {
 	*x = QosMapAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[102]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26211,7 +27889,7 @@ func (x *QosMapAttribute) String() string {
 func (*QosMapAttribute) ProtoMessage() {}
 
 func (x *QosMapAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[102]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26224,7 +27902,7 @@ func (x *QosMapAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QosMapAttribute.ProtoReflect.Descriptor instead.
 func (*QosMapAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{102}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *QosMapAttribute) GetType() QosMapType {
@@ -26264,7 +27942,7 @@ type QueueAttribute struct {
 
 func (x *QueueAttribute) Reset() {
 	*x = QueueAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[103]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26276,7 +27954,7 @@ func (x *QueueAttribute) String() string {
 func (*QueueAttribute) ProtoMessage() {}
 
 func (x *QueueAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[103]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26289,7 +27967,7 @@ func (x *QueueAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueueAttribute.ProtoReflect.Descriptor instead.
 func (*QueueAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{103}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *QueueAttribute) GetType() QueueType {
@@ -26429,7 +28107,7 @@ type RouterInterfaceAttribute struct {
 
 func (x *RouterInterfaceAttribute) Reset() {
 	*x = RouterInterfaceAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[104]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26441,7 +28119,7 @@ func (x *RouterInterfaceAttribute) String() string {
 func (*RouterInterfaceAttribute) ProtoMessage() {}
 
 func (x *RouterInterfaceAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[104]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26454,7 +28132,7 @@ func (x *RouterInterfaceAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RouterInterfaceAttribute.ProtoReflect.Descriptor instead.
 func (*RouterInterfaceAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{104}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *RouterInterfaceAttribute) GetVirtualRouterId() uint64 {
@@ -26640,7 +28318,7 @@ type RouteEntryAttribute struct {
 
 func (x *RouteEntryAttribute) Reset() {
 	*x = RouteEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[105]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26652,7 +28330,7 @@ func (x *RouteEntryAttribute) String() string {
 func (*RouteEntryAttribute) ProtoMessage() {}
 
 func (x *RouteEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[105]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26665,7 +28343,7 @@ func (x *RouteEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RouteEntryAttribute.ProtoReflect.Descriptor instead.
 func (*RouteEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{105}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *RouteEntryAttribute) GetPacketAction() PacketAction {
@@ -26727,7 +28405,7 @@ type RpfGroupAttribute struct {
 
 func (x *RpfGroupAttribute) Reset() {
 	*x = RpfGroupAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[106]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26739,7 +28417,7 @@ func (x *RpfGroupAttribute) String() string {
 func (*RpfGroupAttribute) ProtoMessage() {}
 
 func (x *RpfGroupAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[106]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26752,7 +28430,7 @@ func (x *RpfGroupAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpfGroupAttribute.ProtoReflect.Descriptor instead.
 func (*RpfGroupAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{106}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *RpfGroupAttribute) GetRpfInterfaceCount() uint32 {
@@ -26779,7 +28457,7 @@ type RpfGroupMemberAttribute struct {
 
 func (x *RpfGroupMemberAttribute) Reset() {
 	*x = RpfGroupMemberAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[107]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26791,7 +28469,7 @@ func (x *RpfGroupMemberAttribute) String() string {
 func (*RpfGroupMemberAttribute) ProtoMessage() {}
 
 func (x *RpfGroupMemberAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[107]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26804,7 +28482,7 @@ func (x *RpfGroupMemberAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpfGroupMemberAttribute.ProtoReflect.Descriptor instead.
 func (*RpfGroupMemberAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{107}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *RpfGroupMemberAttribute) GetRpfGroupId() uint64 {
@@ -26834,7 +28512,7 @@ type SamplepacketAttribute struct {
 
 func (x *SamplepacketAttribute) Reset() {
 	*x = SamplepacketAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[108]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26846,7 +28524,7 @@ func (x *SamplepacketAttribute) String() string {
 func (*SamplepacketAttribute) ProtoMessage() {}
 
 func (x *SamplepacketAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[108]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26859,7 +28537,7 @@ func (x *SamplepacketAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SamplepacketAttribute.ProtoReflect.Descriptor instead.
 func (*SamplepacketAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{108}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *SamplepacketAttribute) GetSampleRate() uint32 {
@@ -26912,7 +28590,7 @@ type SchedulerAttribute struct {
 
 func (x *SchedulerAttribute) Reset() {
 	*x = SchedulerAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[109]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26924,7 +28602,7 @@ func (x *SchedulerAttribute) String() string {
 func (*SchedulerAttribute) ProtoMessage() {}
 
 func (x *SchedulerAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[109]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26937,7 +28615,7 @@ func (x *SchedulerAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulerAttribute.ProtoReflect.Descriptor instead.
 func (*SchedulerAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{109}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *SchedulerAttribute) GetSchedulingType() SchedulingType {
@@ -27004,7 +28682,7 @@ type SchedulerGroupAttribute struct {
 
 func (x *SchedulerGroupAttribute) Reset() {
 	*x = SchedulerGroupAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[110]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27016,7 +28694,7 @@ func (x *SchedulerGroupAttribute) String() string {
 func (*SchedulerGroupAttribute) ProtoMessage() {}
 
 func (x *SchedulerGroupAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[110]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27029,7 +28707,7 @@ func (x *SchedulerGroupAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulerGroupAttribute.ProtoReflect.Descriptor instead.
 func (*SchedulerGroupAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{110}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *SchedulerGroupAttribute) GetChildCount() uint32 {
@@ -27095,7 +28773,7 @@ type Srv6SidlistAttribute struct {
 
 func (x *Srv6SidlistAttribute) Reset() {
 	*x = Srv6SidlistAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[111]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27107,7 +28785,7 @@ func (x *Srv6SidlistAttribute) String() string {
 func (*Srv6SidlistAttribute) ProtoMessage() {}
 
 func (x *Srv6SidlistAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[111]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27120,7 +28798,7 @@ func (x *Srv6SidlistAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Srv6SidlistAttribute.ProtoReflect.Descriptor instead.
 func (*Srv6SidlistAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{111}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{115}
 }
 
 func (x *Srv6SidlistAttribute) GetType() Srv6SidlistType {
@@ -27176,7 +28854,7 @@ type StpAttribute struct {
 
 func (x *StpAttribute) Reset() {
 	*x = StpAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[112]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[116]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27188,7 +28866,7 @@ func (x *StpAttribute) String() string {
 func (*StpAttribute) ProtoMessage() {}
 
 func (x *StpAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[112]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[116]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27201,7 +28879,7 @@ func (x *StpAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StpAttribute.ProtoReflect.Descriptor instead.
 func (*StpAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{112}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{116}
 }
 
 func (x *StpAttribute) GetVlanList() []uint32 {
@@ -27236,7 +28914,7 @@ type StpPortAttribute struct {
 
 func (x *StpPortAttribute) Reset() {
 	*x = StpPortAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[113]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[117]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27248,7 +28926,7 @@ func (x *StpPortAttribute) String() string {
 func (*StpPortAttribute) ProtoMessage() {}
 
 func (x *StpPortAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[113]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[117]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27261,7 +28939,7 @@ func (x *StpPortAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StpPortAttribute.ProtoReflect.Descriptor instead.
 func (*StpPortAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{113}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{117}
 }
 
 func (x *StpPortAttribute) GetStp() uint64 {
@@ -27508,21 +29186,18 @@ type SwitchAttribute struct {
 	MaxIcmpEchoSession                             *uint32                           `protobuf:"varint,219,opt,name=max_icmp_echo_session,json=maxIcmpEchoSession,proto3,oneof" json:"max_icmp_echo_session,omitempty"`
 	StatsCountMode                                 *StatsCountMode                   `protobuf:"varint,220,opt,name=stats_count_mode,json=statsCountMode,proto3,enum=lemming.dataplane.sai.StatsCountMode,oneof" json:"stats_count_mode,omitempty"`
 	SelectiveCounterList                           []uint64                          `protobuf:"varint,221,rep,packed,name=selective_counter_list,json=selectiveCounterList,proto3" json:"selective_counter_list,omitempty"`
-	DisableIngressVlanChecks                       *bool                             `protobuf:"varint,222,opt,name=disable_ingress_vlan_checks,json=disableIngressVlanChecks,proto3,oneof" json:"disable_ingress_vlan_checks,omitempty"`
-	DisableEgressVlanChecks                        *bool                             `protobuf:"varint,223,opt,name=disable_egress_vlan_checks,json=disableEgressVlanChecks,proto3,oneof" json:"disable_egress_vlan_checks,omitempty"`
-	DashCapsMaxMeterBucketCountPerEni              *uint32                           `protobuf:"varint,224,opt,name=dash_caps_max_meter_bucket_count_per_eni,json=dashCapsMaxMeterBucketCountPerEni,proto3,oneof" json:"dash_caps_max_meter_bucket_count_per_eni,omitempty"`
-	DashCapsHaScopeLevel                           *DashCapsHaScopeLevel             `protobuf:"varint,225,opt,name=dash_caps_ha_scope_level,json=dashCapsHaScopeLevel,proto3,enum=lemming.dataplane.sai.DashCapsHaScopeLevel,oneof" json:"dash_caps_ha_scope_level,omitempty"`
-	DashCapsHaOwnerNeeded                          *bool                             `protobuf:"varint,226,opt,name=dash_caps_ha_owner_needed,json=dashCapsHaOwnerNeeded,proto3,oneof" json:"dash_caps_ha_owner_needed,omitempty"`
-	SupportedDebugCounterTypeList                  []DebugCounterType                `protobuf:"varint,227,rep,packed,name=supported_debug_counter_type_list,json=supportedDebugCounterTypeList,proto3,enum=lemming.dataplane.sai.DebugCounterType" json:"supported_debug_counter_type_list,omitempty"`
-	SupportedIngressDropReasonList                 []InDropReason                    `protobuf:"varint,228,rep,packed,name=supported_ingress_drop_reason_list,json=supportedIngressDropReasonList,proto3,enum=lemming.dataplane.sai.InDropReason" json:"supported_ingress_drop_reason_list,omitempty"`
-	AvailableSwitchIngressDropCounters             *uint32                           `protobuf:"varint,229,opt,name=available_switch_ingress_drop_counters,json=availableSwitchIngressDropCounters,proto3,oneof" json:"available_switch_ingress_drop_counters,omitempty"`
+	SupportedDebugCounterTypeList                  []DebugCounterType                `protobuf:"varint,222,rep,packed,name=supported_debug_counter_type_list,json=supportedDebugCounterTypeList,proto3,enum=lemming.dataplane.sai.DebugCounterType" json:"supported_debug_counter_type_list,omitempty"`
+	SupportedIngressDropReasonList                 []InDropReason                    `protobuf:"varint,223,rep,packed,name=supported_ingress_drop_reason_list,json=supportedIngressDropReasonList,proto3,enum=lemming.dataplane.sai.InDropReason" json:"supported_ingress_drop_reason_list,omitempty"`
+	AvailableSwitchIngressDropCounters             *uint32                           `protobuf:"varint,224,opt,name=available_switch_ingress_drop_counters,json=availableSwitchIngressDropCounters,proto3,oneof" json:"available_switch_ingress_drop_counters,omitempty"`
+	DisableIngressVlanChecks                       *bool                             `protobuf:"varint,225,opt,name=disable_ingress_vlan_checks,json=disableIngressVlanChecks,proto3,oneof" json:"disable_ingress_vlan_checks,omitempty"`
+	DisableEgressVlanChecks                        *bool                             `protobuf:"varint,226,opt,name=disable_egress_vlan_checks,json=disableEgressVlanChecks,proto3,oneof" json:"disable_egress_vlan_checks,omitempty"`
 	unknownFields                                  protoimpl.UnknownFields
 	sizeCache                                      protoimpl.SizeCache
 }
 
 func (x *SwitchAttribute) Reset() {
 	*x = SwitchAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[114]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27534,7 +29209,7 @@ func (x *SwitchAttribute) String() string {
 func (*SwitchAttribute) ProtoMessage() {}
 
 func (x *SwitchAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[114]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27547,7 +29222,7 @@ func (x *SwitchAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SwitchAttribute.ProtoReflect.Descriptor instead.
 func (*SwitchAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{114}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *SwitchAttribute) GetNumberOfActivePorts() uint32 {
@@ -29097,41 +30772,6 @@ func (x *SwitchAttribute) GetSelectiveCounterList() []uint64 {
 	return nil
 }
 
-func (x *SwitchAttribute) GetDisableIngressVlanChecks() bool {
-	if x != nil && x.DisableIngressVlanChecks != nil {
-		return *x.DisableIngressVlanChecks
-	}
-	return false
-}
-
-func (x *SwitchAttribute) GetDisableEgressVlanChecks() bool {
-	if x != nil && x.DisableEgressVlanChecks != nil {
-		return *x.DisableEgressVlanChecks
-	}
-	return false
-}
-
-func (x *SwitchAttribute) GetDashCapsMaxMeterBucketCountPerEni() uint32 {
-	if x != nil && x.DashCapsMaxMeterBucketCountPerEni != nil {
-		return *x.DashCapsMaxMeterBucketCountPerEni
-	}
-	return 0
-}
-
-func (x *SwitchAttribute) GetDashCapsHaScopeLevel() DashCapsHaScopeLevel {
-	if x != nil && x.DashCapsHaScopeLevel != nil {
-		return *x.DashCapsHaScopeLevel
-	}
-	return DashCapsHaScopeLevel_DASH_CAPS_HA_SCOPE_LEVEL_UNSPECIFIED
-}
-
-func (x *SwitchAttribute) GetDashCapsHaOwnerNeeded() bool {
-	if x != nil && x.DashCapsHaOwnerNeeded != nil {
-		return *x.DashCapsHaOwnerNeeded
-	}
-	return false
-}
-
 func (x *SwitchAttribute) GetSupportedDebugCounterTypeList() []DebugCounterType {
 	if x != nil {
 		return x.SupportedDebugCounterTypeList
@@ -29151,6 +30791,20 @@ func (x *SwitchAttribute) GetAvailableSwitchIngressDropCounters() uint32 {
 		return *x.AvailableSwitchIngressDropCounters
 	}
 	return 0
+}
+
+func (x *SwitchAttribute) GetDisableIngressVlanChecks() bool {
+	if x != nil && x.DisableIngressVlanChecks != nil {
+		return *x.DisableIngressVlanChecks
+	}
+	return false
+}
+
+func (x *SwitchAttribute) GetDisableEgressVlanChecks() bool {
+	if x != nil && x.DisableEgressVlanChecks != nil {
+		return *x.DisableEgressVlanChecks
+	}
+	return false
 }
 
 type SwitchTunnelAttribute struct {
@@ -29174,7 +30828,7 @@ type SwitchTunnelAttribute struct {
 
 func (x *SwitchTunnelAttribute) Reset() {
 	*x = SwitchTunnelAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[115]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29186,7 +30840,7 @@ func (x *SwitchTunnelAttribute) String() string {
 func (*SwitchTunnelAttribute) ProtoMessage() {}
 
 func (x *SwitchTunnelAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[115]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29199,7 +30853,7 @@ func (x *SwitchTunnelAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SwitchTunnelAttribute.ProtoReflect.Descriptor instead.
 func (*SwitchTunnelAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{115}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{119}
 }
 
 func (x *SwitchTunnelAttribute) GetTunnelType() TunnelType {
@@ -29308,7 +30962,7 @@ type SystemPortAttribute struct {
 
 func (x *SystemPortAttribute) Reset() {
 	*x = SystemPortAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[116]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29320,7 +30974,7 @@ func (x *SystemPortAttribute) String() string {
 func (*SystemPortAttribute) ProtoMessage() {}
 
 func (x *SystemPortAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[116]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29333,7 +30987,7 @@ func (x *SystemPortAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemPortAttribute.ProtoReflect.Descriptor instead.
 func (*SystemPortAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{116}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *SystemPortAttribute) GetType() SystemPortType {
@@ -29385,6 +31039,258 @@ func (x *SystemPortAttribute) GetQosTcToQueueMap() uint64 {
 	return 0
 }
 
+type TableBitmapClassificationEntryAttribute struct {
+	state              protoimpl.MessageState                `protogen:"open.v1"`
+	Action             *TableBitmapClassificationEntryAction `protobuf:"varint,1,opt,name=action,proto3,enum=lemming.dataplane.sai.TableBitmapClassificationEntryAction,oneof" json:"action,omitempty"`
+	RouterInterfaceKey *uint64                               `protobuf:"varint,2,opt,name=router_interface_key,json=routerInterfaceKey,proto3,oneof" json:"router_interface_key,omitempty"`
+	IsDefault          *bool                                 `protobuf:"varint,3,opt,name=is_default,json=isDefault,proto3,oneof" json:"is_default,omitempty"`
+	InRifMetadata      *uint32                               `protobuf:"varint,4,opt,name=in_rif_metadata,json=inRifMetadata,proto3,oneof" json:"in_rif_metadata,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *TableBitmapClassificationEntryAttribute) Reset() {
+	*x = TableBitmapClassificationEntryAttribute{}
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[121]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TableBitmapClassificationEntryAttribute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TableBitmapClassificationEntryAttribute) ProtoMessage() {}
+
+func (x *TableBitmapClassificationEntryAttribute) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[121]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TableBitmapClassificationEntryAttribute.ProtoReflect.Descriptor instead.
+func (*TableBitmapClassificationEntryAttribute) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{121}
+}
+
+func (x *TableBitmapClassificationEntryAttribute) GetAction() TableBitmapClassificationEntryAction {
+	if x != nil && x.Action != nil {
+		return *x.Action
+	}
+	return TableBitmapClassificationEntryAction_TABLE_BITMAP_CLASSIFICATION_ENTRY_ACTION_UNSPECIFIED
+}
+
+func (x *TableBitmapClassificationEntryAttribute) GetRouterInterfaceKey() uint64 {
+	if x != nil && x.RouterInterfaceKey != nil {
+		return *x.RouterInterfaceKey
+	}
+	return 0
+}
+
+func (x *TableBitmapClassificationEntryAttribute) GetIsDefault() bool {
+	if x != nil && x.IsDefault != nil {
+		return *x.IsDefault
+	}
+	return false
+}
+
+func (x *TableBitmapClassificationEntryAttribute) GetInRifMetadata() uint32 {
+	if x != nil && x.InRifMetadata != nil {
+		return *x.InRifMetadata
+	}
+	return 0
+}
+
+type TableBitmapRouterEntryAttribute struct {
+	state             protoimpl.MessageState        `protogen:"open.v1"`
+	Action            *TableBitmapRouterEntryAction `protobuf:"varint,1,opt,name=action,proto3,enum=lemming.dataplane.sai.TableBitmapRouterEntryAction,oneof" json:"action,omitempty"`
+	Priority          *uint32                       `protobuf:"varint,2,opt,name=priority,proto3,oneof" json:"priority,omitempty"`
+	InRifMetadataKey  *uint32                       `protobuf:"varint,3,opt,name=in_rif_metadata_key,json=inRifMetadataKey,proto3,oneof" json:"in_rif_metadata_key,omitempty"`
+	InRifMetadataMask *uint32                       `protobuf:"varint,4,opt,name=in_rif_metadata_mask,json=inRifMetadataMask,proto3,oneof" json:"in_rif_metadata_mask,omitempty"`
+	DstIpKey          *IpPrefix                     `protobuf:"bytes,5,opt,name=dst_ip_key,json=dstIpKey,proto3,oneof" json:"dst_ip_key,omitempty"`
+	TunnelIndex       *uint32                       `protobuf:"varint,6,opt,name=tunnel_index,json=tunnelIndex,proto3,oneof" json:"tunnel_index,omitempty"`
+	NextHop           *uint64                       `protobuf:"varint,7,opt,name=next_hop,json=nextHop,proto3,oneof" json:"next_hop,omitempty"`
+	RouterInterface   *uint64                       `protobuf:"varint,8,opt,name=router_interface,json=routerInterface,proto3,oneof" json:"router_interface,omitempty"`
+	TrapId            *uint64                       `protobuf:"varint,9,opt,name=trap_id,json=trapId,proto3,oneof" json:"trap_id,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *TableBitmapRouterEntryAttribute) Reset() {
+	*x = TableBitmapRouterEntryAttribute{}
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[122]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TableBitmapRouterEntryAttribute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TableBitmapRouterEntryAttribute) ProtoMessage() {}
+
+func (x *TableBitmapRouterEntryAttribute) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[122]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TableBitmapRouterEntryAttribute.ProtoReflect.Descriptor instead.
+func (*TableBitmapRouterEntryAttribute) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{122}
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetAction() TableBitmapRouterEntryAction {
+	if x != nil && x.Action != nil {
+		return *x.Action
+	}
+	return TableBitmapRouterEntryAction_TABLE_BITMAP_ROUTER_ENTRY_ACTION_UNSPECIFIED
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetPriority() uint32 {
+	if x != nil && x.Priority != nil {
+		return *x.Priority
+	}
+	return 0
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetInRifMetadataKey() uint32 {
+	if x != nil && x.InRifMetadataKey != nil {
+		return *x.InRifMetadataKey
+	}
+	return 0
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetInRifMetadataMask() uint32 {
+	if x != nil && x.InRifMetadataMask != nil {
+		return *x.InRifMetadataMask
+	}
+	return 0
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetDstIpKey() *IpPrefix {
+	if x != nil {
+		return x.DstIpKey
+	}
+	return nil
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetTunnelIndex() uint32 {
+	if x != nil && x.TunnelIndex != nil {
+		return *x.TunnelIndex
+	}
+	return 0
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetNextHop() uint64 {
+	if x != nil && x.NextHop != nil {
+		return *x.NextHop
+	}
+	return 0
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetRouterInterface() uint64 {
+	if x != nil && x.RouterInterface != nil {
+		return *x.RouterInterface
+	}
+	return 0
+}
+
+func (x *TableBitmapRouterEntryAttribute) GetTrapId() uint64 {
+	if x != nil && x.TrapId != nil {
+		return *x.TrapId
+	}
+	return 0
+}
+
+type TableMetaTunnelEntryAttribute struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	Action        *TableMetaTunnelEntryAction `protobuf:"varint,1,opt,name=action,proto3,enum=lemming.dataplane.sai.TableMetaTunnelEntryAction,oneof" json:"action,omitempty"`
+	MetadataKey   *uint32                     `protobuf:"varint,2,opt,name=metadata_key,json=metadataKey,proto3,oneof" json:"metadata_key,omitempty"`
+	IsDefault     *bool                       `protobuf:"varint,3,opt,name=is_default,json=isDefault,proto3,oneof" json:"is_default,omitempty"`
+	TunnelId      *uint64                     `protobuf:"varint,4,opt,name=tunnel_id,json=tunnelId,proto3,oneof" json:"tunnel_id,omitempty"`
+	UnderlayDip   []byte                      `protobuf:"bytes,5,opt,name=underlay_dip,json=underlayDip,proto3,oneof" json:"underlay_dip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TableMetaTunnelEntryAttribute) Reset() {
+	*x = TableMetaTunnelEntryAttribute{}
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[123]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TableMetaTunnelEntryAttribute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TableMetaTunnelEntryAttribute) ProtoMessage() {}
+
+func (x *TableMetaTunnelEntryAttribute) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[123]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TableMetaTunnelEntryAttribute.ProtoReflect.Descriptor instead.
+func (*TableMetaTunnelEntryAttribute) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{123}
+}
+
+func (x *TableMetaTunnelEntryAttribute) GetAction() TableMetaTunnelEntryAction {
+	if x != nil && x.Action != nil {
+		return *x.Action
+	}
+	return TableMetaTunnelEntryAction_TABLE_META_TUNNEL_ENTRY_ACTION_UNSPECIFIED
+}
+
+func (x *TableMetaTunnelEntryAttribute) GetMetadataKey() uint32 {
+	if x != nil && x.MetadataKey != nil {
+		return *x.MetadataKey
+	}
+	return 0
+}
+
+func (x *TableMetaTunnelEntryAttribute) GetIsDefault() bool {
+	if x != nil && x.IsDefault != nil {
+		return *x.IsDefault
+	}
+	return false
+}
+
+func (x *TableMetaTunnelEntryAttribute) GetTunnelId() uint64 {
+	if x != nil && x.TunnelId != nil {
+		return *x.TunnelId
+	}
+	return 0
+}
+
+func (x *TableMetaTunnelEntryAttribute) GetUnderlayDip() []byte {
+	if x != nil {
+		return x.UnderlayDip
+	}
+	return nil
+}
+
 type TamAttribute struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	TelemetryObjectsList []uint64               `protobuf:"varint,1,rep,packed,name=telemetry_objects_list,json=telemetryObjectsList,proto3" json:"telemetry_objects_list,omitempty"`
@@ -29397,7 +31303,7 @@ type TamAttribute struct {
 
 func (x *TamAttribute) Reset() {
 	*x = TamAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[117]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29409,7 +31315,7 @@ func (x *TamAttribute) String() string {
 func (*TamAttribute) ProtoMessage() {}
 
 func (x *TamAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[117]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29422,7 +31328,7 @@ func (x *TamAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamAttribute.ProtoReflect.Descriptor instead.
 func (*TamAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{117}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *TamAttribute) GetTelemetryObjectsList() []uint64 {
@@ -29469,7 +31375,7 @@ type TamCollectorAttribute struct {
 
 func (x *TamCollectorAttribute) Reset() {
 	*x = TamCollectorAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[118]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29481,7 +31387,7 @@ func (x *TamCollectorAttribute) String() string {
 func (*TamCollectorAttribute) ProtoMessage() {}
 
 func (x *TamCollectorAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[118]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29494,7 +31400,7 @@ func (x *TamCollectorAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamCollectorAttribute.ProtoReflect.Descriptor instead.
 func (*TamCollectorAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{118}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{125}
 }
 
 func (x *TamCollectorAttribute) GetSrcIp() []byte {
@@ -29565,7 +31471,7 @@ type TamCounterSubscriptionAttribute struct {
 
 func (x *TamCounterSubscriptionAttribute) Reset() {
 	*x = TamCounterSubscriptionAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[119]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29577,7 +31483,7 @@ func (x *TamCounterSubscriptionAttribute) String() string {
 func (*TamCounterSubscriptionAttribute) ProtoMessage() {}
 
 func (x *TamCounterSubscriptionAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[119]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29590,7 +31496,7 @@ func (x *TamCounterSubscriptionAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamCounterSubscriptionAttribute.ProtoReflect.Descriptor instead.
 func (*TamCounterSubscriptionAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{119}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{126}
 }
 
 func (x *TamCounterSubscriptionAttribute) GetTelType() uint64 {
@@ -29634,7 +31540,7 @@ type TamEventAttribute struct {
 
 func (x *TamEventAttribute) Reset() {
 	*x = TamEventAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[120]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29646,7 +31552,7 @@ func (x *TamEventAttribute) String() string {
 func (*TamEventAttribute) ProtoMessage() {}
 
 func (x *TamEventAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[120]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29659,7 +31565,7 @@ func (x *TamEventAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamEventAttribute.ProtoReflect.Descriptor instead.
 func (*TamEventAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{120}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *TamEventAttribute) GetType() TamEventType {
@@ -29707,7 +31613,7 @@ type TamEventActionAttribute struct {
 
 func (x *TamEventActionAttribute) Reset() {
 	*x = TamEventActionAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[121]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29719,7 +31625,7 @@ func (x *TamEventActionAttribute) String() string {
 func (*TamEventActionAttribute) ProtoMessage() {}
 
 func (x *TamEventActionAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[121]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29732,7 +31638,7 @@ func (x *TamEventActionAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamEventActionAttribute.ProtoReflect.Descriptor instead.
 func (*TamEventActionAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{121}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{128}
 }
 
 func (x *TamEventActionAttribute) GetReportType() uint64 {
@@ -29763,7 +31669,7 @@ type TamEventThresholdAttribute struct {
 
 func (x *TamEventThresholdAttribute) Reset() {
 	*x = TamEventThresholdAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[122]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29775,7 +31681,7 @@ func (x *TamEventThresholdAttribute) String() string {
 func (*TamEventThresholdAttribute) ProtoMessage() {}
 
 func (x *TamEventThresholdAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[122]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29788,7 +31694,7 @@ func (x *TamEventThresholdAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamEventThresholdAttribute.ProtoReflect.Descriptor instead.
 func (*TamEventThresholdAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{122}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{129}
 }
 
 func (x *TamEventThresholdAttribute) GetHighWatermark() uint32 {
@@ -29867,7 +31773,7 @@ type TamIntAttribute struct {
 
 func (x *TamIntAttribute) Reset() {
 	*x = TamIntAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[123]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -29879,7 +31785,7 @@ func (x *TamIntAttribute) String() string {
 func (*TamIntAttribute) ProtoMessage() {}
 
 func (x *TamIntAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[123]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -29892,7 +31798,7 @@ func (x *TamIntAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamIntAttribute.ProtoReflect.Descriptor instead.
 func (*TamIntAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{123}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{130}
 }
 
 func (x *TamIntAttribute) GetType() TamIntType {
@@ -30086,7 +31992,7 @@ type TamMathFuncAttribute struct {
 
 func (x *TamMathFuncAttribute) Reset() {
 	*x = TamMathFuncAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[124]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -30098,7 +32004,7 @@ func (x *TamMathFuncAttribute) String() string {
 func (*TamMathFuncAttribute) ProtoMessage() {}
 
 func (x *TamMathFuncAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[124]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -30111,7 +32017,7 @@ func (x *TamMathFuncAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamMathFuncAttribute.ProtoReflect.Descriptor instead.
 func (*TamMathFuncAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{124}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{131}
 }
 
 func (x *TamMathFuncAttribute) GetTamTelMathFuncType() TamTelMathFuncType {
@@ -30138,7 +32044,7 @@ type TamReportAttribute struct {
 
 func (x *TamReportAttribute) Reset() {
 	*x = TamReportAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[125]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -30150,7 +32056,7 @@ func (x *TamReportAttribute) String() string {
 func (*TamReportAttribute) ProtoMessage() {}
 
 func (x *TamReportAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[125]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -30163,7 +32069,7 @@ func (x *TamReportAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamReportAttribute.ProtoReflect.Descriptor instead.
 func (*TamReportAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{125}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{132}
 }
 
 func (x *TamReportAttribute) GetType() TamReportType {
@@ -30241,7 +32147,7 @@ type TamTelemetryAttribute struct {
 
 func (x *TamTelemetryAttribute) Reset() {
 	*x = TamTelemetryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[126]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[133]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -30253,7 +32159,7 @@ func (x *TamTelemetryAttribute) String() string {
 func (*TamTelemetryAttribute) ProtoMessage() {}
 
 func (x *TamTelemetryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[126]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[133]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -30266,7 +32172,7 @@ func (x *TamTelemetryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamTelemetryAttribute.ProtoReflect.Descriptor instead.
 func (*TamTelemetryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{126}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{133}
 }
 
 func (x *TamTelemetryAttribute) GetTamTypeList() []uint64 {
@@ -30322,7 +32228,7 @@ type TamTelTypeAttribute struct {
 
 func (x *TamTelTypeAttribute) Reset() {
 	*x = TamTelTypeAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[127]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[134]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -30334,7 +32240,7 @@ func (x *TamTelTypeAttribute) String() string {
 func (*TamTelTypeAttribute) ProtoMessage() {}
 
 func (x *TamTelTypeAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[127]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[134]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -30347,7 +32253,7 @@ func (x *TamTelTypeAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamTelTypeAttribute.ProtoReflect.Descriptor instead.
 func (*TamTelTypeAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{127}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{134}
 }
 
 func (x *TamTelTypeAttribute) GetTamTelemetryType() TamTelemetryType {
@@ -30482,7 +32388,7 @@ type TamTransportAttribute struct {
 
 func (x *TamTransportAttribute) Reset() {
 	*x = TamTransportAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[128]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[135]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -30494,7 +32400,7 @@ func (x *TamTransportAttribute) String() string {
 func (*TamTransportAttribute) ProtoMessage() {}
 
 func (x *TamTransportAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[128]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[135]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -30507,7 +32413,7 @@ func (x *TamTransportAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamTransportAttribute.ProtoReflect.Descriptor instead.
 func (*TamTransportAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{128}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{135}
 }
 
 func (x *TamTransportAttribute) GetTransportType() TamTransportType {
@@ -30585,7 +32491,7 @@ type TunnelAttribute struct {
 
 func (x *TunnelAttribute) Reset() {
 	*x = TunnelAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[129]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[136]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -30597,7 +32503,7 @@ func (x *TunnelAttribute) String() string {
 func (*TunnelAttribute) ProtoMessage() {}
 
 func (x *TunnelAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[129]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[136]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -30610,7 +32516,7 @@ func (x *TunnelAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TunnelAttribute.ProtoReflect.Descriptor instead.
 func (*TunnelAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{129}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{136}
 }
 
 func (x *TunnelAttribute) GetType() TunnelType {
@@ -30847,7 +32753,7 @@ type TunnelMapAttribute struct {
 
 func (x *TunnelMapAttribute) Reset() {
 	*x = TunnelMapAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[130]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[137]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -30859,7 +32765,7 @@ func (x *TunnelMapAttribute) String() string {
 func (*TunnelMapAttribute) ProtoMessage() {}
 
 func (x *TunnelMapAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[130]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[137]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -30872,7 +32778,7 @@ func (x *TunnelMapAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TunnelMapAttribute.ProtoReflect.Descriptor instead.
 func (*TunnelMapAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{130}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{137}
 }
 
 func (x *TunnelMapAttribute) GetType() TunnelMapType {
@@ -30915,7 +32821,7 @@ type TunnelMapEntryAttribute struct {
 
 func (x *TunnelMapEntryAttribute) Reset() {
 	*x = TunnelMapEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[131]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[138]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -30927,7 +32833,7 @@ func (x *TunnelMapEntryAttribute) String() string {
 func (*TunnelMapEntryAttribute) ProtoMessage() {}
 
 func (x *TunnelMapEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[131]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[138]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -30940,7 +32846,7 @@ func (x *TunnelMapEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TunnelMapEntryAttribute.ProtoReflect.Descriptor instead.
 func (*TunnelMapEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{131}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{138}
 }
 
 func (x *TunnelMapEntryAttribute) GetTunnelMapType() TunnelMapType {
@@ -31088,7 +32994,7 @@ type TunnelTermTableEntryAttribute struct {
 
 func (x *TunnelTermTableEntryAttribute) Reset() {
 	*x = TunnelTermTableEntryAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[132]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[139]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -31100,7 +33006,7 @@ func (x *TunnelTermTableEntryAttribute) String() string {
 func (*TunnelTermTableEntryAttribute) ProtoMessage() {}
 
 func (x *TunnelTermTableEntryAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[132]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[139]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31113,7 +33019,7 @@ func (x *TunnelTermTableEntryAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TunnelTermTableEntryAttribute.ProtoReflect.Descriptor instead.
 func (*TunnelTermTableEntryAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{132}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{139}
 }
 
 func (x *TunnelTermTableEntryAttribute) GetVrId() uint64 {
@@ -31206,7 +33112,7 @@ type UdfAttribute struct {
 
 func (x *UdfAttribute) Reset() {
 	*x = UdfAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[133]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[140]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -31218,7 +33124,7 @@ func (x *UdfAttribute) String() string {
 func (*UdfAttribute) ProtoMessage() {}
 
 func (x *UdfAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[133]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[140]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31231,7 +33137,7 @@ func (x *UdfAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UdfAttribute.ProtoReflect.Descriptor instead.
 func (*UdfAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{133}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{140}
 }
 
 func (x *UdfAttribute) GetMatchId() uint64 {
@@ -31280,7 +33186,7 @@ type UdfGroupAttribute struct {
 
 func (x *UdfGroupAttribute) Reset() {
 	*x = UdfGroupAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[134]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[141]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -31292,7 +33198,7 @@ func (x *UdfGroupAttribute) String() string {
 func (*UdfGroupAttribute) ProtoMessage() {}
 
 func (x *UdfGroupAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[134]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[141]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31305,7 +33211,7 @@ func (x *UdfGroupAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UdfGroupAttribute.ProtoReflect.Descriptor instead.
 func (*UdfGroupAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{134}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{141}
 }
 
 func (x *UdfGroupAttribute) GetUdfList() []uint64 {
@@ -31342,7 +33248,7 @@ type UdfMatchAttribute struct {
 
 func (x *UdfMatchAttribute) Reset() {
 	*x = UdfMatchAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[135]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[142]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -31354,7 +33260,7 @@ func (x *UdfMatchAttribute) String() string {
 func (*UdfMatchAttribute) ProtoMessage() {}
 
 func (x *UdfMatchAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[135]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[142]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31367,7 +33273,7 @@ func (x *UdfMatchAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UdfMatchAttribute.ProtoReflect.Descriptor instead.
 func (*UdfMatchAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{135}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{142}
 }
 
 func (x *UdfMatchAttribute) GetL2Type() *AclFieldData {
@@ -31420,7 +33326,7 @@ type VirtualRouterAttribute struct {
 
 func (x *VirtualRouterAttribute) Reset() {
 	*x = VirtualRouterAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[136]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[143]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -31432,7 +33338,7 @@ func (x *VirtualRouterAttribute) String() string {
 func (*VirtualRouterAttribute) ProtoMessage() {}
 
 func (x *VirtualRouterAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[136]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[143]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31445,7 +33351,7 @@ func (x *VirtualRouterAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VirtualRouterAttribute.ProtoReflect.Descriptor instead.
 func (*VirtualRouterAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{136}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{143}
 }
 
 func (x *VirtualRouterAttribute) GetAdminV4State() bool {
@@ -31529,7 +33435,7 @@ type VlanAttribute struct {
 
 func (x *VlanAttribute) Reset() {
 	*x = VlanAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[137]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[144]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -31541,7 +33447,7 @@ func (x *VlanAttribute) String() string {
 func (*VlanAttribute) ProtoMessage() {}
 
 func (x *VlanAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[137]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[144]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31554,7 +33460,7 @@ func (x *VlanAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VlanAttribute.ProtoReflect.Descriptor instead.
 func (*VlanAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{137}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{144}
 }
 
 func (x *VlanAttribute) GetVlanId() uint32 {
@@ -31736,7 +33642,7 @@ type VlanMemberAttribute struct {
 
 func (x *VlanMemberAttribute) Reset() {
 	*x = VlanMemberAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[138]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[145]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -31748,7 +33654,7 @@ func (x *VlanMemberAttribute) String() string {
 func (*VlanMemberAttribute) ProtoMessage() {}
 
 func (x *VlanMemberAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[138]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[145]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31761,7 +33667,7 @@ func (x *VlanMemberAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VlanMemberAttribute.ProtoReflect.Descriptor instead.
 func (*VlanMemberAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{138}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{145}
 }
 
 func (x *VlanMemberAttribute) GetVlanId() uint64 {
@@ -31833,7 +33739,7 @@ type WredAttribute struct {
 
 func (x *WredAttribute) Reset() {
 	*x = WredAttribute{}
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[139]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[146]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -31845,7 +33751,7 @@ func (x *WredAttribute) String() string {
 func (*WredAttribute) ProtoMessage() {}
 
 func (x *WredAttribute) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_common_proto_msgTypes[139]
+	mi := &file_dataplane_proto_sai_common_proto_msgTypes[146]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31858,7 +33764,7 @@ func (x *WredAttribute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WredAttribute.ProtoReflect.Descriptor instead.
 func (*WredAttribute) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{139}
+	return file_dataplane_proto_sai_common_proto_rawDescGZIP(), []int{146}
 }
 
 func (x *WredAttribute) GetGreenEnable() bool {
@@ -33299,7 +35205,19 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"entry_type\x18\x03 \x01(\x0e2(.lemming.dataplane.sai.FdbFlushEntryTypeB\x06\xf0ܓ\xad\x0f\x03H\x02R\tentryType\x88\x01\x01B\x11\n" +
 	"\x0f_bridge_port_idB\b\n" +
 	"\x06_bv_idB\r\n" +
-	"\v_entry_type\"\xaf\x01\n" +
+	"\v_entry_type\"\xc4\x02\n" +
+	"\x1dFineGrainedHashFieldAttribute\x12_\n" +
+	"\x11native_hash_field\x18\x01 \x01(\x0e2&.lemming.dataplane.sai.NativeHashFieldB\x06\xf0ܓ\xad\x0f\x01H\x00R\x0fnativeHashField\x88\x01\x01\x12(\n" +
+	"\tipv4_mask\x18\x02 \x01(\fB\x06\xf0ܓ\xad\x0f\x02H\x01R\bipv4Mask\x88\x01\x01\x12(\n" +
+	"\tipv6_mask\x18\x03 \x01(\fB\x06\xf0ܓ\xad\x0f\x03H\x02R\bipv6Mask\x88\x01\x01\x12,\n" +
+	"\vsequence_id\x18\x04 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x03R\n" +
+	"sequenceId\x88\x01\x01B\x14\n" +
+	"\x12_native_hash_fieldB\f\n" +
+	"\n" +
+	"_ipv4_maskB\f\n" +
+	"\n" +
+	"_ipv6_maskB\x0e\n" +
+	"\f_sequence_id\"\xaf\x01\n" +
 	"\x1cGenericProgrammableAttribute\x12'\n" +
 	"\vobject_name\x18\x01 \x03(\x05B\x06\xf0ܓ\xad\x0f\x01R\n" +
 	"objectName\x12!\n" +
@@ -33443,7 +35361,48 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\f_rx_intervalB \n" +
 	"\x1e_set_next_hop_group_switchoverB\b\n" +
 	"\x06_stateB\x13\n" +
-	"\x11_stats_count_mode\"\xc1\x02\n" +
+	"\x11_stats_count_mode\"\x88\x03\n" +
+	"\x1dIngressPriorityGroupAttribute\x122\n" +
+	"\x0ebuffer_profile\x18\x01 \x01(\x04B\x06\xf0ܓ\xad\x0f\x01H\x00R\rbufferProfile\x88\x01\x01\x12\x1f\n" +
+	"\x04port\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x02H\x01R\x04port\x88\x01\x01\x12\x18\n" +
+	"\x03tam\x18\x03 \x03(\x04B\x06\xf0ܓ\xad\x0f\x03R\x03tam\x12!\n" +
+	"\x05index\x18\x04 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x02R\x05index\x88\x01\x01\x12\\\n" +
+	"\x10stats_count_mode\x18\x05 \x01(\x0e2%.lemming.dataplane.sai.StatsCountModeB\x06\xf0ܓ\xad\x0f\x05H\x03R\x0estatsCountMode\x88\x01\x01\x12<\n" +
+	"\x16selective_counter_list\x18\x06 \x03(\x04B\x06\xf0ܓ\xad\x0f\x06R\x14selectiveCounterListB\x11\n" +
+	"\x0f_buffer_profileB\a\n" +
+	"\x05_portB\b\n" +
+	"\x06_indexB\x13\n" +
+	"\x11_stats_count_mode\"\x85\a\n" +
+	"\x13InsegEntryAttribute\x12)\n" +
+	"\n" +
+	"num_of_pop\x18\x01 \x01(\rB\x06\xf0ܓ\xad\x0f\x01H\x00R\bnumOfPop\x88\x01\x01\x12U\n" +
+	"\rpacket_action\x18\x02 \x01(\x0e2#.lemming.dataplane.sai.PacketActionB\x06\xf0ܓ\xad\x0f\x02H\x01R\fpacketAction\x88\x01\x01\x120\n" +
+	"\rtrap_priority\x18\x03 \x01(\rB\x06\xf0ܓ\xad\x0f\x03H\x02R\ftrapPriority\x88\x01\x01\x12+\n" +
+	"\vnext_hop_id\x18\x04 \x01(\x04B\x06\xf0ܓ\xad\x0f\x04H\x03R\tnextHopId\x88\x01\x01\x12P\n" +
+	"\bpsc_type\x18\x05 \x01(\x0e2(.lemming.dataplane.sai.InsegEntryPscTypeB\x06\xf0ܓ\xad\x0f\x05H\x04R\apscType\x88\x01\x01\x12\"\n" +
+	"\x06qos_tc\x18\x06 \x01(\rB\x06\xf0ܓ\xad\x0f\x06H\x05R\x05qosTc\x88\x01\x01\x127\n" +
+	"\x12mpls_exp_to_tc_map\x18\a \x01(\x04B\x06\xf0ܓ\xad\x0f\aH\x06R\x0emplsExpToTcMap\x88\x01\x01\x12=\n" +
+	"\x15mpls_exp_to_color_map\x18\b \x01(\x04B\x06\xf0ܓ\xad\x0f\bH\aR\x11mplsExpToColorMap\x88\x01\x01\x12Z\n" +
+	"\fpop_ttl_mode\x18\t \x01(\x0e2+.lemming.dataplane.sai.InsegEntryPopTtlModeB\x06\xf0ܓ\xad\x0f\tH\bR\n" +
+	"popTtlMode\x88\x01\x01\x12Z\n" +
+	"\fpop_qos_mode\x18\n" +
+	" \x01(\x0e2+.lemming.dataplane.sai.InsegEntryPopQosModeB\x06\xf0ܓ\xad\x0f\n" +
+	"H\tR\n" +
+	"popQosMode\x88\x01\x01\x12*\n" +
+	"\n" +
+	"counter_id\x18\v \x01(\x04B\x06\xf0ܓ\xad\x0f\vH\n" +
+	"R\tcounterId\x88\x01\x01B\r\n" +
+	"\v_num_of_popB\x10\n" +
+	"\x0e_packet_actionB\x10\n" +
+	"\x0e_trap_priorityB\x0e\n" +
+	"\f_next_hop_idB\v\n" +
+	"\t_psc_typeB\t\n" +
+	"\a_qos_tcB\x15\n" +
+	"\x13_mpls_exp_to_tc_mapB\x18\n" +
+	"\x16_mpls_exp_to_color_mapB\x0f\n" +
+	"\r_pop_ttl_modeB\x0f\n" +
+	"\r_pop_qos_modeB\r\n" +
+	"\v_counter_id\"\xc1\x02\n" +
 	"\x12IpmcEntryAttribute\x12U\n" +
 	"\rpacket_action\x18\x01 \x01(\x0e2#.lemming.dataplane.sai.PacketActionB\x06\xf0ܓ\xad\x0f\x01H\x00R\fpacketAction\x88\x01\x01\x123\n" +
 	"\x0foutput_group_id\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x02H\x01R\routputGroupId\x88\x01\x01\x12-\n" +
@@ -33863,7 +35822,26 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\n" +
 	"\b_vlan_idB\x0e\n" +
 	"\f_mac_addressB\x13\n" +
-	"\x11_mac_address_mask\"\xb0\a\n" +
+	"\x11_mac_address_mask\"\xb9\x05\n" +
+	"\x13MySidEntryAttribute\x12k\n" +
+	"\x11endpoint_behavior\x18\x01 \x01(\x0e21.lemming.dataplane.sai.MySidEntryEndpointBehaviorB\x06\xf0ܓ\xad\x0f\x01H\x00R\x10endpointBehavior\x88\x01\x01\x12~\n" +
+	"\x18endpoint_behavior_flavor\x18\x02 \x01(\x0e27.lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavorB\x06\xf0ܓ\xad\x0f\x02H\x01R\x16endpointBehaviorFlavor\x88\x01\x01\x12U\n" +
+	"\rpacket_action\x18\x03 \x01(\x0e2#.lemming.dataplane.sai.PacketActionB\x06\xf0ܓ\xad\x0f\x03H\x02R\fpacketAction\x88\x01\x01\x120\n" +
+	"\rtrap_priority\x18\x04 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x03R\ftrapPriority\x88\x01\x01\x12+\n" +
+	"\vnext_hop_id\x18\x05 \x01(\x04B\x06\xf0ܓ\xad\x0f\x05H\x04R\tnextHopId\x88\x01\x01\x12(\n" +
+	"\ttunnel_id\x18\x06 \x01(\x04B\x06\xf0ܓ\xad\x0f\x06H\x05R\btunnelId\x88\x01\x01\x12\x1d\n" +
+	"\x03vrf\x18\a \x01(\x04B\x06\xf0ܓ\xad\x0f\aH\x06R\x03vrf\x88\x01\x01\x12*\n" +
+	"\n" +
+	"counter_id\x18\b \x01(\x04B\x06\xf0ܓ\xad\x0f\bH\aR\tcounterId\x88\x01\x01B\x14\n" +
+	"\x12_endpoint_behaviorB\x1b\n" +
+	"\x19_endpoint_behavior_flavorB\x10\n" +
+	"\x0e_packet_actionB\x10\n" +
+	"\x0e_trap_priorityB\x0e\n" +
+	"\f_next_hop_idB\f\n" +
+	"\n" +
+	"_tunnel_idB\x06\n" +
+	"\x04_vrfB\r\n" +
+	"\v_counter_id\"\xb0\a\n" +
 	"\x11NatEntryAttribute\x12F\n" +
 	"\bnat_type\x18\x01 \x01(\x0e2\x1e.lemming.dataplane.sai.NatTypeB\x06\xf0ܓ\xad\x0f\x01H\x00R\anatType\x88\x01\x01\x12\"\n" +
 	"\x06src_ip\x18\x02 \x01(\fB\x06\xf0ܓ\xad\x0f\x02H\x01R\x05srcIp\x88\x01\x01\x12+\n" +
@@ -34680,7 +36658,7 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x05state\x18\x03 \x01(\x0e2#.lemming.dataplane.sai.StpPortStateB\x06\xf0ܓ\xad\x0f\x03H\x02R\x05state\x88\x01\x01B\x06\n" +
 	"\x04_stpB\x0e\n" +
 	"\f_bridge_portB\b\n" +
-	"\x06_state\"ʰ\x01\n" +
+	"\x06_state\"\xbe\xad\x01\n" +
 	"\x0fSwitchAttribute\x12@\n" +
 	"\x16number_of_active_ports\x18\x01 \x01(\rB\x06\xf0ܓ\xad\x0f\x01H\x00R\x13numberOfActivePorts\x88\x01\x01\x12M\n" +
 	"\x1dmax_number_of_supported_ports\x18\x02 \x01(\rB\x06\xf0ܓ\xad\x0f\x02H\x01R\x19maxNumberOfSupportedPorts\x88\x01\x01\x12#\n" +
@@ -34915,15 +36893,12 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x1bavailable_icmp_echo_session\x18\xda\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xea\x01H\xbd\x01R\x18availableIcmpEchoSession\x88\x01\x01\x12A\n" +
 	"\x15max_icmp_echo_session\x18\xdb\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xeb\x01H\xbe\x01R\x12maxIcmpEchoSession\x88\x01\x01\x12_\n" +
 	"\x10stats_count_mode\x18\xdc\x01 \x01(\x0e2%.lemming.dataplane.sai.StatsCountModeB\a\xf0ܓ\xad\x0f\xec\x01H\xbf\x01R\x0estatsCountMode\x88\x01\x01\x12>\n" +
-	"\x16selective_counter_list\x18\xdd\x01 \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterList\x12M\n" +
-	"\x1bdisable_ingress_vlan_checks\x18\xde\x01 \x01(\bB\a\xf0ܓ\xad\x0f\xee\x01H\xc0\x01R\x18disableIngressVlanChecks\x88\x01\x01\x12K\n" +
-	"\x1adisable_egress_vlan_checks\x18\xdf\x01 \x01(\bB\a\xf0ܓ\xad\x0f\xef\x01H\xc1\x01R\x17disableEgressVlanChecks\x88\x01\x01\x12c\n" +
-	"(dash_caps_max_meter_bucket_count_per_eni\x18\xe0\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xf0\x01H\xc2\x01R!dashCapsMaxMeterBucketCountPerEni\x88\x01\x01\x12s\n" +
-	"\x18dash_caps_ha_scope_level\x18\xe1\x01 \x01(\x0e2+.lemming.dataplane.sai.DashCapsHaScopeLevelB\a\xf0ܓ\xad\x0f\xf1\x01H\xc3\x01R\x14dashCapsHaScopeLevel\x88\x01\x01\x12H\n" +
-	"\x19dash_caps_ha_owner_needed\x18\xe2\x01 \x01(\bB\a\xf0ܓ\xad\x0f\xf2\x01H\xc4\x01R\x15dashCapsHaOwnerNeeded\x88\x01\x01\x12{\n" +
-	"!supported_debug_counter_type_list\x18\xe3\x01 \x03(\x0e2'.lemming.dataplane.sai.DebugCounterTypeB\a\xf0ܓ\xad\x0f\xf5\x01R\x1dsupportedDebugCounterTypeList\x12y\n" +
-	"\"supported_ingress_drop_reason_list\x18\xe4\x01 \x03(\x0e2#.lemming.dataplane.sai.InDropReasonB\a\xf0ܓ\xad\x0f\xf6\x01R\x1esupportedIngressDropReasonList\x12b\n" +
-	"&available_switch_ingress_drop_counters\x18\xe5\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xf7\x01H\xc5\x01R\"availableSwitchIngressDropCounters\x88\x01\x01B\x19\n" +
+	"\x16selective_counter_list\x18\xdd\x01 \x03(\x04B\a\xf0ܓ\xad\x0f\xed\x01R\x14selectiveCounterList\x12{\n" +
+	"!supported_debug_counter_type_list\x18\xde\x01 \x03(\x0e2'.lemming.dataplane.sai.DebugCounterTypeB\a\xf0ܓ\xad\x0f\xc0\x10R\x1dsupportedDebugCounterTypeList\x12y\n" +
+	"\"supported_ingress_drop_reason_list\x18\xdf\x01 \x03(\x0e2#.lemming.dataplane.sai.InDropReasonB\a\xf0ܓ\xad\x0f\xc1\x10R\x1esupportedIngressDropReasonList\x12b\n" +
+	"&available_switch_ingress_drop_counters\x18\xe0\x01 \x01(\rB\a\xf0ܓ\xad\x0f\xc6\x10H\xc0\x01R\"availableSwitchIngressDropCounters\x88\x01\x01\x12M\n" +
+	"\x1bdisable_ingress_vlan_checks\x18\xe1\x01 \x01(\bB\a\xf0ܓ\xad\x0f\xee\x01H\xc1\x01R\x18disableIngressVlanChecks\x88\x01\x01\x12K\n" +
+	"\x1adisable_egress_vlan_checks\x18\xe2\x01 \x01(\bB\a\xf0ܓ\xad\x0f\xef\x01H\xc2\x01R\x17disableEgressVlanChecks\x88\x01\x01B\x19\n" +
 	"\x17_number_of_active_portsB \n" +
 	"\x1e_max_number_of_supported_portsB\x0f\n" +
 	"\r_port_max_mtuB\v\n" +
@@ -35119,13 +37094,10 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x16_acl_stage_pre_ingressB\x1e\n" +
 	"\x1c_available_icmp_echo_sessionB\x18\n" +
 	"\x16_max_icmp_echo_sessionB\x13\n" +
-	"\x11_stats_count_modeB\x1e\n" +
+	"\x11_stats_count_modeB)\n" +
+	"'_available_switch_ingress_drop_countersB\x1e\n" +
 	"\x1c_disable_ingress_vlan_checksB\x1d\n" +
-	"\x1b_disable_egress_vlan_checksB+\n" +
-	")_dash_caps_max_meter_bucket_count_per_eniB\x1b\n" +
-	"\x19_dash_caps_ha_scope_levelB\x1c\n" +
-	"\x1a_dash_caps_ha_owner_neededB)\n" +
-	"'_available_switch_ingress_drop_counters\"\xda\n" +
+	"\x1b_disable_egress_vlan_checks\"\xda\n" +
 	"\n" +
 	"\x15SwitchTunnelAttribute\x12O\n" +
 	"\vtunnel_type\x18\x01 \x01(\x0e2!.lemming.dataplane.sai.TunnelTypeB\x06\xf0ܓ\xad\x0f\x01H\x00R\n" +
@@ -35172,7 +37144,51 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x05_portB\x0e\n" +
 	"\f_admin_stateB\x0e\n" +
 	"\f_config_infoB\x16\n" +
-	"\x14_qos_tc_to_queue_map\"\x9d\x02\n" +
+	"\x14_qos_tc_to_queue_map\"\xf2\x02\n" +
+	"'TableBitmapClassificationEntryAttribute\x12`\n" +
+	"\x06action\x18\x01 \x01(\x0e2;.lemming.dataplane.sai.TableBitmapClassificationEntryActionB\x06\xf0ܓ\xad\x0f\x01H\x00R\x06action\x88\x01\x01\x12=\n" +
+	"\x14router_interface_key\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x02H\x01R\x12routerInterfaceKey\x88\x01\x01\x12*\n" +
+	"\n" +
+	"is_default\x18\x03 \x01(\bB\x06\xf0ܓ\xad\x0f\x03H\x02R\tisDefault\x88\x01\x01\x123\n" +
+	"\x0fin_rif_metadata\x18\x04 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x03R\rinRifMetadata\x88\x01\x01B\t\n" +
+	"\a_actionB\x17\n" +
+	"\x15_router_interface_keyB\r\n" +
+	"\v_is_defaultB\x12\n" +
+	"\x10_in_rif_metadata\"\xb7\x05\n" +
+	"\x1fTableBitmapRouterEntryAttribute\x12X\n" +
+	"\x06action\x18\x01 \x01(\x0e23.lemming.dataplane.sai.TableBitmapRouterEntryActionB\x06\xf0ܓ\xad\x0f\x01H\x00R\x06action\x88\x01\x01\x12'\n" +
+	"\bpriority\x18\x02 \x01(\rB\x06\xf0ܓ\xad\x0f\x02H\x01R\bpriority\x88\x01\x01\x12:\n" +
+	"\x13in_rif_metadata_key\x18\x03 \x01(\rB\x06\xf0ܓ\xad\x0f\x03H\x02R\x10inRifMetadataKey\x88\x01\x01\x12<\n" +
+	"\x14in_rif_metadata_mask\x18\x04 \x01(\rB\x06\xf0ܓ\xad\x0f\x04H\x03R\x11inRifMetadataMask\x88\x01\x01\x12J\n" +
+	"\n" +
+	"dst_ip_key\x18\x05 \x01(\v2\x1f.lemming.dataplane.sai.IpPrefixB\x06\xf0ܓ\xad\x0f\x05H\x04R\bdstIpKey\x88\x01\x01\x12.\n" +
+	"\ftunnel_index\x18\x06 \x01(\rB\x06\xf0ܓ\xad\x0f\x06H\x05R\vtunnelIndex\x88\x01\x01\x12&\n" +
+	"\bnext_hop\x18\a \x01(\x04B\x06\xf0ܓ\xad\x0f\aH\x06R\anextHop\x88\x01\x01\x126\n" +
+	"\x10router_interface\x18\b \x01(\x04B\x06\xf0ܓ\xad\x0f\bH\aR\x0frouterInterface\x88\x01\x01\x12$\n" +
+	"\atrap_id\x18\t \x01(\x04B\x06\xf0ܓ\xad\x0f\tH\bR\x06trapId\x88\x01\x01B\t\n" +
+	"\a_actionB\v\n" +
+	"\t_priorityB\x16\n" +
+	"\x14_in_rif_metadata_keyB\x17\n" +
+	"\x15_in_rif_metadata_maskB\r\n" +
+	"\v_dst_ip_keyB\x0f\n" +
+	"\r_tunnel_indexB\v\n" +
+	"\t_next_hopB\x13\n" +
+	"\x11_router_interfaceB\n" +
+	"\n" +
+	"\b_trap_id\"\xf7\x02\n" +
+	"\x1dTableMetaTunnelEntryAttribute\x12V\n" +
+	"\x06action\x18\x01 \x01(\x0e21.lemming.dataplane.sai.TableMetaTunnelEntryActionB\x06\xf0ܓ\xad\x0f\x01H\x00R\x06action\x88\x01\x01\x12.\n" +
+	"\fmetadata_key\x18\x02 \x01(\rB\x06\xf0ܓ\xad\x0f\x02H\x01R\vmetadataKey\x88\x01\x01\x12*\n" +
+	"\n" +
+	"is_default\x18\x03 \x01(\bB\x06\xf0ܓ\xad\x0f\x03H\x02R\tisDefault\x88\x01\x01\x12(\n" +
+	"\ttunnel_id\x18\x04 \x01(\x04B\x06\xf0ܓ\xad\x0f\x04H\x03R\btunnelId\x88\x01\x01\x12.\n" +
+	"\funderlay_dip\x18\x05 \x01(\fB\x06\xf0ܓ\xad\x0f\x05H\x04R\vunderlayDip\x88\x01\x01B\t\n" +
+	"\a_actionB\x0f\n" +
+	"\r_metadata_keyB\r\n" +
+	"\v_is_defaultB\f\n" +
+	"\n" +
+	"_tunnel_idB\x0f\n" +
+	"\r_underlay_dip\"\x9d\x02\n" +
 	"\fTamAttribute\x12<\n" +
 	"\x16telemetry_objects_list\x18\x01 \x03(\x04B\x06\xf0ܓ\xad\x0f\x01R\x14telemetryObjectsList\x124\n" +
 	"\x12event_objects_list\x18\x02 \x03(\x04B\x06\xf0ܓ\xad\x0f\x02R\x10eventObjectsList\x120\n" +
@@ -35850,7 +37866,92 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x1aAclTableSupportedMatchType\x12.\n" +
 	"*ACL_TABLE_SUPPORTED_MATCH_TYPE_UNSPECIFIED\x10\x00\x12*\n" +
 	"&ACL_TABLE_SUPPORTED_MATCH_TYPE_TERNARY\x10\x01\x12(\n" +
-	"$ACL_TABLE_SUPPORTED_MATCH_TYPE_EXACT\x10\x02*\xcf\x01\n" +
+	"$ACL_TABLE_SUPPORTED_MATCH_TYPE_EXACT\x10\x02*\x8a\x04\n" +
+	"\rApiExtensions\x12\x1e\n" +
+	"\x1aAPI_EXTENSIONS_UNSPECIFIED\x10\x00\x12\"\n" +
+	"\x1aAPI_EXTENSIONS_RANGE_START\x10\x81\x80\x80\x80\x02\x12\x11\n" +
+	"\tAPI_BMTOR\x10\x81\x80\x80\x80\x02\x12\x14\n" +
+	"\fAPI_DASH_ACL\x10\x82\x80\x80\x80\x02\x12!\n" +
+	"\x19API_DASH_DIRECTION_LOOKUP\x10\x83\x80\x80\x80\x02\x12\x14\n" +
+	"\fAPI_DASH_ENI\x10\x84\x80\x80\x80\x02\x12 \n" +
+	"\x18API_DASH_INBOUND_ROUTING\x10\x85\x80\x80\x80\x02\x12\x16\n" +
+	"\x0eAPI_DASH_METER\x10\x86\x80\x80\x80\x02\x12\"\n" +
+	"\x1aAPI_DASH_OUTBOUND_CA_TO_PA\x10\x87\x80\x80\x80\x02\x12!\n" +
+	"\x19API_DASH_OUTBOUND_ROUTING\x10\x88\x80\x80\x80\x02\x12\x15\n" +
+	"\rAPI_DASH_VNET\x10\x89\x80\x80\x80\x02\x12\x1e\n" +
+	"\x16API_DASH_PA_VALIDATION\x10\x8a\x80\x80\x80\x02\x12\x14\n" +
+	"\fAPI_DASH_VIP\x10\x8b\x80\x80\x80\x02\x12\x13\n" +
+	"\vAPI_DASH_HA\x10\x8c\x80\x80\x80\x02\x12\x17\n" +
+	"\x0fAPI_DASH_TUNNEL\x10\x8d\x80\x80\x80\x02\x12\x15\n" +
+	"\rAPI_DASH_FLOW\x10\x8e\x80\x80\x80\x02\x12\x1a\n" +
+	"\x12API_DASH_APPLIANCE\x10\x8f\x80\x80\x80\x02\x12 \n" +
+	"\x18API_EXTENSIONS_RANGE_END\x10\x90\x80\x80\x80\x02\x1a\x02\x10\x01*\xdb\a\n" +
+	"\x03Api\x12\x13\n" +
+	"\x0fAPI_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13API_SAI_UNSPECIFIED\x10\x01\x12\x0e\n" +
+	"\n" +
+	"API_SWITCH\x10\x02\x12\f\n" +
+	"\bAPI_PORT\x10\x03\x12\v\n" +
+	"\aAPI_FDB\x10\x04\x12\f\n" +
+	"\bAPI_VLAN\x10\x05\x12\x16\n" +
+	"\x12API_VIRTUAL_ROUTER\x10\x06\x12\r\n" +
+	"\tAPI_ROUTE\x10\a\x12\x10\n" +
+	"\fAPI_NEXT_HOP\x10\b\x12\x16\n" +
+	"\x12API_NEXT_HOP_GROUP\x10\t\x12\x18\n" +
+	"\x14API_ROUTER_INTERFACE\x10\n" +
+	"\x12\x10\n" +
+	"\fAPI_NEIGHBOR\x10\v\x12\v\n" +
+	"\aAPI_ACL\x10\f\x12\x0e\n" +
+	"\n" +
+	"API_HOSTIF\x10\r\x12\x0e\n" +
+	"\n" +
+	"API_MIRROR\x10\x0e\x12\x14\n" +
+	"\x10API_SAMPLEPACKET\x10\x0f\x12\v\n" +
+	"\aAPI_STP\x10\x10\x12\v\n" +
+	"\aAPI_LAG\x10\x11\x12\x0f\n" +
+	"\vAPI_POLICER\x10\x12\x12\f\n" +
+	"\bAPI_WRED\x10\x13\x12\x0f\n" +
+	"\vAPI_QOS_MAP\x10\x14\x12\r\n" +
+	"\tAPI_QUEUE\x10\x15\x12\x11\n" +
+	"\rAPI_SCHEDULER\x10\x16\x12\x17\n" +
+	"\x13API_SCHEDULER_GROUP\x10\x17\x12\x0e\n" +
+	"\n" +
+	"API_BUFFER\x10\x18\x12\f\n" +
+	"\bAPI_HASH\x10\x19\x12\v\n" +
+	"\aAPI_UDF\x10\x1a\x12\x0e\n" +
+	"\n" +
+	"API_TUNNEL\x10\x1b\x12\f\n" +
+	"\bAPI_L2MC\x10\x1c\x12\f\n" +
+	"\bAPI_IPMC\x10\x1d\x12\x11\n" +
+	"\rAPI_RPF_GROUP\x10\x1e\x12\x12\n" +
+	"\x0eAPI_L2MC_GROUP\x10\x1f\x12\x12\n" +
+	"\x0eAPI_IPMC_GROUP\x10 \x12\x11\n" +
+	"\rAPI_MCAST_FDB\x10!\x12\x0e\n" +
+	"\n" +
+	"API_BRIDGE\x10\"\x12\v\n" +
+	"\aAPI_TAM\x10#\x12\f\n" +
+	"\bAPI_SRV6\x10$\x12\f\n" +
+	"\bAPI_MPLS\x10%\x12\f\n" +
+	"\bAPI_DTEL\x10&\x12\v\n" +
+	"\aAPI_BFD\x10'\x12\x17\n" +
+	"\x13API_ISOLATION_GROUP\x10(\x12\v\n" +
+	"\aAPI_NAT\x10)\x12\x0f\n" +
+	"\vAPI_COUNTER\x10*\x12\x15\n" +
+	"\x11API_DEBUG_COUNTER\x10+\x12\x0e\n" +
+	"\n" +
+	"API_MACSEC\x10,\x12\x13\n" +
+	"\x0fAPI_SYSTEM_PORT\x10-\x12\x0e\n" +
+	"\n" +
+	"API_MY_MAC\x10.\x12\r\n" +
+	"\tAPI_IPSEC\x10/\x12\x1c\n" +
+	"\x18API_GENERIC_PROGRAMMABLE\x100\x12\v\n" +
+	"\aAPI_ARS\x101\x12\x13\n" +
+	"\x0fAPI_ARS_PROFILE\x102\x12\r\n" +
+	"\tAPI_TWAMP\x103\x12\v\n" +
+	"\aAPI_POE\x104\x12\x11\n" +
+	"\rAPI_ICMP_ECHO\x105\x12\v\n" +
+	"\aAPI_MAX\x106\x12!\n" +
+	"\x19API_EXTENSIONS_RANGE_BASE\x10\x81\x80\x80\x80\x02*\xcf\x01\n" +
 	"\x14BfdEncapsulationType\x12&\n" +
 	"\"BFD_ENCAPSULATION_TYPE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fBFD_ENCAPSULATION_TYPE_IP_IN_IP\x10\x01\x12(\n" +
@@ -35987,7 +38088,94 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x14DashCapsHaScopeLevel\x12(\n" +
 	"$DASH_CAPS_HA_SCOPE_LEVEL_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dDASH_CAPS_HA_SCOPE_LEVEL_CARD\x10\x01\x12 \n" +
-	"\x1cDASH_CAPS_HA_SCOPE_LEVEL_ENI\x10\x02*l\n" +
+	"\x1cDASH_CAPS_HA_SCOPE_LEVEL_ENI\x10\x02*\x84\x01\n" +
+	"\rDashDirection\x12\x1e\n" +
+	"\x1aDASH_DIRECTION_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16DASH_DIRECTION_INVALID\x10\x01\x12\x1b\n" +
+	"\x17DASH_DIRECTION_OUTBOUND\x10\x02\x12\x1a\n" +
+	"\x16DASH_DIRECTION_INBOUND\x10\x03*\x93\x01\n" +
+	"\x11DashEncapsulation\x12\"\n" +
+	"\x1eDASH_ENCAPSULATION_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aDASH_ENCAPSULATION_INVALID\x10\x01\x12\x1c\n" +
+	"\x18DASH_ENCAPSULATION_VXLAN\x10\x02\x12\x1c\n" +
+	"\x18DASH_ENCAPSULATION_NVGRE\x10\x03*\xb9\x01\n" +
+	"\x16DashEniMacOverrideType\x12*\n" +
+	"&DASH_ENI_MAC_OVERRIDE_TYPE_UNSPECIFIED\x10\x00\x12#\n" +
+	"\x1fDASH_ENI_MAC_OVERRIDE_TYPE_NONE\x10\x01\x12&\n" +
+	"\"DASH_ENI_MAC_OVERRIDE_TYPE_SRC_MAC\x10\x02\x12&\n" +
+	"\"DASH_ENI_MAC_OVERRIDE_TYPE_DST_MAC\x10\x03*M\n" +
+	"\x0eDashFlowAction\x12 \n" +
+	"\x1cDASH_FLOW_ACTION_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15DASH_FLOW_ACTION_NONE\x10\x01*\xad\x02\n" +
+	"\x12DashFlowEnabledKey\x12%\n" +
+	"!DASH_FLOW_ENABLED_KEY_UNSPECIFIED\x10\x00\x12!\n" +
+	"\x1dDASH_FLOW_ENABLED_KEY_ENI_MAC\x10\x02\x12\x1d\n" +
+	"\x19DASH_FLOW_ENABLED_KEY_VNI\x10\x03\x12\"\n" +
+	"\x1eDASH_FLOW_ENABLED_KEY_PROTOCOL\x10\x05\x12 \n" +
+	"\x1cDASH_FLOW_ENABLED_KEY_SRC_IP\x10\t\x12 \n" +
+	"\x1cDASH_FLOW_ENABLED_KEY_DST_IP\x10\x11\x12\"\n" +
+	"\x1eDASH_FLOW_ENABLED_KEY_SRC_PORT\x10!\x12\"\n" +
+	"\x1eDASH_FLOW_ENABLED_KEY_DST_PORT\x10A*\x83\x05\n" +
+	"$DashFlowEntryBulkGetSessionFilterKey\x12;\n" +
+	"7DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_UNSPECIFIED\x10\x00\x127\n" +
+	"3DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_INVAILD\x10\x01\x12=\n" +
+	"9DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_FLOW_TABLE_ID\x10\x02\x128\n" +
+	"4DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_ENI_ADDR\x10\x03\x12;\n" +
+	"7DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_IP_PROTOCOL\x10\x04\x12;\n" +
+	"7DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_IP_ADDR\x10\x05\x12;\n" +
+	"7DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_IP_ADDR\x10\x06\x12;\n" +
+	"7DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_SRC_L4_PORT\x10\a\x12;\n" +
+	"7DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_DST_L4_PORT\x10\b\x12;\n" +
+	"7DASH_FLOW_ENTRY_BULK_GET_SESSION_FILTER_KEY_KEY_VERSION\x10\t*\xd7\x03\n" +
+	"\x1fDashFlowEntryBulkGetSessionMode\x125\n" +
+	"1DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_UNSPECIFIED\x10\x00\x12X\n" +
+	"TDASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_GRPC\x10\x01\x12Z\n" +
+	"VDASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_VENDOR\x10\x02\x12Y\n" +
+	"UDASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT\x10\x03\x12l\n" +
+	"hDASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_SAI_DASH_FLOW_ENTRY_BULK_GET_SESSION_MODE_EVENT_WITHOUT_FLOW_STATE\x10\x04*\xfc\x03\n" +
+	" DashFlowEntryBulkGetSessionOpKey\x127\n" +
+	"3DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_UNSPECIFIED\x10\x00\x12=\n" +
+	"9DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_INVALID\x10\x01\x12>\n" +
+	":DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_EQUAL_TO\x10\x02\x12B\n" +
+	">DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN\x10\x03\x12N\n" +
+	"JDASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_GREATER_THAN_OR_EQUAL_TO\x10\x04\x12?\n" +
+	";DASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN\x10\x05\x12K\n" +
+	"GDASH_FLOW_ENTRY_BULK_GET_SESSION_OP_KEY_FILTER_OP_LESS_THAN_OR_EQUAL_TO\x10\x06*\xb7\x01\n" +
+	"\n" +
+	"DashHaRole\x12\x1c\n" +
+	"\x18DASH_HA_ROLE_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11DASH_HA_ROLE_DEAD\x10\x01\x12\x17\n" +
+	"\x13DASH_HA_ROLE_ACTIVE\x10\x02\x12\x18\n" +
+	"\x14DASH_HA_ROLE_STANDBY\x10\x03\x12\x1b\n" +
+	"\x17DASH_HA_ROLE_STANDALONE\x10\x04\x12$\n" +
+	" DASH_HA_ROLE_SWITCHING_TO_ACTIVE\x10\x05*\xfc\x03\n" +
+	"\vDashHaState\x12\x1d\n" +
+	"\x19DASH_HA_STATE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12DASH_HA_STATE_DEAD\x10\x01\x12\x1c\n" +
+	"\x18DASH_HA_STATE_CONNECTING\x10\x02\x12\x1b\n" +
+	"\x17DASH_HA_STATE_CONNECTED\x10\x03\x12(\n" +
+	"$DASH_HA_STATE_INITIALIZING_TO_ACTIVE\x10\x04\x12)\n" +
+	"%DASH_HA_STATE_INITIALIZING_TO_STANDBY\x10\x05\x12/\n" +
+	"+DASH_HA_STATE_PENDING_STANDALONE_ACTIVATION\x10\x06\x12+\n" +
+	"'DASH_HA_STATE_PENDING_ACTIVE_ACTIVATION\x10\a\x12,\n" +
+	"(DASH_HA_STATE_PENDING_STANDBY_ACTIVATION\x10\b\x12\x1c\n" +
+	"\x18DASH_HA_STATE_STANDALONE\x10\t\x12\x18\n" +
+	"\x14DASH_HA_STATE_ACTIVE\x10\n" +
+	"\x12\x19\n" +
+	"\x15DASH_HA_STATE_STANDBY\x10\v\x12\x1c\n" +
+	"\x18DASH_HA_STATE_DESTROYING\x10\f\x12)\n" +
+	"%DASH_HA_STATE_SWITCHING_TO_STANDALONE\x10\r*\xe2\x01\n" +
+	"\x12DashRoutingActions\x12$\n" +
+	" DASH_ROUTING_ACTIONS_UNSPECIFIED\x10\x00\x12%\n" +
+	"!DASH_ROUTING_ACTIONS_STATIC_ENCAP\x10\x02\x12\x1c\n" +
+	"\x18DASH_ROUTING_ACTIONS_NAT\x10\x03\x12\x1e\n" +
+	"\x1aDASH_ROUTING_ACTIONS_NAT46\x10\x05\x12\x1e\n" +
+	"\x1aDASH_ROUTING_ACTIONS_NAT64\x10\t\x12!\n" +
+	"\x1dDASH_ROUTING_ACTIONS_NAT_PORT\x10\x11*\x8b\x01\n" +
+	"\x12DashTunnelDscpMode\x12%\n" +
+	"!DASH_TUNNEL_DSCP_MODE_UNSPECIFIED\x10\x00\x12(\n" +
+	"$DASH_TUNNEL_DSCP_MODE_PRESERVE_MODEL\x10\x01\x12$\n" +
+	" DASH_TUNNEL_DSCP_MODE_PIPE_MODEL\x10\x02*l\n" +
 	"\x16DebugCounterBindMethod\x12)\n" +
 	"%DEBUG_COUNTER_BIND_METHOD_UNSPECIFIED\x10\x00\x12'\n" +
 	"#DEBUG_COUNTER_BIND_METHOD_AUTOMATIC\x10\x01*\xf0\x01\n" +
@@ -36321,7 +38509,15 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\rL2mcEntryType\x12\x1f\n" +
 	"\x1bL2MC_ENTRY_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12L2MC_ENTRY_TYPE_SG\x10\x01\x12\x16\n" +
-	"\x12L2MC_ENTRY_TYPE_XG\x10\x02*\xd4\x01\n" +
+	"\x12L2MC_ENTRY_TYPE_XG\x10\x02*\xa5\x01\n" +
+	"\bLogLevel\x12\x19\n" +
+	"\x15LOG_LEVEL_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fLOG_LEVEL_DEBUG\x10\x01\x12\x12\n" +
+	"\x0eLOG_LEVEL_INFO\x10\x02\x12\x14\n" +
+	"\x10LOG_LEVEL_NOTICE\x10\x03\x12\x12\n" +
+	"\x0eLOG_LEVEL_WARN\x10\x04\x12\x13\n" +
+	"\x0fLOG_LEVEL_ERROR\x10\x05\x12\x16\n" +
+	"\x12LOG_LEVEL_CRITICAL\x10\x06*\xd4\x01\n" +
 	"\x11MacsecCipherSuite\x12#\n" +
 	"\x1fMACSEC_CIPHER_SUITE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fMACSEC_CIPHER_SUITE_GCM_AES_128\x10\x01\x12#\n" +
@@ -36505,7 +38701,37 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x18OBJECT_STAGE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11OBJECT_STAGE_BOTH\x10\x01\x12\x18\n" +
 	"\x14OBJECT_STAGE_INGRESS\x10\x02\x12\x17\n" +
-	"\x13OBJECT_STAGE_EGRESS\x10\x03*\xd7\x1a\n" +
+	"\x13OBJECT_STAGE_EGRESS\x10\x03*\x8c\t\n" +
+	"\x14ObjectTypeExtensions\x12&\n" +
+	"\"OBJECT_TYPE_EXTENSIONS_UNSPECIFIED\x10\x00\x12*\n" +
+	"\"OBJECT_TYPE_EXTENSIONS_RANGE_START\x10\x81\x80\x80\x80\x02\x125\n" +
+	"-OBJECT_TYPE_TABLE_BITMAP_CLASSIFICATION_ENTRY\x10\x81\x80\x80\x80\x02\x12-\n" +
+	"%OBJECT_TYPE_TABLE_BITMAP_ROUTER_ENTRY\x10\x82\x80\x80\x80\x02\x12+\n" +
+	"#OBJECT_TYPE_TABLE_META_TUNNEL_ENTRY\x10\x83\x80\x80\x80\x02\x12\"\n" +
+	"\x1aOBJECT_TYPE_DASH_ACL_GROUP\x10\x84\x80\x80\x80\x02\x12!\n" +
+	"\x19OBJECT_TYPE_DASH_ACL_RULE\x10\x85\x80\x80\x80\x02\x12*\n" +
+	"\"OBJECT_TYPE_DIRECTION_LOOKUP_ENTRY\x10\x86\x80\x80\x80\x02\x12/\n" +
+	"'OBJECT_TYPE_ENI_ETHER_ADDRESS_MAP_ENTRY\x10\x87\x80\x80\x80\x02\x12\x17\n" +
+	"\x0fOBJECT_TYPE_ENI\x10\x88\x80\x80\x80\x02\x12)\n" +
+	"!OBJECT_TYPE_INBOUND_ROUTING_ENTRY\x10\x89\x80\x80\x80\x02\x12&\n" +
+	"\x1eOBJECT_TYPE_METER_BUCKET_ENTRY\x10\x8a\x80\x80\x80\x02\x12 \n" +
+	"\x18OBJECT_TYPE_METER_POLICY\x10\x8b\x80\x80\x80\x02\x12\x1e\n" +
+	"\x16OBJECT_TYPE_METER_RULE\x10\x8c\x80\x80\x80\x02\x12+\n" +
+	"#OBJECT_TYPE_OUTBOUND_CA_TO_PA_ENTRY\x10\x8d\x80\x80\x80\x02\x12*\n" +
+	"\"OBJECT_TYPE_OUTBOUND_ROUTING_ENTRY\x10\x8e\x80\x80\x80\x02\x12\x18\n" +
+	"\x10OBJECT_TYPE_VNET\x10\x8f\x80\x80\x80\x02\x12'\n" +
+	"\x1fOBJECT_TYPE_PA_VALIDATION_ENTRY\x10\x90\x80\x80\x80\x02\x12\x1d\n" +
+	"\x15OBJECT_TYPE_VIP_ENTRY\x10\x91\x80\x80\x80\x02\x12\x1a\n" +
+	"\x12OBJECT_TYPE_HA_SET\x10\x92\x80\x80\x80\x02\x12\x1c\n" +
+	"\x14OBJECT_TYPE_HA_SCOPE\x10\x93\x80\x80\x80\x02\x12\x1f\n" +
+	"\x17OBJECT_TYPE_DASH_TUNNEL\x10\x94\x80\x80\x80\x02\x12*\n" +
+	"\"OBJECT_TYPE_OUTBOUND_ROUTING_GROUP\x10\x95\x80\x80\x80\x02\x12\x1e\n" +
+	"\x16OBJECT_TYPE_FLOW_TABLE\x10\x96\x80\x80\x80\x02\x12\x1e\n" +
+	"\x16OBJECT_TYPE_FLOW_ENTRY\x10\x97\x80\x80\x80\x02\x126\n" +
+	".OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION_FILTER\x10\x98\x80\x80\x80\x02\x12/\n" +
+	"'OBJECT_TYPE_FLOW_ENTRY_BULK_GET_SESSION\x10\x99\x80\x80\x80\x02\x12\"\n" +
+	"\x1aOBJECT_TYPE_DASH_APPLIANCE\x10\x9a\x80\x80\x80\x02\x12(\n" +
+	" OBJECT_TYPE_EXTENSIONS_RANGE_END\x10\x9b\x80\x80\x80\x02\x1a\x02\x10\x01*\xd7\x1a\n" +
 	"\n" +
 	"ObjectType\x12\x1b\n" +
 	"\x17OBJECT_TYPE_UNSPECIFIED\x10\x00\x12\x14\n" +
@@ -36704,7 +38930,11 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x19POLICER_STAT_YELLOW_BYTES\x10\x06\x12\x1c\n" +
 	"\x18POLICER_STAT_RED_PACKETS\x10\a\x12\x1a\n" +
 	"\x16POLICER_STAT_RED_BYTES\x10\b\x12&\n" +
-	"\x1ePOLICER_STAT_CUSTOM_RANGE_BASE\x10\x81\x80\x80\x80\x01*\xd9\x01\n" +
+	"\x1ePOLICER_STAT_CUSTOM_RANGE_BASE\x10\x81\x80\x80\x80\x01*\x8c\x01\n" +
+	"\x12PortAttrExtensions\x12$\n" +
+	" PORT_ATTR_EXTENSIONS_UNSPECIFIED\x10\x00\x12(\n" +
+	" PORT_ATTR_EXTENSIONS_RANGE_START\x10\x81\x80\x80\x80\x02\x12&\n" +
+	"\x1ePORT_ATTR_EXTENSIONS_RANGE_END\x10\x82\x80\x80\x80\x02*\xd9\x01\n" +
 	"\x15PortAutoNegConfigMode\x12)\n" +
 	"%PORT_AUTO_NEG_CONFIG_MODE_UNSPECIFIED\x10\x00\x12&\n" +
 	"\"PORT_AUTO_NEG_CONFIG_MODE_DISABLED\x10\x01\x12\"\n" +
@@ -37354,7 +39584,16 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"+SWITCH_ASIC_SDK_HEALTH_SEVERITY_UNSPECIFIED\x10\x00\x12)\n" +
 	"%SWITCH_ASIC_SDK_HEALTH_SEVERITY_FATAL\x10\x01\x12+\n" +
 	"'SWITCH_ASIC_SDK_HEALTH_SEVERITY_WARNING\x10\x02\x12*\n" +
-	"&SWITCH_ASIC_SDK_HEALTH_SEVERITY_NOTICE\x10\x03*\x9c\x01\n" +
+	"&SWITCH_ASIC_SDK_HEALTH_SEVERITY_NOTICE\x10\x03*\x87\x03\n" +
+	"\x14SwitchAttrExtensions\x12&\n" +
+	"\"SWITCH_ATTR_EXTENSIONS_UNSPECIFIED\x10\x00\x12*\n" +
+	"\"SWITCH_ATTR_EXTENSIONS_RANGE_START\x10\x81\x80\x80\x80\x02\x12<\n" +
+	"4SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI\x10\x81\x80\x80\x80\x02\x12,\n" +
+	"$SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL\x10\x82\x80\x80\x80\x02\x12-\n" +
+	"%SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED\x10\x83\x80\x80\x80\x02\x12'\n" +
+	"\x1fSWITCH_ATTR_HA_SET_EVENT_NOTIFY\x10\x84\x80\x80\x80\x02\x12)\n" +
+	"!SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY\x10\x85\x80\x80\x80\x02\x12(\n" +
+	" SWITCH_ATTR_EXTENSIONS_RANGE_END\x10\x86\x80\x80\x80\x02\x1a\x02\x10\x01*\x9c\x01\n" +
 	"\x18SwitchFailoverConfigMode\x12+\n" +
 	"'SWITCH_FAILOVER_CONFIG_MODE_UNSPECIFIED\x10\x00\x12*\n" +
 	"&SWITCH_FAILOVER_CONFIG_MODE_NO_HITLESS\x10\x01\x12'\n" +
@@ -37711,844 +39950,881 @@ func file_dataplane_proto_sai_common_proto_rawDescGZIP() []byte {
 	return file_dataplane_proto_sai_common_proto_rawDescData
 }
 
-var file_dataplane_proto_sai_common_proto_enumTypes = make([]protoimpl.EnumInfo, 203)
-var file_dataplane_proto_sai_common_proto_msgTypes = make([]protoimpl.MessageInfo, 143)
+var file_dataplane_proto_sai_common_proto_enumTypes = make([]protoimpl.EnumInfo, 221)
+var file_dataplane_proto_sai_common_proto_msgTypes = make([]protoimpl.MessageInfo, 150)
 var file_dataplane_proto_sai_common_proto_goTypes = []any{
-	(AclActionType)(0),                            // 0: lemming.dataplane.sai.AclActionType
-	(AclBindPointType)(0),                         // 1: lemming.dataplane.sai.AclBindPointType
-	(AclDtelFlowOp)(0),                            // 2: lemming.dataplane.sai.AclDtelFlowOp
-	(AclIpFrag)(0),                                // 3: lemming.dataplane.sai.AclIpFrag
-	(AclIpType)(0),                                // 4: lemming.dataplane.sai.AclIpType
-	(AclRangeType)(0),                             // 5: lemming.dataplane.sai.AclRangeType
-	(AclStage)(0),                                 // 6: lemming.dataplane.sai.AclStage
-	(AclTableChainGroupStage)(0),                  // 7: lemming.dataplane.sai.AclTableChainGroupStage
-	(AclTableChainGroupType)(0),                   // 8: lemming.dataplane.sai.AclTableChainGroupType
-	(AclTableGroupType)(0),                        // 9: lemming.dataplane.sai.AclTableGroupType
-	(AclTableMatchType)(0),                        // 10: lemming.dataplane.sai.AclTableMatchType
-	(AclTableSupportedMatchType)(0),               // 11: lemming.dataplane.sai.AclTableSupportedMatchType
-	(BfdEncapsulationType)(0),                     // 12: lemming.dataplane.sai.BfdEncapsulationType
-	(BfdSessionOffloadType)(0),                    // 13: lemming.dataplane.sai.BfdSessionOffloadType
-	(BfdSessionStat)(0),                           // 14: lemming.dataplane.sai.BfdSessionStat
-	(BfdSessionState)(0),                          // 15: lemming.dataplane.sai.BfdSessionState
-	(BfdSessionType)(0),                           // 16: lemming.dataplane.sai.BfdSessionType
-	(BridgeFloodControlType)(0),                   // 17: lemming.dataplane.sai.BridgeFloodControlType
-	(BridgePortFdbLearningMode)(0),                // 18: lemming.dataplane.sai.BridgePortFdbLearningMode
-	(BridgePortStat)(0),                           // 19: lemming.dataplane.sai.BridgePortStat
-	(BridgePortTaggingMode)(0),                    // 20: lemming.dataplane.sai.BridgePortTaggingMode
-	(BridgePortType)(0),                           // 21: lemming.dataplane.sai.BridgePortType
-	(BridgeStat)(0),                               // 22: lemming.dataplane.sai.BridgeStat
-	(BridgeType)(0),                               // 23: lemming.dataplane.sai.BridgeType
-	(BufferPoolStat)(0),                           // 24: lemming.dataplane.sai.BufferPoolStat
-	(BufferPoolThresholdMode)(0),                  // 25: lemming.dataplane.sai.BufferPoolThresholdMode
-	(BufferPoolType)(0),                           // 26: lemming.dataplane.sai.BufferPoolType
-	(BufferProfileThresholdMode)(0),               // 27: lemming.dataplane.sai.BufferProfileThresholdMode
-	(BulkOpErrorMode)(0),                          // 28: lemming.dataplane.sai.BulkOpErrorMode
-	(CommonApi)(0),                                // 29: lemming.dataplane.sai.CommonApi
-	(CounterStat)(0),                              // 30: lemming.dataplane.sai.CounterStat
-	(CounterType)(0),                              // 31: lemming.dataplane.sai.CounterType
-	(DashCapsHaScopeLevel)(0),                     // 32: lemming.dataplane.sai.DashCapsHaScopeLevel
-	(DebugCounterBindMethod)(0),                   // 33: lemming.dataplane.sai.DebugCounterBindMethod
-	(DebugCounterType)(0),                         // 34: lemming.dataplane.sai.DebugCounterType
-	(DtelEventType)(0),                            // 35: lemming.dataplane.sai.DtelEventType
-	(EcnMarkMode)(0),                              // 36: lemming.dataplane.sai.EcnMarkMode
-	(ErspanEncapsulationType)(0),                  // 37: lemming.dataplane.sai.ErspanEncapsulationType
-	(FdbEntryType)(0),                             // 38: lemming.dataplane.sai.FdbEntryType
-	(FdbEvent)(0),                                 // 39: lemming.dataplane.sai.FdbEvent
-	(FdbFlushEntryType)(0),                        // 40: lemming.dataplane.sai.FdbFlushEntryType
-	(HaScopeEvent)(0),                             // 41: lemming.dataplane.sai.HaScopeEvent
-	(HaSetEvent)(0),                               // 42: lemming.dataplane.sai.HaSetEvent
-	(HashAlgorithm)(0),                            // 43: lemming.dataplane.sai.HashAlgorithm
-	(HealthDataType)(0),                           // 44: lemming.dataplane.sai.HealthDataType
-	(HostifTableEntryChannelType)(0),              // 45: lemming.dataplane.sai.HostifTableEntryChannelType
-	(HostifTableEntryType)(0),                     // 46: lemming.dataplane.sai.HostifTableEntryType
-	(HostifTrapType)(0),                           // 47: lemming.dataplane.sai.HostifTrapType
-	(HostifTxType)(0),                             // 48: lemming.dataplane.sai.HostifTxType
-	(HostifType)(0),                               // 49: lemming.dataplane.sai.HostifType
-	(HostifUserDefinedTrapType)(0),                // 50: lemming.dataplane.sai.HostifUserDefinedTrapType
-	(HostifVlanTag)(0),                            // 51: lemming.dataplane.sai.HostifVlanTag
-	(IcmpEchoSessionStat)(0),                      // 52: lemming.dataplane.sai.IcmpEchoSessionStat
-	(IcmpEchoSessionState)(0),                     // 53: lemming.dataplane.sai.IcmpEchoSessionState
-	(InDropReason)(0),                             // 54: lemming.dataplane.sai.InDropReason
-	(IngressPriorityGroupStat)(0),                 // 55: lemming.dataplane.sai.IngressPriorityGroupStat
-	(InsegEntryPopQosMode)(0),                     // 56: lemming.dataplane.sai.InsegEntryPopQosMode
-	(InsegEntryPopTtlMode)(0),                     // 57: lemming.dataplane.sai.InsegEntryPopTtlMode
-	(InsegEntryPscType)(0),                        // 58: lemming.dataplane.sai.InsegEntryPscType
-	(IpAddrFamily)(0),                             // 59: lemming.dataplane.sai.IpAddrFamily
-	(IpmcEntryType)(0),                            // 60: lemming.dataplane.sai.IpmcEntryType
-	(IpsecCipher)(0),                              // 61: lemming.dataplane.sai.IpsecCipher
-	(IpsecDirection)(0),                           // 62: lemming.dataplane.sai.IpsecDirection
-	(IpsecPortStat)(0),                            // 63: lemming.dataplane.sai.IpsecPortStat
-	(IpsecSaOctetCountStatus)(0),                  // 64: lemming.dataplane.sai.IpsecSaOctetCountStatus
-	(IpsecSaStat)(0),                              // 65: lemming.dataplane.sai.IpsecSaStat
-	(IsolationGroupType)(0),                       // 66: lemming.dataplane.sai.IsolationGroupType
-	(L2McEntryType)(0),                            // 67: lemming.dataplane.sai.L2mcEntryType
-	(MacsecCipherSuite)(0),                        // 68: lemming.dataplane.sai.MacsecCipherSuite
-	(MacsecDirection)(0),                          // 69: lemming.dataplane.sai.MacsecDirection
-	(MacsecFlowStat)(0),                           // 70: lemming.dataplane.sai.MacsecFlowStat
-	(MacsecMaxSecureAssociationsPerSc)(0),         // 71: lemming.dataplane.sai.MacsecMaxSecureAssociationsPerSc
-	(MacsecPortStat)(0),                           // 72: lemming.dataplane.sai.MacsecPortStat
-	(MacsecSaStat)(0),                             // 73: lemming.dataplane.sai.MacsecSaStat
-	(MacsecScStat)(0),                             // 74: lemming.dataplane.sai.MacsecScStat
-	(MeterType)(0),                                // 75: lemming.dataplane.sai.MeterType
-	(MirrorSessionCongestionMode)(0),              // 76: lemming.dataplane.sai.MirrorSessionCongestionMode
-	(MirrorSessionType)(0),                        // 77: lemming.dataplane.sai.MirrorSessionType
-	(MySidEntryEndpointBehaviorFlavor)(0),         // 78: lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor
-	(MySidEntryEndpointBehavior)(0),               // 79: lemming.dataplane.sai.MySidEntryEndpointBehavior
-	(NatEvent)(0),                                 // 80: lemming.dataplane.sai.NatEvent
-	(NatType)(0),                                  // 81: lemming.dataplane.sai.NatType
-	(NativeHashField)(0),                          // 82: lemming.dataplane.sai.NativeHashField
-	(NextHopGroupMapType)(0),                      // 83: lemming.dataplane.sai.NextHopGroupMapType
-	(NextHopGroupMemberConfiguredRole)(0),         // 84: lemming.dataplane.sai.NextHopGroupMemberConfiguredRole
-	(NextHopGroupMemberObservedRole)(0),           // 85: lemming.dataplane.sai.NextHopGroupMemberObservedRole
-	(NextHopGroupType)(0),                         // 86: lemming.dataplane.sai.NextHopGroupType
-	(NextHopType)(0),                              // 87: lemming.dataplane.sai.NextHopType
-	(ObjectStage)(0),                              // 88: lemming.dataplane.sai.ObjectStage
-	(ObjectType)(0),                               // 89: lemming.dataplane.sai.ObjectType
-	(OutDropReason)(0),                            // 90: lemming.dataplane.sai.OutDropReason
-	(OutsegExpMode)(0),                            // 91: lemming.dataplane.sai.OutsegExpMode
-	(OutsegTtlMode)(0),                            // 92: lemming.dataplane.sai.OutsegTtlMode
-	(OutsegType)(0),                               // 93: lemming.dataplane.sai.OutsegType
-	(PacketAction)(0),                             // 94: lemming.dataplane.sai.PacketAction
-	(PacketColor)(0),                              // 95: lemming.dataplane.sai.PacketColor
-	(PacketVlan)(0),                               // 96: lemming.dataplane.sai.PacketVlan
-	(PoePortActiveChannelType)(0),                 // 97: lemming.dataplane.sai.PoePortActiveChannelType
-	(PoePortClassMethodType)(0),                   // 98: lemming.dataplane.sai.PoePortClassMethodType
-	(PoePortSignatureType)(0),                     // 99: lemming.dataplane.sai.PoePortSignatureType
-	(PolicerColorSource)(0),                       // 100: lemming.dataplane.sai.PolicerColorSource
-	(PolicerMode)(0),                              // 101: lemming.dataplane.sai.PolicerMode
-	(PolicerStat)(0),                              // 102: lemming.dataplane.sai.PolicerStat
-	(PortAutoNegConfigMode)(0),                    // 103: lemming.dataplane.sai.PortAutoNegConfigMode
-	(PortBreakoutModeType)(0),                     // 104: lemming.dataplane.sai.PortBreakoutModeType
-	(PortCablePairState)(0),                       // 105: lemming.dataplane.sai.PortCablePairState
-	(PortCableType)(0),                            // 106: lemming.dataplane.sai.PortCableType
-	(PortConnectorFailoverMode)(0),                // 107: lemming.dataplane.sai.PortConnectorFailoverMode
-	(PortDatapathEnable)(0),                       // 108: lemming.dataplane.sai.PortDatapathEnable
-	(PortDualMedia)(0),                            // 109: lemming.dataplane.sai.PortDualMedia
-	(PortErrStatus)(0),                            // 110: lemming.dataplane.sai.PortErrStatus
-	(PortErrorStatus)(0),                          // 111: lemming.dataplane.sai.PortErrorStatus
-	(PortFecModeExtended)(0),                      // 112: lemming.dataplane.sai.PortFecModeExtended
-	(PortFecMode)(0),                              // 113: lemming.dataplane.sai.PortFecMode
-	(PortFlowControlMode)(0),                      // 114: lemming.dataplane.sai.PortFlowControlMode
-	(PortHostTxReadyStatus)(0),                    // 115: lemming.dataplane.sai.PortHostTxReadyStatus
-	(PortInterfaceType)(0),                        // 116: lemming.dataplane.sai.PortInterfaceType
-	(PortInternalLoopbackMode)(0),                 // 117: lemming.dataplane.sai.PortInternalLoopbackMode
-	(PortLinkTrainingFailureStatus)(0),            // 118: lemming.dataplane.sai.PortLinkTrainingFailureStatus
-	(PortLinkTrainingRxStatus)(0),                 // 119: lemming.dataplane.sai.PortLinkTrainingRxStatus
-	(PortLoopbackMode)(0),                         // 120: lemming.dataplane.sai.PortLoopbackMode
-	(PortMdixModeConfig)(0),                       // 121: lemming.dataplane.sai.PortMdixModeConfig
-	(PortMdixModeStatus)(0),                       // 122: lemming.dataplane.sai.PortMdixModeStatus
-	(PortMediaType)(0),                            // 123: lemming.dataplane.sai.PortMediaType
-	(PortModuleType)(0),                           // 124: lemming.dataplane.sai.PortModuleType
-	(PortOperStatus)(0),                           // 125: lemming.dataplane.sai.PortOperStatus
-	(PortPathTracingTimestampType)(0),             // 126: lemming.dataplane.sai.PortPathTracingTimestampType
-	(PortPoolStat)(0),                             // 127: lemming.dataplane.sai.PortPoolStat
-	(PortPrbsConfig)(0),                           // 128: lemming.dataplane.sai.PortPrbsConfig
-	(PortPrbsRxStatus)(0),                         // 129: lemming.dataplane.sai.PortPrbsRxStatus
-	(PortPriorityFlowControlMode)(0),              // 130: lemming.dataplane.sai.PortPriorityFlowControlMode
-	(PortPtpMode)(0),                              // 131: lemming.dataplane.sai.PortPtpMode
-	(PortStatExtensions)(0),                       // 132: lemming.dataplane.sai.PortStatExtensions
-	(PortStat)(0),                                 // 133: lemming.dataplane.sai.PortStat
-	(PortType)(0),                                 // 134: lemming.dataplane.sai.PortType
-	(QosMapType)(0),                               // 135: lemming.dataplane.sai.QosMapType
-	(QueuePfcContinuousDeadlockState)(0),          // 136: lemming.dataplane.sai.QueuePfcContinuousDeadlockState
-	(QueuePfcDeadlockEventType)(0),                // 137: lemming.dataplane.sai.QueuePfcDeadlockEventType
-	(QueueStat)(0),                                // 138: lemming.dataplane.sai.QueueStat
-	(QueueType)(0),                                // 139: lemming.dataplane.sai.QueueType
-	(RouterInterfaceStat)(0),                      // 140: lemming.dataplane.sai.RouterInterfaceStat
-	(RouterInterfaceType)(0),                      // 141: lemming.dataplane.sai.RouterInterfaceType
-	(SamplepacketMode)(0),                         // 142: lemming.dataplane.sai.SamplepacketMode
-	(SamplepacketType)(0),                         // 143: lemming.dataplane.sai.SamplepacketType
-	(SchedulingType)(0),                           // 144: lemming.dataplane.sai.SchedulingType
-	(SerCorrectionType)(0),                        // 145: lemming.dataplane.sai.SerCorrectionType
-	(SerLogType)(0),                               // 146: lemming.dataplane.sai.SerLogType
-	(SerType)(0),                                  // 147: lemming.dataplane.sai.SerType
-	(Srv6SidlistStat)(0),                          // 148: lemming.dataplane.sai.Srv6SidlistStat
-	(Srv6SidlistType)(0),                          // 149: lemming.dataplane.sai.Srv6SidlistType
-	(StatsCountMode)(0),                           // 150: lemming.dataplane.sai.StatsCountMode
-	(StatsMode)(0),                                // 151: lemming.dataplane.sai.StatsMode
-	(StpPortState)(0),                             // 152: lemming.dataplane.sai.StpPortState
-	(SwitchAsicSdkHealthCategory)(0),              // 153: lemming.dataplane.sai.SwitchAsicSdkHealthCategory
-	(SwitchAsicSdkHealthSeverity)(0),              // 154: lemming.dataplane.sai.SwitchAsicSdkHealthSeverity
-	(SwitchFailoverConfigMode)(0),                 // 155: lemming.dataplane.sai.SwitchFailoverConfigMode
-	(SwitchFirmwareLoadMethod)(0),                 // 156: lemming.dataplane.sai.SwitchFirmwareLoadMethod
-	(SwitchFirmwareLoadType)(0),                   // 157: lemming.dataplane.sai.SwitchFirmwareLoadType
-	(SwitchHardwareAccessBus)(0),                  // 158: lemming.dataplane.sai.SwitchHardwareAccessBus
-	(SwitchHostifOperStatusUpdateMode)(0),         // 159: lemming.dataplane.sai.SwitchHostifOperStatusUpdateMode
-	(SwitchMcastSnoopingCapability)(0),            // 160: lemming.dataplane.sai.SwitchMcastSnoopingCapability
-	(SwitchOperStatus)(0),                         // 161: lemming.dataplane.sai.SwitchOperStatus
-	(SwitchRestartType)(0),                        // 162: lemming.dataplane.sai.SwitchRestartType
-	(SwitchStat)(0),                               // 163: lemming.dataplane.sai.SwitchStat
-	(SwitchSwitchingMode)(0),                      // 164: lemming.dataplane.sai.SwitchSwitchingMode
-	(SwitchType)(0),                               // 165: lemming.dataplane.sai.SwitchType
-	(SystemPortType)(0),                           // 166: lemming.dataplane.sai.SystemPortType
-	(TableBitmapClassificationEntryAction)(0),     // 167: lemming.dataplane.sai.TableBitmapClassificationEntryAction
-	(TableBitmapClassificationEntryStat)(0),       // 168: lemming.dataplane.sai.TableBitmapClassificationEntryStat
-	(TableBitmapRouterEntryAction)(0),             // 169: lemming.dataplane.sai.TableBitmapRouterEntryAction
-	(TableBitmapRouterEntryStat)(0),               // 170: lemming.dataplane.sai.TableBitmapRouterEntryStat
-	(TableMetaTunnelEntryAction)(0),               // 171: lemming.dataplane.sai.TableMetaTunnelEntryAction
-	(TableMetaTunnelEntryStat)(0),                 // 172: lemming.dataplane.sai.TableMetaTunnelEntryStat
-	(TamBindPointType)(0),                         // 173: lemming.dataplane.sai.TamBindPointType
-	(TamEventThresholdUnit)(0),                    // 174: lemming.dataplane.sai.TamEventThresholdUnit
-	(TamEventType)(0),                             // 175: lemming.dataplane.sai.TamEventType
-	(TamIntPresenceType)(0),                       // 176: lemming.dataplane.sai.TamIntPresenceType
-	(TamIntType)(0),                               // 177: lemming.dataplane.sai.TamIntType
-	(TamReportIntervalUnit)(0),                    // 178: lemming.dataplane.sai.TamReportIntervalUnit
-	(TamReportMode)(0),                            // 179: lemming.dataplane.sai.TamReportMode
-	(TamReportType)(0),                            // 180: lemming.dataplane.sai.TamReportType
-	(TamReportingUnit)(0),                         // 181: lemming.dataplane.sai.TamReportingUnit
-	(TamTelMathFuncType)(0),                       // 182: lemming.dataplane.sai.TamTelMathFuncType
-	(TamTelemetryType)(0),                         // 183: lemming.dataplane.sai.TamTelemetryType
-	(TamTransportAuthType)(0),                     // 184: lemming.dataplane.sai.TamTransportAuthType
-	(TamTransportType)(0),                         // 185: lemming.dataplane.sai.TamTransportType
-	(TlvType)(0),                                  // 186: lemming.dataplane.sai.TlvType
-	(TunnelDecapEcnMode)(0),                       // 187: lemming.dataplane.sai.TunnelDecapEcnMode
-	(TunnelDscpMode)(0),                           // 188: lemming.dataplane.sai.TunnelDscpMode
-	(TunnelEncapEcnMode)(0),                       // 189: lemming.dataplane.sai.TunnelEncapEcnMode
-	(TunnelMapType)(0),                            // 190: lemming.dataplane.sai.TunnelMapType
-	(TunnelPeerMode)(0),                           // 191: lemming.dataplane.sai.TunnelPeerMode
-	(TunnelStat)(0),                               // 192: lemming.dataplane.sai.TunnelStat
-	(TunnelTermTableEntryType)(0),                 // 193: lemming.dataplane.sai.TunnelTermTableEntryType
-	(TunnelTtlMode)(0),                            // 194: lemming.dataplane.sai.TunnelTtlMode
-	(TunnelType)(0),                               // 195: lemming.dataplane.sai.TunnelType
-	(TunnelVxlanUdpSportMode)(0),                  // 196: lemming.dataplane.sai.TunnelVxlanUdpSportMode
-	(UdfBase)(0),                                  // 197: lemming.dataplane.sai.UdfBase
-	(UdfGroupType)(0),                             // 198: lemming.dataplane.sai.UdfGroupType
-	(VlanFloodControlType)(0),                     // 199: lemming.dataplane.sai.VlanFloodControlType
-	(VlanMcastLookupKeyType)(0),                   // 200: lemming.dataplane.sai.VlanMcastLookupKeyType
-	(VlanStat)(0),                                 // 201: lemming.dataplane.sai.VlanStat
-	(VlanTaggingMode)(0),                          // 202: lemming.dataplane.sai.VlanTaggingMode
-	(*AclActionData)(nil),                         // 203: lemming.dataplane.sai.AclActionData
-	(*ACLCapability)(nil),                         // 204: lemming.dataplane.sai.ACLCapability
-	(*AclFieldData)(nil),                          // 205: lemming.dataplane.sai.AclFieldData
-	(*Uint64List)(nil),                            // 206: lemming.dataplane.sai.Uint64List
-	(*ACLResource)(nil),                           // 207: lemming.dataplane.sai.ACLResource
-	(*BfdSessionStateChangeNotificationData)(nil), // 208: lemming.dataplane.sai.BfdSessionStateChangeNotificationData
-	(*FabricPortReachability)(nil),                // 209: lemming.dataplane.sai.FabricPortReachability
-	(*FdbEntry)(nil),                              // 210: lemming.dataplane.sai.FdbEntry
-	(*FdbEventNotificationData)(nil),              // 211: lemming.dataplane.sai.FdbEventNotificationData
-	(*InsegEntry)(nil),                            // 212: lemming.dataplane.sai.InsegEntry
-	(*IpPrefix)(nil),                              // 213: lemming.dataplane.sai.IpPrefix
-	(*IpmcEntry)(nil),                             // 214: lemming.dataplane.sai.IpmcEntry
-	(*IpsecSaStatusNotificationData)(nil),         // 215: lemming.dataplane.sai.IpsecSaStatusNotificationData
-	(*L2McEntry)(nil),                             // 216: lemming.dataplane.sai.L2mcEntry
-	(*LatchStatus)(nil),                           // 217: lemming.dataplane.sai.LatchStatus
-	(*UintMap)(nil),                               // 218: lemming.dataplane.sai.UintMap
-	(*McastFdbEntry)(nil),                         // 219: lemming.dataplane.sai.McastFdbEntry
-	(*MySidEntry)(nil),                            // 220: lemming.dataplane.sai.MySidEntry
-	(*NatEntryData)(nil),                          // 221: lemming.dataplane.sai.NatEntryData
-	(*NatEntry)(nil),                              // 222: lemming.dataplane.sai.NatEntry
-	(*NeighborEntry)(nil),                         // 223: lemming.dataplane.sai.NeighborEntry
-	(*PortEyeValues)(nil),                         // 224: lemming.dataplane.sai.PortEyeValues
-	(*PortLaneLatchStatus)(nil),                   // 225: lemming.dataplane.sai.PortLaneLatchStatus
-	(*PortOperStatusNotification)(nil),            // 226: lemming.dataplane.sai.PortOperStatusNotification
-	(*PRBS_RXState)(nil),                          // 227: lemming.dataplane.sai.PRBS_RXState
-	(*QOSMapParams)(nil),                          // 228: lemming.dataplane.sai.QOSMapParams
-	(*QOSMap)(nil),                                // 229: lemming.dataplane.sai.QOSMap
-	(*QueueDeadlockNotificationData)(nil),         // 230: lemming.dataplane.sai.QueueDeadlockNotificationData
-	(*RouteEntry)(nil),                            // 231: lemming.dataplane.sai.RouteEntry
-	(*SystemPortConfig)(nil),                      // 232: lemming.dataplane.sai.SystemPortConfig
-	(*HMAC)(nil),                                  // 233: lemming.dataplane.sai.HMAC
-	(*TLVEntry)(nil),                              // 234: lemming.dataplane.sai.TLVEntry
-	(*Uint32Range)(nil),                           // 235: lemming.dataplane.sai.Uint32Range
-	(*ObjectTypeQueryRequest)(nil),                // 236: lemming.dataplane.sai.ObjectTypeQueryRequest
-	(*ObjectTypeQueryResponse)(nil),               // 237: lemming.dataplane.sai.ObjectTypeQueryResponse
-	(*InitializeRequest)(nil),                     // 238: lemming.dataplane.sai.InitializeRequest
-	(*InitializeResponse)(nil),                    // 239: lemming.dataplane.sai.InitializeResponse
-	(*UninitializeRequest)(nil),                   // 240: lemming.dataplane.sai.UninitializeRequest
-	(*UninitializeResponse)(nil),                  // 241: lemming.dataplane.sai.UninitializeResponse
-	(*AclCounterAttribute)(nil),                   // 242: lemming.dataplane.sai.AclCounterAttribute
-	(*AclEntryAttribute)(nil),                     // 243: lemming.dataplane.sai.AclEntryAttribute
-	(*AclRangeAttribute)(nil),                     // 244: lemming.dataplane.sai.AclRangeAttribute
-	(*AclTableAttribute)(nil),                     // 245: lemming.dataplane.sai.AclTableAttribute
-	(*AclTableChainGroupAttribute)(nil),           // 246: lemming.dataplane.sai.AclTableChainGroupAttribute
-	(*AclTableGroupAttribute)(nil),                // 247: lemming.dataplane.sai.AclTableGroupAttribute
-	(*AclTableGroupMemberAttribute)(nil),          // 248: lemming.dataplane.sai.AclTableGroupMemberAttribute
-	(*BfdSessionAttribute)(nil),                   // 249: lemming.dataplane.sai.BfdSessionAttribute
-	(*BridgeAttribute)(nil),                       // 250: lemming.dataplane.sai.BridgeAttribute
-	(*BridgePortAttribute)(nil),                   // 251: lemming.dataplane.sai.BridgePortAttribute
-	(*BufferPoolAttribute)(nil),                   // 252: lemming.dataplane.sai.BufferPoolAttribute
-	(*BufferProfileAttribute)(nil),                // 253: lemming.dataplane.sai.BufferProfileAttribute
-	(*CounterAttribute)(nil),                      // 254: lemming.dataplane.sai.CounterAttribute
-	(*DebugCounterAttribute)(nil),                 // 255: lemming.dataplane.sai.DebugCounterAttribute
-	(*DtelAttribute)(nil),                         // 256: lemming.dataplane.sai.DtelAttribute
-	(*DtelEventAttribute)(nil),                    // 257: lemming.dataplane.sai.DtelEventAttribute
-	(*DtelIntSessionAttribute)(nil),               // 258: lemming.dataplane.sai.DtelIntSessionAttribute
-	(*DtelQueueReportAttribute)(nil),              // 259: lemming.dataplane.sai.DtelQueueReportAttribute
-	(*DtelReportSessionAttribute)(nil),            // 260: lemming.dataplane.sai.DtelReportSessionAttribute
-	(*FdbEntryAttribute)(nil),                     // 261: lemming.dataplane.sai.FdbEntryAttribute
-	(*FdbFlushAttribute)(nil),                     // 262: lemming.dataplane.sai.FdbFlushAttribute
-	(*GenericProgrammableAttribute)(nil),          // 263: lemming.dataplane.sai.GenericProgrammableAttribute
-	(*HashAttribute)(nil),                         // 264: lemming.dataplane.sai.HashAttribute
-	(*HostifAttribute)(nil),                       // 265: lemming.dataplane.sai.HostifAttribute
-	(*HostifPacketAttribute)(nil),                 // 266: lemming.dataplane.sai.HostifPacketAttribute
-	(*HostifTableEntryAttribute)(nil),             // 267: lemming.dataplane.sai.HostifTableEntryAttribute
-	(*HostifTrapAttribute)(nil),                   // 268: lemming.dataplane.sai.HostifTrapAttribute
-	(*HostifTrapGroupAttribute)(nil),              // 269: lemming.dataplane.sai.HostifTrapGroupAttribute
-	(*HostifUserDefinedTrapAttribute)(nil),        // 270: lemming.dataplane.sai.HostifUserDefinedTrapAttribute
-	(*IcmpEchoSessionAttribute)(nil),              // 271: lemming.dataplane.sai.IcmpEchoSessionAttribute
-	(*IpmcEntryAttribute)(nil),                    // 272: lemming.dataplane.sai.IpmcEntryAttribute
-	(*IpmcGroupAttribute)(nil),                    // 273: lemming.dataplane.sai.IpmcGroupAttribute
-	(*IpmcGroupMemberAttribute)(nil),              // 274: lemming.dataplane.sai.IpmcGroupMemberAttribute
-	(*IpsecAttribute)(nil),                        // 275: lemming.dataplane.sai.IpsecAttribute
-	(*IpsecPortAttribute)(nil),                    // 276: lemming.dataplane.sai.IpsecPortAttribute
-	(*IpsecSaAttribute)(nil),                      // 277: lemming.dataplane.sai.IpsecSaAttribute
-	(*IsolationGroupAttribute)(nil),               // 278: lemming.dataplane.sai.IsolationGroupAttribute
-	(*IsolationGroupMemberAttribute)(nil),         // 279: lemming.dataplane.sai.IsolationGroupMemberAttribute
-	(*L2McEntryAttribute)(nil),                    // 280: lemming.dataplane.sai.L2mcEntryAttribute
-	(*L2McGroupAttribute)(nil),                    // 281: lemming.dataplane.sai.L2mcGroupAttribute
-	(*L2McGroupMemberAttribute)(nil),              // 282: lemming.dataplane.sai.L2mcGroupMemberAttribute
-	(*LagAttribute)(nil),                          // 283: lemming.dataplane.sai.LagAttribute
-	(*LagMemberAttribute)(nil),                    // 284: lemming.dataplane.sai.LagMemberAttribute
-	(*MacsecAttribute)(nil),                       // 285: lemming.dataplane.sai.MacsecAttribute
-	(*MacsecFlowAttribute)(nil),                   // 286: lemming.dataplane.sai.MacsecFlowAttribute
-	(*MacsecPortAttribute)(nil),                   // 287: lemming.dataplane.sai.MacsecPortAttribute
-	(*MacsecSaAttribute)(nil),                     // 288: lemming.dataplane.sai.MacsecSaAttribute
-	(*MacsecScAttribute)(nil),                     // 289: lemming.dataplane.sai.MacsecScAttribute
-	(*McastFdbEntryAttribute)(nil),                // 290: lemming.dataplane.sai.McastFdbEntryAttribute
-	(*MirrorSessionAttribute)(nil),                // 291: lemming.dataplane.sai.MirrorSessionAttribute
-	(*MyMacAttribute)(nil),                        // 292: lemming.dataplane.sai.MyMacAttribute
-	(*NatEntryAttribute)(nil),                     // 293: lemming.dataplane.sai.NatEntryAttribute
-	(*NatZoneCounterAttribute)(nil),               // 294: lemming.dataplane.sai.NatZoneCounterAttribute
-	(*NeighborEntryAttribute)(nil),                // 295: lemming.dataplane.sai.NeighborEntryAttribute
-	(*NextHopAttribute)(nil),                      // 296: lemming.dataplane.sai.NextHopAttribute
-	(*NextHopGroupAttribute)(nil),                 // 297: lemming.dataplane.sai.NextHopGroupAttribute
-	(*NextHopGroupMapAttribute)(nil),              // 298: lemming.dataplane.sai.NextHopGroupMapAttribute
-	(*NextHopGroupMemberAttribute)(nil),           // 299: lemming.dataplane.sai.NextHopGroupMemberAttribute
-	(*PolicerAttribute)(nil),                      // 300: lemming.dataplane.sai.PolicerAttribute
-	(*PortAttribute)(nil),                         // 301: lemming.dataplane.sai.PortAttribute
-	(*PortConnectorAttribute)(nil),                // 302: lemming.dataplane.sai.PortConnectorAttribute
-	(*PortPoolAttribute)(nil),                     // 303: lemming.dataplane.sai.PortPoolAttribute
-	(*PortSerdesAttribute)(nil),                   // 304: lemming.dataplane.sai.PortSerdesAttribute
-	(*QosMapAttribute)(nil),                       // 305: lemming.dataplane.sai.QosMapAttribute
-	(*QueueAttribute)(nil),                        // 306: lemming.dataplane.sai.QueueAttribute
-	(*RouterInterfaceAttribute)(nil),              // 307: lemming.dataplane.sai.RouterInterfaceAttribute
-	(*RouteEntryAttribute)(nil),                   // 308: lemming.dataplane.sai.RouteEntryAttribute
-	(*RpfGroupAttribute)(nil),                     // 309: lemming.dataplane.sai.RpfGroupAttribute
-	(*RpfGroupMemberAttribute)(nil),               // 310: lemming.dataplane.sai.RpfGroupMemberAttribute
-	(*SamplepacketAttribute)(nil),                 // 311: lemming.dataplane.sai.SamplepacketAttribute
-	(*SchedulerAttribute)(nil),                    // 312: lemming.dataplane.sai.SchedulerAttribute
-	(*SchedulerGroupAttribute)(nil),               // 313: lemming.dataplane.sai.SchedulerGroupAttribute
-	(*Srv6SidlistAttribute)(nil),                  // 314: lemming.dataplane.sai.Srv6SidlistAttribute
-	(*StpAttribute)(nil),                          // 315: lemming.dataplane.sai.StpAttribute
-	(*StpPortAttribute)(nil),                      // 316: lemming.dataplane.sai.StpPortAttribute
-	(*SwitchAttribute)(nil),                       // 317: lemming.dataplane.sai.SwitchAttribute
-	(*SwitchTunnelAttribute)(nil),                 // 318: lemming.dataplane.sai.SwitchTunnelAttribute
-	(*SystemPortAttribute)(nil),                   // 319: lemming.dataplane.sai.SystemPortAttribute
-	(*TamAttribute)(nil),                          // 320: lemming.dataplane.sai.TamAttribute
-	(*TamCollectorAttribute)(nil),                 // 321: lemming.dataplane.sai.TamCollectorAttribute
-	(*TamCounterSubscriptionAttribute)(nil),       // 322: lemming.dataplane.sai.TamCounterSubscriptionAttribute
-	(*TamEventAttribute)(nil),                     // 323: lemming.dataplane.sai.TamEventAttribute
-	(*TamEventActionAttribute)(nil),               // 324: lemming.dataplane.sai.TamEventActionAttribute
-	(*TamEventThresholdAttribute)(nil),            // 325: lemming.dataplane.sai.TamEventThresholdAttribute
-	(*TamIntAttribute)(nil),                       // 326: lemming.dataplane.sai.TamIntAttribute
-	(*TamMathFuncAttribute)(nil),                  // 327: lemming.dataplane.sai.TamMathFuncAttribute
-	(*TamReportAttribute)(nil),                    // 328: lemming.dataplane.sai.TamReportAttribute
-	(*TamTelemetryAttribute)(nil),                 // 329: lemming.dataplane.sai.TamTelemetryAttribute
-	(*TamTelTypeAttribute)(nil),                   // 330: lemming.dataplane.sai.TamTelTypeAttribute
-	(*TamTransportAttribute)(nil),                 // 331: lemming.dataplane.sai.TamTransportAttribute
-	(*TunnelAttribute)(nil),                       // 332: lemming.dataplane.sai.TunnelAttribute
-	(*TunnelMapAttribute)(nil),                    // 333: lemming.dataplane.sai.TunnelMapAttribute
-	(*TunnelMapEntryAttribute)(nil),               // 334: lemming.dataplane.sai.TunnelMapEntryAttribute
-	(*TunnelTermTableEntryAttribute)(nil),         // 335: lemming.dataplane.sai.TunnelTermTableEntryAttribute
-	(*UdfAttribute)(nil),                          // 336: lemming.dataplane.sai.UdfAttribute
-	(*UdfGroupAttribute)(nil),                     // 337: lemming.dataplane.sai.UdfGroupAttribute
-	(*UdfMatchAttribute)(nil),                     // 338: lemming.dataplane.sai.UdfMatchAttribute
-	(*VirtualRouterAttribute)(nil),                // 339: lemming.dataplane.sai.VirtualRouterAttribute
-	(*VlanAttribute)(nil),                         // 340: lemming.dataplane.sai.VlanAttribute
-	(*VlanMemberAttribute)(nil),                   // 341: lemming.dataplane.sai.VlanMemberAttribute
-	(*WredAttribute)(nil),                         // 342: lemming.dataplane.sai.WredAttribute
-	nil,                                           // 343: lemming.dataplane.sai.UintMap.UintmapEntry
-	nil,                                           // 344: lemming.dataplane.sai.AclEntryAttribute.UserDefinedFieldGroupMinEntry
-	nil,                                           // 345: lemming.dataplane.sai.AclTableAttribute.UserDefinedFieldGroupMinEntry
-	(*timestamppb.Timestamp)(nil),                 // 346: google.protobuf.Timestamp
-	(*descriptorpb.FieldOptions)(nil),             // 347: google.protobuf.FieldOptions
-	(*descriptorpb.MessageOptions)(nil),           // 348: google.protobuf.MessageOptions
+	(AclActionType)(0),                              // 0: lemming.dataplane.sai.AclActionType
+	(AclBindPointType)(0),                           // 1: lemming.dataplane.sai.AclBindPointType
+	(AclDtelFlowOp)(0),                              // 2: lemming.dataplane.sai.AclDtelFlowOp
+	(AclIpFrag)(0),                                  // 3: lemming.dataplane.sai.AclIpFrag
+	(AclIpType)(0),                                  // 4: lemming.dataplane.sai.AclIpType
+	(AclRangeType)(0),                               // 5: lemming.dataplane.sai.AclRangeType
+	(AclStage)(0),                                   // 6: lemming.dataplane.sai.AclStage
+	(AclTableChainGroupStage)(0),                    // 7: lemming.dataplane.sai.AclTableChainGroupStage
+	(AclTableChainGroupType)(0),                     // 8: lemming.dataplane.sai.AclTableChainGroupType
+	(AclTableGroupType)(0),                          // 9: lemming.dataplane.sai.AclTableGroupType
+	(AclTableMatchType)(0),                          // 10: lemming.dataplane.sai.AclTableMatchType
+	(AclTableSupportedMatchType)(0),                 // 11: lemming.dataplane.sai.AclTableSupportedMatchType
+	(ApiExtensions)(0),                              // 12: lemming.dataplane.sai.ApiExtensions
+	(Api)(0),                                        // 13: lemming.dataplane.sai.Api
+	(BfdEncapsulationType)(0),                       // 14: lemming.dataplane.sai.BfdEncapsulationType
+	(BfdSessionOffloadType)(0),                      // 15: lemming.dataplane.sai.BfdSessionOffloadType
+	(BfdSessionStat)(0),                             // 16: lemming.dataplane.sai.BfdSessionStat
+	(BfdSessionState)(0),                            // 17: lemming.dataplane.sai.BfdSessionState
+	(BfdSessionType)(0),                             // 18: lemming.dataplane.sai.BfdSessionType
+	(BridgeFloodControlType)(0),                     // 19: lemming.dataplane.sai.BridgeFloodControlType
+	(BridgePortFdbLearningMode)(0),                  // 20: lemming.dataplane.sai.BridgePortFdbLearningMode
+	(BridgePortStat)(0),                             // 21: lemming.dataplane.sai.BridgePortStat
+	(BridgePortTaggingMode)(0),                      // 22: lemming.dataplane.sai.BridgePortTaggingMode
+	(BridgePortType)(0),                             // 23: lemming.dataplane.sai.BridgePortType
+	(BridgeStat)(0),                                 // 24: lemming.dataplane.sai.BridgeStat
+	(BridgeType)(0),                                 // 25: lemming.dataplane.sai.BridgeType
+	(BufferPoolStat)(0),                             // 26: lemming.dataplane.sai.BufferPoolStat
+	(BufferPoolThresholdMode)(0),                    // 27: lemming.dataplane.sai.BufferPoolThresholdMode
+	(BufferPoolType)(0),                             // 28: lemming.dataplane.sai.BufferPoolType
+	(BufferProfileThresholdMode)(0),                 // 29: lemming.dataplane.sai.BufferProfileThresholdMode
+	(BulkOpErrorMode)(0),                            // 30: lemming.dataplane.sai.BulkOpErrorMode
+	(CommonApi)(0),                                  // 31: lemming.dataplane.sai.CommonApi
+	(CounterStat)(0),                                // 32: lemming.dataplane.sai.CounterStat
+	(CounterType)(0),                                // 33: lemming.dataplane.sai.CounterType
+	(DashCapsHaScopeLevel)(0),                       // 34: lemming.dataplane.sai.DashCapsHaScopeLevel
+	(DashDirection)(0),                              // 35: lemming.dataplane.sai.DashDirection
+	(DashEncapsulation)(0),                          // 36: lemming.dataplane.sai.DashEncapsulation
+	(DashEniMacOverrideType)(0),                     // 37: lemming.dataplane.sai.DashEniMacOverrideType
+	(DashFlowAction)(0),                             // 38: lemming.dataplane.sai.DashFlowAction
+	(DashFlowEnabledKey)(0),                         // 39: lemming.dataplane.sai.DashFlowEnabledKey
+	(DashFlowEntryBulkGetSessionFilterKey)(0),       // 40: lemming.dataplane.sai.DashFlowEntryBulkGetSessionFilterKey
+	(DashFlowEntryBulkGetSessionMode)(0),            // 41: lemming.dataplane.sai.DashFlowEntryBulkGetSessionMode
+	(DashFlowEntryBulkGetSessionOpKey)(0),           // 42: lemming.dataplane.sai.DashFlowEntryBulkGetSessionOpKey
+	(DashHaRole)(0),                                 // 43: lemming.dataplane.sai.DashHaRole
+	(DashHaState)(0),                                // 44: lemming.dataplane.sai.DashHaState
+	(DashRoutingActions)(0),                         // 45: lemming.dataplane.sai.DashRoutingActions
+	(DashTunnelDscpMode)(0),                         // 46: lemming.dataplane.sai.DashTunnelDscpMode
+	(DebugCounterBindMethod)(0),                     // 47: lemming.dataplane.sai.DebugCounterBindMethod
+	(DebugCounterType)(0),                           // 48: lemming.dataplane.sai.DebugCounterType
+	(DtelEventType)(0),                              // 49: lemming.dataplane.sai.DtelEventType
+	(EcnMarkMode)(0),                                // 50: lemming.dataplane.sai.EcnMarkMode
+	(ErspanEncapsulationType)(0),                    // 51: lemming.dataplane.sai.ErspanEncapsulationType
+	(FdbEntryType)(0),                               // 52: lemming.dataplane.sai.FdbEntryType
+	(FdbEvent)(0),                                   // 53: lemming.dataplane.sai.FdbEvent
+	(FdbFlushEntryType)(0),                          // 54: lemming.dataplane.sai.FdbFlushEntryType
+	(HaScopeEvent)(0),                               // 55: lemming.dataplane.sai.HaScopeEvent
+	(HaSetEvent)(0),                                 // 56: lemming.dataplane.sai.HaSetEvent
+	(HashAlgorithm)(0),                              // 57: lemming.dataplane.sai.HashAlgorithm
+	(HealthDataType)(0),                             // 58: lemming.dataplane.sai.HealthDataType
+	(HostifTableEntryChannelType)(0),                // 59: lemming.dataplane.sai.HostifTableEntryChannelType
+	(HostifTableEntryType)(0),                       // 60: lemming.dataplane.sai.HostifTableEntryType
+	(HostifTrapType)(0),                             // 61: lemming.dataplane.sai.HostifTrapType
+	(HostifTxType)(0),                               // 62: lemming.dataplane.sai.HostifTxType
+	(HostifType)(0),                                 // 63: lemming.dataplane.sai.HostifType
+	(HostifUserDefinedTrapType)(0),                  // 64: lemming.dataplane.sai.HostifUserDefinedTrapType
+	(HostifVlanTag)(0),                              // 65: lemming.dataplane.sai.HostifVlanTag
+	(IcmpEchoSessionStat)(0),                        // 66: lemming.dataplane.sai.IcmpEchoSessionStat
+	(IcmpEchoSessionState)(0),                       // 67: lemming.dataplane.sai.IcmpEchoSessionState
+	(InDropReason)(0),                               // 68: lemming.dataplane.sai.InDropReason
+	(IngressPriorityGroupStat)(0),                   // 69: lemming.dataplane.sai.IngressPriorityGroupStat
+	(InsegEntryPopQosMode)(0),                       // 70: lemming.dataplane.sai.InsegEntryPopQosMode
+	(InsegEntryPopTtlMode)(0),                       // 71: lemming.dataplane.sai.InsegEntryPopTtlMode
+	(InsegEntryPscType)(0),                          // 72: lemming.dataplane.sai.InsegEntryPscType
+	(IpAddrFamily)(0),                               // 73: lemming.dataplane.sai.IpAddrFamily
+	(IpmcEntryType)(0),                              // 74: lemming.dataplane.sai.IpmcEntryType
+	(IpsecCipher)(0),                                // 75: lemming.dataplane.sai.IpsecCipher
+	(IpsecDirection)(0),                             // 76: lemming.dataplane.sai.IpsecDirection
+	(IpsecPortStat)(0),                              // 77: lemming.dataplane.sai.IpsecPortStat
+	(IpsecSaOctetCountStatus)(0),                    // 78: lemming.dataplane.sai.IpsecSaOctetCountStatus
+	(IpsecSaStat)(0),                                // 79: lemming.dataplane.sai.IpsecSaStat
+	(IsolationGroupType)(0),                         // 80: lemming.dataplane.sai.IsolationGroupType
+	(L2McEntryType)(0),                              // 81: lemming.dataplane.sai.L2mcEntryType
+	(LogLevel)(0),                                   // 82: lemming.dataplane.sai.LogLevel
+	(MacsecCipherSuite)(0),                          // 83: lemming.dataplane.sai.MacsecCipherSuite
+	(MacsecDirection)(0),                            // 84: lemming.dataplane.sai.MacsecDirection
+	(MacsecFlowStat)(0),                             // 85: lemming.dataplane.sai.MacsecFlowStat
+	(MacsecMaxSecureAssociationsPerSc)(0),           // 86: lemming.dataplane.sai.MacsecMaxSecureAssociationsPerSc
+	(MacsecPortStat)(0),                             // 87: lemming.dataplane.sai.MacsecPortStat
+	(MacsecSaStat)(0),                               // 88: lemming.dataplane.sai.MacsecSaStat
+	(MacsecScStat)(0),                               // 89: lemming.dataplane.sai.MacsecScStat
+	(MeterType)(0),                                  // 90: lemming.dataplane.sai.MeterType
+	(MirrorSessionCongestionMode)(0),                // 91: lemming.dataplane.sai.MirrorSessionCongestionMode
+	(MirrorSessionType)(0),                          // 92: lemming.dataplane.sai.MirrorSessionType
+	(MySidEntryEndpointBehaviorFlavor)(0),           // 93: lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor
+	(MySidEntryEndpointBehavior)(0),                 // 94: lemming.dataplane.sai.MySidEntryEndpointBehavior
+	(NatEvent)(0),                                   // 95: lemming.dataplane.sai.NatEvent
+	(NatType)(0),                                    // 96: lemming.dataplane.sai.NatType
+	(NativeHashField)(0),                            // 97: lemming.dataplane.sai.NativeHashField
+	(NextHopGroupMapType)(0),                        // 98: lemming.dataplane.sai.NextHopGroupMapType
+	(NextHopGroupMemberConfiguredRole)(0),           // 99: lemming.dataplane.sai.NextHopGroupMemberConfiguredRole
+	(NextHopGroupMemberObservedRole)(0),             // 100: lemming.dataplane.sai.NextHopGroupMemberObservedRole
+	(NextHopGroupType)(0),                           // 101: lemming.dataplane.sai.NextHopGroupType
+	(NextHopType)(0),                                // 102: lemming.dataplane.sai.NextHopType
+	(ObjectStage)(0),                                // 103: lemming.dataplane.sai.ObjectStage
+	(ObjectTypeExtensions)(0),                       // 104: lemming.dataplane.sai.ObjectTypeExtensions
+	(ObjectType)(0),                                 // 105: lemming.dataplane.sai.ObjectType
+	(OutDropReason)(0),                              // 106: lemming.dataplane.sai.OutDropReason
+	(OutsegExpMode)(0),                              // 107: lemming.dataplane.sai.OutsegExpMode
+	(OutsegTtlMode)(0),                              // 108: lemming.dataplane.sai.OutsegTtlMode
+	(OutsegType)(0),                                 // 109: lemming.dataplane.sai.OutsegType
+	(PacketAction)(0),                               // 110: lemming.dataplane.sai.PacketAction
+	(PacketColor)(0),                                // 111: lemming.dataplane.sai.PacketColor
+	(PacketVlan)(0),                                 // 112: lemming.dataplane.sai.PacketVlan
+	(PoePortActiveChannelType)(0),                   // 113: lemming.dataplane.sai.PoePortActiveChannelType
+	(PoePortClassMethodType)(0),                     // 114: lemming.dataplane.sai.PoePortClassMethodType
+	(PoePortSignatureType)(0),                       // 115: lemming.dataplane.sai.PoePortSignatureType
+	(PolicerColorSource)(0),                         // 116: lemming.dataplane.sai.PolicerColorSource
+	(PolicerMode)(0),                                // 117: lemming.dataplane.sai.PolicerMode
+	(PolicerStat)(0),                                // 118: lemming.dataplane.sai.PolicerStat
+	(PortAttrExtensions)(0),                         // 119: lemming.dataplane.sai.PortAttrExtensions
+	(PortAutoNegConfigMode)(0),                      // 120: lemming.dataplane.sai.PortAutoNegConfigMode
+	(PortBreakoutModeType)(0),                       // 121: lemming.dataplane.sai.PortBreakoutModeType
+	(PortCablePairState)(0),                         // 122: lemming.dataplane.sai.PortCablePairState
+	(PortCableType)(0),                              // 123: lemming.dataplane.sai.PortCableType
+	(PortConnectorFailoverMode)(0),                  // 124: lemming.dataplane.sai.PortConnectorFailoverMode
+	(PortDatapathEnable)(0),                         // 125: lemming.dataplane.sai.PortDatapathEnable
+	(PortDualMedia)(0),                              // 126: lemming.dataplane.sai.PortDualMedia
+	(PortErrStatus)(0),                              // 127: lemming.dataplane.sai.PortErrStatus
+	(PortErrorStatus)(0),                            // 128: lemming.dataplane.sai.PortErrorStatus
+	(PortFecModeExtended)(0),                        // 129: lemming.dataplane.sai.PortFecModeExtended
+	(PortFecMode)(0),                                // 130: lemming.dataplane.sai.PortFecMode
+	(PortFlowControlMode)(0),                        // 131: lemming.dataplane.sai.PortFlowControlMode
+	(PortHostTxReadyStatus)(0),                      // 132: lemming.dataplane.sai.PortHostTxReadyStatus
+	(PortInterfaceType)(0),                          // 133: lemming.dataplane.sai.PortInterfaceType
+	(PortInternalLoopbackMode)(0),                   // 134: lemming.dataplane.sai.PortInternalLoopbackMode
+	(PortLinkTrainingFailureStatus)(0),              // 135: lemming.dataplane.sai.PortLinkTrainingFailureStatus
+	(PortLinkTrainingRxStatus)(0),                   // 136: lemming.dataplane.sai.PortLinkTrainingRxStatus
+	(PortLoopbackMode)(0),                           // 137: lemming.dataplane.sai.PortLoopbackMode
+	(PortMdixModeConfig)(0),                         // 138: lemming.dataplane.sai.PortMdixModeConfig
+	(PortMdixModeStatus)(0),                         // 139: lemming.dataplane.sai.PortMdixModeStatus
+	(PortMediaType)(0),                              // 140: lemming.dataplane.sai.PortMediaType
+	(PortModuleType)(0),                             // 141: lemming.dataplane.sai.PortModuleType
+	(PortOperStatus)(0),                             // 142: lemming.dataplane.sai.PortOperStatus
+	(PortPathTracingTimestampType)(0),               // 143: lemming.dataplane.sai.PortPathTracingTimestampType
+	(PortPoolStat)(0),                               // 144: lemming.dataplane.sai.PortPoolStat
+	(PortPrbsConfig)(0),                             // 145: lemming.dataplane.sai.PortPrbsConfig
+	(PortPrbsRxStatus)(0),                           // 146: lemming.dataplane.sai.PortPrbsRxStatus
+	(PortPriorityFlowControlMode)(0),                // 147: lemming.dataplane.sai.PortPriorityFlowControlMode
+	(PortPtpMode)(0),                                // 148: lemming.dataplane.sai.PortPtpMode
+	(PortStatExtensions)(0),                         // 149: lemming.dataplane.sai.PortStatExtensions
+	(PortStat)(0),                                   // 150: lemming.dataplane.sai.PortStat
+	(PortType)(0),                                   // 151: lemming.dataplane.sai.PortType
+	(QosMapType)(0),                                 // 152: lemming.dataplane.sai.QosMapType
+	(QueuePfcContinuousDeadlockState)(0),            // 153: lemming.dataplane.sai.QueuePfcContinuousDeadlockState
+	(QueuePfcDeadlockEventType)(0),                  // 154: lemming.dataplane.sai.QueuePfcDeadlockEventType
+	(QueueStat)(0),                                  // 155: lemming.dataplane.sai.QueueStat
+	(QueueType)(0),                                  // 156: lemming.dataplane.sai.QueueType
+	(RouterInterfaceStat)(0),                        // 157: lemming.dataplane.sai.RouterInterfaceStat
+	(RouterInterfaceType)(0),                        // 158: lemming.dataplane.sai.RouterInterfaceType
+	(SamplepacketMode)(0),                           // 159: lemming.dataplane.sai.SamplepacketMode
+	(SamplepacketType)(0),                           // 160: lemming.dataplane.sai.SamplepacketType
+	(SchedulingType)(0),                             // 161: lemming.dataplane.sai.SchedulingType
+	(SerCorrectionType)(0),                          // 162: lemming.dataplane.sai.SerCorrectionType
+	(SerLogType)(0),                                 // 163: lemming.dataplane.sai.SerLogType
+	(SerType)(0),                                    // 164: lemming.dataplane.sai.SerType
+	(Srv6SidlistStat)(0),                            // 165: lemming.dataplane.sai.Srv6SidlistStat
+	(Srv6SidlistType)(0),                            // 166: lemming.dataplane.sai.Srv6SidlistType
+	(StatsCountMode)(0),                             // 167: lemming.dataplane.sai.StatsCountMode
+	(StatsMode)(0),                                  // 168: lemming.dataplane.sai.StatsMode
+	(StpPortState)(0),                               // 169: lemming.dataplane.sai.StpPortState
+	(SwitchAsicSdkHealthCategory)(0),                // 170: lemming.dataplane.sai.SwitchAsicSdkHealthCategory
+	(SwitchAsicSdkHealthSeverity)(0),                // 171: lemming.dataplane.sai.SwitchAsicSdkHealthSeverity
+	(SwitchAttrExtensions)(0),                       // 172: lemming.dataplane.sai.SwitchAttrExtensions
+	(SwitchFailoverConfigMode)(0),                   // 173: lemming.dataplane.sai.SwitchFailoverConfigMode
+	(SwitchFirmwareLoadMethod)(0),                   // 174: lemming.dataplane.sai.SwitchFirmwareLoadMethod
+	(SwitchFirmwareLoadType)(0),                     // 175: lemming.dataplane.sai.SwitchFirmwareLoadType
+	(SwitchHardwareAccessBus)(0),                    // 176: lemming.dataplane.sai.SwitchHardwareAccessBus
+	(SwitchHostifOperStatusUpdateMode)(0),           // 177: lemming.dataplane.sai.SwitchHostifOperStatusUpdateMode
+	(SwitchMcastSnoopingCapability)(0),              // 178: lemming.dataplane.sai.SwitchMcastSnoopingCapability
+	(SwitchOperStatus)(0),                           // 179: lemming.dataplane.sai.SwitchOperStatus
+	(SwitchRestartType)(0),                          // 180: lemming.dataplane.sai.SwitchRestartType
+	(SwitchStat)(0),                                 // 181: lemming.dataplane.sai.SwitchStat
+	(SwitchSwitchingMode)(0),                        // 182: lemming.dataplane.sai.SwitchSwitchingMode
+	(SwitchType)(0),                                 // 183: lemming.dataplane.sai.SwitchType
+	(SystemPortType)(0),                             // 184: lemming.dataplane.sai.SystemPortType
+	(TableBitmapClassificationEntryAction)(0),       // 185: lemming.dataplane.sai.TableBitmapClassificationEntryAction
+	(TableBitmapClassificationEntryStat)(0),         // 186: lemming.dataplane.sai.TableBitmapClassificationEntryStat
+	(TableBitmapRouterEntryAction)(0),               // 187: lemming.dataplane.sai.TableBitmapRouterEntryAction
+	(TableBitmapRouterEntryStat)(0),                 // 188: lemming.dataplane.sai.TableBitmapRouterEntryStat
+	(TableMetaTunnelEntryAction)(0),                 // 189: lemming.dataplane.sai.TableMetaTunnelEntryAction
+	(TableMetaTunnelEntryStat)(0),                   // 190: lemming.dataplane.sai.TableMetaTunnelEntryStat
+	(TamBindPointType)(0),                           // 191: lemming.dataplane.sai.TamBindPointType
+	(TamEventThresholdUnit)(0),                      // 192: lemming.dataplane.sai.TamEventThresholdUnit
+	(TamEventType)(0),                               // 193: lemming.dataplane.sai.TamEventType
+	(TamIntPresenceType)(0),                         // 194: lemming.dataplane.sai.TamIntPresenceType
+	(TamIntType)(0),                                 // 195: lemming.dataplane.sai.TamIntType
+	(TamReportIntervalUnit)(0),                      // 196: lemming.dataplane.sai.TamReportIntervalUnit
+	(TamReportMode)(0),                              // 197: lemming.dataplane.sai.TamReportMode
+	(TamReportType)(0),                              // 198: lemming.dataplane.sai.TamReportType
+	(TamReportingUnit)(0),                           // 199: lemming.dataplane.sai.TamReportingUnit
+	(TamTelMathFuncType)(0),                         // 200: lemming.dataplane.sai.TamTelMathFuncType
+	(TamTelemetryType)(0),                           // 201: lemming.dataplane.sai.TamTelemetryType
+	(TamTransportAuthType)(0),                       // 202: lemming.dataplane.sai.TamTransportAuthType
+	(TamTransportType)(0),                           // 203: lemming.dataplane.sai.TamTransportType
+	(TlvType)(0),                                    // 204: lemming.dataplane.sai.TlvType
+	(TunnelDecapEcnMode)(0),                         // 205: lemming.dataplane.sai.TunnelDecapEcnMode
+	(TunnelDscpMode)(0),                             // 206: lemming.dataplane.sai.TunnelDscpMode
+	(TunnelEncapEcnMode)(0),                         // 207: lemming.dataplane.sai.TunnelEncapEcnMode
+	(TunnelMapType)(0),                              // 208: lemming.dataplane.sai.TunnelMapType
+	(TunnelPeerMode)(0),                             // 209: lemming.dataplane.sai.TunnelPeerMode
+	(TunnelStat)(0),                                 // 210: lemming.dataplane.sai.TunnelStat
+	(TunnelTermTableEntryType)(0),                   // 211: lemming.dataplane.sai.TunnelTermTableEntryType
+	(TunnelTtlMode)(0),                              // 212: lemming.dataplane.sai.TunnelTtlMode
+	(TunnelType)(0),                                 // 213: lemming.dataplane.sai.TunnelType
+	(TunnelVxlanUdpSportMode)(0),                    // 214: lemming.dataplane.sai.TunnelVxlanUdpSportMode
+	(UdfBase)(0),                                    // 215: lemming.dataplane.sai.UdfBase
+	(UdfGroupType)(0),                               // 216: lemming.dataplane.sai.UdfGroupType
+	(VlanFloodControlType)(0),                       // 217: lemming.dataplane.sai.VlanFloodControlType
+	(VlanMcastLookupKeyType)(0),                     // 218: lemming.dataplane.sai.VlanMcastLookupKeyType
+	(VlanStat)(0),                                   // 219: lemming.dataplane.sai.VlanStat
+	(VlanTaggingMode)(0),                            // 220: lemming.dataplane.sai.VlanTaggingMode
+	(*AclActionData)(nil),                           // 221: lemming.dataplane.sai.AclActionData
+	(*ACLCapability)(nil),                           // 222: lemming.dataplane.sai.ACLCapability
+	(*AclFieldData)(nil),                            // 223: lemming.dataplane.sai.AclFieldData
+	(*Uint64List)(nil),                              // 224: lemming.dataplane.sai.Uint64List
+	(*ACLResource)(nil),                             // 225: lemming.dataplane.sai.ACLResource
+	(*BfdSessionStateChangeNotificationData)(nil),   // 226: lemming.dataplane.sai.BfdSessionStateChangeNotificationData
+	(*FabricPortReachability)(nil),                  // 227: lemming.dataplane.sai.FabricPortReachability
+	(*FdbEntry)(nil),                                // 228: lemming.dataplane.sai.FdbEntry
+	(*FdbEventNotificationData)(nil),                // 229: lemming.dataplane.sai.FdbEventNotificationData
+	(*InsegEntry)(nil),                              // 230: lemming.dataplane.sai.InsegEntry
+	(*IpPrefix)(nil),                                // 231: lemming.dataplane.sai.IpPrefix
+	(*IpmcEntry)(nil),                               // 232: lemming.dataplane.sai.IpmcEntry
+	(*IpsecSaStatusNotificationData)(nil),           // 233: lemming.dataplane.sai.IpsecSaStatusNotificationData
+	(*L2McEntry)(nil),                               // 234: lemming.dataplane.sai.L2mcEntry
+	(*LatchStatus)(nil),                             // 235: lemming.dataplane.sai.LatchStatus
+	(*UintMap)(nil),                                 // 236: lemming.dataplane.sai.UintMap
+	(*McastFdbEntry)(nil),                           // 237: lemming.dataplane.sai.McastFdbEntry
+	(*MySidEntry)(nil),                              // 238: lemming.dataplane.sai.MySidEntry
+	(*NatEntryData)(nil),                            // 239: lemming.dataplane.sai.NatEntryData
+	(*NatEntry)(nil),                                // 240: lemming.dataplane.sai.NatEntry
+	(*NeighborEntry)(nil),                           // 241: lemming.dataplane.sai.NeighborEntry
+	(*PortEyeValues)(nil),                           // 242: lemming.dataplane.sai.PortEyeValues
+	(*PortLaneLatchStatus)(nil),                     // 243: lemming.dataplane.sai.PortLaneLatchStatus
+	(*PortOperStatusNotification)(nil),              // 244: lemming.dataplane.sai.PortOperStatusNotification
+	(*PRBS_RXState)(nil),                            // 245: lemming.dataplane.sai.PRBS_RXState
+	(*QOSMapParams)(nil),                            // 246: lemming.dataplane.sai.QOSMapParams
+	(*QOSMap)(nil),                                  // 247: lemming.dataplane.sai.QOSMap
+	(*QueueDeadlockNotificationData)(nil),           // 248: lemming.dataplane.sai.QueueDeadlockNotificationData
+	(*RouteEntry)(nil),                              // 249: lemming.dataplane.sai.RouteEntry
+	(*SystemPortConfig)(nil),                        // 250: lemming.dataplane.sai.SystemPortConfig
+	(*HMAC)(nil),                                    // 251: lemming.dataplane.sai.HMAC
+	(*TLVEntry)(nil),                                // 252: lemming.dataplane.sai.TLVEntry
+	(*Uint32Range)(nil),                             // 253: lemming.dataplane.sai.Uint32Range
+	(*ObjectTypeQueryRequest)(nil),                  // 254: lemming.dataplane.sai.ObjectTypeQueryRequest
+	(*ObjectTypeQueryResponse)(nil),                 // 255: lemming.dataplane.sai.ObjectTypeQueryResponse
+	(*InitializeRequest)(nil),                       // 256: lemming.dataplane.sai.InitializeRequest
+	(*InitializeResponse)(nil),                      // 257: lemming.dataplane.sai.InitializeResponse
+	(*UninitializeRequest)(nil),                     // 258: lemming.dataplane.sai.UninitializeRequest
+	(*UninitializeResponse)(nil),                    // 259: lemming.dataplane.sai.UninitializeResponse
+	(*AclCounterAttribute)(nil),                     // 260: lemming.dataplane.sai.AclCounterAttribute
+	(*AclEntryAttribute)(nil),                       // 261: lemming.dataplane.sai.AclEntryAttribute
+	(*AclRangeAttribute)(nil),                       // 262: lemming.dataplane.sai.AclRangeAttribute
+	(*AclTableAttribute)(nil),                       // 263: lemming.dataplane.sai.AclTableAttribute
+	(*AclTableChainGroupAttribute)(nil),             // 264: lemming.dataplane.sai.AclTableChainGroupAttribute
+	(*AclTableGroupAttribute)(nil),                  // 265: lemming.dataplane.sai.AclTableGroupAttribute
+	(*AclTableGroupMemberAttribute)(nil),            // 266: lemming.dataplane.sai.AclTableGroupMemberAttribute
+	(*BfdSessionAttribute)(nil),                     // 267: lemming.dataplane.sai.BfdSessionAttribute
+	(*BridgeAttribute)(nil),                         // 268: lemming.dataplane.sai.BridgeAttribute
+	(*BridgePortAttribute)(nil),                     // 269: lemming.dataplane.sai.BridgePortAttribute
+	(*BufferPoolAttribute)(nil),                     // 270: lemming.dataplane.sai.BufferPoolAttribute
+	(*BufferProfileAttribute)(nil),                  // 271: lemming.dataplane.sai.BufferProfileAttribute
+	(*CounterAttribute)(nil),                        // 272: lemming.dataplane.sai.CounterAttribute
+	(*DebugCounterAttribute)(nil),                   // 273: lemming.dataplane.sai.DebugCounterAttribute
+	(*DtelAttribute)(nil),                           // 274: lemming.dataplane.sai.DtelAttribute
+	(*DtelEventAttribute)(nil),                      // 275: lemming.dataplane.sai.DtelEventAttribute
+	(*DtelIntSessionAttribute)(nil),                 // 276: lemming.dataplane.sai.DtelIntSessionAttribute
+	(*DtelQueueReportAttribute)(nil),                // 277: lemming.dataplane.sai.DtelQueueReportAttribute
+	(*DtelReportSessionAttribute)(nil),              // 278: lemming.dataplane.sai.DtelReportSessionAttribute
+	(*FdbEntryAttribute)(nil),                       // 279: lemming.dataplane.sai.FdbEntryAttribute
+	(*FdbFlushAttribute)(nil),                       // 280: lemming.dataplane.sai.FdbFlushAttribute
+	(*FineGrainedHashFieldAttribute)(nil),           // 281: lemming.dataplane.sai.FineGrainedHashFieldAttribute
+	(*GenericProgrammableAttribute)(nil),            // 282: lemming.dataplane.sai.GenericProgrammableAttribute
+	(*HashAttribute)(nil),                           // 283: lemming.dataplane.sai.HashAttribute
+	(*HostifAttribute)(nil),                         // 284: lemming.dataplane.sai.HostifAttribute
+	(*HostifPacketAttribute)(nil),                   // 285: lemming.dataplane.sai.HostifPacketAttribute
+	(*HostifTableEntryAttribute)(nil),               // 286: lemming.dataplane.sai.HostifTableEntryAttribute
+	(*HostifTrapAttribute)(nil),                     // 287: lemming.dataplane.sai.HostifTrapAttribute
+	(*HostifTrapGroupAttribute)(nil),                // 288: lemming.dataplane.sai.HostifTrapGroupAttribute
+	(*HostifUserDefinedTrapAttribute)(nil),          // 289: lemming.dataplane.sai.HostifUserDefinedTrapAttribute
+	(*IcmpEchoSessionAttribute)(nil),                // 290: lemming.dataplane.sai.IcmpEchoSessionAttribute
+	(*IngressPriorityGroupAttribute)(nil),           // 291: lemming.dataplane.sai.IngressPriorityGroupAttribute
+	(*InsegEntryAttribute)(nil),                     // 292: lemming.dataplane.sai.InsegEntryAttribute
+	(*IpmcEntryAttribute)(nil),                      // 293: lemming.dataplane.sai.IpmcEntryAttribute
+	(*IpmcGroupAttribute)(nil),                      // 294: lemming.dataplane.sai.IpmcGroupAttribute
+	(*IpmcGroupMemberAttribute)(nil),                // 295: lemming.dataplane.sai.IpmcGroupMemberAttribute
+	(*IpsecAttribute)(nil),                          // 296: lemming.dataplane.sai.IpsecAttribute
+	(*IpsecPortAttribute)(nil),                      // 297: lemming.dataplane.sai.IpsecPortAttribute
+	(*IpsecSaAttribute)(nil),                        // 298: lemming.dataplane.sai.IpsecSaAttribute
+	(*IsolationGroupAttribute)(nil),                 // 299: lemming.dataplane.sai.IsolationGroupAttribute
+	(*IsolationGroupMemberAttribute)(nil),           // 300: lemming.dataplane.sai.IsolationGroupMemberAttribute
+	(*L2McEntryAttribute)(nil),                      // 301: lemming.dataplane.sai.L2mcEntryAttribute
+	(*L2McGroupAttribute)(nil),                      // 302: lemming.dataplane.sai.L2mcGroupAttribute
+	(*L2McGroupMemberAttribute)(nil),                // 303: lemming.dataplane.sai.L2mcGroupMemberAttribute
+	(*LagAttribute)(nil),                            // 304: lemming.dataplane.sai.LagAttribute
+	(*LagMemberAttribute)(nil),                      // 305: lemming.dataplane.sai.LagMemberAttribute
+	(*MacsecAttribute)(nil),                         // 306: lemming.dataplane.sai.MacsecAttribute
+	(*MacsecFlowAttribute)(nil),                     // 307: lemming.dataplane.sai.MacsecFlowAttribute
+	(*MacsecPortAttribute)(nil),                     // 308: lemming.dataplane.sai.MacsecPortAttribute
+	(*MacsecSaAttribute)(nil),                       // 309: lemming.dataplane.sai.MacsecSaAttribute
+	(*MacsecScAttribute)(nil),                       // 310: lemming.dataplane.sai.MacsecScAttribute
+	(*McastFdbEntryAttribute)(nil),                  // 311: lemming.dataplane.sai.McastFdbEntryAttribute
+	(*MirrorSessionAttribute)(nil),                  // 312: lemming.dataplane.sai.MirrorSessionAttribute
+	(*MyMacAttribute)(nil),                          // 313: lemming.dataplane.sai.MyMacAttribute
+	(*MySidEntryAttribute)(nil),                     // 314: lemming.dataplane.sai.MySidEntryAttribute
+	(*NatEntryAttribute)(nil),                       // 315: lemming.dataplane.sai.NatEntryAttribute
+	(*NatZoneCounterAttribute)(nil),                 // 316: lemming.dataplane.sai.NatZoneCounterAttribute
+	(*NeighborEntryAttribute)(nil),                  // 317: lemming.dataplane.sai.NeighborEntryAttribute
+	(*NextHopAttribute)(nil),                        // 318: lemming.dataplane.sai.NextHopAttribute
+	(*NextHopGroupAttribute)(nil),                   // 319: lemming.dataplane.sai.NextHopGroupAttribute
+	(*NextHopGroupMapAttribute)(nil),                // 320: lemming.dataplane.sai.NextHopGroupMapAttribute
+	(*NextHopGroupMemberAttribute)(nil),             // 321: lemming.dataplane.sai.NextHopGroupMemberAttribute
+	(*PolicerAttribute)(nil),                        // 322: lemming.dataplane.sai.PolicerAttribute
+	(*PortAttribute)(nil),                           // 323: lemming.dataplane.sai.PortAttribute
+	(*PortConnectorAttribute)(nil),                  // 324: lemming.dataplane.sai.PortConnectorAttribute
+	(*PortPoolAttribute)(nil),                       // 325: lemming.dataplane.sai.PortPoolAttribute
+	(*PortSerdesAttribute)(nil),                     // 326: lemming.dataplane.sai.PortSerdesAttribute
+	(*QosMapAttribute)(nil),                         // 327: lemming.dataplane.sai.QosMapAttribute
+	(*QueueAttribute)(nil),                          // 328: lemming.dataplane.sai.QueueAttribute
+	(*RouterInterfaceAttribute)(nil),                // 329: lemming.dataplane.sai.RouterInterfaceAttribute
+	(*RouteEntryAttribute)(nil),                     // 330: lemming.dataplane.sai.RouteEntryAttribute
+	(*RpfGroupAttribute)(nil),                       // 331: lemming.dataplane.sai.RpfGroupAttribute
+	(*RpfGroupMemberAttribute)(nil),                 // 332: lemming.dataplane.sai.RpfGroupMemberAttribute
+	(*SamplepacketAttribute)(nil),                   // 333: lemming.dataplane.sai.SamplepacketAttribute
+	(*SchedulerAttribute)(nil),                      // 334: lemming.dataplane.sai.SchedulerAttribute
+	(*SchedulerGroupAttribute)(nil),                 // 335: lemming.dataplane.sai.SchedulerGroupAttribute
+	(*Srv6SidlistAttribute)(nil),                    // 336: lemming.dataplane.sai.Srv6SidlistAttribute
+	(*StpAttribute)(nil),                            // 337: lemming.dataplane.sai.StpAttribute
+	(*StpPortAttribute)(nil),                        // 338: lemming.dataplane.sai.StpPortAttribute
+	(*SwitchAttribute)(nil),                         // 339: lemming.dataplane.sai.SwitchAttribute
+	(*SwitchTunnelAttribute)(nil),                   // 340: lemming.dataplane.sai.SwitchTunnelAttribute
+	(*SystemPortAttribute)(nil),                     // 341: lemming.dataplane.sai.SystemPortAttribute
+	(*TableBitmapClassificationEntryAttribute)(nil), // 342: lemming.dataplane.sai.TableBitmapClassificationEntryAttribute
+	(*TableBitmapRouterEntryAttribute)(nil),         // 343: lemming.dataplane.sai.TableBitmapRouterEntryAttribute
+	(*TableMetaTunnelEntryAttribute)(nil),           // 344: lemming.dataplane.sai.TableMetaTunnelEntryAttribute
+	(*TamAttribute)(nil),                            // 345: lemming.dataplane.sai.TamAttribute
+	(*TamCollectorAttribute)(nil),                   // 346: lemming.dataplane.sai.TamCollectorAttribute
+	(*TamCounterSubscriptionAttribute)(nil),         // 347: lemming.dataplane.sai.TamCounterSubscriptionAttribute
+	(*TamEventAttribute)(nil),                       // 348: lemming.dataplane.sai.TamEventAttribute
+	(*TamEventActionAttribute)(nil),                 // 349: lemming.dataplane.sai.TamEventActionAttribute
+	(*TamEventThresholdAttribute)(nil),              // 350: lemming.dataplane.sai.TamEventThresholdAttribute
+	(*TamIntAttribute)(nil),                         // 351: lemming.dataplane.sai.TamIntAttribute
+	(*TamMathFuncAttribute)(nil),                    // 352: lemming.dataplane.sai.TamMathFuncAttribute
+	(*TamReportAttribute)(nil),                      // 353: lemming.dataplane.sai.TamReportAttribute
+	(*TamTelemetryAttribute)(nil),                   // 354: lemming.dataplane.sai.TamTelemetryAttribute
+	(*TamTelTypeAttribute)(nil),                     // 355: lemming.dataplane.sai.TamTelTypeAttribute
+	(*TamTransportAttribute)(nil),                   // 356: lemming.dataplane.sai.TamTransportAttribute
+	(*TunnelAttribute)(nil),                         // 357: lemming.dataplane.sai.TunnelAttribute
+	(*TunnelMapAttribute)(nil),                      // 358: lemming.dataplane.sai.TunnelMapAttribute
+	(*TunnelMapEntryAttribute)(nil),                 // 359: lemming.dataplane.sai.TunnelMapEntryAttribute
+	(*TunnelTermTableEntryAttribute)(nil),           // 360: lemming.dataplane.sai.TunnelTermTableEntryAttribute
+	(*UdfAttribute)(nil),                            // 361: lemming.dataplane.sai.UdfAttribute
+	(*UdfGroupAttribute)(nil),                       // 362: lemming.dataplane.sai.UdfGroupAttribute
+	(*UdfMatchAttribute)(nil),                       // 363: lemming.dataplane.sai.UdfMatchAttribute
+	(*VirtualRouterAttribute)(nil),                  // 364: lemming.dataplane.sai.VirtualRouterAttribute
+	(*VlanAttribute)(nil),                           // 365: lemming.dataplane.sai.VlanAttribute
+	(*VlanMemberAttribute)(nil),                     // 366: lemming.dataplane.sai.VlanMemberAttribute
+	(*WredAttribute)(nil),                           // 367: lemming.dataplane.sai.WredAttribute
+	nil,                                             // 368: lemming.dataplane.sai.UintMap.UintmapEntry
+	nil,                                             // 369: lemming.dataplane.sai.AclEntryAttribute.UserDefinedFieldGroupMinEntry
+	nil,                                             // 370: lemming.dataplane.sai.AclTableAttribute.UserDefinedFieldGroupMinEntry
+	(*timestamppb.Timestamp)(nil),                   // 371: google.protobuf.Timestamp
+	(*descriptorpb.FieldOptions)(nil),               // 372: google.protobuf.FieldOptions
+	(*descriptorpb.MessageOptions)(nil),             // 373: google.protobuf.MessageOptions
 }
 var file_dataplane_proto_sai_common_proto_depIdxs = []int32{
-	206, // 0: lemming.dataplane.sai.AclActionData.objlist:type_name -> lemming.dataplane.sai.Uint64List
-	94,  // 1: lemming.dataplane.sai.AclActionData.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	224, // 0: lemming.dataplane.sai.AclActionData.objlist:type_name -> lemming.dataplane.sai.Uint64List
+	110, // 1: lemming.dataplane.sai.AclActionData.packet_action:type_name -> lemming.dataplane.sai.PacketAction
 	0,   // 2: lemming.dataplane.sai.ACLCapability.action_list:type_name -> lemming.dataplane.sai.AclActionType
-	206, // 3: lemming.dataplane.sai.AclFieldData.mask_list:type_name -> lemming.dataplane.sai.Uint64List
-	206, // 4: lemming.dataplane.sai.AclFieldData.data_list:type_name -> lemming.dataplane.sai.Uint64List
+	224, // 3: lemming.dataplane.sai.AclFieldData.mask_list:type_name -> lemming.dataplane.sai.Uint64List
+	224, // 4: lemming.dataplane.sai.AclFieldData.data_list:type_name -> lemming.dataplane.sai.Uint64List
 	4,   // 5: lemming.dataplane.sai.AclFieldData.data_ip_type:type_name -> lemming.dataplane.sai.AclIpType
 	6,   // 6: lemming.dataplane.sai.ACLResource.stage:type_name -> lemming.dataplane.sai.AclStage
 	1,   // 7: lemming.dataplane.sai.ACLResource.bind_point:type_name -> lemming.dataplane.sai.AclBindPointType
-	15,  // 8: lemming.dataplane.sai.BfdSessionStateChangeNotificationData.session_state:type_name -> lemming.dataplane.sai.BfdSessionState
-	39,  // 9: lemming.dataplane.sai.FdbEventNotificationData.event_type:type_name -> lemming.dataplane.sai.FdbEvent
-	210, // 10: lemming.dataplane.sai.FdbEventNotificationData.fdb_entry:type_name -> lemming.dataplane.sai.FdbEntry
-	261, // 11: lemming.dataplane.sai.FdbEventNotificationData.attrs:type_name -> lemming.dataplane.sai.FdbEntryAttribute
-	60,  // 12: lemming.dataplane.sai.IpmcEntry.type:type_name -> lemming.dataplane.sai.IpmcEntryType
-	64,  // 13: lemming.dataplane.sai.IpsecSaStatusNotificationData.ipsec_sa_octet_count_status:type_name -> lemming.dataplane.sai.IpsecSaOctetCountStatus
-	67,  // 14: lemming.dataplane.sai.L2mcEntry.type:type_name -> lemming.dataplane.sai.L2mcEntryType
-	343, // 15: lemming.dataplane.sai.UintMap.uintmap:type_name -> lemming.dataplane.sai.UintMap.UintmapEntry
-	81,  // 16: lemming.dataplane.sai.NatEntry.nat_type:type_name -> lemming.dataplane.sai.NatType
-	221, // 17: lemming.dataplane.sai.NatEntry.data:type_name -> lemming.dataplane.sai.NatEntryData
-	217, // 18: lemming.dataplane.sai.PortLaneLatchStatus.value:type_name -> lemming.dataplane.sai.LatchStatus
-	125, // 19: lemming.dataplane.sai.PortOperStatusNotification.port_state:type_name -> lemming.dataplane.sai.PortOperStatus
-	129, // 20: lemming.dataplane.sai.PRBS_RXState.rx_status:type_name -> lemming.dataplane.sai.PortPrbsRxStatus
-	95,  // 21: lemming.dataplane.sai.QOSMapParams.color:type_name -> lemming.dataplane.sai.PacketColor
-	228, // 22: lemming.dataplane.sai.QOSMap.key:type_name -> lemming.dataplane.sai.QOSMapParams
-	228, // 23: lemming.dataplane.sai.QOSMap.value:type_name -> lemming.dataplane.sai.QOSMapParams
-	137, // 24: lemming.dataplane.sai.QueueDeadlockNotificationData.event:type_name -> lemming.dataplane.sai.QueuePfcDeadlockEventType
-	213, // 25: lemming.dataplane.sai.RouteEntry.destination:type_name -> lemming.dataplane.sai.IpPrefix
-	233, // 26: lemming.dataplane.sai.TLVEntry.hmac:type_name -> lemming.dataplane.sai.HMAC
-	89,  // 27: lemming.dataplane.sai.ObjectTypeQueryResponse.type:type_name -> lemming.dataplane.sai.ObjectType
-	205, // 28: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 29: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6_word3:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 30: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6_word2:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 31: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6_word1:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 32: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6_word0:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 33: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 34: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6_word3:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 35: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6_word2:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 36: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6_word1:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 37: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6_word0:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 38: lemming.dataplane.sai.AclEntryAttribute.field_inner_src_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 39: lemming.dataplane.sai.AclEntryAttribute.field_inner_dst_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 40: lemming.dataplane.sai.AclEntryAttribute.field_src_mac:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 41: lemming.dataplane.sai.AclEntryAttribute.field_dst_mac:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 42: lemming.dataplane.sai.AclEntryAttribute.field_src_ip:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 43: lemming.dataplane.sai.AclEntryAttribute.field_dst_ip:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 44: lemming.dataplane.sai.AclEntryAttribute.field_inner_src_ip:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 45: lemming.dataplane.sai.AclEntryAttribute.field_inner_dst_ip:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 46: lemming.dataplane.sai.AclEntryAttribute.field_in_ports:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 47: lemming.dataplane.sai.AclEntryAttribute.field_out_ports:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 48: lemming.dataplane.sai.AclEntryAttribute.field_in_port:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 49: lemming.dataplane.sai.AclEntryAttribute.field_out_port:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 50: lemming.dataplane.sai.AclEntryAttribute.field_src_port:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 51: lemming.dataplane.sai.AclEntryAttribute.field_outer_vlan_id:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 52: lemming.dataplane.sai.AclEntryAttribute.field_outer_vlan_pri:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 53: lemming.dataplane.sai.AclEntryAttribute.field_outer_vlan_cfi:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 54: lemming.dataplane.sai.AclEntryAttribute.field_inner_vlan_id:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 55: lemming.dataplane.sai.AclEntryAttribute.field_inner_vlan_pri:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 56: lemming.dataplane.sai.AclEntryAttribute.field_inner_vlan_cfi:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 57: lemming.dataplane.sai.AclEntryAttribute.field_l4_src_port:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 58: lemming.dataplane.sai.AclEntryAttribute.field_l4_dst_port:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 59: lemming.dataplane.sai.AclEntryAttribute.field_inner_l4_src_port:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 60: lemming.dataplane.sai.AclEntryAttribute.field_inner_l4_dst_port:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 61: lemming.dataplane.sai.AclEntryAttribute.field_ether_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 62: lemming.dataplane.sai.AclEntryAttribute.field_inner_ether_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 63: lemming.dataplane.sai.AclEntryAttribute.field_ip_protocol:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 64: lemming.dataplane.sai.AclEntryAttribute.field_inner_ip_protocol:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 65: lemming.dataplane.sai.AclEntryAttribute.field_ip_identification:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 66: lemming.dataplane.sai.AclEntryAttribute.field_dscp:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 67: lemming.dataplane.sai.AclEntryAttribute.field_ecn:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 68: lemming.dataplane.sai.AclEntryAttribute.field_ttl:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 69: lemming.dataplane.sai.AclEntryAttribute.field_tos:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 70: lemming.dataplane.sai.AclEntryAttribute.field_ip_flags:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 71: lemming.dataplane.sai.AclEntryAttribute.field_tcp_flags:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 72: lemming.dataplane.sai.AclEntryAttribute.field_acl_ip_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 73: lemming.dataplane.sai.AclEntryAttribute.field_acl_ip_frag:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 74: lemming.dataplane.sai.AclEntryAttribute.field_ipv6_flow_label:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 75: lemming.dataplane.sai.AclEntryAttribute.field_tc:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 76: lemming.dataplane.sai.AclEntryAttribute.field_icmp_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 77: lemming.dataplane.sai.AclEntryAttribute.field_icmp_code:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 78: lemming.dataplane.sai.AclEntryAttribute.field_icmpv6_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 79: lemming.dataplane.sai.AclEntryAttribute.field_icmpv6_code:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 80: lemming.dataplane.sai.AclEntryAttribute.field_packet_vlan:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 81: lemming.dataplane.sai.AclEntryAttribute.field_tunnel_vni:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 82: lemming.dataplane.sai.AclEntryAttribute.field_has_vlan_tag:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 83: lemming.dataplane.sai.AclEntryAttribute.field_macsec_sci:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 84: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label0_label:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 85: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label0_ttl:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 86: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label0_exp:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 87: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label0_bos:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 88: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label1_label:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 89: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label1_ttl:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 90: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label1_exp:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 91: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label1_bos:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 92: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label2_label:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 93: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label2_ttl:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 94: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label2_exp:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 95: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label2_bos:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 96: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label3_label:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 97: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label3_ttl:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 98: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label3_exp:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 99: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label3_bos:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 100: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label4_label:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 101: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label4_ttl:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 102: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label4_exp:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 103: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label4_bos:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 104: lemming.dataplane.sai.AclEntryAttribute.field_fdb_dst_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 105: lemming.dataplane.sai.AclEntryAttribute.field_route_dst_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 106: lemming.dataplane.sai.AclEntryAttribute.field_neighbor_dst_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 107: lemming.dataplane.sai.AclEntryAttribute.field_port_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 108: lemming.dataplane.sai.AclEntryAttribute.field_vlan_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 109: lemming.dataplane.sai.AclEntryAttribute.field_acl_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 110: lemming.dataplane.sai.AclEntryAttribute.field_fdb_npu_meta_dst_hit:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 111: lemming.dataplane.sai.AclEntryAttribute.field_neighbor_npu_meta_dst_hit:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 112: lemming.dataplane.sai.AclEntryAttribute.field_route_npu_meta_dst_hit:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 113: lemming.dataplane.sai.AclEntryAttribute.field_bth_opcode:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 114: lemming.dataplane.sai.AclEntryAttribute.field_aeth_syndrome:type_name -> lemming.dataplane.sai.AclFieldData
-	344, // 115: lemming.dataplane.sai.AclEntryAttribute.user_defined_field_group_min:type_name -> lemming.dataplane.sai.AclEntryAttribute.UserDefinedFieldGroupMinEntry
-	205, // 116: lemming.dataplane.sai.AclEntryAttribute.field_acl_range_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 117: lemming.dataplane.sai.AclEntryAttribute.field_ipv6_next_header:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 118: lemming.dataplane.sai.AclEntryAttribute.field_gre_key:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 119: lemming.dataplane.sai.AclEntryAttribute.field_tam_int_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 120: lemming.dataplane.sai.AclEntryAttribute.field_inner_src_mac:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 121: lemming.dataplane.sai.AclEntryAttribute.field_inner_dst_mac:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 122: lemming.dataplane.sai.AclEntryAttribute.field_vrf_id:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 123: lemming.dataplane.sai.AclEntryAttribute.field_ipmc_npu_meta_dst_hit:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 124: lemming.dataplane.sai.AclEntryAttribute.field_tunnel_terminated:type_name -> lemming.dataplane.sai.AclFieldData
-	203, // 125: lemming.dataplane.sai.AclEntryAttribute.action_redirect:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 126: lemming.dataplane.sai.AclEntryAttribute.action_endpoint_ip:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 127: lemming.dataplane.sai.AclEntryAttribute.action_redirect_list:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 128: lemming.dataplane.sai.AclEntryAttribute.action_packet_action:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 129: lemming.dataplane.sai.AclEntryAttribute.action_flood:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 130: lemming.dataplane.sai.AclEntryAttribute.action_counter:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 131: lemming.dataplane.sai.AclEntryAttribute.action_mirror_ingress:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 132: lemming.dataplane.sai.AclEntryAttribute.action_mirror_egress:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 133: lemming.dataplane.sai.AclEntryAttribute.action_set_policer:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 134: lemming.dataplane.sai.AclEntryAttribute.action_decrement_ttl:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 135: lemming.dataplane.sai.AclEntryAttribute.action_set_tc:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 136: lemming.dataplane.sai.AclEntryAttribute.action_set_packet_color:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 137: lemming.dataplane.sai.AclEntryAttribute.action_set_inner_vlan_id:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 138: lemming.dataplane.sai.AclEntryAttribute.action_set_inner_vlan_pri:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 139: lemming.dataplane.sai.AclEntryAttribute.action_set_outer_vlan_id:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 140: lemming.dataplane.sai.AclEntryAttribute.action_set_outer_vlan_pri:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 141: lemming.dataplane.sai.AclEntryAttribute.action_add_vlan_id:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 142: lemming.dataplane.sai.AclEntryAttribute.action_add_vlan_pri:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 143: lemming.dataplane.sai.AclEntryAttribute.action_set_src_mac:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 144: lemming.dataplane.sai.AclEntryAttribute.action_set_dst_mac:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 145: lemming.dataplane.sai.AclEntryAttribute.action_set_src_ip:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 146: lemming.dataplane.sai.AclEntryAttribute.action_set_dst_ip:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 147: lemming.dataplane.sai.AclEntryAttribute.action_set_src_ipv6:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 148: lemming.dataplane.sai.AclEntryAttribute.action_set_dst_ipv6:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 149: lemming.dataplane.sai.AclEntryAttribute.action_set_dscp:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 150: lemming.dataplane.sai.AclEntryAttribute.action_set_ecn:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 151: lemming.dataplane.sai.AclEntryAttribute.action_set_l4_src_port:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 152: lemming.dataplane.sai.AclEntryAttribute.action_set_l4_dst_port:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 153: lemming.dataplane.sai.AclEntryAttribute.action_ingress_samplepacket_enable:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 154: lemming.dataplane.sai.AclEntryAttribute.action_egress_samplepacket_enable:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 155: lemming.dataplane.sai.AclEntryAttribute.action_set_acl_meta_data:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 156: lemming.dataplane.sai.AclEntryAttribute.action_egress_block_port_list:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 157: lemming.dataplane.sai.AclEntryAttribute.action_set_user_trap_id:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 158: lemming.dataplane.sai.AclEntryAttribute.action_set_do_not_learn:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 159: lemming.dataplane.sai.AclEntryAttribute.action_acl_dtel_flow_op:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 160: lemming.dataplane.sai.AclEntryAttribute.action_dtel_int_session:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 161: lemming.dataplane.sai.AclEntryAttribute.action_dtel_drop_report_enable:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 162: lemming.dataplane.sai.AclEntryAttribute.action_dtel_tail_drop_report_enable:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 163: lemming.dataplane.sai.AclEntryAttribute.action_dtel_flow_sample_percent:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 164: lemming.dataplane.sai.AclEntryAttribute.action_dtel_report_all_packets:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 165: lemming.dataplane.sai.AclEntryAttribute.action_no_nat:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 166: lemming.dataplane.sai.AclEntryAttribute.action_int_insert:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 167: lemming.dataplane.sai.AclEntryAttribute.action_int_delete:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 168: lemming.dataplane.sai.AclEntryAttribute.action_int_report_flow:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 169: lemming.dataplane.sai.AclEntryAttribute.action_int_report_drops:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 170: lemming.dataplane.sai.AclEntryAttribute.action_int_report_tail_drops:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 171: lemming.dataplane.sai.AclEntryAttribute.action_tam_int_object:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 172: lemming.dataplane.sai.AclEntryAttribute.action_set_isolation_group:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 173: lemming.dataplane.sai.AclEntryAttribute.action_macsec_flow:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 174: lemming.dataplane.sai.AclEntryAttribute.action_set_lag_hash_id:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 175: lemming.dataplane.sai.AclEntryAttribute.action_set_ecmp_hash_id:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 176: lemming.dataplane.sai.AclEntryAttribute.action_set_vrf:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 177: lemming.dataplane.sai.AclEntryAttribute.action_set_forwarding_class:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 178: lemming.dataplane.sai.AclEntryAttribute.action_set_ars_monitoring:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 179: lemming.dataplane.sai.AclEntryAttribute.action_set_ars_object:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 180: lemming.dataplane.sai.AclEntryAttribute.action_disable_ars_forwarding:type_name -> lemming.dataplane.sai.AclActionData
-	203, // 181: lemming.dataplane.sai.AclEntryAttribute.action_chain_redirect:type_name -> lemming.dataplane.sai.AclActionData
+	17,  // 8: lemming.dataplane.sai.BfdSessionStateChangeNotificationData.session_state:type_name -> lemming.dataplane.sai.BfdSessionState
+	53,  // 9: lemming.dataplane.sai.FdbEventNotificationData.event_type:type_name -> lemming.dataplane.sai.FdbEvent
+	228, // 10: lemming.dataplane.sai.FdbEventNotificationData.fdb_entry:type_name -> lemming.dataplane.sai.FdbEntry
+	279, // 11: lemming.dataplane.sai.FdbEventNotificationData.attrs:type_name -> lemming.dataplane.sai.FdbEntryAttribute
+	74,  // 12: lemming.dataplane.sai.IpmcEntry.type:type_name -> lemming.dataplane.sai.IpmcEntryType
+	78,  // 13: lemming.dataplane.sai.IpsecSaStatusNotificationData.ipsec_sa_octet_count_status:type_name -> lemming.dataplane.sai.IpsecSaOctetCountStatus
+	81,  // 14: lemming.dataplane.sai.L2mcEntry.type:type_name -> lemming.dataplane.sai.L2mcEntryType
+	368, // 15: lemming.dataplane.sai.UintMap.uintmap:type_name -> lemming.dataplane.sai.UintMap.UintmapEntry
+	96,  // 16: lemming.dataplane.sai.NatEntry.nat_type:type_name -> lemming.dataplane.sai.NatType
+	239, // 17: lemming.dataplane.sai.NatEntry.data:type_name -> lemming.dataplane.sai.NatEntryData
+	235, // 18: lemming.dataplane.sai.PortLaneLatchStatus.value:type_name -> lemming.dataplane.sai.LatchStatus
+	142, // 19: lemming.dataplane.sai.PortOperStatusNotification.port_state:type_name -> lemming.dataplane.sai.PortOperStatus
+	146, // 20: lemming.dataplane.sai.PRBS_RXState.rx_status:type_name -> lemming.dataplane.sai.PortPrbsRxStatus
+	111, // 21: lemming.dataplane.sai.QOSMapParams.color:type_name -> lemming.dataplane.sai.PacketColor
+	246, // 22: lemming.dataplane.sai.QOSMap.key:type_name -> lemming.dataplane.sai.QOSMapParams
+	246, // 23: lemming.dataplane.sai.QOSMap.value:type_name -> lemming.dataplane.sai.QOSMapParams
+	154, // 24: lemming.dataplane.sai.QueueDeadlockNotificationData.event:type_name -> lemming.dataplane.sai.QueuePfcDeadlockEventType
+	231, // 25: lemming.dataplane.sai.RouteEntry.destination:type_name -> lemming.dataplane.sai.IpPrefix
+	251, // 26: lemming.dataplane.sai.TLVEntry.hmac:type_name -> lemming.dataplane.sai.HMAC
+	105, // 27: lemming.dataplane.sai.ObjectTypeQueryResponse.type:type_name -> lemming.dataplane.sai.ObjectType
+	223, // 28: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 29: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6_word3:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 30: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6_word2:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 31: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6_word1:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 32: lemming.dataplane.sai.AclEntryAttribute.field_src_ipv6_word0:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 33: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 34: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6_word3:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 35: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6_word2:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 36: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6_word1:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 37: lemming.dataplane.sai.AclEntryAttribute.field_dst_ipv6_word0:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 38: lemming.dataplane.sai.AclEntryAttribute.field_inner_src_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 39: lemming.dataplane.sai.AclEntryAttribute.field_inner_dst_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 40: lemming.dataplane.sai.AclEntryAttribute.field_src_mac:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 41: lemming.dataplane.sai.AclEntryAttribute.field_dst_mac:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 42: lemming.dataplane.sai.AclEntryAttribute.field_src_ip:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 43: lemming.dataplane.sai.AclEntryAttribute.field_dst_ip:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 44: lemming.dataplane.sai.AclEntryAttribute.field_inner_src_ip:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 45: lemming.dataplane.sai.AclEntryAttribute.field_inner_dst_ip:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 46: lemming.dataplane.sai.AclEntryAttribute.field_in_ports:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 47: lemming.dataplane.sai.AclEntryAttribute.field_out_ports:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 48: lemming.dataplane.sai.AclEntryAttribute.field_in_port:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 49: lemming.dataplane.sai.AclEntryAttribute.field_out_port:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 50: lemming.dataplane.sai.AclEntryAttribute.field_src_port:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 51: lemming.dataplane.sai.AclEntryAttribute.field_outer_vlan_id:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 52: lemming.dataplane.sai.AclEntryAttribute.field_outer_vlan_pri:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 53: lemming.dataplane.sai.AclEntryAttribute.field_outer_vlan_cfi:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 54: lemming.dataplane.sai.AclEntryAttribute.field_inner_vlan_id:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 55: lemming.dataplane.sai.AclEntryAttribute.field_inner_vlan_pri:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 56: lemming.dataplane.sai.AclEntryAttribute.field_inner_vlan_cfi:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 57: lemming.dataplane.sai.AclEntryAttribute.field_l4_src_port:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 58: lemming.dataplane.sai.AclEntryAttribute.field_l4_dst_port:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 59: lemming.dataplane.sai.AclEntryAttribute.field_inner_l4_src_port:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 60: lemming.dataplane.sai.AclEntryAttribute.field_inner_l4_dst_port:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 61: lemming.dataplane.sai.AclEntryAttribute.field_ether_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 62: lemming.dataplane.sai.AclEntryAttribute.field_inner_ether_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 63: lemming.dataplane.sai.AclEntryAttribute.field_ip_protocol:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 64: lemming.dataplane.sai.AclEntryAttribute.field_inner_ip_protocol:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 65: lemming.dataplane.sai.AclEntryAttribute.field_ip_identification:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 66: lemming.dataplane.sai.AclEntryAttribute.field_dscp:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 67: lemming.dataplane.sai.AclEntryAttribute.field_ecn:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 68: lemming.dataplane.sai.AclEntryAttribute.field_ttl:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 69: lemming.dataplane.sai.AclEntryAttribute.field_tos:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 70: lemming.dataplane.sai.AclEntryAttribute.field_ip_flags:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 71: lemming.dataplane.sai.AclEntryAttribute.field_tcp_flags:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 72: lemming.dataplane.sai.AclEntryAttribute.field_acl_ip_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 73: lemming.dataplane.sai.AclEntryAttribute.field_acl_ip_frag:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 74: lemming.dataplane.sai.AclEntryAttribute.field_ipv6_flow_label:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 75: lemming.dataplane.sai.AclEntryAttribute.field_tc:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 76: lemming.dataplane.sai.AclEntryAttribute.field_icmp_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 77: lemming.dataplane.sai.AclEntryAttribute.field_icmp_code:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 78: lemming.dataplane.sai.AclEntryAttribute.field_icmpv6_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 79: lemming.dataplane.sai.AclEntryAttribute.field_icmpv6_code:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 80: lemming.dataplane.sai.AclEntryAttribute.field_packet_vlan:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 81: lemming.dataplane.sai.AclEntryAttribute.field_tunnel_vni:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 82: lemming.dataplane.sai.AclEntryAttribute.field_has_vlan_tag:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 83: lemming.dataplane.sai.AclEntryAttribute.field_macsec_sci:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 84: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label0_label:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 85: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label0_ttl:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 86: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label0_exp:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 87: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label0_bos:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 88: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label1_label:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 89: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label1_ttl:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 90: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label1_exp:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 91: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label1_bos:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 92: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label2_label:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 93: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label2_ttl:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 94: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label2_exp:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 95: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label2_bos:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 96: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label3_label:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 97: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label3_ttl:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 98: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label3_exp:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 99: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label3_bos:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 100: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label4_label:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 101: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label4_ttl:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 102: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label4_exp:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 103: lemming.dataplane.sai.AclEntryAttribute.field_mpls_label4_bos:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 104: lemming.dataplane.sai.AclEntryAttribute.field_fdb_dst_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 105: lemming.dataplane.sai.AclEntryAttribute.field_route_dst_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 106: lemming.dataplane.sai.AclEntryAttribute.field_neighbor_dst_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 107: lemming.dataplane.sai.AclEntryAttribute.field_port_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 108: lemming.dataplane.sai.AclEntryAttribute.field_vlan_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 109: lemming.dataplane.sai.AclEntryAttribute.field_acl_user_meta:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 110: lemming.dataplane.sai.AclEntryAttribute.field_fdb_npu_meta_dst_hit:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 111: lemming.dataplane.sai.AclEntryAttribute.field_neighbor_npu_meta_dst_hit:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 112: lemming.dataplane.sai.AclEntryAttribute.field_route_npu_meta_dst_hit:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 113: lemming.dataplane.sai.AclEntryAttribute.field_bth_opcode:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 114: lemming.dataplane.sai.AclEntryAttribute.field_aeth_syndrome:type_name -> lemming.dataplane.sai.AclFieldData
+	369, // 115: lemming.dataplane.sai.AclEntryAttribute.user_defined_field_group_min:type_name -> lemming.dataplane.sai.AclEntryAttribute.UserDefinedFieldGroupMinEntry
+	223, // 116: lemming.dataplane.sai.AclEntryAttribute.field_acl_range_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 117: lemming.dataplane.sai.AclEntryAttribute.field_ipv6_next_header:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 118: lemming.dataplane.sai.AclEntryAttribute.field_gre_key:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 119: lemming.dataplane.sai.AclEntryAttribute.field_tam_int_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 120: lemming.dataplane.sai.AclEntryAttribute.field_inner_src_mac:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 121: lemming.dataplane.sai.AclEntryAttribute.field_inner_dst_mac:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 122: lemming.dataplane.sai.AclEntryAttribute.field_vrf_id:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 123: lemming.dataplane.sai.AclEntryAttribute.field_ipmc_npu_meta_dst_hit:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 124: lemming.dataplane.sai.AclEntryAttribute.field_tunnel_terminated:type_name -> lemming.dataplane.sai.AclFieldData
+	221, // 125: lemming.dataplane.sai.AclEntryAttribute.action_redirect:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 126: lemming.dataplane.sai.AclEntryAttribute.action_endpoint_ip:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 127: lemming.dataplane.sai.AclEntryAttribute.action_redirect_list:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 128: lemming.dataplane.sai.AclEntryAttribute.action_packet_action:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 129: lemming.dataplane.sai.AclEntryAttribute.action_flood:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 130: lemming.dataplane.sai.AclEntryAttribute.action_counter:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 131: lemming.dataplane.sai.AclEntryAttribute.action_mirror_ingress:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 132: lemming.dataplane.sai.AclEntryAttribute.action_mirror_egress:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 133: lemming.dataplane.sai.AclEntryAttribute.action_set_policer:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 134: lemming.dataplane.sai.AclEntryAttribute.action_decrement_ttl:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 135: lemming.dataplane.sai.AclEntryAttribute.action_set_tc:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 136: lemming.dataplane.sai.AclEntryAttribute.action_set_packet_color:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 137: lemming.dataplane.sai.AclEntryAttribute.action_set_inner_vlan_id:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 138: lemming.dataplane.sai.AclEntryAttribute.action_set_inner_vlan_pri:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 139: lemming.dataplane.sai.AclEntryAttribute.action_set_outer_vlan_id:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 140: lemming.dataplane.sai.AclEntryAttribute.action_set_outer_vlan_pri:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 141: lemming.dataplane.sai.AclEntryAttribute.action_add_vlan_id:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 142: lemming.dataplane.sai.AclEntryAttribute.action_add_vlan_pri:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 143: lemming.dataplane.sai.AclEntryAttribute.action_set_src_mac:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 144: lemming.dataplane.sai.AclEntryAttribute.action_set_dst_mac:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 145: lemming.dataplane.sai.AclEntryAttribute.action_set_src_ip:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 146: lemming.dataplane.sai.AclEntryAttribute.action_set_dst_ip:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 147: lemming.dataplane.sai.AclEntryAttribute.action_set_src_ipv6:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 148: lemming.dataplane.sai.AclEntryAttribute.action_set_dst_ipv6:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 149: lemming.dataplane.sai.AclEntryAttribute.action_set_dscp:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 150: lemming.dataplane.sai.AclEntryAttribute.action_set_ecn:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 151: lemming.dataplane.sai.AclEntryAttribute.action_set_l4_src_port:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 152: lemming.dataplane.sai.AclEntryAttribute.action_set_l4_dst_port:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 153: lemming.dataplane.sai.AclEntryAttribute.action_ingress_samplepacket_enable:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 154: lemming.dataplane.sai.AclEntryAttribute.action_egress_samplepacket_enable:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 155: lemming.dataplane.sai.AclEntryAttribute.action_set_acl_meta_data:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 156: lemming.dataplane.sai.AclEntryAttribute.action_egress_block_port_list:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 157: lemming.dataplane.sai.AclEntryAttribute.action_set_user_trap_id:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 158: lemming.dataplane.sai.AclEntryAttribute.action_set_do_not_learn:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 159: lemming.dataplane.sai.AclEntryAttribute.action_acl_dtel_flow_op:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 160: lemming.dataplane.sai.AclEntryAttribute.action_dtel_int_session:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 161: lemming.dataplane.sai.AclEntryAttribute.action_dtel_drop_report_enable:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 162: lemming.dataplane.sai.AclEntryAttribute.action_dtel_tail_drop_report_enable:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 163: lemming.dataplane.sai.AclEntryAttribute.action_dtel_flow_sample_percent:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 164: lemming.dataplane.sai.AclEntryAttribute.action_dtel_report_all_packets:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 165: lemming.dataplane.sai.AclEntryAttribute.action_no_nat:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 166: lemming.dataplane.sai.AclEntryAttribute.action_int_insert:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 167: lemming.dataplane.sai.AclEntryAttribute.action_int_delete:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 168: lemming.dataplane.sai.AclEntryAttribute.action_int_report_flow:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 169: lemming.dataplane.sai.AclEntryAttribute.action_int_report_drops:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 170: lemming.dataplane.sai.AclEntryAttribute.action_int_report_tail_drops:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 171: lemming.dataplane.sai.AclEntryAttribute.action_tam_int_object:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 172: lemming.dataplane.sai.AclEntryAttribute.action_set_isolation_group:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 173: lemming.dataplane.sai.AclEntryAttribute.action_macsec_flow:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 174: lemming.dataplane.sai.AclEntryAttribute.action_set_lag_hash_id:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 175: lemming.dataplane.sai.AclEntryAttribute.action_set_ecmp_hash_id:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 176: lemming.dataplane.sai.AclEntryAttribute.action_set_vrf:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 177: lemming.dataplane.sai.AclEntryAttribute.action_set_forwarding_class:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 178: lemming.dataplane.sai.AclEntryAttribute.action_set_ars_monitoring:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 179: lemming.dataplane.sai.AclEntryAttribute.action_set_ars_object:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 180: lemming.dataplane.sai.AclEntryAttribute.action_disable_ars_forwarding:type_name -> lemming.dataplane.sai.AclActionData
+	221, // 181: lemming.dataplane.sai.AclEntryAttribute.action_chain_redirect:type_name -> lemming.dataplane.sai.AclActionData
 	5,   // 182: lemming.dataplane.sai.AclRangeAttribute.type:type_name -> lemming.dataplane.sai.AclRangeType
-	235, // 183: lemming.dataplane.sai.AclRangeAttribute.limit:type_name -> lemming.dataplane.sai.Uint32Range
+	253, // 183: lemming.dataplane.sai.AclRangeAttribute.limit:type_name -> lemming.dataplane.sai.Uint32Range
 	6,   // 184: lemming.dataplane.sai.AclTableAttribute.acl_stage:type_name -> lemming.dataplane.sai.AclStage
 	1,   // 185: lemming.dataplane.sai.AclTableAttribute.acl_bind_point_type_list:type_name -> lemming.dataplane.sai.AclBindPointType
 	0,   // 186: lemming.dataplane.sai.AclTableAttribute.acl_action_type_list:type_name -> lemming.dataplane.sai.AclActionType
-	345, // 187: lemming.dataplane.sai.AclTableAttribute.user_defined_field_group_min:type_name -> lemming.dataplane.sai.AclTableAttribute.UserDefinedFieldGroupMinEntry
+	370, // 187: lemming.dataplane.sai.AclTableAttribute.user_defined_field_group_min:type_name -> lemming.dataplane.sai.AclTableAttribute.UserDefinedFieldGroupMinEntry
 	5,   // 188: lemming.dataplane.sai.AclTableAttribute.field_acl_range_type:type_name -> lemming.dataplane.sai.AclRangeType
 	10,  // 189: lemming.dataplane.sai.AclTableAttribute.acl_table_match_type:type_name -> lemming.dataplane.sai.AclTableMatchType
-	205, // 190: lemming.dataplane.sai.AclTableAttribute.field_valid_bits_src_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 191: lemming.dataplane.sai.AclTableAttribute.field_valid_bits_dst_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 190: lemming.dataplane.sai.AclTableAttribute.field_valid_bits_src_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 191: lemming.dataplane.sai.AclTableAttribute.field_valid_bits_dst_ipv6:type_name -> lemming.dataplane.sai.AclFieldData
 	8,   // 192: lemming.dataplane.sai.AclTableChainGroupAttribute.type:type_name -> lemming.dataplane.sai.AclTableChainGroupType
 	7,   // 193: lemming.dataplane.sai.AclTableChainGroupAttribute.stage:type_name -> lemming.dataplane.sai.AclTableChainGroupStage
 	6,   // 194: lemming.dataplane.sai.AclTableGroupAttribute.acl_stage:type_name -> lemming.dataplane.sai.AclStage
 	1,   // 195: lemming.dataplane.sai.AclTableGroupAttribute.acl_bind_point_type_list:type_name -> lemming.dataplane.sai.AclBindPointType
 	9,   // 196: lemming.dataplane.sai.AclTableGroupAttribute.type:type_name -> lemming.dataplane.sai.AclTableGroupType
-	16,  // 197: lemming.dataplane.sai.BfdSessionAttribute.type:type_name -> lemming.dataplane.sai.BfdSessionType
-	12,  // 198: lemming.dataplane.sai.BfdSessionAttribute.bfd_encapsulation_type:type_name -> lemming.dataplane.sai.BfdEncapsulationType
-	15,  // 199: lemming.dataplane.sai.BfdSessionAttribute.state:type_name -> lemming.dataplane.sai.BfdSessionState
-	13,  // 200: lemming.dataplane.sai.BfdSessionAttribute.offload_type:type_name -> lemming.dataplane.sai.BfdSessionOffloadType
-	150, // 201: lemming.dataplane.sai.BfdSessionAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	23,  // 202: lemming.dataplane.sai.BridgeAttribute.type:type_name -> lemming.dataplane.sai.BridgeType
-	17,  // 203: lemming.dataplane.sai.BridgeAttribute.unknown_unicast_flood_control_type:type_name -> lemming.dataplane.sai.BridgeFloodControlType
-	17,  // 204: lemming.dataplane.sai.BridgeAttribute.unknown_multicast_flood_control_type:type_name -> lemming.dataplane.sai.BridgeFloodControlType
-	17,  // 205: lemming.dataplane.sai.BridgeAttribute.broadcast_flood_control_type:type_name -> lemming.dataplane.sai.BridgeFloodControlType
-	150, // 206: lemming.dataplane.sai.BridgeAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	21,  // 207: lemming.dataplane.sai.BridgePortAttribute.type:type_name -> lemming.dataplane.sai.BridgePortType
-	20,  // 208: lemming.dataplane.sai.BridgePortAttribute.tagging_mode:type_name -> lemming.dataplane.sai.BridgePortTaggingMode
-	18,  // 209: lemming.dataplane.sai.BridgePortAttribute.fdb_learning_mode:type_name -> lemming.dataplane.sai.BridgePortFdbLearningMode
-	94,  // 210: lemming.dataplane.sai.BridgePortAttribute.fdb_learning_limit_violation_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	150, // 211: lemming.dataplane.sai.BridgePortAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	26,  // 212: lemming.dataplane.sai.BufferPoolAttribute.type:type_name -> lemming.dataplane.sai.BufferPoolType
-	25,  // 213: lemming.dataplane.sai.BufferPoolAttribute.threshold_mode:type_name -> lemming.dataplane.sai.BufferPoolThresholdMode
-	150, // 214: lemming.dataplane.sai.BufferPoolAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	27,  // 215: lemming.dataplane.sai.BufferProfileAttribute.threshold_mode:type_name -> lemming.dataplane.sai.BufferProfileThresholdMode
-	31,  // 216: lemming.dataplane.sai.CounterAttribute.type:type_name -> lemming.dataplane.sai.CounterType
-	89,  // 217: lemming.dataplane.sai.CounterAttribute.object_type:type_name -> lemming.dataplane.sai.ObjectType
-	34,  // 218: lemming.dataplane.sai.DebugCounterAttribute.type:type_name -> lemming.dataplane.sai.DebugCounterType
-	33,  // 219: lemming.dataplane.sai.DebugCounterAttribute.bind_method:type_name -> lemming.dataplane.sai.DebugCounterBindMethod
-	54,  // 220: lemming.dataplane.sai.DebugCounterAttribute.in_drop_reason_list:type_name -> lemming.dataplane.sai.InDropReason
-	90,  // 221: lemming.dataplane.sai.DebugCounterAttribute.out_drop_reason_list:type_name -> lemming.dataplane.sai.OutDropReason
-	205, // 222: lemming.dataplane.sai.DtelAttribute.int_l4_dscp:type_name -> lemming.dataplane.sai.AclFieldData
-	35,  // 223: lemming.dataplane.sai.DtelEventAttribute.type:type_name -> lemming.dataplane.sai.DtelEventType
-	38,  // 224: lemming.dataplane.sai.FdbEntryAttribute.type:type_name -> lemming.dataplane.sai.FdbEntryType
-	94,  // 225: lemming.dataplane.sai.FdbEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	40,  // 226: lemming.dataplane.sai.FdbFlushAttribute.entry_type:type_name -> lemming.dataplane.sai.FdbFlushEntryType
-	82,  // 227: lemming.dataplane.sai.HashAttribute.native_hash_field_list:type_name -> lemming.dataplane.sai.NativeHashField
-	49,  // 228: lemming.dataplane.sai.HostifAttribute.type:type_name -> lemming.dataplane.sai.HostifType
-	51,  // 229: lemming.dataplane.sai.HostifAttribute.vlan_tag:type_name -> lemming.dataplane.sai.HostifVlanTag
-	48,  // 230: lemming.dataplane.sai.HostifPacketAttribute.hostif_tx_type:type_name -> lemming.dataplane.sai.HostifTxType
-	346, // 231: lemming.dataplane.sai.HostifPacketAttribute.timestamp:type_name -> google.protobuf.Timestamp
-	46,  // 232: lemming.dataplane.sai.HostifTableEntryAttribute.type:type_name -> lemming.dataplane.sai.HostifTableEntryType
-	45,  // 233: lemming.dataplane.sai.HostifTableEntryAttribute.channel_type:type_name -> lemming.dataplane.sai.HostifTableEntryChannelType
-	47,  // 234: lemming.dataplane.sai.HostifTrapAttribute.trap_type:type_name -> lemming.dataplane.sai.HostifTrapType
-	94,  // 235: lemming.dataplane.sai.HostifTrapAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	88,  // 236: lemming.dataplane.sai.HostifTrapGroupAttribute.object_stage:type_name -> lemming.dataplane.sai.ObjectStage
-	50,  // 237: lemming.dataplane.sai.HostifUserDefinedTrapAttribute.type:type_name -> lemming.dataplane.sai.HostifUserDefinedTrapType
-	53,  // 238: lemming.dataplane.sai.IcmpEchoSessionAttribute.state:type_name -> lemming.dataplane.sai.IcmpEchoSessionState
-	150, // 239: lemming.dataplane.sai.IcmpEchoSessionAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	94,  // 240: lemming.dataplane.sai.IpmcEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	61,  // 241: lemming.dataplane.sai.IpsecAttribute.supported_cipher_list:type_name -> lemming.dataplane.sai.IpsecCipher
-	151, // 242: lemming.dataplane.sai.IpsecAttribute.stats_mode:type_name -> lemming.dataplane.sai.StatsMode
-	164, // 243: lemming.dataplane.sai.IpsecPortAttribute.switch_switching_mode:type_name -> lemming.dataplane.sai.SwitchSwitchingMode
-	150, // 244: lemming.dataplane.sai.IpsecPortAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	62,  // 245: lemming.dataplane.sai.IpsecSaAttribute.ipsec_direction:type_name -> lemming.dataplane.sai.IpsecDirection
-	64,  // 246: lemming.dataplane.sai.IpsecSaAttribute.octet_count_status:type_name -> lemming.dataplane.sai.IpsecSaOctetCountStatus
-	61,  // 247: lemming.dataplane.sai.IpsecSaAttribute.ipsec_cipher:type_name -> lemming.dataplane.sai.IpsecCipher
-	150, // 248: lemming.dataplane.sai.IpsecSaAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	66,  // 249: lemming.dataplane.sai.IsolationGroupAttribute.type:type_name -> lemming.dataplane.sai.IsolationGroupType
-	94,  // 250: lemming.dataplane.sai.L2mcEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	69,  // 251: lemming.dataplane.sai.MacsecAttribute.direction:type_name -> lemming.dataplane.sai.MacsecDirection
-	68,  // 252: lemming.dataplane.sai.MacsecAttribute.supported_cipher_suite_list:type_name -> lemming.dataplane.sai.MacsecCipherSuite
-	151, // 253: lemming.dataplane.sai.MacsecAttribute.stats_mode:type_name -> lemming.dataplane.sai.StatsMode
-	71,  // 254: lemming.dataplane.sai.MacsecAttribute.max_secure_associations_per_sc:type_name -> lemming.dataplane.sai.MacsecMaxSecureAssociationsPerSc
-	69,  // 255: lemming.dataplane.sai.MacsecFlowAttribute.macsec_direction:type_name -> lemming.dataplane.sai.MacsecDirection
-	150, // 256: lemming.dataplane.sai.MacsecFlowAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	69,  // 257: lemming.dataplane.sai.MacsecPortAttribute.macsec_direction:type_name -> lemming.dataplane.sai.MacsecDirection
-	164, // 258: lemming.dataplane.sai.MacsecPortAttribute.switch_switching_mode:type_name -> lemming.dataplane.sai.SwitchSwitchingMode
-	150, // 259: lemming.dataplane.sai.MacsecPortAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	69,  // 260: lemming.dataplane.sai.MacsecSaAttribute.macsec_direction:type_name -> lemming.dataplane.sai.MacsecDirection
-	69,  // 261: lemming.dataplane.sai.MacsecScAttribute.macsec_direction:type_name -> lemming.dataplane.sai.MacsecDirection
-	68,  // 262: lemming.dataplane.sai.MacsecScAttribute.macsec_cipher_suite:type_name -> lemming.dataplane.sai.MacsecCipherSuite
-	94,  // 263: lemming.dataplane.sai.McastFdbEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	77,  // 264: lemming.dataplane.sai.MirrorSessionAttribute.type:type_name -> lemming.dataplane.sai.MirrorSessionType
-	76,  // 265: lemming.dataplane.sai.MirrorSessionAttribute.congestion_mode:type_name -> lemming.dataplane.sai.MirrorSessionCongestionMode
-	37,  // 266: lemming.dataplane.sai.MirrorSessionAttribute.erspan_encapsulation_type:type_name -> lemming.dataplane.sai.ErspanEncapsulationType
-	81,  // 267: lemming.dataplane.sai.NatEntryAttribute.nat_type:type_name -> lemming.dataplane.sai.NatType
-	81,  // 268: lemming.dataplane.sai.NatZoneCounterAttribute.nat_type:type_name -> lemming.dataplane.sai.NatType
-	94,  // 269: lemming.dataplane.sai.NeighborEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	59,  // 270: lemming.dataplane.sai.NeighborEntryAttribute.ip_addr_family:type_name -> lemming.dataplane.sai.IpAddrFamily
-	87,  // 271: lemming.dataplane.sai.NextHopAttribute.type:type_name -> lemming.dataplane.sai.NextHopType
-	93,  // 272: lemming.dataplane.sai.NextHopAttribute.outseg_type:type_name -> lemming.dataplane.sai.OutsegType
-	92,  // 273: lemming.dataplane.sai.NextHopAttribute.outseg_ttl_mode:type_name -> lemming.dataplane.sai.OutsegTtlMode
-	91,  // 274: lemming.dataplane.sai.NextHopAttribute.outseg_exp_mode:type_name -> lemming.dataplane.sai.OutsegExpMode
-	86,  // 275: lemming.dataplane.sai.NextHopGroupAttribute.type:type_name -> lemming.dataplane.sai.NextHopGroupType
-	83,  // 276: lemming.dataplane.sai.NextHopGroupMapAttribute.type:type_name -> lemming.dataplane.sai.NextHopGroupMapType
-	218, // 277: lemming.dataplane.sai.NextHopGroupMapAttribute.map_to_value_list:type_name -> lemming.dataplane.sai.UintMap
-	84,  // 278: lemming.dataplane.sai.NextHopGroupMemberAttribute.configured_role:type_name -> lemming.dataplane.sai.NextHopGroupMemberConfiguredRole
-	85,  // 279: lemming.dataplane.sai.NextHopGroupMemberAttribute.observed_role:type_name -> lemming.dataplane.sai.NextHopGroupMemberObservedRole
-	75,  // 280: lemming.dataplane.sai.PolicerAttribute.meter_type:type_name -> lemming.dataplane.sai.MeterType
-	101, // 281: lemming.dataplane.sai.PolicerAttribute.mode:type_name -> lemming.dataplane.sai.PolicerMode
-	100, // 282: lemming.dataplane.sai.PolicerAttribute.color_source:type_name -> lemming.dataplane.sai.PolicerColorSource
-	94,  // 283: lemming.dataplane.sai.PolicerAttribute.green_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	94,  // 284: lemming.dataplane.sai.PolicerAttribute.yellow_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	94,  // 285: lemming.dataplane.sai.PolicerAttribute.red_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	94,  // 286: lemming.dataplane.sai.PolicerAttribute.enable_counter_packet_action_list:type_name -> lemming.dataplane.sai.PacketAction
-	88,  // 287: lemming.dataplane.sai.PolicerAttribute.object_stage:type_name -> lemming.dataplane.sai.ObjectStage
-	150, // 288: lemming.dataplane.sai.PolicerAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	134, // 289: lemming.dataplane.sai.PortAttribute.type:type_name -> lemming.dataplane.sai.PortType
-	125, // 290: lemming.dataplane.sai.PortAttribute.oper_status:type_name -> lemming.dataplane.sai.PortOperStatus
-	104, // 291: lemming.dataplane.sai.PortAttribute.supported_breakout_mode_type:type_name -> lemming.dataplane.sai.PortBreakoutModeType
-	104, // 292: lemming.dataplane.sai.PortAttribute.current_breakout_mode_type:type_name -> lemming.dataplane.sai.PortBreakoutModeType
-	113, // 293: lemming.dataplane.sai.PortAttribute.supported_fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
-	112, // 294: lemming.dataplane.sai.PortAttribute.supported_fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
-	114, // 295: lemming.dataplane.sai.PortAttribute.supported_flow_control_mode:type_name -> lemming.dataplane.sai.PortFlowControlMode
-	123, // 296: lemming.dataplane.sai.PortAttribute.supported_media_type:type_name -> lemming.dataplane.sai.PortMediaType
-	113, // 297: lemming.dataplane.sai.PortAttribute.remote_advertised_fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
-	112, // 298: lemming.dataplane.sai.PortAttribute.remote_advertised_fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
-	114, // 299: lemming.dataplane.sai.PortAttribute.remote_advertised_flow_control_mode:type_name -> lemming.dataplane.sai.PortFlowControlMode
-	123, // 300: lemming.dataplane.sai.PortAttribute.remote_advertised_media_type:type_name -> lemming.dataplane.sai.PortMediaType
-	224, // 301: lemming.dataplane.sai.PortAttribute.eye_values:type_name -> lemming.dataplane.sai.PortEyeValues
-	123, // 302: lemming.dataplane.sai.PortAttribute.media_type:type_name -> lemming.dataplane.sai.PortMediaType
-	113, // 303: lemming.dataplane.sai.PortAttribute.advertised_fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
-	112, // 304: lemming.dataplane.sai.PortAttribute.advertised_fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
-	114, // 305: lemming.dataplane.sai.PortAttribute.advertised_flow_control_mode:type_name -> lemming.dataplane.sai.PortFlowControlMode
-	123, // 306: lemming.dataplane.sai.PortAttribute.advertised_media_type:type_name -> lemming.dataplane.sai.PortMediaType
-	117, // 307: lemming.dataplane.sai.PortAttribute.internal_loopback_mode:type_name -> lemming.dataplane.sai.PortInternalLoopbackMode
-	113, // 308: lemming.dataplane.sai.PortAttribute.fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
-	112, // 309: lemming.dataplane.sai.PortAttribute.fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
-	114, // 310: lemming.dataplane.sai.PortAttribute.global_flow_control_mode:type_name -> lemming.dataplane.sai.PortFlowControlMode
-	130, // 311: lemming.dataplane.sai.PortAttribute.priority_flow_control_mode:type_name -> lemming.dataplane.sai.PortPriorityFlowControlMode
-	131, // 312: lemming.dataplane.sai.PortAttribute.ptp_mode:type_name -> lemming.dataplane.sai.PortPtpMode
-	116, // 313: lemming.dataplane.sai.PortAttribute.interface_type:type_name -> lemming.dataplane.sai.PortInterfaceType
-	116, // 314: lemming.dataplane.sai.PortAttribute.advertised_interface_type:type_name -> lemming.dataplane.sai.PortInterfaceType
-	118, // 315: lemming.dataplane.sai.PortAttribute.link_training_failure_status:type_name -> lemming.dataplane.sai.PortLinkTrainingFailureStatus
-	119, // 316: lemming.dataplane.sai.PortAttribute.link_training_rx_status:type_name -> lemming.dataplane.sai.PortLinkTrainingRxStatus
-	128, // 317: lemming.dataplane.sai.PortAttribute.prbs_config:type_name -> lemming.dataplane.sai.PortPrbsConfig
-	129, // 318: lemming.dataplane.sai.PortAttribute.prbs_rx_status:type_name -> lemming.dataplane.sai.PortPrbsRxStatus
-	227, // 319: lemming.dataplane.sai.PortAttribute.prbs_rx_state:type_name -> lemming.dataplane.sai.PRBS_RXState
-	110, // 320: lemming.dataplane.sai.PortAttribute.err_status_list:type_name -> lemming.dataplane.sai.PortErrStatus
-	165, // 321: lemming.dataplane.sai.PortAttribute.fabric_attached_switch_type:type_name -> lemming.dataplane.sai.SwitchType
-	209, // 322: lemming.dataplane.sai.PortAttribute.fabric_reachability:type_name -> lemming.dataplane.sai.FabricPortReachability
-	120, // 323: lemming.dataplane.sai.PortAttribute.loopback_mode:type_name -> lemming.dataplane.sai.PortLoopbackMode
-	122, // 324: lemming.dataplane.sai.PortAttribute.mdix_mode_status:type_name -> lemming.dataplane.sai.PortMdixModeStatus
-	121, // 325: lemming.dataplane.sai.PortAttribute.mdix_mode_config:type_name -> lemming.dataplane.sai.PortMdixModeConfig
-	103, // 326: lemming.dataplane.sai.PortAttribute.auto_neg_config_mode:type_name -> lemming.dataplane.sai.PortAutoNegConfigMode
-	124, // 327: lemming.dataplane.sai.PortAttribute.module_type:type_name -> lemming.dataplane.sai.PortModuleType
-	109, // 328: lemming.dataplane.sai.PortAttribute.dual_media:type_name -> lemming.dataplane.sai.PortDualMedia
-	112, // 329: lemming.dataplane.sai.PortAttribute.auto_neg_fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
-	235, // 330: lemming.dataplane.sai.PortAttribute.pfc_tc_dld_interval_range:type_name -> lemming.dataplane.sai.Uint32Range
-	218, // 331: lemming.dataplane.sai.PortAttribute.pfc_tc_dld_interval:type_name -> lemming.dataplane.sai.UintMap
-	235, // 332: lemming.dataplane.sai.PortAttribute.pfc_tc_dlr_interval_range:type_name -> lemming.dataplane.sai.Uint32Range
-	218, // 333: lemming.dataplane.sai.PortAttribute.pfc_tc_dlr_interval:type_name -> lemming.dataplane.sai.UintMap
-	225, // 334: lemming.dataplane.sai.PortAttribute.rx_signal_detect:type_name -> lemming.dataplane.sai.PortLaneLatchStatus
-	225, // 335: lemming.dataplane.sai.PortAttribute.rx_lock_status:type_name -> lemming.dataplane.sai.PortLaneLatchStatus
-	217, // 336: lemming.dataplane.sai.PortAttribute.pcs_rx_link_status:type_name -> lemming.dataplane.sai.LatchStatus
-	225, // 337: lemming.dataplane.sai.PortAttribute.fec_alignment_lock:type_name -> lemming.dataplane.sai.PortLaneLatchStatus
-	43,  // 338: lemming.dataplane.sai.PortAttribute.ecmp_hash_algorithm:type_name -> lemming.dataplane.sai.HashAlgorithm
-	113, // 339: lemming.dataplane.sai.PortAttribute.oper_port_fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
-	115, // 340: lemming.dataplane.sai.PortAttribute.host_tx_ready_status:type_name -> lemming.dataplane.sai.PortHostTxReadyStatus
-	126, // 341: lemming.dataplane.sai.PortAttribute.path_tracing_timestamp_type:type_name -> lemming.dataplane.sai.PortPathTracingTimestampType
-	108, // 342: lemming.dataplane.sai.PortAttribute.datapath_enable:type_name -> lemming.dataplane.sai.PortDatapathEnable
-	105, // 343: lemming.dataplane.sai.PortAttribute.cable_pair_state:type_name -> lemming.dataplane.sai.PortCablePairState
-	106, // 344: lemming.dataplane.sai.PortAttribute.cable_type:type_name -> lemming.dataplane.sai.PortCableType
-	111, // 345: lemming.dataplane.sai.PortAttribute.error_status:type_name -> lemming.dataplane.sai.PortErrorStatus
-	150, // 346: lemming.dataplane.sai.PortAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	107, // 347: lemming.dataplane.sai.PortConnectorAttribute.failover_mode:type_name -> lemming.dataplane.sai.PortConnectorFailoverMode
-	135, // 348: lemming.dataplane.sai.QosMapAttribute.type:type_name -> lemming.dataplane.sai.QosMapType
-	229, // 349: lemming.dataplane.sai.QosMapAttribute.map_to_value_list:type_name -> lemming.dataplane.sai.QOSMap
-	139, // 350: lemming.dataplane.sai.QueueAttribute.type:type_name -> lemming.dataplane.sai.QueueType
-	94,  // 351: lemming.dataplane.sai.QueueAttribute.pfc_dlr_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	136, // 352: lemming.dataplane.sai.QueueAttribute.pfc_continuous_deadlock_state:type_name -> lemming.dataplane.sai.QueuePfcContinuousDeadlockState
-	150, // 353: lemming.dataplane.sai.QueueAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	141, // 354: lemming.dataplane.sai.RouterInterfaceAttribute.type:type_name -> lemming.dataplane.sai.RouterInterfaceType
-	94,  // 355: lemming.dataplane.sai.RouterInterfaceAttribute.neighbor_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	94,  // 356: lemming.dataplane.sai.RouterInterfaceAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	150, // 357: lemming.dataplane.sai.RouterInterfaceAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	94,  // 358: lemming.dataplane.sai.RouteEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	59,  // 359: lemming.dataplane.sai.RouteEntryAttribute.ip_addr_family:type_name -> lemming.dataplane.sai.IpAddrFamily
-	143, // 360: lemming.dataplane.sai.SamplepacketAttribute.type:type_name -> lemming.dataplane.sai.SamplepacketType
-	142, // 361: lemming.dataplane.sai.SamplepacketAttribute.mode:type_name -> lemming.dataplane.sai.SamplepacketMode
-	144, // 362: lemming.dataplane.sai.SchedulerAttribute.scheduling_type:type_name -> lemming.dataplane.sai.SchedulingType
-	75,  // 363: lemming.dataplane.sai.SchedulerAttribute.meter_type:type_name -> lemming.dataplane.sai.MeterType
-	149, // 364: lemming.dataplane.sai.Srv6SidlistAttribute.type:type_name -> lemming.dataplane.sai.Srv6SidlistType
-	234, // 365: lemming.dataplane.sai.Srv6SidlistAttribute.tlv_list:type_name -> lemming.dataplane.sai.TLVEntry
-	150, // 366: lemming.dataplane.sai.Srv6SidlistAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	152, // 367: lemming.dataplane.sai.StpPortAttribute.state:type_name -> lemming.dataplane.sai.StpPortState
-	161, // 368: lemming.dataplane.sai.SwitchAttribute.oper_status:type_name -> lemming.dataplane.sai.SwitchOperStatus
-	235, // 369: lemming.dataplane.sai.SwitchAttribute.fdb_dst_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
-	235, // 370: lemming.dataplane.sai.SwitchAttribute.route_dst_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
-	235, // 371: lemming.dataplane.sai.SwitchAttribute.neighbor_dst_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
-	235, // 372: lemming.dataplane.sai.SwitchAttribute.port_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
-	235, // 373: lemming.dataplane.sai.SwitchAttribute.vlan_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
-	235, // 374: lemming.dataplane.sai.SwitchAttribute.acl_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
-	235, // 375: lemming.dataplane.sai.SwitchAttribute.acl_user_trap_id_range:type_name -> lemming.dataplane.sai.Uint32Range
-	207, // 376: lemming.dataplane.sai.SwitchAttribute.available_acl_table:type_name -> lemming.dataplane.sai.ACLResource
-	207, // 377: lemming.dataplane.sai.SwitchAttribute.available_acl_table_group:type_name -> lemming.dataplane.sai.ACLResource
-	162, // 378: lemming.dataplane.sai.SwitchAttribute.restart_type:type_name -> lemming.dataplane.sai.SwitchRestartType
-	204, // 379: lemming.dataplane.sai.SwitchAttribute.acl_capability:type_name -> lemming.dataplane.sai.ACLCapability
-	160, // 380: lemming.dataplane.sai.SwitchAttribute.mcast_snooping_capability:type_name -> lemming.dataplane.sai.SwitchMcastSnoopingCapability
-	164, // 381: lemming.dataplane.sai.SwitchAttribute.switching_mode:type_name -> lemming.dataplane.sai.SwitchSwitchingMode
-	94,  // 382: lemming.dataplane.sai.SwitchAttribute.fdb_unicast_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	94,  // 383: lemming.dataplane.sai.SwitchAttribute.fdb_broadcast_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	94,  // 384: lemming.dataplane.sai.SwitchAttribute.fdb_multicast_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	43,  // 385: lemming.dataplane.sai.SwitchAttribute.ecmp_default_hash_algorithm:type_name -> lemming.dataplane.sai.HashAlgorithm
-	43,  // 386: lemming.dataplane.sai.SwitchAttribute.lag_default_hash_algorithm:type_name -> lemming.dataplane.sai.HashAlgorithm
-	204, // 387: lemming.dataplane.sai.SwitchAttribute.acl_stage_ingress:type_name -> lemming.dataplane.sai.ACLCapability
-	204, // 388: lemming.dataplane.sai.SwitchAttribute.acl_stage_egress:type_name -> lemming.dataplane.sai.ACLCapability
-	186, // 389: lemming.dataplane.sai.SwitchAttribute.srv6_tlv_type:type_name -> lemming.dataplane.sai.TlvType
-	94,  // 390: lemming.dataplane.sai.SwitchAttribute.pfc_dlr_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	235, // 391: lemming.dataplane.sai.SwitchAttribute.pfc_tc_dld_interval_range:type_name -> lemming.dataplane.sai.Uint32Range
-	218, // 392: lemming.dataplane.sai.SwitchAttribute.pfc_tc_dld_interval:type_name -> lemming.dataplane.sai.UintMap
-	235, // 393: lemming.dataplane.sai.SwitchAttribute.pfc_tc_dlr_interval_range:type_name -> lemming.dataplane.sai.Uint32Range
-	218, // 394: lemming.dataplane.sai.SwitchAttribute.pfc_tc_dlr_interval:type_name -> lemming.dataplane.sai.UintMap
-	89,  // 395: lemming.dataplane.sai.SwitchAttribute.supported_protected_object_type:type_name -> lemming.dataplane.sai.ObjectType
-	13,  // 396: lemming.dataplane.sai.SwitchAttribute.supported_ipv4_bfd_session_offload_type:type_name -> lemming.dataplane.sai.BfdSessionOffloadType
-	13,  // 397: lemming.dataplane.sai.SwitchAttribute.supported_ipv6_bfd_session_offload_type:type_name -> lemming.dataplane.sai.BfdSessionOffloadType
-	151, // 398: lemming.dataplane.sai.SwitchAttribute.supported_extended_stats_mode:type_name -> lemming.dataplane.sai.StatsMode
-	89,  // 399: lemming.dataplane.sai.SwitchAttribute.supported_object_type_list:type_name -> lemming.dataplane.sai.ObjectType
-	158, // 400: lemming.dataplane.sai.SwitchAttribute.hardware_access_bus:type_name -> lemming.dataplane.sai.SwitchHardwareAccessBus
-	156, // 401: lemming.dataplane.sai.SwitchAttribute.firmware_load_method:type_name -> lemming.dataplane.sai.SwitchFirmwareLoadMethod
-	157, // 402: lemming.dataplane.sai.SwitchAttribute.firmware_load_type:type_name -> lemming.dataplane.sai.SwitchFirmwareLoadType
-	165, // 403: lemming.dataplane.sai.SwitchAttribute.type:type_name -> lemming.dataplane.sai.SwitchType
-	232, // 404: lemming.dataplane.sai.SwitchAttribute.system_port_config_list:type_name -> lemming.dataplane.sai.SystemPortConfig
-	155, // 405: lemming.dataplane.sai.SwitchAttribute.failover_config_mode:type_name -> lemming.dataplane.sai.SwitchFailoverConfigMode
-	204, // 406: lemming.dataplane.sai.SwitchAttribute.acl_stage_post_ingress:type_name -> lemming.dataplane.sai.ACLCapability
-	159, // 407: lemming.dataplane.sai.SwitchAttribute.hostif_oper_status_update_mode:type_name -> lemming.dataplane.sai.SwitchHostifOperStatusUpdateMode
-	153, // 408: lemming.dataplane.sai.SwitchAttribute.reg_fatal_switch_asic_sdk_health_category:type_name -> lemming.dataplane.sai.SwitchAsicSdkHealthCategory
-	153, // 409: lemming.dataplane.sai.SwitchAttribute.reg_warning_switch_asic_sdk_health_category:type_name -> lemming.dataplane.sai.SwitchAsicSdkHealthCategory
-	153, // 410: lemming.dataplane.sai.SwitchAttribute.reg_notice_switch_asic_sdk_health_category:type_name -> lemming.dataplane.sai.SwitchAsicSdkHealthCategory
-	204, // 411: lemming.dataplane.sai.SwitchAttribute.acl_stage_pre_ingress:type_name -> lemming.dataplane.sai.ACLCapability
-	150, // 412: lemming.dataplane.sai.SwitchAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	32,  // 413: lemming.dataplane.sai.SwitchAttribute.dash_caps_ha_scope_level:type_name -> lemming.dataplane.sai.DashCapsHaScopeLevel
-	34,  // 414: lemming.dataplane.sai.SwitchAttribute.supported_debug_counter_type_list:type_name -> lemming.dataplane.sai.DebugCounterType
-	54,  // 415: lemming.dataplane.sai.SwitchAttribute.supported_ingress_drop_reason_list:type_name -> lemming.dataplane.sai.InDropReason
-	195, // 416: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
-	94,  // 417: lemming.dataplane.sai.SwitchTunnelAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	189, // 418: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_encap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelEncapEcnMode
-	187, // 419: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_decap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelDecapEcnMode
-	196, // 420: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_vxlan_udp_sport_mode:type_name -> lemming.dataplane.sai.TunnelVxlanUdpSportMode
-	166, // 421: lemming.dataplane.sai.SystemPortAttribute.type:type_name -> lemming.dataplane.sai.SystemPortType
-	232, // 422: lemming.dataplane.sai.SystemPortAttribute.config_info:type_name -> lemming.dataplane.sai.SystemPortConfig
-	173, // 423: lemming.dataplane.sai.TamAttribute.tam_bind_point_type_list:type_name -> lemming.dataplane.sai.TamBindPointType
-	175, // 424: lemming.dataplane.sai.TamEventAttribute.type:type_name -> lemming.dataplane.sai.TamEventType
-	174, // 425: lemming.dataplane.sai.TamEventThresholdAttribute.unit:type_name -> lemming.dataplane.sai.TamEventThresholdUnit
-	177, // 426: lemming.dataplane.sai.TamIntAttribute.type:type_name -> lemming.dataplane.sai.TamIntType
-	176, // 427: lemming.dataplane.sai.TamIntAttribute.int_presence_type:type_name -> lemming.dataplane.sai.TamIntPresenceType
-	182, // 428: lemming.dataplane.sai.TamMathFuncAttribute.tam_tel_math_func_type:type_name -> lemming.dataplane.sai.TamTelMathFuncType
-	180, // 429: lemming.dataplane.sai.TamReportAttribute.type:type_name -> lemming.dataplane.sai.TamReportType
-	179, // 430: lemming.dataplane.sai.TamReportAttribute.report_mode:type_name -> lemming.dataplane.sai.TamReportMode
-	178, // 431: lemming.dataplane.sai.TamReportAttribute.report_interval_unit:type_name -> lemming.dataplane.sai.TamReportIntervalUnit
-	181, // 432: lemming.dataplane.sai.TamTelemetryAttribute.tam_reporting_unit:type_name -> lemming.dataplane.sai.TamReportingUnit
-	183, // 433: lemming.dataplane.sai.TamTelTypeAttribute.tam_telemetry_type:type_name -> lemming.dataplane.sai.TamTelemetryType
-	185, // 434: lemming.dataplane.sai.TamTransportAttribute.transport_type:type_name -> lemming.dataplane.sai.TamTransportType
-	184, // 435: lemming.dataplane.sai.TamTransportAttribute.transport_auth_type:type_name -> lemming.dataplane.sai.TamTransportAuthType
-	195, // 436: lemming.dataplane.sai.TunnelAttribute.type:type_name -> lemming.dataplane.sai.TunnelType
-	191, // 437: lemming.dataplane.sai.TunnelAttribute.peer_mode:type_name -> lemming.dataplane.sai.TunnelPeerMode
-	194, // 438: lemming.dataplane.sai.TunnelAttribute.encap_ttl_mode:type_name -> lemming.dataplane.sai.TunnelTtlMode
-	188, // 439: lemming.dataplane.sai.TunnelAttribute.encap_dscp_mode:type_name -> lemming.dataplane.sai.TunnelDscpMode
-	189, // 440: lemming.dataplane.sai.TunnelAttribute.encap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelEncapEcnMode
-	187, // 441: lemming.dataplane.sai.TunnelAttribute.decap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelDecapEcnMode
-	194, // 442: lemming.dataplane.sai.TunnelAttribute.decap_ttl_mode:type_name -> lemming.dataplane.sai.TunnelTtlMode
-	188, // 443: lemming.dataplane.sai.TunnelAttribute.decap_dscp_mode:type_name -> lemming.dataplane.sai.TunnelDscpMode
-	94,  // 444: lemming.dataplane.sai.TunnelAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	196, // 445: lemming.dataplane.sai.TunnelAttribute.vxlan_udp_sport_mode:type_name -> lemming.dataplane.sai.TunnelVxlanUdpSportMode
-	150, // 446: lemming.dataplane.sai.TunnelAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	190, // 447: lemming.dataplane.sai.TunnelMapAttribute.type:type_name -> lemming.dataplane.sai.TunnelMapType
-	190, // 448: lemming.dataplane.sai.TunnelMapEntryAttribute.tunnel_map_type:type_name -> lemming.dataplane.sai.TunnelMapType
-	193, // 449: lemming.dataplane.sai.TunnelTermTableEntryAttribute.type:type_name -> lemming.dataplane.sai.TunnelTermTableEntryType
-	195, // 450: lemming.dataplane.sai.TunnelTermTableEntryAttribute.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
-	59,  // 451: lemming.dataplane.sai.TunnelTermTableEntryAttribute.ip_addr_family:type_name -> lemming.dataplane.sai.IpAddrFamily
-	197, // 452: lemming.dataplane.sai.UdfAttribute.base:type_name -> lemming.dataplane.sai.UdfBase
-	198, // 453: lemming.dataplane.sai.UdfGroupAttribute.type:type_name -> lemming.dataplane.sai.UdfGroupType
-	205, // 454: lemming.dataplane.sai.UdfMatchAttribute.l2_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 455: lemming.dataplane.sai.UdfMatchAttribute.l3_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 456: lemming.dataplane.sai.UdfMatchAttribute.gre_type:type_name -> lemming.dataplane.sai.AclFieldData
-	205, // 457: lemming.dataplane.sai.UdfMatchAttribute.l4_dst_port_type:type_name -> lemming.dataplane.sai.AclFieldData
-	94,  // 458: lemming.dataplane.sai.VirtualRouterAttribute.violation_ttl1_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	94,  // 459: lemming.dataplane.sai.VirtualRouterAttribute.violation_ip_options_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	94,  // 460: lemming.dataplane.sai.VirtualRouterAttribute.unknown_l3_multicast_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	200, // 461: lemming.dataplane.sai.VlanAttribute.ipv4_mcast_lookup_key_type:type_name -> lemming.dataplane.sai.VlanMcastLookupKeyType
-	200, // 462: lemming.dataplane.sai.VlanAttribute.ipv6_mcast_lookup_key_type:type_name -> lemming.dataplane.sai.VlanMcastLookupKeyType
-	199, // 463: lemming.dataplane.sai.VlanAttribute.unknown_unicast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
-	199, // 464: lemming.dataplane.sai.VlanAttribute.unknown_multicast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
-	199, // 465: lemming.dataplane.sai.VlanAttribute.broadcast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
-	150, // 466: lemming.dataplane.sai.VlanAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
-	202, // 467: lemming.dataplane.sai.VlanMemberAttribute.vlan_tagging_mode:type_name -> lemming.dataplane.sai.VlanTaggingMode
-	36,  // 468: lemming.dataplane.sai.WredAttribute.ecn_mark_mode:type_name -> lemming.dataplane.sai.EcnMarkMode
-	205, // 469: lemming.dataplane.sai.AclEntryAttribute.UserDefinedFieldGroupMinEntry.value:type_name -> lemming.dataplane.sai.AclFieldData
-	347, // 470: lemming.dataplane.sai.attr_enum_value:extendee -> google.protobuf.FieldOptions
-	348, // 471: lemming.dataplane.sai.sai_type:extendee -> google.protobuf.MessageOptions
-	89,  // 472: lemming.dataplane.sai.sai_type:type_name -> lemming.dataplane.sai.ObjectType
-	236, // 473: lemming.dataplane.sai.Entrypoint.ObjectTypeQuery:input_type -> lemming.dataplane.sai.ObjectTypeQueryRequest
-	238, // 474: lemming.dataplane.sai.Entrypoint.Initialize:input_type -> lemming.dataplane.sai.InitializeRequest
-	240, // 475: lemming.dataplane.sai.Entrypoint.Uninitialize:input_type -> lemming.dataplane.sai.UninitializeRequest
-	237, // 476: lemming.dataplane.sai.Entrypoint.ObjectTypeQuery:output_type -> lemming.dataplane.sai.ObjectTypeQueryResponse
-	239, // 477: lemming.dataplane.sai.Entrypoint.Initialize:output_type -> lemming.dataplane.sai.InitializeResponse
-	241, // 478: lemming.dataplane.sai.Entrypoint.Uninitialize:output_type -> lemming.dataplane.sai.UninitializeResponse
-	476, // [476:479] is the sub-list for method output_type
-	473, // [473:476] is the sub-list for method input_type
-	472, // [472:473] is the sub-list for extension type_name
-	470, // [470:472] is the sub-list for extension extendee
-	0,   // [0:470] is the sub-list for field type_name
+	18,  // 197: lemming.dataplane.sai.BfdSessionAttribute.type:type_name -> lemming.dataplane.sai.BfdSessionType
+	14,  // 198: lemming.dataplane.sai.BfdSessionAttribute.bfd_encapsulation_type:type_name -> lemming.dataplane.sai.BfdEncapsulationType
+	17,  // 199: lemming.dataplane.sai.BfdSessionAttribute.state:type_name -> lemming.dataplane.sai.BfdSessionState
+	15,  // 200: lemming.dataplane.sai.BfdSessionAttribute.offload_type:type_name -> lemming.dataplane.sai.BfdSessionOffloadType
+	167, // 201: lemming.dataplane.sai.BfdSessionAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	25,  // 202: lemming.dataplane.sai.BridgeAttribute.type:type_name -> lemming.dataplane.sai.BridgeType
+	19,  // 203: lemming.dataplane.sai.BridgeAttribute.unknown_unicast_flood_control_type:type_name -> lemming.dataplane.sai.BridgeFloodControlType
+	19,  // 204: lemming.dataplane.sai.BridgeAttribute.unknown_multicast_flood_control_type:type_name -> lemming.dataplane.sai.BridgeFloodControlType
+	19,  // 205: lemming.dataplane.sai.BridgeAttribute.broadcast_flood_control_type:type_name -> lemming.dataplane.sai.BridgeFloodControlType
+	167, // 206: lemming.dataplane.sai.BridgeAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	23,  // 207: lemming.dataplane.sai.BridgePortAttribute.type:type_name -> lemming.dataplane.sai.BridgePortType
+	22,  // 208: lemming.dataplane.sai.BridgePortAttribute.tagging_mode:type_name -> lemming.dataplane.sai.BridgePortTaggingMode
+	20,  // 209: lemming.dataplane.sai.BridgePortAttribute.fdb_learning_mode:type_name -> lemming.dataplane.sai.BridgePortFdbLearningMode
+	110, // 210: lemming.dataplane.sai.BridgePortAttribute.fdb_learning_limit_violation_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	167, // 211: lemming.dataplane.sai.BridgePortAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	28,  // 212: lemming.dataplane.sai.BufferPoolAttribute.type:type_name -> lemming.dataplane.sai.BufferPoolType
+	27,  // 213: lemming.dataplane.sai.BufferPoolAttribute.threshold_mode:type_name -> lemming.dataplane.sai.BufferPoolThresholdMode
+	167, // 214: lemming.dataplane.sai.BufferPoolAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	29,  // 215: lemming.dataplane.sai.BufferProfileAttribute.threshold_mode:type_name -> lemming.dataplane.sai.BufferProfileThresholdMode
+	33,  // 216: lemming.dataplane.sai.CounterAttribute.type:type_name -> lemming.dataplane.sai.CounterType
+	105, // 217: lemming.dataplane.sai.CounterAttribute.object_type:type_name -> lemming.dataplane.sai.ObjectType
+	48,  // 218: lemming.dataplane.sai.DebugCounterAttribute.type:type_name -> lemming.dataplane.sai.DebugCounterType
+	47,  // 219: lemming.dataplane.sai.DebugCounterAttribute.bind_method:type_name -> lemming.dataplane.sai.DebugCounterBindMethod
+	68,  // 220: lemming.dataplane.sai.DebugCounterAttribute.in_drop_reason_list:type_name -> lemming.dataplane.sai.InDropReason
+	106, // 221: lemming.dataplane.sai.DebugCounterAttribute.out_drop_reason_list:type_name -> lemming.dataplane.sai.OutDropReason
+	223, // 222: lemming.dataplane.sai.DtelAttribute.int_l4_dscp:type_name -> lemming.dataplane.sai.AclFieldData
+	49,  // 223: lemming.dataplane.sai.DtelEventAttribute.type:type_name -> lemming.dataplane.sai.DtelEventType
+	52,  // 224: lemming.dataplane.sai.FdbEntryAttribute.type:type_name -> lemming.dataplane.sai.FdbEntryType
+	110, // 225: lemming.dataplane.sai.FdbEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	54,  // 226: lemming.dataplane.sai.FdbFlushAttribute.entry_type:type_name -> lemming.dataplane.sai.FdbFlushEntryType
+	97,  // 227: lemming.dataplane.sai.FineGrainedHashFieldAttribute.native_hash_field:type_name -> lemming.dataplane.sai.NativeHashField
+	97,  // 228: lemming.dataplane.sai.HashAttribute.native_hash_field_list:type_name -> lemming.dataplane.sai.NativeHashField
+	63,  // 229: lemming.dataplane.sai.HostifAttribute.type:type_name -> lemming.dataplane.sai.HostifType
+	65,  // 230: lemming.dataplane.sai.HostifAttribute.vlan_tag:type_name -> lemming.dataplane.sai.HostifVlanTag
+	62,  // 231: lemming.dataplane.sai.HostifPacketAttribute.hostif_tx_type:type_name -> lemming.dataplane.sai.HostifTxType
+	371, // 232: lemming.dataplane.sai.HostifPacketAttribute.timestamp:type_name -> google.protobuf.Timestamp
+	60,  // 233: lemming.dataplane.sai.HostifTableEntryAttribute.type:type_name -> lemming.dataplane.sai.HostifTableEntryType
+	59,  // 234: lemming.dataplane.sai.HostifTableEntryAttribute.channel_type:type_name -> lemming.dataplane.sai.HostifTableEntryChannelType
+	61,  // 235: lemming.dataplane.sai.HostifTrapAttribute.trap_type:type_name -> lemming.dataplane.sai.HostifTrapType
+	110, // 236: lemming.dataplane.sai.HostifTrapAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	103, // 237: lemming.dataplane.sai.HostifTrapGroupAttribute.object_stage:type_name -> lemming.dataplane.sai.ObjectStage
+	64,  // 238: lemming.dataplane.sai.HostifUserDefinedTrapAttribute.type:type_name -> lemming.dataplane.sai.HostifUserDefinedTrapType
+	67,  // 239: lemming.dataplane.sai.IcmpEchoSessionAttribute.state:type_name -> lemming.dataplane.sai.IcmpEchoSessionState
+	167, // 240: lemming.dataplane.sai.IcmpEchoSessionAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	167, // 241: lemming.dataplane.sai.IngressPriorityGroupAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	110, // 242: lemming.dataplane.sai.InsegEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	72,  // 243: lemming.dataplane.sai.InsegEntryAttribute.psc_type:type_name -> lemming.dataplane.sai.InsegEntryPscType
+	71,  // 244: lemming.dataplane.sai.InsegEntryAttribute.pop_ttl_mode:type_name -> lemming.dataplane.sai.InsegEntryPopTtlMode
+	70,  // 245: lemming.dataplane.sai.InsegEntryAttribute.pop_qos_mode:type_name -> lemming.dataplane.sai.InsegEntryPopQosMode
+	110, // 246: lemming.dataplane.sai.IpmcEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	75,  // 247: lemming.dataplane.sai.IpsecAttribute.supported_cipher_list:type_name -> lemming.dataplane.sai.IpsecCipher
+	168, // 248: lemming.dataplane.sai.IpsecAttribute.stats_mode:type_name -> lemming.dataplane.sai.StatsMode
+	182, // 249: lemming.dataplane.sai.IpsecPortAttribute.switch_switching_mode:type_name -> lemming.dataplane.sai.SwitchSwitchingMode
+	167, // 250: lemming.dataplane.sai.IpsecPortAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	76,  // 251: lemming.dataplane.sai.IpsecSaAttribute.ipsec_direction:type_name -> lemming.dataplane.sai.IpsecDirection
+	78,  // 252: lemming.dataplane.sai.IpsecSaAttribute.octet_count_status:type_name -> lemming.dataplane.sai.IpsecSaOctetCountStatus
+	75,  // 253: lemming.dataplane.sai.IpsecSaAttribute.ipsec_cipher:type_name -> lemming.dataplane.sai.IpsecCipher
+	167, // 254: lemming.dataplane.sai.IpsecSaAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	80,  // 255: lemming.dataplane.sai.IsolationGroupAttribute.type:type_name -> lemming.dataplane.sai.IsolationGroupType
+	110, // 256: lemming.dataplane.sai.L2mcEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	84,  // 257: lemming.dataplane.sai.MacsecAttribute.direction:type_name -> lemming.dataplane.sai.MacsecDirection
+	83,  // 258: lemming.dataplane.sai.MacsecAttribute.supported_cipher_suite_list:type_name -> lemming.dataplane.sai.MacsecCipherSuite
+	168, // 259: lemming.dataplane.sai.MacsecAttribute.stats_mode:type_name -> lemming.dataplane.sai.StatsMode
+	86,  // 260: lemming.dataplane.sai.MacsecAttribute.max_secure_associations_per_sc:type_name -> lemming.dataplane.sai.MacsecMaxSecureAssociationsPerSc
+	84,  // 261: lemming.dataplane.sai.MacsecFlowAttribute.macsec_direction:type_name -> lemming.dataplane.sai.MacsecDirection
+	167, // 262: lemming.dataplane.sai.MacsecFlowAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	84,  // 263: lemming.dataplane.sai.MacsecPortAttribute.macsec_direction:type_name -> lemming.dataplane.sai.MacsecDirection
+	182, // 264: lemming.dataplane.sai.MacsecPortAttribute.switch_switching_mode:type_name -> lemming.dataplane.sai.SwitchSwitchingMode
+	167, // 265: lemming.dataplane.sai.MacsecPortAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	84,  // 266: lemming.dataplane.sai.MacsecSaAttribute.macsec_direction:type_name -> lemming.dataplane.sai.MacsecDirection
+	84,  // 267: lemming.dataplane.sai.MacsecScAttribute.macsec_direction:type_name -> lemming.dataplane.sai.MacsecDirection
+	83,  // 268: lemming.dataplane.sai.MacsecScAttribute.macsec_cipher_suite:type_name -> lemming.dataplane.sai.MacsecCipherSuite
+	110, // 269: lemming.dataplane.sai.McastFdbEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	92,  // 270: lemming.dataplane.sai.MirrorSessionAttribute.type:type_name -> lemming.dataplane.sai.MirrorSessionType
+	91,  // 271: lemming.dataplane.sai.MirrorSessionAttribute.congestion_mode:type_name -> lemming.dataplane.sai.MirrorSessionCongestionMode
+	51,  // 272: lemming.dataplane.sai.MirrorSessionAttribute.erspan_encapsulation_type:type_name -> lemming.dataplane.sai.ErspanEncapsulationType
+	94,  // 273: lemming.dataplane.sai.MySidEntryAttribute.endpoint_behavior:type_name -> lemming.dataplane.sai.MySidEntryEndpointBehavior
+	93,  // 274: lemming.dataplane.sai.MySidEntryAttribute.endpoint_behavior_flavor:type_name -> lemming.dataplane.sai.MySidEntryEndpointBehaviorFlavor
+	110, // 275: lemming.dataplane.sai.MySidEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	96,  // 276: lemming.dataplane.sai.NatEntryAttribute.nat_type:type_name -> lemming.dataplane.sai.NatType
+	96,  // 277: lemming.dataplane.sai.NatZoneCounterAttribute.nat_type:type_name -> lemming.dataplane.sai.NatType
+	110, // 278: lemming.dataplane.sai.NeighborEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	73,  // 279: lemming.dataplane.sai.NeighborEntryAttribute.ip_addr_family:type_name -> lemming.dataplane.sai.IpAddrFamily
+	102, // 280: lemming.dataplane.sai.NextHopAttribute.type:type_name -> lemming.dataplane.sai.NextHopType
+	109, // 281: lemming.dataplane.sai.NextHopAttribute.outseg_type:type_name -> lemming.dataplane.sai.OutsegType
+	108, // 282: lemming.dataplane.sai.NextHopAttribute.outseg_ttl_mode:type_name -> lemming.dataplane.sai.OutsegTtlMode
+	107, // 283: lemming.dataplane.sai.NextHopAttribute.outseg_exp_mode:type_name -> lemming.dataplane.sai.OutsegExpMode
+	101, // 284: lemming.dataplane.sai.NextHopGroupAttribute.type:type_name -> lemming.dataplane.sai.NextHopGroupType
+	98,  // 285: lemming.dataplane.sai.NextHopGroupMapAttribute.type:type_name -> lemming.dataplane.sai.NextHopGroupMapType
+	236, // 286: lemming.dataplane.sai.NextHopGroupMapAttribute.map_to_value_list:type_name -> lemming.dataplane.sai.UintMap
+	99,  // 287: lemming.dataplane.sai.NextHopGroupMemberAttribute.configured_role:type_name -> lemming.dataplane.sai.NextHopGroupMemberConfiguredRole
+	100, // 288: lemming.dataplane.sai.NextHopGroupMemberAttribute.observed_role:type_name -> lemming.dataplane.sai.NextHopGroupMemberObservedRole
+	90,  // 289: lemming.dataplane.sai.PolicerAttribute.meter_type:type_name -> lemming.dataplane.sai.MeterType
+	117, // 290: lemming.dataplane.sai.PolicerAttribute.mode:type_name -> lemming.dataplane.sai.PolicerMode
+	116, // 291: lemming.dataplane.sai.PolicerAttribute.color_source:type_name -> lemming.dataplane.sai.PolicerColorSource
+	110, // 292: lemming.dataplane.sai.PolicerAttribute.green_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 293: lemming.dataplane.sai.PolicerAttribute.yellow_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 294: lemming.dataplane.sai.PolicerAttribute.red_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 295: lemming.dataplane.sai.PolicerAttribute.enable_counter_packet_action_list:type_name -> lemming.dataplane.sai.PacketAction
+	103, // 296: lemming.dataplane.sai.PolicerAttribute.object_stage:type_name -> lemming.dataplane.sai.ObjectStage
+	167, // 297: lemming.dataplane.sai.PolicerAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	151, // 298: lemming.dataplane.sai.PortAttribute.type:type_name -> lemming.dataplane.sai.PortType
+	142, // 299: lemming.dataplane.sai.PortAttribute.oper_status:type_name -> lemming.dataplane.sai.PortOperStatus
+	121, // 300: lemming.dataplane.sai.PortAttribute.supported_breakout_mode_type:type_name -> lemming.dataplane.sai.PortBreakoutModeType
+	121, // 301: lemming.dataplane.sai.PortAttribute.current_breakout_mode_type:type_name -> lemming.dataplane.sai.PortBreakoutModeType
+	130, // 302: lemming.dataplane.sai.PortAttribute.supported_fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
+	129, // 303: lemming.dataplane.sai.PortAttribute.supported_fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
+	131, // 304: lemming.dataplane.sai.PortAttribute.supported_flow_control_mode:type_name -> lemming.dataplane.sai.PortFlowControlMode
+	140, // 305: lemming.dataplane.sai.PortAttribute.supported_media_type:type_name -> lemming.dataplane.sai.PortMediaType
+	130, // 306: lemming.dataplane.sai.PortAttribute.remote_advertised_fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
+	129, // 307: lemming.dataplane.sai.PortAttribute.remote_advertised_fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
+	131, // 308: lemming.dataplane.sai.PortAttribute.remote_advertised_flow_control_mode:type_name -> lemming.dataplane.sai.PortFlowControlMode
+	140, // 309: lemming.dataplane.sai.PortAttribute.remote_advertised_media_type:type_name -> lemming.dataplane.sai.PortMediaType
+	242, // 310: lemming.dataplane.sai.PortAttribute.eye_values:type_name -> lemming.dataplane.sai.PortEyeValues
+	140, // 311: lemming.dataplane.sai.PortAttribute.media_type:type_name -> lemming.dataplane.sai.PortMediaType
+	130, // 312: lemming.dataplane.sai.PortAttribute.advertised_fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
+	129, // 313: lemming.dataplane.sai.PortAttribute.advertised_fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
+	131, // 314: lemming.dataplane.sai.PortAttribute.advertised_flow_control_mode:type_name -> lemming.dataplane.sai.PortFlowControlMode
+	140, // 315: lemming.dataplane.sai.PortAttribute.advertised_media_type:type_name -> lemming.dataplane.sai.PortMediaType
+	134, // 316: lemming.dataplane.sai.PortAttribute.internal_loopback_mode:type_name -> lemming.dataplane.sai.PortInternalLoopbackMode
+	130, // 317: lemming.dataplane.sai.PortAttribute.fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
+	129, // 318: lemming.dataplane.sai.PortAttribute.fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
+	131, // 319: lemming.dataplane.sai.PortAttribute.global_flow_control_mode:type_name -> lemming.dataplane.sai.PortFlowControlMode
+	147, // 320: lemming.dataplane.sai.PortAttribute.priority_flow_control_mode:type_name -> lemming.dataplane.sai.PortPriorityFlowControlMode
+	148, // 321: lemming.dataplane.sai.PortAttribute.ptp_mode:type_name -> lemming.dataplane.sai.PortPtpMode
+	133, // 322: lemming.dataplane.sai.PortAttribute.interface_type:type_name -> lemming.dataplane.sai.PortInterfaceType
+	133, // 323: lemming.dataplane.sai.PortAttribute.advertised_interface_type:type_name -> lemming.dataplane.sai.PortInterfaceType
+	135, // 324: lemming.dataplane.sai.PortAttribute.link_training_failure_status:type_name -> lemming.dataplane.sai.PortLinkTrainingFailureStatus
+	136, // 325: lemming.dataplane.sai.PortAttribute.link_training_rx_status:type_name -> lemming.dataplane.sai.PortLinkTrainingRxStatus
+	145, // 326: lemming.dataplane.sai.PortAttribute.prbs_config:type_name -> lemming.dataplane.sai.PortPrbsConfig
+	146, // 327: lemming.dataplane.sai.PortAttribute.prbs_rx_status:type_name -> lemming.dataplane.sai.PortPrbsRxStatus
+	245, // 328: lemming.dataplane.sai.PortAttribute.prbs_rx_state:type_name -> lemming.dataplane.sai.PRBS_RXState
+	127, // 329: lemming.dataplane.sai.PortAttribute.err_status_list:type_name -> lemming.dataplane.sai.PortErrStatus
+	183, // 330: lemming.dataplane.sai.PortAttribute.fabric_attached_switch_type:type_name -> lemming.dataplane.sai.SwitchType
+	227, // 331: lemming.dataplane.sai.PortAttribute.fabric_reachability:type_name -> lemming.dataplane.sai.FabricPortReachability
+	137, // 332: lemming.dataplane.sai.PortAttribute.loopback_mode:type_name -> lemming.dataplane.sai.PortLoopbackMode
+	139, // 333: lemming.dataplane.sai.PortAttribute.mdix_mode_status:type_name -> lemming.dataplane.sai.PortMdixModeStatus
+	138, // 334: lemming.dataplane.sai.PortAttribute.mdix_mode_config:type_name -> lemming.dataplane.sai.PortMdixModeConfig
+	120, // 335: lemming.dataplane.sai.PortAttribute.auto_neg_config_mode:type_name -> lemming.dataplane.sai.PortAutoNegConfigMode
+	141, // 336: lemming.dataplane.sai.PortAttribute.module_type:type_name -> lemming.dataplane.sai.PortModuleType
+	126, // 337: lemming.dataplane.sai.PortAttribute.dual_media:type_name -> lemming.dataplane.sai.PortDualMedia
+	129, // 338: lemming.dataplane.sai.PortAttribute.auto_neg_fec_mode_extended:type_name -> lemming.dataplane.sai.PortFecModeExtended
+	253, // 339: lemming.dataplane.sai.PortAttribute.pfc_tc_dld_interval_range:type_name -> lemming.dataplane.sai.Uint32Range
+	236, // 340: lemming.dataplane.sai.PortAttribute.pfc_tc_dld_interval:type_name -> lemming.dataplane.sai.UintMap
+	253, // 341: lemming.dataplane.sai.PortAttribute.pfc_tc_dlr_interval_range:type_name -> lemming.dataplane.sai.Uint32Range
+	236, // 342: lemming.dataplane.sai.PortAttribute.pfc_tc_dlr_interval:type_name -> lemming.dataplane.sai.UintMap
+	243, // 343: lemming.dataplane.sai.PortAttribute.rx_signal_detect:type_name -> lemming.dataplane.sai.PortLaneLatchStatus
+	243, // 344: lemming.dataplane.sai.PortAttribute.rx_lock_status:type_name -> lemming.dataplane.sai.PortLaneLatchStatus
+	235, // 345: lemming.dataplane.sai.PortAttribute.pcs_rx_link_status:type_name -> lemming.dataplane.sai.LatchStatus
+	243, // 346: lemming.dataplane.sai.PortAttribute.fec_alignment_lock:type_name -> lemming.dataplane.sai.PortLaneLatchStatus
+	57,  // 347: lemming.dataplane.sai.PortAttribute.ecmp_hash_algorithm:type_name -> lemming.dataplane.sai.HashAlgorithm
+	130, // 348: lemming.dataplane.sai.PortAttribute.oper_port_fec_mode:type_name -> lemming.dataplane.sai.PortFecMode
+	132, // 349: lemming.dataplane.sai.PortAttribute.host_tx_ready_status:type_name -> lemming.dataplane.sai.PortHostTxReadyStatus
+	143, // 350: lemming.dataplane.sai.PortAttribute.path_tracing_timestamp_type:type_name -> lemming.dataplane.sai.PortPathTracingTimestampType
+	125, // 351: lemming.dataplane.sai.PortAttribute.datapath_enable:type_name -> lemming.dataplane.sai.PortDatapathEnable
+	122, // 352: lemming.dataplane.sai.PortAttribute.cable_pair_state:type_name -> lemming.dataplane.sai.PortCablePairState
+	123, // 353: lemming.dataplane.sai.PortAttribute.cable_type:type_name -> lemming.dataplane.sai.PortCableType
+	128, // 354: lemming.dataplane.sai.PortAttribute.error_status:type_name -> lemming.dataplane.sai.PortErrorStatus
+	167, // 355: lemming.dataplane.sai.PortAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	124, // 356: lemming.dataplane.sai.PortConnectorAttribute.failover_mode:type_name -> lemming.dataplane.sai.PortConnectorFailoverMode
+	152, // 357: lemming.dataplane.sai.QosMapAttribute.type:type_name -> lemming.dataplane.sai.QosMapType
+	247, // 358: lemming.dataplane.sai.QosMapAttribute.map_to_value_list:type_name -> lemming.dataplane.sai.QOSMap
+	156, // 359: lemming.dataplane.sai.QueueAttribute.type:type_name -> lemming.dataplane.sai.QueueType
+	110, // 360: lemming.dataplane.sai.QueueAttribute.pfc_dlr_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	153, // 361: lemming.dataplane.sai.QueueAttribute.pfc_continuous_deadlock_state:type_name -> lemming.dataplane.sai.QueuePfcContinuousDeadlockState
+	167, // 362: lemming.dataplane.sai.QueueAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	158, // 363: lemming.dataplane.sai.RouterInterfaceAttribute.type:type_name -> lemming.dataplane.sai.RouterInterfaceType
+	110, // 364: lemming.dataplane.sai.RouterInterfaceAttribute.neighbor_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 365: lemming.dataplane.sai.RouterInterfaceAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	167, // 366: lemming.dataplane.sai.RouterInterfaceAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	110, // 367: lemming.dataplane.sai.RouteEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	73,  // 368: lemming.dataplane.sai.RouteEntryAttribute.ip_addr_family:type_name -> lemming.dataplane.sai.IpAddrFamily
+	160, // 369: lemming.dataplane.sai.SamplepacketAttribute.type:type_name -> lemming.dataplane.sai.SamplepacketType
+	159, // 370: lemming.dataplane.sai.SamplepacketAttribute.mode:type_name -> lemming.dataplane.sai.SamplepacketMode
+	161, // 371: lemming.dataplane.sai.SchedulerAttribute.scheduling_type:type_name -> lemming.dataplane.sai.SchedulingType
+	90,  // 372: lemming.dataplane.sai.SchedulerAttribute.meter_type:type_name -> lemming.dataplane.sai.MeterType
+	166, // 373: lemming.dataplane.sai.Srv6SidlistAttribute.type:type_name -> lemming.dataplane.sai.Srv6SidlistType
+	252, // 374: lemming.dataplane.sai.Srv6SidlistAttribute.tlv_list:type_name -> lemming.dataplane.sai.TLVEntry
+	167, // 375: lemming.dataplane.sai.Srv6SidlistAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	169, // 376: lemming.dataplane.sai.StpPortAttribute.state:type_name -> lemming.dataplane.sai.StpPortState
+	179, // 377: lemming.dataplane.sai.SwitchAttribute.oper_status:type_name -> lemming.dataplane.sai.SwitchOperStatus
+	253, // 378: lemming.dataplane.sai.SwitchAttribute.fdb_dst_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
+	253, // 379: lemming.dataplane.sai.SwitchAttribute.route_dst_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
+	253, // 380: lemming.dataplane.sai.SwitchAttribute.neighbor_dst_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
+	253, // 381: lemming.dataplane.sai.SwitchAttribute.port_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
+	253, // 382: lemming.dataplane.sai.SwitchAttribute.vlan_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
+	253, // 383: lemming.dataplane.sai.SwitchAttribute.acl_user_meta_data_range:type_name -> lemming.dataplane.sai.Uint32Range
+	253, // 384: lemming.dataplane.sai.SwitchAttribute.acl_user_trap_id_range:type_name -> lemming.dataplane.sai.Uint32Range
+	225, // 385: lemming.dataplane.sai.SwitchAttribute.available_acl_table:type_name -> lemming.dataplane.sai.ACLResource
+	225, // 386: lemming.dataplane.sai.SwitchAttribute.available_acl_table_group:type_name -> lemming.dataplane.sai.ACLResource
+	180, // 387: lemming.dataplane.sai.SwitchAttribute.restart_type:type_name -> lemming.dataplane.sai.SwitchRestartType
+	222, // 388: lemming.dataplane.sai.SwitchAttribute.acl_capability:type_name -> lemming.dataplane.sai.ACLCapability
+	178, // 389: lemming.dataplane.sai.SwitchAttribute.mcast_snooping_capability:type_name -> lemming.dataplane.sai.SwitchMcastSnoopingCapability
+	182, // 390: lemming.dataplane.sai.SwitchAttribute.switching_mode:type_name -> lemming.dataplane.sai.SwitchSwitchingMode
+	110, // 391: lemming.dataplane.sai.SwitchAttribute.fdb_unicast_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 392: lemming.dataplane.sai.SwitchAttribute.fdb_broadcast_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 393: lemming.dataplane.sai.SwitchAttribute.fdb_multicast_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	57,  // 394: lemming.dataplane.sai.SwitchAttribute.ecmp_default_hash_algorithm:type_name -> lemming.dataplane.sai.HashAlgorithm
+	57,  // 395: lemming.dataplane.sai.SwitchAttribute.lag_default_hash_algorithm:type_name -> lemming.dataplane.sai.HashAlgorithm
+	222, // 396: lemming.dataplane.sai.SwitchAttribute.acl_stage_ingress:type_name -> lemming.dataplane.sai.ACLCapability
+	222, // 397: lemming.dataplane.sai.SwitchAttribute.acl_stage_egress:type_name -> lemming.dataplane.sai.ACLCapability
+	204, // 398: lemming.dataplane.sai.SwitchAttribute.srv6_tlv_type:type_name -> lemming.dataplane.sai.TlvType
+	110, // 399: lemming.dataplane.sai.SwitchAttribute.pfc_dlr_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	253, // 400: lemming.dataplane.sai.SwitchAttribute.pfc_tc_dld_interval_range:type_name -> lemming.dataplane.sai.Uint32Range
+	236, // 401: lemming.dataplane.sai.SwitchAttribute.pfc_tc_dld_interval:type_name -> lemming.dataplane.sai.UintMap
+	253, // 402: lemming.dataplane.sai.SwitchAttribute.pfc_tc_dlr_interval_range:type_name -> lemming.dataplane.sai.Uint32Range
+	236, // 403: lemming.dataplane.sai.SwitchAttribute.pfc_tc_dlr_interval:type_name -> lemming.dataplane.sai.UintMap
+	105, // 404: lemming.dataplane.sai.SwitchAttribute.supported_protected_object_type:type_name -> lemming.dataplane.sai.ObjectType
+	15,  // 405: lemming.dataplane.sai.SwitchAttribute.supported_ipv4_bfd_session_offload_type:type_name -> lemming.dataplane.sai.BfdSessionOffloadType
+	15,  // 406: lemming.dataplane.sai.SwitchAttribute.supported_ipv6_bfd_session_offload_type:type_name -> lemming.dataplane.sai.BfdSessionOffloadType
+	168, // 407: lemming.dataplane.sai.SwitchAttribute.supported_extended_stats_mode:type_name -> lemming.dataplane.sai.StatsMode
+	105, // 408: lemming.dataplane.sai.SwitchAttribute.supported_object_type_list:type_name -> lemming.dataplane.sai.ObjectType
+	176, // 409: lemming.dataplane.sai.SwitchAttribute.hardware_access_bus:type_name -> lemming.dataplane.sai.SwitchHardwareAccessBus
+	174, // 410: lemming.dataplane.sai.SwitchAttribute.firmware_load_method:type_name -> lemming.dataplane.sai.SwitchFirmwareLoadMethod
+	175, // 411: lemming.dataplane.sai.SwitchAttribute.firmware_load_type:type_name -> lemming.dataplane.sai.SwitchFirmwareLoadType
+	183, // 412: lemming.dataplane.sai.SwitchAttribute.type:type_name -> lemming.dataplane.sai.SwitchType
+	250, // 413: lemming.dataplane.sai.SwitchAttribute.system_port_config_list:type_name -> lemming.dataplane.sai.SystemPortConfig
+	173, // 414: lemming.dataplane.sai.SwitchAttribute.failover_config_mode:type_name -> lemming.dataplane.sai.SwitchFailoverConfigMode
+	222, // 415: lemming.dataplane.sai.SwitchAttribute.acl_stage_post_ingress:type_name -> lemming.dataplane.sai.ACLCapability
+	177, // 416: lemming.dataplane.sai.SwitchAttribute.hostif_oper_status_update_mode:type_name -> lemming.dataplane.sai.SwitchHostifOperStatusUpdateMode
+	170, // 417: lemming.dataplane.sai.SwitchAttribute.reg_fatal_switch_asic_sdk_health_category:type_name -> lemming.dataplane.sai.SwitchAsicSdkHealthCategory
+	170, // 418: lemming.dataplane.sai.SwitchAttribute.reg_warning_switch_asic_sdk_health_category:type_name -> lemming.dataplane.sai.SwitchAsicSdkHealthCategory
+	170, // 419: lemming.dataplane.sai.SwitchAttribute.reg_notice_switch_asic_sdk_health_category:type_name -> lemming.dataplane.sai.SwitchAsicSdkHealthCategory
+	222, // 420: lemming.dataplane.sai.SwitchAttribute.acl_stage_pre_ingress:type_name -> lemming.dataplane.sai.ACLCapability
+	167, // 421: lemming.dataplane.sai.SwitchAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	48,  // 422: lemming.dataplane.sai.SwitchAttribute.supported_debug_counter_type_list:type_name -> lemming.dataplane.sai.DebugCounterType
+	68,  // 423: lemming.dataplane.sai.SwitchAttribute.supported_ingress_drop_reason_list:type_name -> lemming.dataplane.sai.InDropReason
+	213, // 424: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
+	110, // 425: lemming.dataplane.sai.SwitchTunnelAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	207, // 426: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_encap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelEncapEcnMode
+	205, // 427: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_decap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelDecapEcnMode
+	214, // 428: lemming.dataplane.sai.SwitchTunnelAttribute.tunnel_vxlan_udp_sport_mode:type_name -> lemming.dataplane.sai.TunnelVxlanUdpSportMode
+	184, // 429: lemming.dataplane.sai.SystemPortAttribute.type:type_name -> lemming.dataplane.sai.SystemPortType
+	250, // 430: lemming.dataplane.sai.SystemPortAttribute.config_info:type_name -> lemming.dataplane.sai.SystemPortConfig
+	185, // 431: lemming.dataplane.sai.TableBitmapClassificationEntryAttribute.action:type_name -> lemming.dataplane.sai.TableBitmapClassificationEntryAction
+	187, // 432: lemming.dataplane.sai.TableBitmapRouterEntryAttribute.action:type_name -> lemming.dataplane.sai.TableBitmapRouterEntryAction
+	231, // 433: lemming.dataplane.sai.TableBitmapRouterEntryAttribute.dst_ip_key:type_name -> lemming.dataplane.sai.IpPrefix
+	189, // 434: lemming.dataplane.sai.TableMetaTunnelEntryAttribute.action:type_name -> lemming.dataplane.sai.TableMetaTunnelEntryAction
+	191, // 435: lemming.dataplane.sai.TamAttribute.tam_bind_point_type_list:type_name -> lemming.dataplane.sai.TamBindPointType
+	193, // 436: lemming.dataplane.sai.TamEventAttribute.type:type_name -> lemming.dataplane.sai.TamEventType
+	192, // 437: lemming.dataplane.sai.TamEventThresholdAttribute.unit:type_name -> lemming.dataplane.sai.TamEventThresholdUnit
+	195, // 438: lemming.dataplane.sai.TamIntAttribute.type:type_name -> lemming.dataplane.sai.TamIntType
+	194, // 439: lemming.dataplane.sai.TamIntAttribute.int_presence_type:type_name -> lemming.dataplane.sai.TamIntPresenceType
+	200, // 440: lemming.dataplane.sai.TamMathFuncAttribute.tam_tel_math_func_type:type_name -> lemming.dataplane.sai.TamTelMathFuncType
+	198, // 441: lemming.dataplane.sai.TamReportAttribute.type:type_name -> lemming.dataplane.sai.TamReportType
+	197, // 442: lemming.dataplane.sai.TamReportAttribute.report_mode:type_name -> lemming.dataplane.sai.TamReportMode
+	196, // 443: lemming.dataplane.sai.TamReportAttribute.report_interval_unit:type_name -> lemming.dataplane.sai.TamReportIntervalUnit
+	199, // 444: lemming.dataplane.sai.TamTelemetryAttribute.tam_reporting_unit:type_name -> lemming.dataplane.sai.TamReportingUnit
+	201, // 445: lemming.dataplane.sai.TamTelTypeAttribute.tam_telemetry_type:type_name -> lemming.dataplane.sai.TamTelemetryType
+	203, // 446: lemming.dataplane.sai.TamTransportAttribute.transport_type:type_name -> lemming.dataplane.sai.TamTransportType
+	202, // 447: lemming.dataplane.sai.TamTransportAttribute.transport_auth_type:type_name -> lemming.dataplane.sai.TamTransportAuthType
+	213, // 448: lemming.dataplane.sai.TunnelAttribute.type:type_name -> lemming.dataplane.sai.TunnelType
+	209, // 449: lemming.dataplane.sai.TunnelAttribute.peer_mode:type_name -> lemming.dataplane.sai.TunnelPeerMode
+	212, // 450: lemming.dataplane.sai.TunnelAttribute.encap_ttl_mode:type_name -> lemming.dataplane.sai.TunnelTtlMode
+	206, // 451: lemming.dataplane.sai.TunnelAttribute.encap_dscp_mode:type_name -> lemming.dataplane.sai.TunnelDscpMode
+	207, // 452: lemming.dataplane.sai.TunnelAttribute.encap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelEncapEcnMode
+	205, // 453: lemming.dataplane.sai.TunnelAttribute.decap_ecn_mode:type_name -> lemming.dataplane.sai.TunnelDecapEcnMode
+	212, // 454: lemming.dataplane.sai.TunnelAttribute.decap_ttl_mode:type_name -> lemming.dataplane.sai.TunnelTtlMode
+	206, // 455: lemming.dataplane.sai.TunnelAttribute.decap_dscp_mode:type_name -> lemming.dataplane.sai.TunnelDscpMode
+	110, // 456: lemming.dataplane.sai.TunnelAttribute.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	214, // 457: lemming.dataplane.sai.TunnelAttribute.vxlan_udp_sport_mode:type_name -> lemming.dataplane.sai.TunnelVxlanUdpSportMode
+	167, // 458: lemming.dataplane.sai.TunnelAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	208, // 459: lemming.dataplane.sai.TunnelMapAttribute.type:type_name -> lemming.dataplane.sai.TunnelMapType
+	208, // 460: lemming.dataplane.sai.TunnelMapEntryAttribute.tunnel_map_type:type_name -> lemming.dataplane.sai.TunnelMapType
+	211, // 461: lemming.dataplane.sai.TunnelTermTableEntryAttribute.type:type_name -> lemming.dataplane.sai.TunnelTermTableEntryType
+	213, // 462: lemming.dataplane.sai.TunnelTermTableEntryAttribute.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
+	73,  // 463: lemming.dataplane.sai.TunnelTermTableEntryAttribute.ip_addr_family:type_name -> lemming.dataplane.sai.IpAddrFamily
+	215, // 464: lemming.dataplane.sai.UdfAttribute.base:type_name -> lemming.dataplane.sai.UdfBase
+	216, // 465: lemming.dataplane.sai.UdfGroupAttribute.type:type_name -> lemming.dataplane.sai.UdfGroupType
+	223, // 466: lemming.dataplane.sai.UdfMatchAttribute.l2_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 467: lemming.dataplane.sai.UdfMatchAttribute.l3_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 468: lemming.dataplane.sai.UdfMatchAttribute.gre_type:type_name -> lemming.dataplane.sai.AclFieldData
+	223, // 469: lemming.dataplane.sai.UdfMatchAttribute.l4_dst_port_type:type_name -> lemming.dataplane.sai.AclFieldData
+	110, // 470: lemming.dataplane.sai.VirtualRouterAttribute.violation_ttl1_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 471: lemming.dataplane.sai.VirtualRouterAttribute.violation_ip_options_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	110, // 472: lemming.dataplane.sai.VirtualRouterAttribute.unknown_l3_multicast_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	218, // 473: lemming.dataplane.sai.VlanAttribute.ipv4_mcast_lookup_key_type:type_name -> lemming.dataplane.sai.VlanMcastLookupKeyType
+	218, // 474: lemming.dataplane.sai.VlanAttribute.ipv6_mcast_lookup_key_type:type_name -> lemming.dataplane.sai.VlanMcastLookupKeyType
+	217, // 475: lemming.dataplane.sai.VlanAttribute.unknown_unicast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
+	217, // 476: lemming.dataplane.sai.VlanAttribute.unknown_multicast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
+	217, // 477: lemming.dataplane.sai.VlanAttribute.broadcast_flood_control_type:type_name -> lemming.dataplane.sai.VlanFloodControlType
+	167, // 478: lemming.dataplane.sai.VlanAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
+	220, // 479: lemming.dataplane.sai.VlanMemberAttribute.vlan_tagging_mode:type_name -> lemming.dataplane.sai.VlanTaggingMode
+	50,  // 480: lemming.dataplane.sai.WredAttribute.ecn_mark_mode:type_name -> lemming.dataplane.sai.EcnMarkMode
+	223, // 481: lemming.dataplane.sai.AclEntryAttribute.UserDefinedFieldGroupMinEntry.value:type_name -> lemming.dataplane.sai.AclFieldData
+	372, // 482: lemming.dataplane.sai.attr_enum_value:extendee -> google.protobuf.FieldOptions
+	373, // 483: lemming.dataplane.sai.sai_type:extendee -> google.protobuf.MessageOptions
+	105, // 484: lemming.dataplane.sai.sai_type:type_name -> lemming.dataplane.sai.ObjectType
+	254, // 485: lemming.dataplane.sai.Entrypoint.ObjectTypeQuery:input_type -> lemming.dataplane.sai.ObjectTypeQueryRequest
+	256, // 486: lemming.dataplane.sai.Entrypoint.Initialize:input_type -> lemming.dataplane.sai.InitializeRequest
+	258, // 487: lemming.dataplane.sai.Entrypoint.Uninitialize:input_type -> lemming.dataplane.sai.UninitializeRequest
+	255, // 488: lemming.dataplane.sai.Entrypoint.ObjectTypeQuery:output_type -> lemming.dataplane.sai.ObjectTypeQueryResponse
+	257, // 489: lemming.dataplane.sai.Entrypoint.Initialize:output_type -> lemming.dataplane.sai.InitializeResponse
+	259, // 490: lemming.dataplane.sai.Entrypoint.Uninitialize:output_type -> lemming.dataplane.sai.UninitializeResponse
+	488, // [488:491] is the sub-list for method output_type
+	485, // [485:488] is the sub-list for method input_type
+	484, // [484:485] is the sub-list for extension type_name
+	482, // [482:484] is the sub-list for extension extendee
+	0,   // [0:482] is the sub-list for field type_name
 }
 
 func init() { file_dataplane_proto_sai_common_proto_init() }
@@ -38623,7 +40899,7 @@ func file_dataplane_proto_sai_common_proto_init() {
 	file_dataplane_proto_sai_common_proto_msgTypes[58].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[59].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[60].OneofWrappers = []any{}
-	file_dataplane_proto_sai_common_proto_msgTypes[62].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[61].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[63].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[64].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[65].OneofWrappers = []any{}
@@ -38678,13 +40954,13 @@ func file_dataplane_proto_sai_common_proto_init() {
 	file_dataplane_proto_sai_common_proto_msgTypes[114].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[115].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[116].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[117].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[118].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[119].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[120].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[121].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[122].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[123].OneofWrappers = []any{}
-	file_dataplane_proto_sai_common_proto_msgTypes[124].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[125].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[126].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[127].OneofWrappers = []any{}
@@ -38700,13 +40976,20 @@ func file_dataplane_proto_sai_common_proto_init() {
 	file_dataplane_proto_sai_common_proto_msgTypes[137].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[138].OneofWrappers = []any{}
 	file_dataplane_proto_sai_common_proto_msgTypes[139].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[140].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[141].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[142].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[143].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[144].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[145].OneofWrappers = []any{}
+	file_dataplane_proto_sai_common_proto_msgTypes[146].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dataplane_proto_sai_common_proto_rawDesc), len(file_dataplane_proto_sai_common_proto_rawDesc)),
-			NumEnums:      203,
-			NumMessages:   143,
+			NumEnums:      221,
+			NumMessages:   150,
 			NumExtensions: 2,
 			NumServices:   1,
 		},

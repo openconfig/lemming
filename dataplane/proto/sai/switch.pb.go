@@ -264,14 +264,6 @@ const (
 	SwitchAttr_SWITCH_ATTR_SELECTIVE_COUNTER_LIST                                 SwitchAttr = 237
 	SwitchAttr_SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS                            SwitchAttr = 238
 	SwitchAttr_SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS                             SwitchAttr = 239
-	SwitchAttr_SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI               SwitchAttr = 240
-	SwitchAttr_SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL                               SwitchAttr = 241
-	SwitchAttr_SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED                              SwitchAttr = 242
-	SwitchAttr_SWITCH_ATTR_HA_SET_EVENT_NOTIFY                                    SwitchAttr = 243
-	SwitchAttr_SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY                                  SwitchAttr = 244
-	SwitchAttr_SWITCH_ATTR_SUPPORTED_DEBUG_COUNTER_TYPE_LIST                      SwitchAttr = 245
-	SwitchAttr_SWITCH_ATTR_SUPPORTED_INGRESS_DROP_REASON_LIST                     SwitchAttr = 246
-	SwitchAttr_SWITCH_ATTR_AVAILABLE_SWITCH_INGRESS_DROP_COUNTERS                 SwitchAttr = 247
 )
 
 // Enum value maps for SwitchAttr.
@@ -517,14 +509,6 @@ var (
 		237: "SWITCH_ATTR_SELECTIVE_COUNTER_LIST",
 		238: "SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS",
 		239: "SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS",
-		240: "SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI",
-		241: "SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL",
-		242: "SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED",
-		243: "SWITCH_ATTR_HA_SET_EVENT_NOTIFY",
-		244: "SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY",
-		245: "SWITCH_ATTR_SUPPORTED_DEBUG_COUNTER_TYPE_LIST",
-		246: "SWITCH_ATTR_SUPPORTED_INGRESS_DROP_REASON_LIST",
-		247: "SWITCH_ATTR_AVAILABLE_SWITCH_INGRESS_DROP_COUNTERS",
 	}
 	SwitchAttr_value = map[string]int32{
 		"SWITCH_ATTR_UNSPECIFIED":                                            0,
@@ -767,14 +751,6 @@ var (
 		"SWITCH_ATTR_SELECTIVE_COUNTER_LIST":                                 237,
 		"SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS":                            238,
 		"SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS":                             239,
-		"SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI":               240,
-		"SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL":                               241,
-		"SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED":                              242,
-		"SWITCH_ATTR_HA_SET_EVENT_NOTIFY":                                    243,
-		"SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY":                                  244,
-		"SWITCH_ATTR_SUPPORTED_DEBUG_COUNTER_TYPE_LIST":                      245,
-		"SWITCH_ATTR_SUPPORTED_INGRESS_DROP_REASON_LIST":                     246,
-		"SWITCH_ATTR_AVAILABLE_SWITCH_INGRESS_DROP_COUNTERS":                 247,
 	}
 )
 
@@ -4483,7 +4459,7 @@ const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12D\n" +
 	"\tattr_type\x18\x02 \x03(\x0e2'.lemming.dataplane.sai.SwitchTunnelAttrR\battrType\"d\n" +
 	" GetSwitchTunnelAttributeResponse\x12@\n" +
-	"\x04attr\x18\x01 \x01(\v2,.lemming.dataplane.sai.SwitchTunnelAttributeR\x04attr*\xfaN\n" +
+	"\x04attr\x18\x01 \x01(\v2,.lemming.dataplane.sai.SwitchTunnelAttributeR\x04attr*\xf8K\n" +
 	"\n" +
 	"SwitchAttr\x12\x1b\n" +
 	"\x17SWITCH_ATTR_UNSPECIFIED\x10\x00\x12&\n" +
@@ -4726,15 +4702,7 @@ const file_dataplane_proto_sai_switch_proto_rawDesc = "" +
 	"\x1cSWITCH_ATTR_STATS_COUNT_MODE\x10\xec\x01\x12'\n" +
 	"\"SWITCH_ATTR_SELECTIVE_COUNTER_LIST\x10\xed\x01\x12,\n" +
 	"'SWITCH_ATTR_DISABLE_INGRESS_VLAN_CHECKS\x10\xee\x01\x12+\n" +
-	"&SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS\x10\xef\x01\x129\n" +
-	"4SWITCH_ATTR_DASH_CAPS_MAX_METER_BUCKET_COUNT_PER_ENI\x10\xf0\x01\x12)\n" +
-	"$SWITCH_ATTR_DASH_CAPS_HA_SCOPE_LEVEL\x10\xf1\x01\x12*\n" +
-	"%SWITCH_ATTR_DASH_CAPS_HA_OWNER_NEEDED\x10\xf2\x01\x12$\n" +
-	"\x1fSWITCH_ATTR_HA_SET_EVENT_NOTIFY\x10\xf3\x01\x12&\n" +
-	"!SWITCH_ATTR_HA_SCOPE_EVENT_NOTIFY\x10\xf4\x01\x122\n" +
-	"-SWITCH_ATTR_SUPPORTED_DEBUG_COUNTER_TYPE_LIST\x10\xf5\x01\x123\n" +
-	".SWITCH_ATTR_SUPPORTED_INGRESS_DROP_REASON_LIST\x10\xf6\x01\x127\n" +
-	"2SWITCH_ATTR_AVAILABLE_SWITCH_INGRESS_DROP_COUNTERS\x10\xf7\x01*\x93\x05\n" +
+	"&SWITCH_ATTR_DISABLE_EGRESS_VLAN_CHECKS\x10\xef\x01*\x93\x05\n" +
 	"\x10SwitchTunnelAttr\x12\"\n" +
 	"\x1eSWITCH_TUNNEL_ATTR_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eSWITCH_TUNNEL_ATTR_TUNNEL_TYPE\x10\x01\x12-\n" +

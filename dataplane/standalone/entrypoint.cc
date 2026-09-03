@@ -71,54 +71,54 @@
 #include "dataplane/proto/sai/virtual_router.grpc.pb.h"
 #include "dataplane/proto/sai/vlan.grpc.pb.h"
 #include "dataplane/proto/sai/wred.grpc.pb.h"
-#include "dataplane/proto/sai/acl.h"
-#include "dataplane/proto/sai/bfd.h"
-#include "dataplane/proto/sai/bmtor.h"
-#include "dataplane/proto/sai/bridge.h"
-#include "dataplane/proto/sai/buffer.h"
-#include "dataplane/proto/sai/counter.h"
-#include "dataplane/proto/sai/debug_counter.h"
-#include "dataplane/proto/sai/dtel.h"
-#include "dataplane/proto/sai/fdb.h"
-#include "dataplane/proto/sai/generic_programmable.h"
-#include "dataplane/proto/sai/hash.h"
-#include "dataplane/proto/sai/hostif.h"
-#include "dataplane/proto/sai/ipmc.h"
-#include "dataplane/proto/sai/ipmc_group.h"
-#include "dataplane/proto/sai/ipsec.h"
-#include "dataplane/proto/sai/isolation_group.h"
-#include "dataplane/proto/sai/l2mc.h"
-#include "dataplane/proto/sai/l2mc_group.h"
-#include "dataplane/proto/sai/lag.h"
-#include "dataplane/proto/sai/macsec.h"
-#include "dataplane/proto/sai/mcast_fdb.h"
-#include "dataplane/proto/sai/mirror.h"
-#include "dataplane/proto/sai/mpls.h"
-#include "dataplane/proto/sai/my_mac.h"
-#include "dataplane/proto/sai/nat.h"
-#include "dataplane/proto/sai/neighbor.h"
-#include "dataplane/proto/sai/next_hop.h"
-#include "dataplane/proto/sai/next_hop_group.h"
-#include "dataplane/proto/sai/policer.h"
-#include "dataplane/proto/sai/port.h"
-#include "dataplane/proto/sai/qos_map.h"
-#include "dataplane/proto/sai/queue.h"
-#include "dataplane/proto/sai/route.h"
-#include "dataplane/proto/sai/router_interface.h"
-#include "dataplane/proto/sai/rpf_group.h"
-#include "dataplane/proto/sai/samplepacket.h"
-#include "dataplane/proto/sai/scheduler.h"
-#include "dataplane/proto/sai/scheduler_group.h"
-#include "dataplane/proto/sai/srv6.h"
-#include "dataplane/proto/sai/stp.h"
-#include "dataplane/proto/sai/switch.h"
-#include "dataplane/proto/sai/system_port.h"
-#include "dataplane/proto/sai/tam.h"
-#include "dataplane/proto/sai/tunnel.h"
-#include "dataplane/proto/sai/udf.h"
-#include "dataplane/proto/sai/virtual_router.h"
-#include "dataplane/proto/sai/vlan.h"
-#include "dataplane/proto/sai/wred.h"
+#include "dataplane/standalone/sai/acl.h"
+#include "dataplane/standalone/sai/bfd.h"
+#include "dataplane/standalone/sai/bmtor.h"
+#include "dataplane/standalone/sai/bridge.h"
+#include "dataplane/standalone/sai/buffer.h"
+#include "dataplane/standalone/sai/counter.h"
+#include "dataplane/standalone/sai/debug_counter.h"
+#include "dataplane/standalone/sai/dtel.h"
+#include "dataplane/standalone/sai/fdb.h"
+#include "dataplane/standalone/sai/generic_programmable.h"
+#include "dataplane/standalone/sai/hash.h"
+#include "dataplane/standalone/sai/hostif.h"
+#include "dataplane/standalone/sai/ipmc.h"
+#include "dataplane/standalone/sai/ipmc_group.h"
+#include "dataplane/standalone/sai/ipsec.h"
+#include "dataplane/standalone/sai/isolation_group.h"
+#include "dataplane/standalone/sai/l2mc.h"
+#include "dataplane/standalone/sai/l2mc_group.h"
+#include "dataplane/standalone/sai/lag.h"
+#include "dataplane/standalone/sai/macsec.h"
+#include "dataplane/standalone/sai/mcast_fdb.h"
+#include "dataplane/standalone/sai/mirror.h"
+#include "dataplane/standalone/sai/mpls.h"
+#include "dataplane/standalone/sai/my_mac.h"
+#include "dataplane/standalone/sai/nat.h"
+#include "dataplane/standalone/sai/neighbor.h"
+#include "dataplane/standalone/sai/next_hop.h"
+#include "dataplane/standalone/sai/next_hop_group.h"
+#include "dataplane/standalone/sai/policer.h"
+#include "dataplane/standalone/sai/port.h"
+#include "dataplane/standalone/sai/qos_map.h"
+#include "dataplane/standalone/sai/queue.h"
+#include "dataplane/standalone/sai/route.h"
+#include "dataplane/standalone/sai/router_interface.h"
+#include "dataplane/standalone/sai/rpf_group.h"
+#include "dataplane/standalone/sai/samplepacket.h"
+#include "dataplane/standalone/sai/scheduler.h"
+#include "dataplane/standalone/sai/scheduler_group.h"
+#include "dataplane/standalone/sai/srv6.h"
+#include "dataplane/standalone/sai/stp.h"
+#include "dataplane/standalone/sai/switch.h"
+#include "dataplane/standalone/sai/system_port.h"
+#include "dataplane/standalone/sai/tam.h"
+#include "dataplane/standalone/sai/tunnel.h"
+#include "dataplane/standalone/sai/udf.h"
+#include "dataplane/standalone/sai/virtual_router.h"
+#include "dataplane/standalone/sai/vlan.h"
+#include "dataplane/standalone/sai/wred.h"
 
 extern "C" {
 #include "experimental/saiextensions.h"
@@ -531,42 +531,8 @@ sai_status_t sai_object_type_get_availability(
     _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
     _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list,
     _Out_ uint64_t *count) {
-  if (count) {
-    *count = 1024;
-  } else {
-    LOG(WARNING) << "sai_object_type_get_availability called with NULL count "
-                    "for object_type: " << object_type;
-  }
+  *count = 1024;
   return SAI_STATUS_NOT_IMPLEMENTED;
-}
-
-sai_object_id_t sai_switch_id_query(
-    _In_ sai_object_id_t object_id) {
-    return SAI_NULL_OBJECT_ID;
-}
-
-sai_status_t sai_query_api_version(
-    _Out_ sai_api_version_t *version) {
-    if (version)
-        *version = SAI_API_VERSION;
-
-    return SAI_STATUS_SUCCESS;
-}
-
-extern "C" sai_status_t sai_query_stats_st_capability(
-        _In_ sai_object_id_t switch_id,
-        _In_ sai_object_type_t object_type,
-        _Inout_ sai_stat_st_capability_list_t *stats_capability) {
-    return SAI_STATUS_NOT_IMPLEMENTED;
-}
-
-sai_status_t sai_tam_telemetry_get_data(
-    _In_ sai_object_id_t switch_id,
-    _In_ sai_object_list_t obj_list,
-    _In_ bool clear_on_read,
-    _Inout_ sai_size_t *buffer_size,
-    _Out_ void *buffer) {
-    return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t sai_query_stats_capability(

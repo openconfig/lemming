@@ -18,15 +18,8 @@ cc_library(
 
 cc_binary(
     name = "sai",
-    additional_linker_inputs = [
-        ":libsai.map",
-    ],
-    linkopts = [
-        "-Wl,--version-script,$(location :libsai.map)",
-    ],
     linkshared = True,
     linkstatic = True,
-    visibility = ["//visibility:public"],
     deps = [
         ":entrypoint",
     ],
@@ -34,11 +27,10 @@ cc_binary(
 
 cc_binary(
     name = "sai-dynamic",
-    additional_linker_inputs = [
-        ":libsai.map",
-    ],
     linkopts = [
-        "-Wl,--version-script,$(location :libsai.map)",
+        "-lprotobuf",
+        "-lgrpc++",
+        "-lglog",
     ],
     linkshared = True,
     linkstatic = True,
@@ -78,5 +70,21 @@ cc_binary(
     tags = ["manual"],
     deps = [
         ":entrypoint",
+    ],
+)
+
+cc_binary(
+    name = "server",
+    srcs = ["server.cc"],
+    linkopts = [
+        "-lprotobuf",
+        "-lgrpc++",
+        "-lglog",
+        "-lsai",
+    ],
+    tags = ["manual"],
+    deps = [
+        "//dataplane/standalone/saiserver",
+        "@com_github_grpc_grpc//:grpc++",
     ],
 )

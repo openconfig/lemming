@@ -1,9 +1,8 @@
 cc_library(
-    name = "sai",
+    name = "saiserver",
     srcs = glob(["*.cc"]),
     hdrs = glob(
         ["*.h"],
-        exclude = ["entry.h"],
     ),
     visibility = ["//visibility:public"],
     deps = [

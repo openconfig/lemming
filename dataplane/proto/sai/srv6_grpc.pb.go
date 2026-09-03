@@ -26,6 +26,12 @@ const (
 	Srv6_CreateSrv6Sidlists_FullMethodName      = "/lemming.dataplane.sai.Srv6/CreateSrv6Sidlists"
 	Srv6_RemoveSrv6Sidlists_FullMethodName      = "/lemming.dataplane.sai.Srv6/RemoveSrv6Sidlists"
 	Srv6_GetSrv6SidlistStats_FullMethodName     = "/lemming.dataplane.sai.Srv6/GetSrv6SidlistStats"
+	Srv6_CreateMySidEntry_FullMethodName        = "/lemming.dataplane.sai.Srv6/CreateMySidEntry"
+	Srv6_RemoveMySidEntry_FullMethodName        = "/lemming.dataplane.sai.Srv6/RemoveMySidEntry"
+	Srv6_SetMySidEntryAttribute_FullMethodName  = "/lemming.dataplane.sai.Srv6/SetMySidEntryAttribute"
+	Srv6_GetMySidEntryAttribute_FullMethodName  = "/lemming.dataplane.sai.Srv6/GetMySidEntryAttribute"
+	Srv6_CreateMySidEntries_FullMethodName      = "/lemming.dataplane.sai.Srv6/CreateMySidEntries"
+	Srv6_RemoveMySidEntries_FullMethodName      = "/lemming.dataplane.sai.Srv6/RemoveMySidEntries"
 )
 
 // Srv6Client is the client API for Srv6 service.
@@ -39,6 +45,12 @@ type Srv6Client interface {
 	CreateSrv6Sidlists(ctx context.Context, in *CreateSrv6SidlistsRequest, opts ...grpc.CallOption) (*CreateSrv6SidlistsResponse, error)
 	RemoveSrv6Sidlists(ctx context.Context, in *RemoveSrv6SidlistsRequest, opts ...grpc.CallOption) (*RemoveSrv6SidlistsResponse, error)
 	GetSrv6SidlistStats(ctx context.Context, in *GetSrv6SidlistStatsRequest, opts ...grpc.CallOption) (*GetSrv6SidlistStatsResponse, error)
+	CreateMySidEntry(ctx context.Context, in *CreateMySidEntryRequest, opts ...grpc.CallOption) (*CreateMySidEntryResponse, error)
+	RemoveMySidEntry(ctx context.Context, in *RemoveMySidEntryRequest, opts ...grpc.CallOption) (*RemoveMySidEntryResponse, error)
+	SetMySidEntryAttribute(ctx context.Context, in *SetMySidEntryAttributeRequest, opts ...grpc.CallOption) (*SetMySidEntryAttributeResponse, error)
+	GetMySidEntryAttribute(ctx context.Context, in *GetMySidEntryAttributeRequest, opts ...grpc.CallOption) (*GetMySidEntryAttributeResponse, error)
+	CreateMySidEntries(ctx context.Context, in *CreateMySidEntriesRequest, opts ...grpc.CallOption) (*CreateMySidEntriesResponse, error)
+	RemoveMySidEntries(ctx context.Context, in *RemoveMySidEntriesRequest, opts ...grpc.CallOption) (*RemoveMySidEntriesResponse, error)
 }
 
 type srv6Client struct {
@@ -119,6 +131,66 @@ func (c *srv6Client) GetSrv6SidlistStats(ctx context.Context, in *GetSrv6Sidlist
 	return out, nil
 }
 
+func (c *srv6Client) CreateMySidEntry(ctx context.Context, in *CreateMySidEntryRequest, opts ...grpc.CallOption) (*CreateMySidEntryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateMySidEntryResponse)
+	err := c.cc.Invoke(ctx, Srv6_CreateMySidEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *srv6Client) RemoveMySidEntry(ctx context.Context, in *RemoveMySidEntryRequest, opts ...grpc.CallOption) (*RemoveMySidEntryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveMySidEntryResponse)
+	err := c.cc.Invoke(ctx, Srv6_RemoveMySidEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *srv6Client) SetMySidEntryAttribute(ctx context.Context, in *SetMySidEntryAttributeRequest, opts ...grpc.CallOption) (*SetMySidEntryAttributeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetMySidEntryAttributeResponse)
+	err := c.cc.Invoke(ctx, Srv6_SetMySidEntryAttribute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *srv6Client) GetMySidEntryAttribute(ctx context.Context, in *GetMySidEntryAttributeRequest, opts ...grpc.CallOption) (*GetMySidEntryAttributeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMySidEntryAttributeResponse)
+	err := c.cc.Invoke(ctx, Srv6_GetMySidEntryAttribute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *srv6Client) CreateMySidEntries(ctx context.Context, in *CreateMySidEntriesRequest, opts ...grpc.CallOption) (*CreateMySidEntriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateMySidEntriesResponse)
+	err := c.cc.Invoke(ctx, Srv6_CreateMySidEntries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *srv6Client) RemoveMySidEntries(ctx context.Context, in *RemoveMySidEntriesRequest, opts ...grpc.CallOption) (*RemoveMySidEntriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveMySidEntriesResponse)
+	err := c.cc.Invoke(ctx, Srv6_RemoveMySidEntries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Srv6Server is the server API for Srv6 service.
 // All implementations should embed UnimplementedSrv6Server
 // for forward compatibility.
@@ -130,6 +202,12 @@ type Srv6Server interface {
 	CreateSrv6Sidlists(context.Context, *CreateSrv6SidlistsRequest) (*CreateSrv6SidlistsResponse, error)
 	RemoveSrv6Sidlists(context.Context, *RemoveSrv6SidlistsRequest) (*RemoveSrv6SidlistsResponse, error)
 	GetSrv6SidlistStats(context.Context, *GetSrv6SidlistStatsRequest) (*GetSrv6SidlistStatsResponse, error)
+	CreateMySidEntry(context.Context, *CreateMySidEntryRequest) (*CreateMySidEntryResponse, error)
+	RemoveMySidEntry(context.Context, *RemoveMySidEntryRequest) (*RemoveMySidEntryResponse, error)
+	SetMySidEntryAttribute(context.Context, *SetMySidEntryAttributeRequest) (*SetMySidEntryAttributeResponse, error)
+	GetMySidEntryAttribute(context.Context, *GetMySidEntryAttributeRequest) (*GetMySidEntryAttributeResponse, error)
+	CreateMySidEntries(context.Context, *CreateMySidEntriesRequest) (*CreateMySidEntriesResponse, error)
+	RemoveMySidEntries(context.Context, *RemoveMySidEntriesRequest) (*RemoveMySidEntriesResponse, error)
 }
 
 // UnimplementedSrv6Server should be embedded to have
@@ -159,6 +237,24 @@ func (UnimplementedSrv6Server) RemoveSrv6Sidlists(context.Context, *RemoveSrv6Si
 }
 func (UnimplementedSrv6Server) GetSrv6SidlistStats(context.Context, *GetSrv6SidlistStatsRequest) (*GetSrv6SidlistStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSrv6SidlistStats not implemented")
+}
+func (UnimplementedSrv6Server) CreateMySidEntry(context.Context, *CreateMySidEntryRequest) (*CreateMySidEntryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMySidEntry not implemented")
+}
+func (UnimplementedSrv6Server) RemoveMySidEntry(context.Context, *RemoveMySidEntryRequest) (*RemoveMySidEntryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveMySidEntry not implemented")
+}
+func (UnimplementedSrv6Server) SetMySidEntryAttribute(context.Context, *SetMySidEntryAttributeRequest) (*SetMySidEntryAttributeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetMySidEntryAttribute not implemented")
+}
+func (UnimplementedSrv6Server) GetMySidEntryAttribute(context.Context, *GetMySidEntryAttributeRequest) (*GetMySidEntryAttributeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMySidEntryAttribute not implemented")
+}
+func (UnimplementedSrv6Server) CreateMySidEntries(context.Context, *CreateMySidEntriesRequest) (*CreateMySidEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMySidEntries not implemented")
+}
+func (UnimplementedSrv6Server) RemoveMySidEntries(context.Context, *RemoveMySidEntriesRequest) (*RemoveMySidEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveMySidEntries not implemented")
 }
 func (UnimplementedSrv6Server) testEmbeddedByValue() {}
 
@@ -306,6 +402,114 @@ func _Srv6_GetSrv6SidlistStats_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Srv6_CreateMySidEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateMySidEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Srv6Server).CreateMySidEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Srv6_CreateMySidEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Srv6Server).CreateMySidEntry(ctx, req.(*CreateMySidEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Srv6_RemoveMySidEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveMySidEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Srv6Server).RemoveMySidEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Srv6_RemoveMySidEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Srv6Server).RemoveMySidEntry(ctx, req.(*RemoveMySidEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Srv6_SetMySidEntryAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetMySidEntryAttributeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Srv6Server).SetMySidEntryAttribute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Srv6_SetMySidEntryAttribute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Srv6Server).SetMySidEntryAttribute(ctx, req.(*SetMySidEntryAttributeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Srv6_GetMySidEntryAttribute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMySidEntryAttributeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Srv6Server).GetMySidEntryAttribute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Srv6_GetMySidEntryAttribute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Srv6Server).GetMySidEntryAttribute(ctx, req.(*GetMySidEntryAttributeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Srv6_CreateMySidEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateMySidEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Srv6Server).CreateMySidEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Srv6_CreateMySidEntries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Srv6Server).CreateMySidEntries(ctx, req.(*CreateMySidEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Srv6_RemoveMySidEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveMySidEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Srv6Server).RemoveMySidEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Srv6_RemoveMySidEntries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Srv6Server).RemoveMySidEntries(ctx, req.(*RemoveMySidEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Srv6_ServiceDesc is the grpc.ServiceDesc for Srv6 service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -340,6 +544,30 @@ var Srv6_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSrv6SidlistStats",
 			Handler:    _Srv6_GetSrv6SidlistStats_Handler,
+		},
+		{
+			MethodName: "CreateMySidEntry",
+			Handler:    _Srv6_CreateMySidEntry_Handler,
+		},
+		{
+			MethodName: "RemoveMySidEntry",
+			Handler:    _Srv6_RemoveMySidEntry_Handler,
+		},
+		{
+			MethodName: "SetMySidEntryAttribute",
+			Handler:    _Srv6_SetMySidEntryAttribute_Handler,
+		},
+		{
+			MethodName: "GetMySidEntryAttribute",
+			Handler:    _Srv6_GetMySidEntryAttribute_Handler,
+		},
+		{
+			MethodName: "CreateMySidEntries",
+			Handler:    _Srv6_CreateMySidEntries_Handler,
+		},
+		{
+			MethodName: "RemoveMySidEntries",
+			Handler:    _Srv6_RemoveMySidEntries_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
