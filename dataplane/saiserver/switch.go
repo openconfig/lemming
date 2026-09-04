@@ -24,10 +24,13 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	fwdbridge "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/bridge"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
@@ -45,6 +48,7 @@ type saiSwitch struct {
 	vlan            *vlan
 	stp             *stp
 	bridge          *bridge
+	fdb             *fdb
 	hostif          *hostif
 	hash            *hash
 	isolationGroup  *isolationGroup
@@ -191,6 +195,8 @@ const (
 	tunTermTable          = "tun-term"
 	VlanTable             = "vlan"
 	L2MCGroupTable        = "l2mcg"
+	FDBTable              = "fdb"
+	FloodTable            = "flood"
 	policerTabler         = "policerTable"
 	invalidIngress        = "invalid-ingress"
 	invalidIngressV4Table = "invalid-ingress-v4"
@@ -443,6 +449,53 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		},
 	}
 	if _, err := sw.dataplane.TableCreate(ctx, l2mcGroupReq); err != nil {
+		return nil, err
+	}
+	fdbReq := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_BRIDGE,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FDBTable}},
+			Table: &fwdpb.TableDesc_Bridge{
+				Bridge: &fwdpb.BridgeTableDesc{},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, fdbReq); err != nil {
+		return nil, err
+	}
+	if fwdCtx, err := sw.dataplane.FindContext(&fwdpb.ContextId{Id: sw.dataplane.ID()}); err == nil && fwdCtx != nil {
+		if obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: FDBTable}); err == nil {
+			if brTable, ok := obj.(*fwdbridge.Table); ok {
+				brTable.SetLearnCallback(sw.onBridgeLearn)
+				slog.Info("CreateSwitch: successfully set learn callback on FDB table")
+			} else {
+				slog.Error("CreateSwitch: FDB table object is not a fwdbridge.Table", "type", fmt.Sprintf("%T", obj))
+			}
+		} else {
+			slog.Error("CreateSwitch: failed to find FDB table object", "err", err)
+		}
+	} else {
+		slog.Error("CreateSwitch: failed to find forwarding context", "err", err, "fwdCtx", fwdCtx)
+	}
+	floodReq := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FloodTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, floodReq); err != nil {
 		return nil, err
 	}
 	action := &fwdpb.TableCreateRequest{
@@ -1227,6 +1280,128 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 			}
 		}
 	}
+}
+
+func (sw *saiSwitch) FdbEventNotification(req *saipb.FdbEventNotificationRequest, srv grpc.ServerStreamingServer[saipb.FdbEventNotificationResponse]) error {
+	if sw.fdb == nil {
+		return status.Error(codes.Unimplemented, "FDB notification service unavailable")
+	}
+	slog.InfoContext(srv.Context(), "FdbEventNotification: subscriber connected", "req", req)
+	ch := make(chan *saipb.FdbEventNotificationResponse, 100)
+	unsubscribe := sw.fdb.subscribe(ch)
+	defer func() {
+		unsubscribe()
+		slog.InfoContext(srv.Context(), "FdbEventNotification: subscriber disconnected", "err", srv.Context().Err())
+	}()
+
+	for {
+		select {
+		case <-srv.Context().Done():
+			return srv.Context().Err()
+		case resp, ok := <-ch:
+			if !ok {
+				slog.InfoContext(srv.Context(), "FdbEventNotification: subscription channel closed")
+				return nil
+			}
+			slog.InfoContext(srv.Context(), "FdbEventNotification: sending event", "resp", resp)
+			if err := srv.Send(resp); err != nil {
+				slog.ErrorContext(srv.Context(), "FdbEventNotification: failed to send event", "err", err)
+				return err
+			}
+		}
+	}
+}
+
+func (sw *saiSwitch) onBridgeLearn(mac []byte, portID string) {
+	if sw.fdb == nil {
+		return
+	}
+	portNum, err := strconv.ParseUint(portID, 10, 64)
+	if err != nil {
+		slog.Warn("onBridgeLearn: failed to parse numeric port ID", "portID", portID, "err", err)
+		return
+	}
+
+	// Find the Bridge Port OID that wraps this physical port.
+	var bridgePortOID uint64
+	bpOIDs := sw.mgr.GetOIDsByType(saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT)
+	for _, bpOID := range bpOIDs {
+		val := sw.mgr.GetAttribute(strconv.FormatUint(bpOID, 10), int32(saipb.BridgePortAttr_BRIDGE_PORT_ATTR_PORT_ID))
+		if val != nil {
+			if pID, ok := val.(uint64); ok && pID == portNum {
+				bridgePortOID = bpOID
+				break
+			}
+		}
+	}
+
+	if bridgePortOID == 0 {
+		slog.Warn("onBridgeLearn: failed to find bridge port for physical port", "portNum", portNum)
+		return
+	}
+
+	// Find the VLAN ID and VLAN OID for this port.
+	vlanID := uint32(DefaultVlanId)
+	var vlanOID uint64
+	if sw.vlan != nil {
+		if member := sw.vlan.memberByPortId(portNum); member != nil {
+			vlanID = member.Vid
+			if oid, ok := sw.vlan.oidByVid(vlanID); ok {
+				vlanOID = oid
+				slog.Info("onBridgeLearn: found VLAN for port", "portNum", portNum, "vlanID", vlanID, "vlanOID", vlanOID)
+			} else {
+				slog.Warn("onBridgeLearn: failed to get OID for VLAN", "vlanID", vlanID)
+			}
+		} else {
+			slog.Warn("onBridgeLearn: no VLAN member found for port", "portNum", portNum)
+		}
+	} else {
+		slog.Warn("onBridgeLearn: vlan server is nil, using default vlan")
+	}
+
+	swIDStr, ok := sw.mgr.GetSwitchID()
+	if !ok {
+		slog.Warn("onBridgeLearn: failed to get switch ID")
+		return
+	}
+	swID, err := strconv.ParseUint(swIDStr, 10, 64)
+	if err != nil {
+		slog.Warn("onBridgeLearn: failed to parse switch ID", "swIDStr", swIDStr, "err", err)
+		return
+	}
+
+	// If we couldn't resolve the VLAN OID, fallback to default VLAN OID.
+	if vlanOID == 0 {
+		req := &saipb.GetSwitchAttributeRequest{Oid: swID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID}}
+		resp := &saipb.GetSwitchAttributeResponse{}
+		if err := sw.mgr.PopulateAttributes(req, resp); err == nil {
+			vlanOID = resp.GetAttr().GetDefaultVlanId()
+			slog.Info("onBridgeLearn: fallback to default VLAN", "defaultVlanOID", vlanOID)
+		} else {
+			slog.Error("onBridgeLearn: failed to get default VLAN OID", "err", err)
+		}
+	}
+
+	slog.Info("onBridgeLearn: successfully translated and sending FdbEventNotification", "mac", mac, "portNum", portNum, "bridgePortOID", bridgePortOID, "vlanOID", vlanOID)
+	sw.fdb.sendNotification(&saipb.FdbEventNotificationData{
+		EventType: saipb.FdbEvent_FDB_EVENT_LEARNED,
+		FdbEntry: &saipb.FdbEntry{
+			SwitchId:   swID,
+			MacAddress: mac,
+			BvId:       vlanOID,
+		},
+		Attrs: []*saipb.FdbEntryAttribute{
+			{
+				BridgePortId: proto.Uint64(bridgePortOID),
+			},
+			{
+				Type: saipb.FdbEntryType_FDB_ENTRY_TYPE_DYNAMIC.Enum(),
+			},
+			{
+				PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+			},
+		},
+	})
 }
 
 func (sw *saiSwitch) Reset() {
