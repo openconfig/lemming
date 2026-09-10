@@ -29,11 +29,11 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v7
         with:
           go-version: 1.26.2
           cache: false
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Install pcap
         run: |
           sudo apt-get install libpcap-dev libnl-genl-3-dev libnl-3-dev
