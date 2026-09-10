@@ -1,5 +1,6 @@
 build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
 build --incompatible_strict_action_env=true
+common --experimental_repository_downloader_retries=10
 
 
 build:remote --java_runtime_version=rbe_jdk
