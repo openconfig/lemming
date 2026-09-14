@@ -7,6 +7,7 @@ bazel_dep(name = "abseil-cpp", version = "20240722.0.bcr.2")
 bazel_dep(name = "gazelle", version = "0.45.0", repo_name = "bazel_gazelle")
 bazel_dep(name = "glog", version = "0.7.1", repo_name = "com_github_google_glog")
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a")
+bazel_dep(name = "boringssl", version = "0.20250114.0")
 bazel_dep(name = "grpc", version = "1.70.1", repo_name = "com_github_grpc_grpc")
 bazel_dep(name = "openconfig_gnmi", version = "0.14.1", repo_name = "com_github_openconfig_gnmi")
 bazel_dep(name = "p4runtime", version = "0.0.0", repo_name = "p4runtime_protos")
@@ -68,7 +69,7 @@ cc_library(
 ######################################
 ######### Python ####################
 ######################################
-bazel_dep(name = "rules_python", version = "2.3.3")
+bazel_dep(name = "rules_python", version = "1.3.0")
 
 # This prevents "current user is root" build failures in Cloud Build Presubmit
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")

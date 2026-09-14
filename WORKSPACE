@@ -50,9 +50,9 @@ http_archive(
 
 http_archive(
     name = "rules_python",
-    sha256 = "f700c75859a827a2e3e3ba4c9c0ec2d796e191bf0438ac3fee0b7851d83a3d4c",
-    strip_prefix = "rules_python-2.3.3",
-    url = "https://github.com/bazel-contrib/rules_python/releases/download/2.3.3/rules_python-2.3.3.tar.gz",
+    sha256 = "2cc26bbd53854ceb76dd42a834b1002cd4ba7f8df35440cf03482e045affc244",
+    strip_prefix = "rules_python-1.3.0",
+    url = "https://github.com/bazel-contrib/rules_python/releases/download/1.3.0/rules_python-1.3.0.tar.gz",
 )
 
 http_archive(
