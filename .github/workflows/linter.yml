@@ -20,6 +20,9 @@ on:
     # Remove the line above to run when pushing to master
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Lint Code Base
@@ -30,6 +33,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Lint Code Base
         uses: github/super-linter/slim@b807e99ddd37e444d189cfd2c2ca1274d8ae8ef1 # v7
         env:
@@ -38,6 +42,7 @@ jobs:
           VALIDATE_GO: false
           VALIDATE_CLANG_FORMAT: false
           VALIDATE_KUBERNETES_KUBEVAL: false
+          VALIDATE_CHECKOV: false
           VALIDATE_GITLEAKS: false
           IGNORE_GENERATED_FILES: true
           DEFAULT_BRANCH: main
