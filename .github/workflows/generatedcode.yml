@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
----
 name: Check Generate Code
 on:
   pull_request:
@@ -26,7 +24,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@5483a91b6e3ffac6092848f1dd7eafcfad203d80 # 0.14.0
+        uses: bazel-contrib/setup-bazel@e8776f58fb6a6e9055cbaf1b38c52ccc5247e9c4 # 0.14.0
       - name: Run Gazelle
         run: bazel run //:gazelle
       - name: Check Diff
@@ -43,7 +41,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@5483a91b6e3ffac6092848f1dd7eafcfad203d80 # 0.14.0
+        uses: bazel-contrib/setup-bazel@e8776f58fb6a6e9055cbaf1b38c52ccc5247e9c4 # 0.14.0
       - name: Cache Bazel
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
