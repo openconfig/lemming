@@ -14,12 +14,12 @@ FROM build as debug-build
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN --mount=type=cache,target=/root/.cache/go-build go build -gcflags='all=-N -l' -o /out/lemming ./cmd/lemming
 
-FROM docker.io/debian:bookworm as debug
-RUN apt-get update && apt-get install -y libpcap-dev ca-certificates
+FROM docker.io/debian:bookworm-slim as debug
+RUN apt-get update && apt-get install -y --no-install-recommends libpcap-dev ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=debug-build /out/lemming /lemming/lemming
 COPY --from=debug-build /go/bin/dlv /dlv/dlv
 
-FROM docker.io/debian:bookworm as release
-RUN apt-get update && apt-get install -y libpcap-dev ca-certificates
+FROM docker.io/debian:bookworm-slim as release
+RUN apt-get update && apt-get install -y --no-install-recommends libpcap-dev ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=release-build /out/lemming /lemming/lemming
 COPY --from=release-build /build/THIRD_PARTY_LICENSES /lemming/THIRD_PARTY

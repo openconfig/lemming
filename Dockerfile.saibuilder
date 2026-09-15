@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:bookworm-slim
 
 # Install required build packages and development libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \

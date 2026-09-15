@@ -1,0 +1,8 @@
+# Trivy ignore file
+# KSV-0056: The Lemming Kubernetes Operator controller manager requires permissions
+# to create/delete/manage pods, secrets, and services for virtual network devices.
+AVD-KSV-0056
+KSV-0056
+
+# GO-2026-5932: golang.org/x/crypto/openpgp is deprecated upstream
+GO-2026-5932

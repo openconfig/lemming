@@ -65,24 +65,24 @@ http_archive(
 
 http_archive(
     name = "com_google_absl",
-    sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
-    strip_prefix = "abseil-cpp-20250127.1",
+    sha256 = "71358f2e72e945d280bfab44090eacb3f98e10fead31fd97876f05a835510d92",
+    strip_prefix = "abseil-cpp-20250512.2",
     urls = [
-        "https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
+        "https://github.com/abseil/abseil-cpp/releases/download/20250512.2/abseil-cpp-20250512.2.tar.gz",
     ],
 )
 
 http_archive(
     name = "build_bazel_rules_swift",
-    sha256 = "4901feadef8e47ede930c95c40298dd38a83a81eb1ed5b74e62abfa546ff2d1b",
-    url = "https://github.com/bazelbuild/rules_swift/releases/download/2.8.1/rules_swift.2.8.1.tar.gz",
+    sha256 = "0814d7513a3a18c2fedca69d44ee35b41168ae10e24ba50ec711e496e82ae3eb",
+    url = "https://github.com/bazelbuild/rules_swift/releases/download/4.0.1/rules_swift.4.0.1.tar.gz",
 )
 
 http_archive(
     name = "rules_proto_grpc",
-    sha256 = "fb7fc7a3c19a92b2f15ed7c4ffb2983e956625c1436f57a3430b897ba9864059",
-    strip_prefix = "rules_proto_grpc-4.3.0",
-    urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.3.0.tar.gz"],
+    sha256 = "a25b9992ded30441b0250b2a3e69638e94e664bffcbd77daac6dd355fc92dd17",
+    strip_prefix = "rules_proto_grpc-5.8.0",
+    urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/5.8.0.tar.gz"],
 )
 
 http_archive(
@@ -105,9 +105,9 @@ http_archive(
 
 http_archive(
     name = "rules_proto",
-    sha256 = "303e86e722a520f6f326a50b41cfc16b98fe6d1955ce46642a5b7a67c11c0f5d",
-    strip_prefix = "rules_proto-6.0.0",
-    url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.0/rules_proto-6.0.0.tar.gz",
+    sha256 = "14a225870ab4e91869652cfd69ef2028277fc1dc4910d65d353b62d6e0ae21f4",
+    strip_prefix = "rules_proto-7.1.0",
+    url = "https://github.com/bazelbuild/rules_proto/releases/download/7.1.0/rules_proto-7.1.0.tar.gz",
 )
 
 http_archive(
