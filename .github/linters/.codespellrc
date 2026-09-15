@@ -1,0 +1,2 @@
+[codespell]
+skip = *.sum,*.lock,*.lock.json,go.work.sum,go.sum,MODULE.bazel.lock
