@@ -394,6 +394,12 @@ func testTraffic(t *testing.T, tt myMacTest, sc saipb.SwitchClient, mmc saipb.My
 	defer otg.StopTraffic(t)
 
 	gnmi.Await(t, otg, gnmi.OTG().Flow(flowID).Counters().OutPkts().State(), 5*time.Second, txPkts)
-	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow(flowID).Counters().InPkts().State())
+	var rxPkts uint64
+	if !tt.wantTrafficDropped {
+		rx, _ := gnmi.Await(t, otg, gnmi.OTG().Flow(flowID).Counters().InPkts().State(), 5*time.Second, txPkts).Val()
+		rxPkts = rx
+	} else if val, ok := gnmi.Lookup(t, otg, gnmi.OTG().Flow(flowID).Counters().InPkts().State()).Val(); ok {
+		rxPkts = val
+	}
 	return txPkts, rxPkts
 }
