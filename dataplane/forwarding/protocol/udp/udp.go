@@ -134,21 +134,21 @@ func (udp *UDP) Rebuild() error {
 	var err error
 	var f []byte
 	var sum csum16.Sum
-	sum.Write(udp.Header())
-	sum.Write(udp.desc.Payload())
+	_, _ = sum.Write(udp.Header())
+	_, _ = sum.Write(udp.desc.Payload())
 	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("udp: Rebuild failed: %v", err)
 	}
-	sum.Write(f)
+	_, _ = sum.Write(f)
 	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("udp: Rebuild failed: %v", err)
 	}
-	sum.Write(f)
+	_, _ = sum.Write(f)
 
 	f = make([]byte, protocol.SizeUint32)
 	binary.BigEndian.PutUint32(f, uint32(length))
-	sum.Write(f)
-	sum.Write([]byte{0, 0, 0, protoUDP})
+	_, _ = sum.Write(f)
+	_, _ = sum.Write([]byte{0, 0, 0, protoUDP})
 	udp.header.Field(csumOffset, csumBytes).SetValue(uint(sum))
 	return nil
 }
