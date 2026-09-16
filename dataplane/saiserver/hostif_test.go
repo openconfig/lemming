@@ -175,7 +175,7 @@ func TestRemoveHostif(t *testing.T) {
 		want    *pktiopb.HostPortControlMessage
 		wantErr string
 	}{{
-		desc: "sucess",
+		desc: "success",
 		req: &saipb.RemoveHostifRequest{
 			Oid: 1,
 		},

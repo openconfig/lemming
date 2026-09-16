@@ -254,7 +254,7 @@ var (
 	etherTypeARP  = []byte{0x08, 0x06}
 	udldDstMAC    = []byte{0x01, 0x00, 0x0C, 0xCC, 0xCC, 0xCC}
 	etherTypeLLDP = []byte{0x88, 0xcc}
-	ndDstMAC      = []byte{0x33, 0x33, 0x00, 0x00, 0x00, 0x00} // ND is generic IPv6 multicast MAC.
+	ndDstMAC      = []byte{0x33, 0x33, 0x00, 0x00, 0x00, 0x00} // Neighbor Discovery is generic IPv6 multicast MAC.
 	ndDstMACMask  = []byte{0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00}
 	lacpDstMAC    = []byte{0x01, 0x80, 0xC2, 0x00, 0x00, 0x02}
 )
@@ -442,7 +442,7 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 	ctx, cancel := context.WithCancel(srv.Context())
 
 	// Since Recv() is blocking and we want this func to return immediately on cancel.
-	// Run the Recv in a seperate goroutine.
+	// Run the Recv in a separate goroutine.
 	go func() {
 		for {
 			pkt, err := srv.Recv()
