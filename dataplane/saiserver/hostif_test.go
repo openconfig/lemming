@@ -25,9 +25,10 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/openconfig/gnmi/errdiff"
-	"google.golang.org/genproto/googleapis/rpc/status"
+	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -113,25 +114,36 @@ func TestCreateHostif(t *testing.T) {
 			if err := pc.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Init{}}); err != nil {
 				t.Fatal(err)
 			}
-			time.Sleep(time.Millisecond)
-			processRequest := func() {
-				msg, _ := pc.Recv()
-				msgCh <- msg
-				pc.Send(&pktiopb.HostPortControlRequest{
-					Msg: &pktiopb.HostPortControlRequest_Status{
-						Status: &status.Status{
-							Code:    int32(codes.OK),
-							Message: "",
+			go func() {
+				for {
+					msg, err := pc.Recv()
+					if err != nil {
+						return
+					}
+					msgCh <- msg
+					if err := pc.Send(&pktiopb.HostPortControlRequest{
+						Msg: &pktiopb.HostPortControlRequest_Status{
+							Status: &statuspb.Status{
+								Code:    int32(codes.OK),
+								Message: "",
+							},
 						},
-					},
-				})
-			}
-
-			go processRequest()
-			go processRequest()
+					}); err != nil {
+						return
+					}
+				}
+			}()
 
 			defer stopFn()
-			got, gotErr := c.CreateHostif(context.TODO(), tt.req)
+			var got *saipb.CreateHostifResponse
+			var gotErr error
+			for i := 0; i < 50; i++ {
+				got, gotErr = c.CreateHostif(context.TODO(), tt.req)
+				if gotErr == nil || status.Code(gotErr) != codes.FailedPrecondition {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("CreateHostif() unexpected err: %s", diff)
 			}
@@ -163,7 +175,7 @@ func TestRemoveHostif(t *testing.T) {
 		want    *pktiopb.HostPortControlMessage
 		wantErr string
 	}{{
-		desc: "sucess",
+		desc: "success",
 		req: &saipb.RemoveHostifRequest{
 			Oid: 1,
 		},
@@ -194,21 +206,34 @@ func TestRemoveHostif(t *testing.T) {
 			if err := pc.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Init{}}); err != nil {
 				t.Fatal(err)
 			}
-			time.Sleep(time.Millisecond)
 			go func() {
-				msg, _ := pc.Recv()
-				msgCh <- msg
-				pc.Send(&pktiopb.HostPortControlRequest{
-					Msg: &pktiopb.HostPortControlRequest_Status{
-						Status: &status.Status{
-							Code:    int32(codes.OK),
-							Message: "",
+				for {
+					msg, err := pc.Recv()
+					if err != nil {
+						return
+					}
+					msgCh <- msg
+					if err := pc.Send(&pktiopb.HostPortControlRequest{
+						Msg: &pktiopb.HostPortControlRequest_Status{
+							Status: &statuspb.Status{
+								Code:    int32(codes.OK),
+								Message: "",
+							},
 						},
-					},
-				})
+					}); err != nil {
+						return
+					}
+				}
 			}()
 
-			_, gotErr := c.RemoveHostif(context.TODO(), tt.req)
+			var gotErr error
+			for i := 0; i < 50; i++ {
+				_, gotErr = c.RemoveHostif(context.TODO(), tt.req)
+				if gotErr == nil || status.Code(gotErr) != codes.FailedPrecondition {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("RemoveHostif() unexpected err: %s", diff)
 			}

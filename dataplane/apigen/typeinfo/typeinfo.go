@@ -460,7 +460,7 @@ func protoFieldSetter(saiType, protoVar, protoField, varName string, info *docpa
 			}
 		}
 	default:
-		return nil, fmt.Errorf("unknown accessor type %q", ua.aType)
+		return nil, fmt.Errorf("unknown accessor type %v", ua.aType)
 	}
 	return smt, nil
 }
@@ -470,7 +470,7 @@ type AttrSwitchSmt struct {
 	EnumValue string
 	// ProtoFunc is the name of the protobuf getter or setter (eg set_obj_id() or obj_id()).
 	ProtoFunc string
-	// Args are the arguments to pass the ProtoFunc as comma seperated values.
+	// Args are the arguments to pass the ProtoFunc as comma separated values.
 	Args string
 	// Var is the name of the variable that is used for assignment.
 	Var string
