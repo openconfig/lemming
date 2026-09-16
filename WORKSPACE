@@ -50,9 +50,9 @@ http_archive(
 
 http_archive(
     name = "rules_python",
-    sha256 = "2cc26bbd53854ceb76dd42a834b1002cd4ba7f8df35440cf03482e045affc244",
-    strip_prefix = "rules_python-1.3.0",
-    url = "https://github.com/bazel-contrib/rules_python/releases/download/1.3.0/rules_python-1.3.0.tar.gz",
+    sha256 = "f700c75859a827a2e3e3ba4c9c0ec2d796e191bf0438ac3fee0b7851d83a3d4c",
+    strip_prefix = "rules_python-2.3.3",
+    url = "https://github.com/bazel-contrib/rules_python/releases/download/2.3.3/rules_python-2.3.3.tar.gz",
 )
 
 http_archive(
@@ -65,10 +65,10 @@ http_archive(
 
 http_archive(
     name = "com_google_absl",
-    sha256 = "71358f2e72e945d280bfab44090eacb3f98e10fead31fd97876f05a835510d92",
-    strip_prefix = "abseil-cpp-20250512.2",
+    sha256 = "f9148fb00ec98a2396bdf875c99a78e6a70afa662b107862d92b285d857a8320",
+    strip_prefix = "abseil-cpp-20250814.2",
     urls = [
-        "https://github.com/abseil/abseil-cpp/releases/download/20250512.2/abseil-cpp-20250512.2.tar.gz",
+        "https://github.com/abseil/abseil-cpp/releases/download/20250814.2/abseil-cpp-20250814.2.tar.gz",
     ],
 )
 
