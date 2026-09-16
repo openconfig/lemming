@@ -80,6 +80,13 @@ const (
 
 // CreateHostif creates a hostif interface (usually a tap interface).
 func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
+	hostif.remoteMu.Lock()
+	defer hostif.remoteMu.Unlock()
+
+	if hostif.remotePortReq == nil {
+		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
+	}
+
 	id := hostif.mgr.NextID()
 
 	ctlReq := &pktiopb.HostPortControlMessage{
@@ -157,12 +164,6 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
 	}
 
-	hostif.remoteMu.Lock()
-	defer hostif.remoteMu.Unlock()
-
-	if hostif.remotePortReq == nil {
-		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
-	}
 	if err := hostif.remotePortReq(ctlReq); err != nil {
 		return nil, err
 	}
@@ -180,6 +181,10 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifRequest) (*saipb.RemoveHostifResponse, error) {
 	hostif.remoteMu.Lock()
 	defer hostif.remoteMu.Unlock()
+
+	if hostif.remotePortReq == nil {
+		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
+	}
 
 	nid, err := hostif.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
@@ -208,9 +213,6 @@ func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifR
 		Op:     pktiopb.PortOperation_PORT_OPERATION_DELETE,
 	}
 
-	if hostif.remotePortReq == nil {
-		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
-	}
 	if err := hostif.remotePortReq(ctlReq); err != nil {
 		return nil, err
 	}
@@ -222,6 +224,11 @@ func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifR
 // SetHostifAttribute sets the attributes in the request.
 func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHostifAttributeRequest) (*saipb.SetHostifAttributeResponse, error) {
 	if req.OperStatus != nil {
+		hostif.remoteMu.Lock()
+		defer hostif.remoteMu.Unlock()
+		if hostif.remotePortReq == nil {
+			return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
+		}
 		op := pktiopb.PortOperation_PORT_OPERATION_SET_DOWN
 
 		if req.GetOperStatus() {
