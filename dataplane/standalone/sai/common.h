@@ -150,12 +150,22 @@ sai_ip_prefix_t convert_to_ip_prefix(
     const lemming::dataplane::sai::IpPrefix& ip_prefix);
 std::vector<sai_port_oper_status_notification_t> convert_to_oper_status(
     const lemming::dataplane::sai::PortStateChangeNotificationResponse& resp);
+struct FdbNotificationDataHolder {
+  std::vector<sai_fdb_event_notification_data_t> events;
+  std::vector<std::vector<sai_attribute_t>> attributes_storage;
+};
+FdbNotificationDataHolder convert_to_fdb_event(
+    const lemming::dataplane::sai::FdbEventNotificationResponse& resp);
 
 lemming::dataplane::sai::NeighborEntry convert_from_neighbor_entry(
     const sai_neighbor_entry_t& entry);
 
 sai_neighbor_entry_t convert_to_neighbor_entry(
     const lemming::dataplane::sai::NeighborEntry& entry);
+lemming::dataplane::sai::FdbEntry convert_from_fdb_entry(
+    const sai_fdb_entry_t& entry);
+sai_fdb_entry_t convert_to_fdb_entry(
+    const lemming::dataplane::sai::FdbEntry& entry);
 
 void convert_to_acl_capability(
     sai_acl_capability_t& out,
@@ -316,4 +326,76 @@ class PortStateReactor
 };
 #endif
 
+
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
+class FdbEventReactor
+    : public grpc::experimental::ClientReadReactor<
+          lemming::dataplane::sai::FdbEventNotificationResponse> {
+ public:
+  FdbEventReactor(std::shared_ptr<lemming::dataplane::sai::Switch::Stub> stub,
+                  sai_fdb_event_notification_fn callback) {
+    this->callback = callback;
+    lemming::dataplane::sai::FdbEventNotificationRequest req;
+    stub->experimental_async()->FdbEventNotification(&context, &req, this);
+    StartRead(&resp);
+    StartCall();
+  }
+
+  void OnReadDone(bool ok) override {
+    if (!ok) return;
+    LOG(INFO) << "FdbEventReactor: OnReadDone received " << resp.data_size() << " event(s). Invoking callback.";
+    FdbNotificationDataHolder holder = convert_to_fdb_event(resp);
+    callback(holder.events.size(), holder.events.data());
+    StartRead(&resp);
+  }
+
+  void OnDone(const grpc::Status& status) override {
+    if (status.ok()) {
+      LOG(INFO) << "FdbEventNotification RPC succeeded.";
+    } else {
+      LOG(ERROR) << "FdbEventNotification RPC failed: " << status.error_message();
+    }
+  }
+
+ private:
+  grpc::ClientContext context;
+  lemming::dataplane::sai::FdbEventNotificationResponse resp;
+  sai_fdb_event_notification_fn callback;
+};
+#else
+class FdbEventReactor
+    : public grpc::ClientReadReactor<
+          lemming::dataplane::sai::FdbEventNotificationResponse> {
+ public:
+  FdbEventReactor(std::shared_ptr<lemming::dataplane::sai::Switch::Stub> stub,
+                  sai_fdb_event_notification_fn callback) {
+    this->callback = callback;
+    lemming::dataplane::sai::FdbEventNotificationRequest req;
+    stub->async()->FdbEventNotification(&context, &req, this);
+    StartRead(&resp);
+    StartCall();
+  }
+
+  void OnReadDone(bool ok) override {
+    if (!ok) return;
+    LOG(INFO) << "FdbEventReactor: OnReadDone received " << resp.data_size() << " event(s). Invoking callback.";
+    FdbNotificationDataHolder holder = convert_to_fdb_event(resp);
+    callback(holder.events.size(), holder.events.data());
+    StartRead(&resp);
+  }
+
+  void OnDone(const grpc::Status& status) override {
+    if (status.ok()) {
+      LOG(INFO) << "FdbEventNotification RPC succeeded.";
+    } else {
+      LOG(ERROR) << "FdbEventNotification RPC failed: " << status.error_message();
+    }
+  }
+
+ private:
+  grpc::ClientContext context;
+  lemming::dataplane::sai::FdbEventNotificationResponse resp;
+  sai_fdb_event_notification_fn callback;
+};
+#endif
 #endif  // DATAPLANE_STANDALONE_SAI_COMMON_H_

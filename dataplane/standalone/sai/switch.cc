@@ -36,6 +36,7 @@ const sai_switch_api_t l_switch = {
 };
 
 std::unique_ptr<PortStateReactor> port_state;
+std::unique_ptr<FdbEventReactor> fdb_event;
 
 lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
     uint32_t attr_count, const sai_attribute_t* attr_list) {
@@ -180,6 +181,11 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
       case SAI_SWITCH_ATTR_PORT_STATE_CHANGE_NOTIFY:
         port_state = std::make_unique<PortStateReactor>(
             switch_, reinterpret_cast<sai_port_state_change_notification_fn>(
+                         attr_list[i].value.ptr));
+        break;
+      case SAI_SWITCH_ATTR_FDB_EVENT_NOTIFY:
+        fdb_event = std::make_unique<FdbEventReactor>(
+            switch_, reinterpret_cast<sai_fdb_event_notification_fn>(
                          attr_list[i].value.ptr));
         break;
       case SAI_SWITCH_ATTR_FAST_API_ENABLE:
@@ -441,6 +447,10 @@ lemming::dataplane::sai::CreateSwitchTunnelRequest convert_create_switch_tunnel(
 sai_status_t l_create_switch(sai_object_id_t* switch_id, uint32_t attr_count,
                              const sai_attribute_t* attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  LOG(INFO) << "Compiled SAI_SWITCH_ATTR_FDB_EVENT_NOTIFY ID = " << SAI_SWITCH_ATTR_FDB_EVENT_NOTIFY;
+  for (uint32_t i = 0; i < attr_count; i++) {
+    LOG(INFO) << "l_create_switch attr ID=" << attr_list[i].id << " (0x" << std::hex << attr_list[i].id << std::dec << ") ptr=" << attr_list[i].value.ptr;
+  }
 
   lemming::dataplane::sai::CreateSwitchRequest req =
       convert_create_switch(attr_count, attr_list);
@@ -619,7 +629,16 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       port_state = std::make_unique<PortStateReactor>(
           switch_, reinterpret_cast<sai_port_state_change_notification_fn>(
                        attr->value.ptr));
-      break;
+      return SAI_STATUS_SUCCESS;
+    case SAI_SWITCH_ATTR_FDB_EVENT_NOTIFY:
+      fdb_event = std::make_unique<FdbEventReactor>(
+          switch_, reinterpret_cast<sai_fdb_event_notification_fn>(
+                       attr->value.ptr));
+      return SAI_STATUS_SUCCESS;
+    case SAI_SWITCH_ATTR_SHUTDOWN_REQUEST_NOTIFY:
+    case SAI_SWITCH_ATTR_SWITCH_STATE_CHANGE_NOTIFY:
+    case SAI_SWITCH_ATTR_PACKET_EVENT_NOTIFY:
+      return SAI_STATUS_SUCCESS;
     case SAI_SWITCH_ATTR_FAST_API_ENABLE:
       req.set_fast_api_enable(attr->value.booldata);
       break;
