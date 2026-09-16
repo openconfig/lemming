@@ -470,7 +470,7 @@ type AttrSwitchSmt struct {
 	EnumValue string
 	// ProtoFunc is the name of the protobuf getter or setter (eg set_obj_id() or obj_id()).
 	ProtoFunc string
-	// Args are the arguments to pass the ProtoFunc as comma seperated values.
+	// Args are the arguments to pass the ProtoFunc as comma separated values.
 	Args string
 	// Var is the name of the variable that is used for assignment.
 	Var string
