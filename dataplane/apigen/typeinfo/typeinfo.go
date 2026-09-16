@@ -460,7 +460,7 @@ func protoFieldSetter(saiType, protoVar, protoField, varName string, info *docpa
 			}
 		}
 	default:
-		return nil, fmt.Errorf("unknown accessor type %q", ua.aType)
+		return nil, fmt.Errorf("unknown accessor type %v", ua.aType)
 	}
 	return smt, nil
 }

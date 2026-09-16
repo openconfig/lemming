@@ -39,6 +39,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 )
@@ -355,9 +356,9 @@ func (r *LemmingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Secret{}).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 50,
-			RateLimiter: workqueue.NewMaxOfRateLimiter(
-				workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
-				&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(100), 200)},
+			RateLimiter: workqueue.NewTypedMaxOfRateLimiter(
+				workqueue.NewTypedItemExponentialFailureRateLimiter[reconcile.Request](5*time.Millisecond, 1000*time.Second),
+				&workqueue.TypedBucketRateLimiter[reconcile.Request]{Limiter: rate.NewLimiter(rate.Limit(100), 200)},
 			),
 		}).
 		Complete(r)

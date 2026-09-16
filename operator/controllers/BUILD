@@ -21,6 +21,7 @@ go_library(
         "@io_k8s_sigs_controller_runtime//pkg/client",
         "@io_k8s_sigs_controller_runtime//pkg/controller",
         "@io_k8s_sigs_controller_runtime//pkg/log",
+        "@io_k8s_sigs_controller_runtime//pkg/reconcile",
         "@io_k8s_utils//pointer",
         "@org_golang_x_time//rate",
     ],

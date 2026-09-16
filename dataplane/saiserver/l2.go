@@ -74,7 +74,7 @@ func (mg *l2mcGroup) portNidFromBrirdgeId(ctx context.Context, outputId uint64) 
 		return 0, fmt.Errorf("failed to populate OutputId (oid=%d): %v", outputId, err)
 	}
 	if resp.GetAttr().PortId == nil {
-		return 0, fmt.Errorf("cannot find portId for bridge port %q", outputId)
+		return 0, fmt.Errorf("cannot find portId for bridge port %d", outputId)
 	}
 	return resp.GetAttr().GetPortId(), nil
 }
