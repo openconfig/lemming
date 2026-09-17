@@ -49,7 +49,8 @@ type UDP struct {
 
 // Header returns the UDP header.
 func (udp *UDP) Header() []byte {
-	return udp.header
+	header := append([]byte(nil), udp.header...)
+	return header
 }
 
 // Trailer returns the no trailing bytes.
@@ -62,7 +63,7 @@ func (UDP) ID(int) fwdpb.PacketHeaderId {
 	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP
 }
 
-// field returns bytes within the TCP header as identified by id.
+// field returns bytes within the UDP header as identified by id.
 func (udp *UDP) field(id fwdpacket.FieldID) frame.Field {
 	if id.IsUDF {
 		return protocol.UDF(udp.header, id)
@@ -119,7 +120,7 @@ func (udp *UDP) Rebuild() error {
 	}
 
 	// Update the length and reset the checksum.
-	length := len(udp.header) + udp.desc.PayloadLength()
+	length := len(udp.Header()) + udp.desc.PayloadLength()
 	udp.header.Field(lenOffset, lenBytes).SetValue(uint(length))
 	udp.header.Field(csumOffset, csumBytes).SetValue(0)
 
@@ -133,20 +134,21 @@ func (udp *UDP) Rebuild() error {
 	var err error
 	var f []byte
 	var sum csum16.Sum
-	sum.Write(udp.header)
+	_, _ = sum.Write(udp.Header())
+	_, _ = sum.Write(udp.desc.Payload())
 	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("udp: Rebuild failed: %v", err)
 	}
-	sum.Write(f)
+	_, _ = sum.Write(f)
 	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("udp: Rebuild failed: %v", err)
 	}
-	sum.Write(f)
+	_, _ = sum.Write(f)
 
 	f = make([]byte, protocol.SizeUint32)
 	binary.BigEndian.PutUint32(f, uint32(length))
-	sum.Write(f)
-	sum.Write([]byte{0, 0, 0, protoUDP})
+	_, _ = sum.Write(f)
+	_, _ = sum.Write([]byte{0, 0, 0, protoUDP})
 	udp.header.Field(csumOffset, csumBytes).SetValue(uint(sum))
 	return nil
 }
@@ -165,14 +167,15 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	if frame.Len() < udpBytes {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("udp: parse failed, frame length %v too small to contain a UDP header", frame.Len())
 	}
-	header, err := frame.ReadHeader(frame.Len())
+	header, err := frame.ReadHeader(udpBytes)
 	if err != nil {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("udp: unable read header: %v", err)
 	}
+	next := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
 	return &UDP{
 		header: header,
 		desc:   desc,
-	}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE, nil
+	}, next, nil
 }
 
 func init() {
