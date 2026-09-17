@@ -230,17 +230,22 @@ sai_acl_field_data_t convert_to_acl_field_data_ip_type(
     lemming::dataplane::sai::AclIpType type);
 
 // copy_list copies a scalar proto list to an attribute.
-// Note: It is expected that the attribute list contains preallocated memory.
+// SAI list attributes use a two-pass protocol: a caller may pass a null or
+// undersized buffer purely to discover how many elements it must allocate.
+// Only write into the buffer when it is large enough, but always report the
+// required element count so the caller can retry.
 template <typename T, typename S>
 void copy_list(S* dst, const google::protobuf::RepeatedField<T>& src,
                uint32_t* attr_len) {
   // It's not safe to just memcpy this because in some cases to proto types are
   // larger than the corresponding sai types.
-  *attr_len =
-      static_cast<uint32_t>(std::min(static_cast<int>(*attr_len), src.size()));
-  for (uint32_t i = 0; i < *attr_len; i++) {
-    dst[i] = src[i];
+  const uint32_t required = static_cast<uint32_t>(src.size());
+  if (dst != nullptr && *attr_len >= required) {
+    for (uint32_t i = 0; i < required; i++) {
+      dst[i] = src[i];
+    }
   }
+  *attr_len = required;
 }
 
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL

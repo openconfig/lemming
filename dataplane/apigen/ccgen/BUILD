@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "ccgen",
@@ -12,5 +12,15 @@ go_library(
         "//dataplane/apigen/docparser",
         "//dataplane/apigen/saiast",
         "//dataplane/apigen/typeinfo",
+    ],
+)
+
+go_test(
+    name = "ccgen_test",
+    srcs = ["ccgen_test.go"],
+    embed = [":ccgen"],
+    deps = [
+        "//dataplane/apigen/docparser",
+        "//dataplane/apigen/saiast",
     ],
 )
