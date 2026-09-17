@@ -50,7 +50,11 @@ import (
 
 func TestFakeGNMI(t *testing.T) {
 	f := startLemming(t)
-	defer f.Stop()
+	defer func() {
+		if err := f.Stop(); err != nil {
+			t.Errorf("f.Stop() failed: %v", err)
+		}
+	}()
 	conn, err := grpc.NewClient(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
@@ -88,7 +92,9 @@ func TestStop(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
 		f := startLemming(t)
 		// Close the listener so the get must fail.
-		f.GNMIListener().Close()
+		if err := f.GNMIListener().Close(); err != nil {
+			t.Fatalf("failed to close GNMI listener: %v", err)
+		}
 		select {
 		case <-f.gnmignoignsiService.stopped:
 		case <-time.After(5 * time.Second):
@@ -110,7 +116,11 @@ func TestStop(t *testing.T) {
 
 func TestFakeGNOI(t *testing.T) {
 	f := startLemming(t)
-	defer f.Stop()
+	defer func() {
+		if err := f.Stop(); err != nil {
+			t.Errorf("f.Stop() failed: %v", err)
+		}
+	}()
 	conn, err := grpc.NewClient(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
