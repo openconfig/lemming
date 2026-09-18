@@ -17,7 +17,10 @@ package packet_test
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
+	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
@@ -25,6 +28,8 @@ import (
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
 	"github.com/openconfig/lemming/dataplane/forwarding/protocol/packettestutil"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/udp"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/vxlan"
 )
 
 // IP tunnels are formed via various combinations of IP4, IP6, GRE tunnels.
@@ -51,6 +56,10 @@ const (
 	GRE4Key                  // GRE header with an IP4 payload, and GRE key
 	GRE4Seq                  // GRE header with an IP4 payload, and GRE sequence number
 	GRE4KeySeq               // GRE header with an IP4 payload, and GRE key and sequence number
+	outerIP4UDP              // IP4 header with UDP payload
+	udpHeader                // UDP header
+	vxlanHeader              // VXLAN header
+	innerEthernet            // Inner Ethernet header
 )
 
 // A field describes a field in the header used to create a test packet.
@@ -104,6 +113,24 @@ var fields = map[fwdpb.PacketFieldNum]struct {
 	},
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_SEQUENCE: {
 		update: true,
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC: {
+		update: true,
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST: {
+		update: true,
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI: {
+		update: true,
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC: {
+		update: true,
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST: {
+		update: true,
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE: {
+		update: false,
 	},
 }
 
@@ -486,6 +513,74 @@ var headers = map[int]header{
 			{
 				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
 				value: []byte{0x01},
+			},
+		},
+	},
+	outerIP4UDP: {
+		id:   fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+		orig: []byte{0x45, 0x01, 0x00, 0x3e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0xa0, 0x8e, 0x01, 0x02, 0x03, 0x04, 0x0a, 0x0b, 0x0c, 0x0d},
+		fields: []field{
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+				value: []byte{0x04},
+			},
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
+				value: []byte{0x01, 0x02, 0x03, 0x04},
+			},
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
+				value: []byte{0x0a, 0x0b, 0x0c, 0x0d},
+			},
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
+				value: []byte{0x01},
+			},
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO, 0),
+				value: []byte{0x11},
+			},
+		},
+	},
+	udpHeader: {
+		id:   fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
+		orig: []byte{0x01, 0x02, 0x12, 0xb5, 0x00, 0x2a, 0x00, 0x00},
+		fields: []field{
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0),
+				value: []byte{0x01, 0x02},
+			},
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0),
+				value: []byte{0x12, 0xb5},
+			},
+		},
+	},
+	vxlanHeader: {
+		id:   fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+		orig: []byte{0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00},
+		fields: []field{
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI, 0),
+				value: []byte{0x00, 0x00, 0x01},
+			},
+		},
+	},
+	innerEthernet: {
+		id:   fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+		orig: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x08, 0x00},
+		fields: []field{
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				value: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
+			},
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				value: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
+			},
+			{
+				id:    fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
+				value: []byte{0x08, 0x00},
 			},
 		},
 	},
@@ -1197,3 +1292,125 @@ func TestTunnelEncapErrors(t *testing.T) {
 	}
 	packettestutil.TestPacketHeaders("tunnel-encap-errors", t, tests)
 }
+
+func TestVXLANPacketParsing(t *testing.T) {
+	outerEthernet := []byte{
+		0x00, 0x11, 0x22, 0x33, 0x44, 0x55, // dst mac
+		0x00, 0x11, 0x22, 0x33, 0x44, 0x66, // src mac
+		0x08, 0x00, // ethertype ipv4
+	}
+	outerIP := []byte{
+		0x45, 0x01, 0x00, 0x3e, 0x00, 0x00, 0x00, 0x00, 0x40, 0x11, 0xa0, 0x8e,
+		0x0a, 0x00, 0x01, 0x01, // src ip: 10.0.1.1
+		0x0a, 0x00, 0x01, 0x02, // dst ip: 10.0.1.2
+	}
+	udpHeader := []byte{
+		0x01, 0x02, // src port
+		0x12, 0xb5, // dst port: 4789
+		0x00, 0x2a, // length
+		0x00, 0x00, // csum
+	}
+	vxlanHeader := []byte{
+		0x08, 0x00, 0x00, 0x00, // flags
+		0x00, 0x4e, 0x21, // vni: 20001
+		0x00, // reserved
+	}
+	innerEthernet := []byte{
+		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, // dst mac
+		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xfe, // src mac
+		0x08, 0x00, // ethertype ipv4
+	}
+	innerIP := []byte{
+		0x45, 0x01, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x40, 0xff, 0x97, 0xcb,
+		0xc0, 0xa8, 0x01, 0x64, // src ip: 192.168.1.100
+		0xc0, 0xa8, 0x01, 0xc8, // dst ip: 192.168.1.200
+		0x00, 0x00,
+	}
+
+	rawBytes := append([]byte(nil), outerEthernet...)
+	rawBytes = append(rawBytes, outerIP...)
+	rawBytes = append(rawBytes, udpHeader...)
+	rawBytes = append(rawBytes, vxlanHeader...)
+	rawBytes = append(rawBytes, innerEthernet...)
+	rawBytes = append(rawBytes, innerIP...)
+
+	packet, err := protocol.NewPacket(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, frame.NewFrame(rawBytes))
+	if err != nil {
+		t.Fatalf("NewPacket failed: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		fieldID fwdpacket.FieldID
+		want    []byte
+	}{
+		{
+			name:    "Outer Ethernet MAC Dst",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+			want:    []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
+		},
+		{
+			name:    "Outer Ethernet MAC Src",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+			want:    []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x66},
+		},
+		{
+			name:    "Outer IP Src",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
+			want:    []byte{0x0a, 0x00, 0x01, 0x01},
+		},
+		{
+			name:    "Outer IP Dst",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
+			want:    []byte{0x0a, 0x00, 0x01, 0x02},
+		},
+		{
+			name:    "Outer UDP Port Src",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0),
+			want:    []byte{0x01, 0x02},
+		},
+		{
+			name:    "Outer UDP Port Dst (4789)",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0),
+			want:    []byte{0x12, 0xb5},
+		},
+		{
+			name:    "VXLAN VNI (20001)",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI, 0),
+			want:    []byte{0x00, 0x4e, 0x21},
+		},
+		{
+			name:    "Inner Ethernet MAC Dst",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 1),
+			want:    []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
+		},
+		{
+			name:    "Inner Ethernet MAC Src",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 1),
+			want:    []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xfe},
+		},
+		{
+			name:    "Inner IP Src",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 1),
+			want:    []byte{0xc0, 0xa8, 0x01, 0x64},
+		},
+		{
+			name:    "Inner IP Dst",
+			fieldID: fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 1),
+			want:    []byte{0xc0, 0xa8, 0x01, 0xc8},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			b, err := packet.Field(tc.fieldID)
+			if err != nil {
+				t.Fatalf("Field(%v) failed: %v", tc.fieldID, err)
+			}
+			if diff := cmp.Diff(b, tc.want); diff != "" {
+				t.Errorf("Field(%v) diff (-got +want):\n%s", tc.fieldID, diff)
+			}
+		})
+	}
+}
+

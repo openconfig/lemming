@@ -53,6 +53,7 @@ import (
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/tcp"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/udp"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/vxlan"
 )
 
 // A Server is an instance of the forwarding server. It contains a set of
