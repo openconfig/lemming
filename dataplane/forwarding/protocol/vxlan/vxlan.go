@@ -91,8 +91,7 @@ func (v *VXLAN) UpdateField(id fwdpacket.FieldID, op int, arg []byte) (bool, err
 	}
 	switch id.Num {
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI:
-		field.Set(arg)
-		return true, nil
+		return true, field.Set(arg)
 	default:
 		return false, fmt.Errorf("vxlan: UpdateField failed, field %v not supported", id)
 	}

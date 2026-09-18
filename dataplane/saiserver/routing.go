@@ -1414,7 +1414,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
 		return nil, err
 	}
-	// Update the attributes and intenal data.
+	// Update the attributes and internal data.
 	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: vOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
 	vlanAttrResp := &saipb.GetVlanAttributeResponse{}
 	if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {

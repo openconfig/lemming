@@ -162,7 +162,7 @@ func (p *Packet) fieldDesc(id fwdpacket.FieldID) (*Desc, fwdpacket.FieldID) {
 	return nil, id
 }
 
-// rebuildHeaders rebuilds the headers preceeding the specified header.
+// rebuildHeaders rebuilds the headers preceding the specified header.
 // The rebuilt headers are marked as clean.
 func (p *Packet) rebuildHeaders(header *Desc) {
 	for header != nil {

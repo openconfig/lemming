@@ -59,7 +59,7 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 
 	actions := []*fwdpb.ActionDesc{}
 
-	// TODO: Support parsing QOS into ECN and DSCP bits seperately.
+	// TODO: Support parsing QOS into ECN and DSCP bits separately.
 	ecnMode := req.GetEncapEcnMode()
 	dscpMode := req.GetEncapDscpMode()
 	if ecnMode == saipb.TunnelEncapEcnMode_TUNNEL_ENCAP_ECN_MODE_STANDARD && dscpMode == saipb.TunnelDscpMode_TUNNEL_DSCP_MODE_UNIFORM_MODEL { // Copy the QOS bits from the inner IP header.

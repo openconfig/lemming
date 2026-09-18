@@ -80,7 +80,7 @@ func TestCreateNextHopGroup(t *testing.T) {
 		wantAttr *saipb.NextHopGroupAttribute
 		wantErr  string
 	}{{
-		desc:    "unspeficied type",
+		desc:    "unspecified type",
 		req:     &saipb.CreateNextHopGroupRequest{},
 		wantErr: "InvalidArgument",
 	}, {
@@ -862,7 +862,7 @@ func TestRemoveNextHop(t *testing.T) {
 
 			resp, err := c.CreateNextHop(context.TODO(), tt.reqCreate)
 			if err != nil {
-				t.Fatalf("Unexpcted error: %v", err)
+				t.Fatalf("Unexpected error: %v", err)
 			}
 			oid := tt.oid
 			if oid == 0 {

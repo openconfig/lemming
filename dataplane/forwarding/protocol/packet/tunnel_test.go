@@ -612,7 +612,7 @@ func newValue(arg, cur []byte) []byte {
 // TestTunnelFields performs query and update tests for various fields
 // in IP tunnel packets.
 //
-// The test has a desciption of packets that are used to generate unit tests.
+// The test has a description of packets that are used to generate unit tests.
 // For each described packet, it does the following:
 // 1. Generate the packet frame by stringing the ethernet frame with all the
 // specified headers.
@@ -620,7 +620,7 @@ func newValue(arg, cur []byte) []byte {
 // 3. Generate an update test for all fields that can be updated.
 func TestTunnelParsing(t *testing.T) {
 	descs := []struct {
-		text     string // Desciption of the test.
+		text     string // Description of the test.
 		headers  []int  // List of headers in the packet (in sequence).
 		ethernet []byte // Ethernet header for the packet.
 	}{
@@ -711,7 +711,7 @@ func TestTunnelParsing(t *testing.T) {
 
 // TestTunnelDecap tests decap for various IP tunnel packets.
 //
-// The test has a desciption of packets that are used to generate unit tests.
+// The test has a description of packets that are used to generate unit tests.
 // For each described packet, it does the following:
 // 1. Generate the packet frame by stringing the ethernet frame with all the
 // specified headers.
@@ -721,7 +721,7 @@ func TestTunnelDecap(t *testing.T) {
 	descs := []struct {
 		text          string // Description of the packet.
 		headers       []int  // List of headers in the original packet (in sequence).
-		origEthernet  []byte // Orignal ethernet header.
+		origEthernet  []byte // Original ethernet header.
 		finalEthernet []byte // Final ethernet header.
 		depth         int    // Number of headers to decap.
 	}{
@@ -810,7 +810,7 @@ func TestTunnelDecap(t *testing.T) {
 
 // TestTunnelEncap tests encap for various IP tunnel packets.
 //
-// The test has a desciption of packets that are used to generate unit tests.
+// The test has a description of packets that are used to generate unit tests.
 // For each described packet, it does the following:
 // 1. Generate the packet frame by stringing the ethernet frame with all the
 // specified headers.
