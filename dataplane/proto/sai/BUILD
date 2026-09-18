@@ -62,6 +62,8 @@ filegroup(
 
 proto_library(
     name = "sai_proto",
+    strip_import_prefix = "/dataplane/proto/sai",
+    import_prefix = "dataplane/proto/sai",
     # keep
     srcs = [":" + f for f in GEN_PROTOS],
     visibility = ["//visibility:public"],
