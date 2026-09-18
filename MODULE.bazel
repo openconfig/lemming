@@ -85,7 +85,7 @@ python.toolchain(
 go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
 go_sdk.download(version = "1.26.6")
 
-go_deps = use_extension("@bazel_gazelle//:extensions.bzl", "go_deps")
+go_deps = use_extension("@bazel_gazelle//:extensions.bzl", "go_deps", dev_dependency = True)
 go_deps.from_file(go_work = "//:go.work")
 use_repo(
     go_deps,
