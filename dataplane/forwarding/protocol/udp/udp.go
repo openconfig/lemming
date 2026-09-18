@@ -121,7 +121,9 @@ func (udp *UDP) Remove(id fwdpb.PacketHeaderId) error {
 	switch id {
 	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN:
 		if udp.vxlan != nil {
-			return udp.vxlan.Remove(id)
+			err := udp.vxlan.Remove(id)
+			udp.vxlan = nil
+			return err
 		}
 		return fmt.Errorf("udp: Remove header %v failed, VXLAN header does not exist", id)
 	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP:
