@@ -488,11 +488,12 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 
 func TestCreateNextHop(t *testing.T) {
 	tests := []struct {
-		desc     string
-		req      *saipb.CreateNextHopRequest
-		wantAttr *saipb.NextHopAttribute
-		wantReq  *fwdpb.TableEntryAddRequest
-		wantErr  string
+		desc       string
+		req        *saipb.CreateNextHopRequest
+		tunnelType saipb.TunnelType
+		wantAttr   *saipb.NextHopAttribute
+		wantReq    *fwdpb.TableEntryAddRequest
+		wantErr    string
 	}{{
 		desc:    "unknown type",
 		req:     &saipb.CreateNextHopRequest{},
@@ -654,12 +655,159 @@ func TestCreateNextHop(t *testing.T) {
 				},
 			}},
 		},
+	}, {
+		desc: "success tunnel next hop with vni and mac",
+		req: &saipb.CreateNextHopRequest{
+			Type:      saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP.Enum(),
+			TunnelId:  proto.Uint64(15),
+			Ip:        []byte{127, 0, 0, 1},
+			TunnelVni: proto.Uint32(0x123456),
+			TunnelMac: []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
+		},
+		tunnelType: saipb.TunnelType_TUNNEL_TYPE_VXLAN,
+		wantAttr: &saipb.NextHopAttribute{
+			Type:      saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP.Enum(),
+			TunnelId:  proto.Uint64(15),
+			Ip:        []byte{127, 0, 0, 1},
+			TunnelVni: proto.Uint32(0x123456),
+			TunnelMac: []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
+		},
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+					Action: &fwdpb.ActionDesc_Encap{
+						Encap: &fwdpb.EncapActionDesc{
+							HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+					Action: &fwdpb.ActionDesc_Encap{
+						Encap: &fwdpb.EncapActionDesc{
+							HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+					Action: &fwdpb.ActionDesc_Encap{
+						Encap: &fwdpb.EncapActionDesc{
+							HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x7f, 0x00, 0x00, 0x01},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x7f, 0x00, 0x00, 0x01},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x12, 0x34, 0x56},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+					Action: &fwdpb.ActionDesc_Lookup{
+						Lookup: &fwdpb.LookupActionDesc{
+							TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHActionTable}},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+					Action: &fwdpb.ActionDesc_Lookup{
+						Lookup: &fwdpb.LookupActionDesc{
+							TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: TunnelEncap}},
+						},
+					},
+				}},
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Exact{
+						Exact: &fwdpb.ExactEntryDesc{
+							Fields: []*fwdpb.PacketFieldBytes{{
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{
+										FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID,
+									},
+								},
+							}},
+						},
+					},
+				},
+			}},
+		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHop(t, dplane)
-			mgr.StoreAttributes(15, &saipb.TunnelAttribute{Type: saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum()})
+			tType := tt.tunnelType
+			if tType == saipb.TunnelType_TUNNEL_TYPE_UNSPECIFIED {
+				tType = saipb.TunnelType_TUNNEL_TYPE_IPINIP
+			}
+			mgr.StoreAttributes(15, &saipb.TunnelAttribute{Type: tType.Enum()})
 			defer stopFn()
 			_, gotErr := c.CreateNextHop(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
