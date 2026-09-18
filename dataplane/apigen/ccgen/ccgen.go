@@ -543,10 +543,17 @@ google::protobuf::RepeatedField<int> convert_list_{{ .SAIName }}_to_proto(const 
 	return proto_list;
 }
 void convert_list_{{ .SAIName }}_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
-	for (int i = 0; i < proto_list.size(); i++) {
-		list[i] = convert_{{ .SAIName }}_to_sai(static_cast<lemming::dataplane::sai::{{.ProtoName}}>(proto_list[i]));
+	// SAI list attributes use a two-pass protocol: a caller may pass a null or
+	// undersized buffer purely to discover how many elements it must allocate.
+	// Only write into the buffer when it is large enough, but always report the
+	// required element count so the caller can retry.
+	const uint32_t required = static_cast<uint32_t>(proto_list.size());
+	if (list != nullptr && *count >= required) {
+		for (uint32_t i = 0; i < required; i++) {
+			list[i] = convert_{{ .SAIName }}_to_sai(static_cast<lemming::dataplane::sai::{{.ProtoName}}>(proto_list[i]));
+		}
 	}
-	*count = proto_list.size();
+	*count = required;
 }
 
 {{ end }}
