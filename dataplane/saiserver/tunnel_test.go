@@ -102,6 +102,62 @@ func TestCreateTunnel(t *testing.T) {
 				}},
 			}},
 		},
+	}, {
+		desc: "vxlan tunnel",
+		req: &saipb.CreateTunnelRequest{
+			Type:              saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+			UnderlayInterface: proto.Uint64(10),
+			VxlanUdpSport:     proto.Uint32(1234),
+		},
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: TunnelEncap}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Exact{
+						Exact: &fwdpb.ExactEntryDesc{
+							Fields: []*fwdpb.PacketFieldBytes{{
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID},
+								},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+							}},
+						},
+					},
+				},
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE}},
+							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xb5},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
+							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xd2},
+						},
+					},
+				}},
+			}},
+		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -163,6 +219,76 @@ func TestRemoveTunnel(t *testing.T) {
 				t.Fatalf("RemoveTunnel() unexpected err: %s", diff)
 			}
 		})
+	}
+}
+
+func TestTunnelTermTableEntry(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	c, _, stopFn := newTestTunnel(t, dplane)
+	defer stopFn()
+
+	req := &saipb.CreateTunnelTermTableEntryRequest{
+		TunnelType: saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+		Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
+		SrcIp:      []byte{1, 2, 3, 4},
+		DstIp:      []byte{5, 6, 7, 8},
+		VrId:       proto.Uint64(10),
+	}
+	resp, err := c.CreateTunnelTermTableEntry(context.TODO(), req)
+	if err != nil {
+		t.Fatalf("CreateTunnelTermTableEntry() unexpected err: %v", err)
+	}
+	if resp.GetOid() == 0 {
+		t.Errorf("CreateTunnelTermTableEntry() returned 0 OID")
+	}
+
+	_, err = c.RemoveTunnelTermTableEntry(context.TODO(), &saipb.RemoveTunnelTermTableEntryRequest{
+		Oid: resp.GetOid(),
+	})
+	if err != nil {
+		t.Fatalf("RemoveTunnelTermTableEntry() unexpected err: %v", err)
+	}
+}
+
+func TestTunnelMapAndEntry(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	c, _, stopFn := newTestTunnel(t, dplane)
+	defer stopFn()
+
+	mapResp, err := c.CreateTunnelMap(context.TODO(), &saipb.CreateTunnelMapRequest{
+		Type: saipb.TunnelMapType_TUNNEL_MAP_TYPE_VLAN_ID_TO_VNI.Enum(),
+	})
+	if err != nil {
+		t.Fatalf("CreateTunnelMap() unexpected err: %v", err)
+	}
+	if mapResp.GetOid() == 0 {
+		t.Errorf("CreateTunnelMap() returned 0 OID")
+	}
+
+	entryResp, err := c.CreateTunnelMapEntry(context.TODO(), &saipb.CreateTunnelMapEntryRequest{
+		TunnelMap: proto.Uint64(mapResp.GetOid()),
+		VlanIdKey: proto.Uint32(100),
+		VniIdKey:  proto.Uint32(1000),
+	})
+	if err != nil {
+		t.Fatalf("CreateTunnelMapEntry() unexpected err: %v", err)
+	}
+	if entryResp.GetOid() == 0 {
+		t.Errorf("CreateTunnelMapEntry() returned 0 OID")
+	}
+
+	_, err = c.RemoveTunnelMapEntry(context.TODO(), &saipb.RemoveTunnelMapEntryRequest{
+		Oid: entryResp.GetOid(),
+	})
+	if err != nil {
+		t.Fatalf("RemoveTunnelMapEntry() unexpected err: %v", err)
+	}
+
+	_, err = c.RemoveTunnelMap(context.TODO(), &saipb.RemoveTunnelMapRequest{
+		Oid: mapResp.GetOid(),
+	})
+	if err != nil {
+		t.Fatalf("RemoveTunnelMap() unexpected err: %v", err)
 	}
 }
 

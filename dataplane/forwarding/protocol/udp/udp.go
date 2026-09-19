@@ -22,6 +22,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/vxlan"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/hash/csum16"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -44,12 +45,16 @@ const (
 // the UDP header. The UDP payload is treated as OPAQUE.
 type UDP struct {
 	header frame.Header
+	vxlan  protocol.Handler
 	desc   *protocol.Desc
 }
 
-// Header returns the UDP header.
+// Header returns the UDP header (including optional embedded VXLAN).
 func (udp *UDP) Header() []byte {
 	header := append([]byte(nil), udp.header...)
+	if udp.vxlan != nil {
+		header = append(header, udp.vxlan.Header()...)
+	}
 	return header
 }
 
@@ -58,8 +63,11 @@ func (UDP) Trailer() []byte {
 	return nil
 }
 
-// ID returns the UDP protocol header ID.
-func (UDP) ID(int) fwdpb.PacketHeaderId {
+// ID returns the UDP or VXLAN protocol header ID.
+func (udp *UDP) ID(instance int) fwdpb.PacketHeaderId {
+	if instance > 0 && udp.vxlan != nil {
+		return udp.vxlan.ID(instance - 1)
+	}
 	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP
 }
 
@@ -80,38 +88,65 @@ func (udp *UDP) field(id fwdpacket.FieldID) frame.Field {
 	}
 }
 
-// Field finds bytes within the UDP header.
+// Field finds bytes within the UDP or VXLAN header.
 func (udp *UDP) Field(id fwdpacket.FieldID) ([]byte, error) {
+	if id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI {
+		if udp.vxlan != nil {
+			return udp.vxlan.Field(id)
+		}
+		return nil, fmt.Errorf("udp: Field failed, VXLAN header does not exist")
+	}
 	if field := udp.field(id); field != nil {
 		return field.Copy(), nil
 	}
 	return nil, fmt.Errorf("udp: Field failed, field %v does not exist", id)
 }
 
-// UpdateField sets bytes within the UDP header.
+// UpdateField sets bytes within the UDP or VXLAN header.
 func (udp *UDP) UpdateField(id fwdpacket.FieldID, op int, arg []byte) (bool, error) {
+	if id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI {
+		if udp.vxlan != nil {
+			return udp.vxlan.UpdateField(id, op, arg)
+		}
+		return false, fmt.Errorf("udp: UpdateField failed, VXLAN header does not exist")
+	}
 	if field := udp.field(id); field != nil && op == fwdpacket.OpSet {
 		return true, field.Set(arg)
 	}
 	return false, fmt.Errorf("udp: UpdateField failed, unsupported op %v for field %v", op, id)
 }
 
-// Remove removes the UDP header.
+// Remove removes the UDP or VXLAN header.
 func (udp *UDP) Remove(id fwdpb.PacketHeaderId) error {
-	if id != fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP {
+	switch id {
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN:
+		if udp.vxlan != nil {
+			err := udp.vxlan.Remove(id)
+			udp.vxlan = nil
+			return err
+		}
+		return fmt.Errorf("udp: Remove header %v failed, VXLAN header does not exist", id)
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP:
+		udp.header = nil
+		return nil
+	default:
 		return fmt.Errorf("udp: Remove header %v failed, outermost header is %v", id, fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP)
 	}
-	udp.header = nil
-	return nil
 }
 
-// Modify returns an error as the UDP header has not extensions.
+// Modify returns an error as the UDP header has no extensions.
 func (UDP) Modify(_ fwdpb.PacketHeaderId) error {
 	return errors.New("udp: Modify is unsupported")
 }
 
-// Rebuild updates the UDP header length and csum (if over IPv6).
+// Rebuild updates the UDP header length and csum (if over IPv6) and rebuilds VXLAN if present.
 func (udp *UDP) Rebuild() error {
+	if udp.vxlan != nil {
+		if err := udp.vxlan.Rebuild(); err != nil {
+			return err
+		}
+	}
+
 	// If the envelope, payload and udp header are unmodified, skip updates.
 	e := udp.desc.EnvelopeDesc()
 	p := udp.desc.PayloadDesc()
@@ -161,8 +196,8 @@ func add(_ fwdpb.PacketHeaderId, desc *protocol.Desc) (protocol.Handler, error) 
 	}, nil
 }
 
-// parse parses a UDP header in the packet.
-// The payload of UDP is handled as an OPAQUE header.
+// parse parses a UDP header in the packet. VXLAN traffic on port 4789 embeds
+// a VXLAN header while other UDP payloads default to PACKET_HEADER_ID_OPAQUE.
 func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.PacketHeaderId, error) {
 	if frame.Len() < udpBytes {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("udp: parse failed, frame length %v too small to contain a UDP header", frame.Len())
@@ -171,9 +206,19 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	if err != nil {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("udp: unable read header: %v", err)
 	}
+	dstPort := header.Field(dstOffset, portBytes).Value()
+	var vxlanHandler protocol.Handler
 	next := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
+	if dstPort == vxlan.DefaultPort {
+		var err error
+		vxlanHandler, next, err = vxlan.Parse(frame, desc)
+		if err != nil {
+			return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, err
+		}
+	}
 	return &UDP{
 		header: header,
+		vxlan:  vxlanHandler,
 		desc:   desc,
 	}, next, nil
 }
