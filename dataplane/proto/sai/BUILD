@@ -60,10 +60,12 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# keep
 proto_library(
     name = "sai_proto",
-    # keep
     srcs = [":" + f for f in GEN_PROTOS],
+    import_prefix = "dataplane/proto/sai",
+    strip_import_prefix = "/dataplane/proto/sai",
     visibility = ["//visibility:public"],
     deps = [
         "@com_google_protobuf//:descriptor_proto",
