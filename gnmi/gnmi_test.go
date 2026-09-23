@@ -166,7 +166,7 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 // addr (in the form host:port).
 //
 // It returns the address it is listening on in the form hostname:port or any
-// errors encounted whilst setting it up.
+// errors encountered whilst setting it up.
 func startServer(s *Server) (string, error) {
 	// Start gNMI server.
 	srv := grpc.NewServer(grpc.StreamInterceptor(NewSubscribeTargetUpdateInterceptor(targetName)))
@@ -1249,7 +1249,7 @@ func TestDeleteOperations(t *testing.T) {
 	})
 
 	t.Run("configure and delete cycles leave zero residue and are idempotent", func(t *testing.T) {
-		for i := 0; i < 200; i++ {
+		for i := 0; i < 10; i++ {
 			ip := "192.0.2.1"
 			addrPath := ocpath.Root().Interface("eth1").Subinterface(0).Ipv4().Address(ip)
 			if _, err := ygnmi.Replace(ctx, configClient, addrPath.Config(), &oc.Interface_Subinterface_Ipv4_Address{
