@@ -537,6 +537,33 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 			return nil, nil
 		}
 
+		// Do not apply admin-state changes to the fallback TAP created for a
+		// kernel-backed port whose real lane interface is absent.
+		if port.opts.PortType == fwdpb.PortType_PORT_TYPE_KERNEL && req.GetAdminState() {
+			attrReq := &saipb.GetPortAttributeRequest{
+				Oid:      req.GetOid(),
+				AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_HW_LANE_LIST},
+			}
+			p := &saipb.GetPortAttributeResponse{}
+			if err := port.mgr.PopulateAttributes(attrReq, p); err != nil {
+				return nil, err
+			}
+			attr := p.GetAttr()
+			if attr == nil {
+				return nil, fmt.Errorf("failed to get attributes for port %d", req.GetOid())
+			}
+			lanes := attr.GetHwLaneList()
+			if len(lanes) == 0 {
+				return nil, fmt.Errorf("port %d has no hardware lanes", req.GetOid())
+			}
+			dev := fmt.Sprintf("eth%d", lanes[0])
+			if _, err := getInterface(dev); err != nil {
+				slog.InfoContext(ctx, "ignoring admin-state update for port without backing interface",
+					"oid", req.GetOid(), "device", dev, "admin_state", req.GetAdminState())
+				return &saipb.SetPortAttributeResponse{}, nil
+			}
+		}
+
 		stateReq := &fwdpb.PortStateRequest{
 			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())}},
