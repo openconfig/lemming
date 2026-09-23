@@ -1150,3 +1150,142 @@ func TestSubscribeWithAuth(t *testing.T) {
 		})
 	}
 }
+
+func TestInterfaceKeyLeavesDelete(t *testing.T) {
+	orig := &oc.Root{}
+	intf := orig.GetOrCreateInterface("eth1")
+	subintf := intf.GetOrCreateSubinterface(0)
+	addr := subintf.GetOrCreateIpv4().GetOrCreateAddress("192.0.2.1")
+	addr.PrefixLength = ygot.Uint8(31)
+
+	mod := &oc.Root{}
+
+	for _, preferShadow := range []bool{false, true} {
+		t.Run(fmt.Sprintf("preferShadow=%v", preferShadow), func(t *testing.T) {
+			nos, err := ygot.DiffWithAtomic(orig, mod, &ygot.DiffPathOpt{PreferShadowPath: preferShadow})
+			if err != nil {
+				t.Fatalf("DiffWithAtomic failed: %v", err)
+			}
+			delPaths := make(map[string]bool)
+			for _, n := range nos {
+				for _, d := range n.Delete {
+					p, _ := ygot.PathToString(d)
+					delPaths[p] = true
+				}
+			}
+			// Verify that key leaves are present in deleted paths.
+			wantKeyLeaves := []string{
+				"/interfaces/interface[name=eth1]/name",
+				"/interfaces/interface[name=eth1]/subinterfaces/subinterface[index=0]/index",
+				"/interfaces/interface[name=eth1]/subinterfaces/subinterface[index=0]/ipv4/addresses/address[ip=192.0.2.1]/ip",
+			}
+			for _, leaf := range wantKeyLeaves {
+				if !delPaths[leaf] {
+					t.Errorf("Expected key leaf %q to be in deleted paths, got: %v", leaf, delPaths)
+				}
+			}
+		})
+	}
+}
+
+func TestDeleteOperations(t *testing.T) {
+	gnmiServer, err := newServer(context.Background(), targetName, true)
+	if err != nil {
+		t.Fatalf("cannot create server: %v", err)
+	}
+	addr, err := startServer(gnmiServer)
+	if err != nil {
+		t.Fatalf("cannot start server: %v", err)
+	}
+	defer gnmiServer.c.Stop()
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+	if err != nil {
+		t.Fatalf("cannot dial server: %v", err)
+	}
+	configClient, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget(targetName))
+	if err != nil {
+		t.Fatalf("failed to create config client: %v", err)
+	}
+
+	ctx := context.Background()
+
+	t.Run("delete non-existent path returns OK", func(t *testing.T) {
+		nonExistentPath := ocpath.Root().Interface("nonexistent").Config()
+		if _, err := ygnmi.Delete(ctx, configClient, nonExistentPath); err != nil {
+			t.Errorf("Delete non-existent path returned error: %v, want nil", err)
+		}
+	})
+
+	t.Run("delete intermediate container succeeds", func(t *testing.T) {
+		// Configure interface eth1 with subinterface 0
+		ipPath := ocpath.Root().Interface("eth1").Subinterface(0).Ipv4().Address("192.0.2.1")
+		if _, err := ygnmi.Replace(ctx, configClient, ipPath.Config(), &oc.Interface_Subinterface_Ipv4_Address{
+			Ip:           ygot.String("192.0.2.1"),
+			PrefixLength: ygot.Uint8(31),
+		}); err != nil {
+			t.Fatalf("Replace failed: %v", err)
+		}
+
+		// Delete container /interfaces/interface[name=eth1]/subinterfaces
+		subinterfacesPath := ocpath.Root().Interface("eth1").SubinterfaceAny().Config()
+		// Raw gNMI Set delete for container path:
+		gnmiClient := gpb.NewGNMIClient(conn)
+		containerPath := &gpb.Path{
+			Origin: OpenConfigOrigin,
+			Target: targetName,
+			Elem: []*gpb.PathElem{
+				{Name: "interfaces"},
+				{Name: "interface", Key: map[string]string{"name": "eth1"}},
+				{Name: "subinterfaces"},
+			},
+		}
+		if _, err := gnmiClient.Set(ctx, &gpb.SetRequest{
+			Delete: []*gpb.Path{containerPath},
+		}); err != nil {
+			t.Errorf("Delete container /interfaces/interface[name=eth1]/subinterfaces returned error: %v, want nil", err)
+		}
+		_ = subinterfacesPath
+	})
+
+	t.Run("configure and delete cycles leave zero residue and are idempotent", func(t *testing.T) {
+		for i := 0; i < 200; i++ {
+			ip := "192.0.2.1"
+			addrPath := ocpath.Root().Interface("eth1").Subinterface(0).Ipv4().Address(ip)
+			if _, err := ygnmi.Replace(ctx, configClient, addrPath.Config(), &oc.Interface_Subinterface_Ipv4_Address{
+				Ip:           ygot.String(ip),
+				PrefixLength: ygot.Uint8(31),
+			}); err != nil {
+				t.Fatalf("iteration %d: configure failed: %v", i, err)
+			}
+
+			// Delete address
+			if _, err := ygnmi.Delete(ctx, configClient, addrPath.Config()); err != nil {
+				t.Fatalf("iteration %d: delete address failed: %v", i, err)
+			}
+
+			// Delete parent interface
+			intfPath := ocpath.Root().Interface("eth1").Config()
+			if _, err := ygnmi.Delete(ctx, configClient, intfPath); err != nil {
+				t.Fatalf("iteration %d: delete interface failed: %v", i, err)
+			}
+
+			// Second delete of the same path (idempotency check)
+			if _, err := ygnmi.Delete(ctx, configClient, intfPath); err != nil {
+				t.Fatalf("iteration %d: second delete interface failed: %v", i, err)
+			}
+
+			// Read back interface
+			v, err := ygnmi.Lookup(ctx, configClient, ocpath.Root().Interface("eth1").Config())
+			if err != nil {
+				t.Fatalf("iteration %d: lookup failed: %v", i, err)
+			}
+			val, ok := v.Val()
+			if ok {
+				t.Fatalf("iteration %d: interface residue found: %+v", i, val)
+			}
+		}
+	})
+}
+
+
