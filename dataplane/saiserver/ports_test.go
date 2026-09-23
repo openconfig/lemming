@@ -362,6 +362,41 @@ func TestSetPortAttribute(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("admin status ignored without backing interface", func(t *testing.T) {
+		oldGetInterface := getInterface
+		defer func() { getInterface = oldGetInterface }()
+
+		getInterface = func(name string) (*net.Interface, error) {
+			if name != "eth125" {
+				t.Errorf("getInterface() got %q, want eth125", name)
+			}
+			return nil, fmt.Errorf("link not found")
+		}
+
+		dplane := &fakeSwitchDataplane{}
+		c, mgr, stopFn := newTestPort(t, dplane, &dplaneopts.Options{
+			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+		})
+		defer stopFn()
+
+		mgr.StoreAttributes(3, &saipb.PortAttribute{
+			OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
+			HwLaneList: []uint32{125, 126, 127, 128},
+		})
+
+		_, err := c.SetPortAttribute(context.Background(), &saipb.SetPortAttributeRequest{
+			Oid:        3,
+			AdminState: proto.Bool(true),
+		})
+		if err != nil {
+			t.Fatalf("SetPortAttribute() unexpected error: %v", err)
+		}
+		if got := len(dplane.gotPortStateReq); got != 0 {
+			t.Fatalf("SetPortAttribute() sent %d PortState requests, want 0", got)
+		}
+	})
+
 	fecTests := []struct {
 		desc    string
 		req     *saipb.SetPortAttributeRequest
