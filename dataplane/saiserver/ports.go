@@ -244,7 +244,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum()
 			port.mgr.StoreAttributes(id, attrs)
 			// TODO: This should be a real error, improve once we a correct config solution.
-			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistant port.
+			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistent port.
 			fwdPort := &fwdpb.PortCreateRequest{
 				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 				Port: &fwdpb.PortDesc{
@@ -527,7 +527,7 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 // SetPortAttributes sets the attributes in the request.
 func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttributeRequest) (*saipb.SetPortAttributeResponse, error) {
 	if req.AdminState != nil {
-		// Skip ports that don't exsit.
+		// Skip ports that don't exist.
 		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetOid(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
 		p := &saipb.GetPortAttributeResponse{}
 		if err := port.mgr.PopulateAttributes(attrReq, p); err != nil {
@@ -535,6 +535,33 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 		}
 		if p.GetAttr().GetOperStatus() == saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT {
 			return nil, nil
+		}
+
+		// Do not apply admin-state changes to the fallback TAP created for a
+		// kernel-backed port whose real lane interface is absent.
+		if port.opts.PortType == fwdpb.PortType_PORT_TYPE_KERNEL && req.GetAdminState() {
+			attrReq := &saipb.GetPortAttributeRequest{
+				Oid:      req.GetOid(),
+				AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_HW_LANE_LIST},
+			}
+			p := &saipb.GetPortAttributeResponse{}
+			if err := port.mgr.PopulateAttributes(attrReq, p); err != nil {
+				return nil, err
+			}
+			attr := p.GetAttr()
+			if attr == nil {
+				return nil, fmt.Errorf("failed to get attributes for port %d", req.GetOid())
+			}
+			lanes := attr.GetHwLaneList()
+			if len(lanes) == 0 {
+				return nil, fmt.Errorf("port %d has no hardware lanes", req.GetOid())
+			}
+			dev := fmt.Sprintf("eth%d", lanes[0])
+			if _, err := getInterface(dev); err != nil {
+				slog.InfoContext(ctx, "ignoring admin-state update for port without backing interface",
+					"oid", req.GetOid(), "device", dev, "admin_state", req.GetAdminState())
+				return &saipb.SetPortAttributeResponse{}, nil
+			}
 		}
 
 		stateReq := &fwdpb.PortStateRequest{
@@ -709,7 +736,7 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 }
 
 func (port *port) Reset() {
-	slog.Info("reseting port")
+	slog.Info("resetting port")
 }
 
 type lagMember struct {
