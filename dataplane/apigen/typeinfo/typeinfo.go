@@ -60,6 +60,7 @@ type GenFunc struct {
 	ConvertFunc           string
 	AttrConvertInsert     string
 	IsStreaming           bool
+	ClientOnly            bool
 }
 
 type APITemplate struct {
@@ -121,6 +122,11 @@ func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPacka
 				gFunc.ProtoRequestType = protoReqType.Name
 				gFunc.ProtoResponseType = protoRespType.Name
 				data.APIs[apiName].Types = append(data.APIs[apiName].Types, protoReqType, protoRespType)
+			} else if meta.Operation == "get_stats_ext" {
+				gFunc.ProtoRPCName = "Get" + strcase.UpperCamelCase(meta.TypeName) + "Stats"
+				gFunc.ProtoRequestType = "Get" + strcase.UpperCamelCase(meta.TypeName) + "StatsRequest"
+				gFunc.ProtoResponseType = "Get" + strcase.UpperCamelCase(meta.TypeName) + "StatsResponse"
+				gFunc.ClientOnly = true
 			}
 
 			populateCCInfo(meta, apiName, sai, doc, fn, gFunc)
@@ -310,7 +316,7 @@ func populateCCInfo(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAP
 			}
 			smt.EnumValue = attr.EnumName
 		}
-	case "get_stats":
+	case "get_stats", "get_stats_ext":
 		genFunc.AttrType = strcase.SnakeCase("sai_" + meta.TypeName + "_stat_t")
 		genFunc.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " stat")
 	default:
