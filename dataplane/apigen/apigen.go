@@ -37,9 +37,7 @@ func parse(headers []string, includePaths ...string) (*cc.AST, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, p := range includePaths {
-		cfg.SysIncludePaths = append(cfg.SysIncludePaths, p)
-	}
+	cfg.SysIncludePaths = append(cfg.SysIncludePaths, includePaths...)
 
 	sources := []cc.Source{
 		{Name: "<predefined>", Value: cfg.Predefined},
@@ -63,7 +61,7 @@ var (
 	saiPath         = flag.String("sai_path", "bazel-lemming/external/com_github_opencomputeproject_sai", "Path to SAI repo")
 	clientOutDir    = flag.String("client_out_dir", "dataplane/standalone/sai", "Output directory for C++ client code")
 	serverOutDir    = flag.String("server_out_dir", "dataplane/standalone/saiserver", "Output directory for C++ server code")
-	protoOutDir     = flag.String("proto_out_dir", "dataplane/proto/sai", "Output dirrectory for proto code")
+	protoOutDir     = flag.String("proto_out_dir", "dataplane/proto/sai", "Output directory for proto code")
 	protoImportPath = flag.String("proto_import_path", "", "Proto import path inside generated includes (falls back to -proto_out_dir if empty)")
 	protoPackage    = flag.String("proto_package", "lemming.dataplane.sai", "Package for generated proto code")
 	protoGoPackage  = flag.String("proto_go_package", "github.com/openconfig/lemming/dataplane/proto/sai", "Go package option in proto code")

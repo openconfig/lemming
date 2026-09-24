@@ -59,7 +59,7 @@ func rangeInOrder[T any](m map[string]T, pred func(key string, val T) error) err
 	return nil
 }
 
-// protoCommonTmplData contains the formated information needed to render the protobuf template.
+// protoCommonTmplData contains the formatted information needed to render the protobuf template.
 type protoCommonTmplData struct {
 	Messages       []string
 	Enums          []*typeinfo.ProtoEnum
@@ -77,16 +77,18 @@ func generateCommonTypes(docInfo *docparser.SAIInfo, protoPackage, protoGoPackag
 	}
 
 	// Generate the hand-crafted messages.
-	rangeInOrder(typeinfo.SAITypeToProto, func(_ string, typeInfo typeinfo.SAITypeInfo) error {
+	if err := rangeInOrder(typeinfo.SAITypeToProto, func(_ string, typeInfo typeinfo.SAITypeInfo) error {
 		if typeInfo.MessageDef != "" {
 			common.Messages = append(common.Messages, typeInfo.MessageDef)
 		}
 		return nil
-	})
+	}); err != nil {
+		return "", err
+	}
 
 	seenEnums := map[string]bool{}
 	// Generate non-attribute enums.
-	rangeInOrder(docInfo.Enums, func(name string, vals []*docparser.Enum) error {
+	if err := rangeInOrder(docInfo.Enums, func(name string, vals []*docparser.Enum) error {
 		protoName := saiast.TrimSAIName(name, true, false)
 		unspecifiedName := saiast.TrimSAIName(name, false, true) + "_UNSPECIFIED"
 		enum := &typeinfo.ProtoEnum{
@@ -116,7 +118,9 @@ func generateCommonTypes(docInfo *docparser.SAIInfo, protoPackage, protoGoPackag
 			seenEnums[protoName] = true
 		}
 		return nil
-	})
+	}); err != nil {
+		return "", err
+	}
 
 	err := rangeInOrder(docInfo.Attrs, func(n string, attr *docparser.Attr) error {
 		attrFields, err := typeinfo.CreateAttrs(1, n, docInfo, attr.ReadFields)
@@ -170,7 +174,7 @@ message {{ .Name }} {
 
 service {{ .ServiceName }} {
 	{{- range .Funcs }}
-	{{- if .ProtoRPCName }}
+	{{- if and .ProtoRPCName (not .ClientOnly) }}
 	rpc {{ .ProtoRPCName }} ({{ .ProtoRequestType }}) returns ({{ .ProtoResponseType }}) {}
 	{{- end }}
 	{{- end }}

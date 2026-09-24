@@ -146,7 +146,7 @@ extern "C" {
 class {{ .ServiceName }} final : public lemming::dataplane::sai::{{ .ServiceName }}::Service {
     public:
         {{ range .Funcs }}
-		{{- if and .ProtoRPCName (not .IsStreaming) }}
+		{{- if and .ProtoRPCName (not .IsStreaming) (not .ClientOnly) }}
         grpc::Status {{ .ProtoRPCName }}(grpc::ServerContext* context, const lemming::dataplane::sai::{{ .ProtoRequestType }}* req, lemming::dataplane::sai::{{ .ProtoResponseType }}* resp);
         {{- end }}
 		{{ end }}
@@ -177,7 +177,7 @@ class {{ .ServiceName }} final : public lemming::dataplane::sai::{{ .ServiceName
 #include <glog/logging.h>
 
 {{ range .Funcs }}
-{{- if and .ProtoRPCName (not .IsStreaming) }}
+{{- if and .ProtoRPCName (not .IsStreaming) (not .ClientOnly) }}
 grpc::Status {{ $.ServiceName }}::{{ .ProtoRPCName }}(grpc::ServerContext* context, const lemming::dataplane::sai::{{ .ProtoRequestType }}* req, lemming::dataplane::sai::{{ .ProtoResponseType }}* resp) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 	{{- if .UseCommonAPI }}

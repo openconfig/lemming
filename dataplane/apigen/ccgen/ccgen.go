@@ -86,8 +86,10 @@ func GenClient(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoOutDir, ccOutDir
 				ProtoName: name,
 			})
 		}
-		e.DefaultReturn = e.Elems[0].SAIName
-		enums.Enums = append(enums.Enums, e)
+		if len(e.Elems) > 0 {
+			e.DefaultReturn = e.Elems[0].SAIName
+			enums.Enums = append(enums.Enums, e)
+		}
 	}
 	for name, attr := range doc.Attrs {
 		if _, ok := unsupportedEnum[name]; ok {
@@ -110,8 +112,10 @@ func GenClient(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoOutDir, ccOutDir
 				ProtoName: name,
 			})
 		}
-		e.DefaultReturn = e.Elems[0].SAIName
-		enums.Enums = append(enums.Enums, e)
+		if len(e.Elems) > 0 {
+			e.DefaultReturn = e.Elems[0].SAIName
+			enums.Enums = append(enums.Enums, e)
+		}
 	}
 	slices.SortFunc(enums.Enums, func(a, b enum) int { return strings.Compare(a.SAIName, b.SAIName) })
 	var headerBuilder, implBuilder strings.Builder
@@ -408,7 +412,7 @@ return msg;
 	for (uint32_t i = 0; i < object_count; i++) {
 		object_statuses[i] = SAI_STATUS_SUCCESS;
 	}
-	{{ else if eq .Operation "get_stats" }}
+	{{ else if or (eq .Operation "get_stats") (eq .Operation "get_stats_ext") }}
 	lemming::dataplane::sai::{{ .ProtoRequestType }} req;
 	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
 	grpc::ClientContext context;
