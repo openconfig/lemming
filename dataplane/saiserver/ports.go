@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"log/slog"
 	"net"
@@ -64,6 +65,7 @@ var getInterface = net.InterfaceByName
 func getPreIngressPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),          // Decap the packet if we have a tunnel.
+		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),             // Classify incoming packets to VLAN.
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),       // Match packet to interface.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),       // Match interface to VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(), // Run pre-ingress actions.
@@ -101,7 +103,9 @@ func getL3Pipeline(skipIPValidation bool) []*fwdpb.ActionDesc {
 func getL2Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
-		fwdconfig.Action(fwdconfig.LookupAction(outputTable)).Build(),        // Take final decision on forward, drop, or trap.
+		fwdconfig.Action(fwdconfig.BridgeLearnAction(FDBTable)).Build(),      // Learn source MAC into FDB.
+		fwdconfig.Action(fwdconfig.LookupAction(FDBTable)).Build(),           // Match dest MAC in FDB.
+		fwdconfig.Action(fwdconfig.LookupAction(FloodTable)).Build(),         // Match VLAN tag if FDB misses.
 		{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},
@@ -301,8 +305,10 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs:  getPreIngressPipeline(),
-					Outputs: nil,
+					Inputs: getPreIngressPipeline(),
+					Outputs: []*fwdpb.ActionDesc{
+						fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+					},
 				},
 			},
 		},
@@ -361,7 +367,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
 	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(attrs.GetPortVlanId()))).Build(),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithValue(binary.BigEndian.AppendUint16(nil, uint16(attrs.GetPortVlanId())))).Build(),
 	}
 	if _, err := port.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
 		return nil, err

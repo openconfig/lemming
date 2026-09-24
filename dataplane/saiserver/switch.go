@@ -191,6 +191,8 @@ const (
 	tunTermTable          = "tun-term"
 	VlanTable             = "vlan"
 	L2MCGroupTable        = "l2mcg"
+	FDBTable              = "fdb"
+	FloodTable            = "flood"
 	policerTabler         = "policerTable"
 	invalidIngress        = "invalid-ingress"
 	invalidIngressV4Table = "invalid-ingress-v4"
@@ -443,6 +445,39 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		},
 	}
 	if _, err := sw.dataplane.TableCreate(ctx, l2mcGroupReq); err != nil {
+		return nil, err
+	}
+	fdbReq := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_BRIDGE,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FDBTable}},
+			Table: &fwdpb.TableDesc_Bridge{
+				Bridge: &fwdpb.BridgeTableDesc{},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, fdbReq); err != nil {
+		return nil, err
+	}
+	floodReq := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FloodTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, floodReq); err != nil {
 		return nil, err
 	}
 	action := &fwdpb.TableCreateRequest{
