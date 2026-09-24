@@ -35,7 +35,8 @@ require (
 	github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07
 	github.com/openconfig/ygnmi v0.11.1
 	github.com/openconfig/ygot v0.31.0
-	github.com/osrg/gobgp/v3 v3.37.0
+	github.com/osrg/gobgp/v3 v3.27.1-0.20240614010451-0148e2d22dcf
+	github.com/osrg/gobgp/v4 v4.9.0
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
