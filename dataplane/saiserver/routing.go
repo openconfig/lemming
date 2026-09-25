@@ -478,7 +478,7 @@ func newNextHop(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serv
 	return n
 }
 
-// CreateNextHop creates a new next hop.
+// CreateNextHop creates a new next hop, including support for IPinIP, GRE, and VXLAN tunnel encapsulation next hops.
 func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRequest) (*saipb.CreateNextHopResponse, error) {
 	id := nh.mgr.NextID()
 
@@ -531,6 +531,29 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 					},
 				},
 			})
+		case saipb.TunnelType_TUNNEL_TYPE_VXLAN:
+			actions = append(actions, &fwdpb.ActionDesc{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+				Action: &fwdpb.ActionDesc_Encap{
+					Encap: &fwdpb.EncapActionDesc{
+						HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+					},
+				},
+			}, &fwdpb.ActionDesc{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+				Action: &fwdpb.ActionDesc_Encap{
+					Encap: &fwdpb.EncapActionDesc{
+						HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
+					},
+				},
+			}, &fwdpb.ActionDesc{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+				Action: &fwdpb.ActionDesc_Encap{
+					Encap: &fwdpb.EncapActionDesc{
+						HeaderId: headerID,
+					},
+				},
+			})
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unsupported tunnel type: %v", tunnel.GetAttr().GetType())
 		}
@@ -539,6 +562,18 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithValue(req.GetIp())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetTunnelId())).Build(),
+		)
+
+		if req.GetTunnelVni() != 0 {
+			vni := req.GetTunnelVni()
+			vniBytes := []byte{byte(vni >> 16), byte(vni >> 8), byte(vni)}
+			actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI).WithValue(vniBytes)).Build())
+		}
+		if len(req.GetTunnelMac()) > 0 {
+			actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetTunnelMac())).Build())
+		}
+
+		actions = append(actions,
 			fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)).Build(),
 			fwdconfig.Action(fwdconfig.LookupAction(TunnelEncap)).Build(),
 		)
@@ -554,6 +589,9 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 	if _, err := nh.dataplane.TableEntryAdd(ctx, nhReq); err != nil {
 		return nil, err
 	}
+
+	nh.mgr.StoreAttributes(id, req)
+
 	return &saipb.CreateNextHopResponse{
 		Oid: id,
 	}, nil
@@ -1376,7 +1414,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
 		return nil, err
 	}
-	// Update the attributes and intenal data.
+	// Update the attributes and internal data.
 	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: vOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
 	vlanAttrResp := &saipb.GetVlanAttributeResponse{}
 	if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {

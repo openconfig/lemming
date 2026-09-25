@@ -530,6 +530,9 @@ service Sample {
 				}, {
 					Name: "get_foo_stats",
 					Typ:  "sai_get_foo_stats_t",
+				}, {
+					Name: "get_foo_stats_ext",
+					Typ:  "sai_get_foo_stats_ext_t",
 				}},
 			}},
 			Funcs: map[string]*saiast.SAIFunc{
@@ -538,6 +541,7 @@ service Sample {
 				"sai_set_foo_attribute_t": {Params: []saiast.TypeDecl{{}}},
 				"sai_get_foo_attribute_t": {Params: []saiast.TypeDecl{{}}},
 				"sai_get_foo_stats_t":     {Params: []saiast.TypeDecl{{}}},
+				"sai_get_foo_stats_ext_t": {Params: []saiast.TypeDecl{{}}},
 			},
 		},
 		inInfo: &docparser.SAIInfo{

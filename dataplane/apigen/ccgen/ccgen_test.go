@@ -69,3 +69,60 @@ func TestGenClientEnumListToSAIRespectsBuffer(t *testing.T) {
 		t.Errorf("GenClient() enum.cc writes to the caller's buffer without checking its size")
 	}
 }
+
+func TestGenClientStatsExtGeneratesRPC(t *testing.T) {
+	doc := &docparser.SAIInfo{
+		Attrs: map[string]*docparser.Attr{
+			"SWITCH": {},
+		},
+		Enums: map[string][]*docparser.Enum{},
+	}
+	sai := &saiast.SAIAPI{
+		Ifaces: []*saiast.SAIInterface{
+			{
+				Name: "sai_switch_api_t",
+				Funcs: []*saiast.TypeDecl{
+					{
+						Name: "sai_get_switch_stats_ext_fn",
+						Typ:  "sai_get_switch_stats_ext_fn",
+					},
+				},
+			},
+		},
+		Funcs: map[string]*saiast.SAIFunc{
+			"sai_get_switch_stats_ext_fn": {
+				Name:       "get_switch_stats_ext",
+				ReturnType: "sai_status_t",
+				Params: []saiast.TypeDecl{
+					{Name: "switch_id", Typ: "sai_object_id_t"},
+					{Name: "number_of_counters", Typ: "uint32_t"},
+					{Name: "counter_ids", Typ: "const sai_stat_id_t *"},
+					{Name: "mode", Typ: "sai_stats_mode_t"},
+					{Name: "counters", Typ: "uint64_t *"},
+				},
+			},
+		},
+	}
+
+	files, err := GenClient(doc, sai, "dataplane/proto/sai", "dataplane/standalone/sai", nil)
+	if err != nil {
+		t.Fatalf("GenClient() got unexpected error: %v", err)
+	}
+
+	got, ok := files["switch.cc"]
+	if !ok {
+		t.Fatalf("GenClient() did not generate switch.cc, got files: %v", files)
+	}
+
+	for _, want := range []string{
+		"sai_status_t l_get_switch_stats_ext(",
+		"lemming::dataplane::sai::GetSwitchStatsRequest req;",
+		"lemming::dataplane::sai::GetSwitchStatsResponse resp;",
+		"switch_->GetSwitchStats(&context, req, &resp);",
+		"counters[i] = resp.values(i);",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("GenClient() switch.cc missing %q", want)
+		}
+	}
+}
