@@ -129,6 +129,7 @@ enum PacketHeaderId {
   PACKET_HEADER_ID_TUNNEL_6TO4_SECURE = 16;
   PACKET_HEADER_ID_IP = 19;
   PACKET_HEADER_ID_MPLS = 20;
+  PACKET_HEADER_ID_VXLAN = 21;
   PACKET_HEADER_ID_COUNT = 1000;
 }
 
@@ -184,7 +185,8 @@ enum PacketFieldNum {
   PACKET_FIELD_NUM_MPLS_TC = 67; // MPLS Traffic Class
   PACKET_FIELD_NUM_MPLS_TTL = 68; // MPLS TTL
   PACKET_FIELD_NUM_TARGET_EGRESS_PORT = 69; // Original output port (metadata)
-  PACKET_FIELD_NUM_PACKET_ACTION = 70; // Action to take on the packet (metdata)
+  PACKET_FIELD_NUM_PACKET_ACTION = 70; // Packet action (metadata)
+  PACKET_FIELD_NUM_VXLAN_VNI = 71; // VXLAN VNI
   PACKET_FIELD_NUM_COUNT = 1000;
 }
 
@@ -196,7 +198,7 @@ message PacketBytes {
   uint32 size = 4;      // Size in bytes.
 }
 
-// PacketField identfies a field within the packet.
+// PacketField identifies a field within the packet.
 message PacketField {
   PacketFieldNum field_num = 1;
   uint32 instance = 2;  // Instance of the field.

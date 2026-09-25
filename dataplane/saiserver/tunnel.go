@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/vxlan"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
@@ -44,20 +45,21 @@ func newTunnel(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 	return t
 }
 
+// CreateTunnel creates a new tunnel supporting IPinIP, GRE, and VXLAN tunnel types.
 func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelRequest) (*saipb.CreateTunnelResponse, error) {
 	id := t.mgr.NextID()
 
 	tunType := req.GetType()
 
 	switch tunType {
-	case saipb.TunnelType_TUNNEL_TYPE_IPINIP, saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE:
+	case saipb.TunnelType_TUNNEL_TYPE_IPINIP, saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE, saipb.TunnelType_TUNNEL_TYPE_VXLAN:
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported tunnel type: %v", tunType)
 	}
 
 	actions := []*fwdpb.ActionDesc{}
 
-	// TODO: Support parsing QOS into ECN and DSCP bits seperately.
+	// TODO: Support parsing QOS into ECN and DSCP bits separately.
 	ecnMode := req.GetEncapEcnMode()
 	dscpMode := req.GetEncapDscpMode()
 	if ecnMode == saipb.TunnelEncapEcnMode_TUNNEL_ENCAP_ECN_MODE_STANDARD && dscpMode == saipb.TunnelDscpMode_TUNNEL_DSCP_MODE_UNIFORM_MODEL { // Copy the QOS bits from the inner IP header.
@@ -78,6 +80,13 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 	if req.GetEncapDstIp() != nil {
 		actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(
 			fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithValue(req.EncapDstIp)).Build())
+	}
+
+	if tunType == saipb.TunnelType_TUNNEL_TYPE_VXLAN {
+		actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).WithUint64Value(vxlan.DefaultPort)).Build())
+		if req.GetVxlanUdpSport() != 0 {
+			actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC).WithUint64Value(uint64(req.GetVxlanUdpSport()))).Build())
+		}
 	}
 
 	under := req.GetUnderlayInterface()
@@ -212,6 +221,7 @@ func termFieldsFromReq(req *saipb.CreateTunnelTermTableEntryRequest) ([]*fwdpb.P
 	return fields, headerID, nil
 }
 
+// CreateTunnelTermTableEntry creates a tunnel termination table entry supporting IPinIP, GRE, and VXLAN tunnel types.
 func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.CreateTunnelTermTableEntryRequest) (*saipb.CreateTunnelTermTableEntryResponse, error) {
 	id := t.mgr.NextID()
 
@@ -247,8 +257,36 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 				},
 			},
 		})
+	case saipb.TunnelType_TUNNEL_TYPE_VXLAN:
+		actions = append(actions, &fwdpb.ActionDesc{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
+			Action: &fwdpb.ActionDesc_Decap{
+				Decap: &fwdpb.DecapActionDesc{
+					HeaderId: headerID,
+				},
+			},
+		}, &fwdpb.ActionDesc{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
+			Action: &fwdpb.ActionDesc_Decap{
+				Decap: &fwdpb.DecapActionDesc{
+					HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
+				},
+			},
+		}, &fwdpb.ActionDesc{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
+			Action: &fwdpb.ActionDesc_Decap{
+				Decap: &fwdpb.DecapActionDesc{
+					HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+				},
+			},
+		})
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetType())
+		return nil, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetTunnelType())
+	}
+	if req.GetActionTunnelId() != 0 {
+		actions = append(actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetActionTunnelId())).Build(),
+		)
 	}
 	actions = append(actions,
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVrId())).Build(),
@@ -270,6 +308,8 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 	if _, err := t.dataplane.TableEntryAdd(ctx, tReq); err != nil {
 		return nil, err
 	}
+
+	t.mgr.StoreAttributes(id, req)
 
 	return &saipb.CreateTunnelTermTableEntryResponse{
 		Oid: id,
@@ -302,4 +342,24 @@ func (t *tunnel) RemoveTunnelTermTableEntry(ctx context.Context, req *saipb.Remo
 		return nil, err
 	}
 	return &saipb.RemoveTunnelTermTableEntryResponse{}, nil
+}
+
+func (t *tunnel) CreateTunnelMap(ctx context.Context, req *saipb.CreateTunnelMapRequest) (*saipb.CreateTunnelMapResponse, error) {
+	id := t.mgr.NextID()
+	t.mgr.StoreAttributes(id, req)
+	return &saipb.CreateTunnelMapResponse{Oid: id}, nil
+}
+
+func (t *tunnel) RemoveTunnelMap(ctx context.Context, req *saipb.RemoveTunnelMapRequest) (*saipb.RemoveTunnelMapResponse, error) {
+	return &saipb.RemoveTunnelMapResponse{}, nil
+}
+
+func (t *tunnel) CreateTunnelMapEntry(ctx context.Context, req *saipb.CreateTunnelMapEntryRequest) (*saipb.CreateTunnelMapEntryResponse, error) {
+	id := t.mgr.NextID()
+	t.mgr.StoreAttributes(id, req)
+	return &saipb.CreateTunnelMapEntryResponse{Oid: id}, nil
+}
+
+func (t *tunnel) RemoveTunnelMapEntry(ctx context.Context, req *saipb.RemoveTunnelMapEntryRequest) (*saipb.RemoveTunnelMapEntryResponse, error) {
+	return &saipb.RemoveTunnelMapEntryResponse{}, nil
 }

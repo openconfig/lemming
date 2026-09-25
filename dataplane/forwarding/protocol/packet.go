@@ -112,9 +112,49 @@ func (p *Packet) fieldDesc(id fwdpacket.FieldID) (*Desc, fwdpacket.FieldID) {
 		return nil, id
 
 	case false:
-		// In case of well known fields, we can find the header directly and use the
-		// unmodified field id.
+		// For well-known fields, search the descriptor chain to locate the header containing the field.
+		// In encapsulated packets (e.g. VXLAN, GRE), multiple headers may share the same group or
+		// subsequent inner headers may overwrite p.headers[attr.Group]. We walk the linked list of
+		// descriptors from outermost to innermost, tracking instance occurrences to return the exact
+		// header matching id.Instance, while remaining fully backward-compatible with single-header lookups.
 		if attr, ok := FieldAttr[id.Num]; ok {
+			startDesc := p.headers[Sequence[0]]
+			if startDesc == nil {
+				for _, seq := range Sequence {
+					if groupDesc := p.headers[seq]; groupDesc != nil {
+						for groupDesc.prev != nil {
+							groupDesc = groupDesc.prev
+						}
+						startDesc = groupDesc
+						break
+					}
+				}
+			}
+			// If a specific instance is requested, walk descriptors from outermost to innermost
+			// and match the nth header that contains the field.
+			if id.Instance != fwdpacket.LastField {
+				var count uint8
+				for desc := startDesc; desc != nil; desc = desc.next {
+					if _, err := desc.handler.Field(fwdpacket.NewFieldIDFromNum(id.Num, 0)); err == nil {
+						if count == id.Instance {
+							return desc, fwdpacket.NewFieldIDFromNum(id.Num, 0)
+						}
+						count++
+					}
+				}
+			}
+			// Fallback: check p.headers[attr.Group] directly for standard/non-encapsulated packets
+			// or LastField lookups.
+			if desc := p.headers[attr.Group]; desc != nil {
+				if _, err := desc.handler.Field(id); err == nil {
+					return desc, id
+				}
+			}
+			for desc := startDesc; desc != nil; desc = desc.next {
+				if _, err := desc.handler.Field(id); err == nil {
+					return desc, id
+				}
+			}
 			return p.headers[attr.Group], id
 		}
 		panic(fmt.Sprintf("protocol: fieldDesc failed, field %+v contains unknown field number", id))
@@ -122,7 +162,7 @@ func (p *Packet) fieldDesc(id fwdpacket.FieldID) (*Desc, fwdpacket.FieldID) {
 	return nil, id
 }
 
-// rebuildHeaders rebuilds the headers preceeding the specified header.
+// rebuildHeaders rebuilds the headers preceding the specified header.
 // The rebuilt headers are marked as clean.
 func (p *Packet) rebuildHeaders(header *Desc) {
 	for header != nil {

@@ -53,6 +53,7 @@ import (
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/tcp"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/udp"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/vxlan"
 )
 
 // A Server is an instance of the forwarding server. It contains a set of
@@ -468,7 +469,7 @@ func (e *Server) PortState(_ context.Context, request *fwdpb.PortStateRequest) (
 	}
 
 	// If the request has no specified "operation", it is a request which can
-	// be satisified with a read lock.
+	// be satisfied with a read lock.
 	if request.Operation == nil {
 		ctx.RLock()
 		defer ctx.RUnlock()
@@ -722,7 +723,7 @@ func (e *Server) FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQ
 	return reply, nil
 }
 
-// InjectPacket inserts a packet in the forwarding pipeline, orginating from the specified port.
+// InjectPacket inserts a packet in the forwarding pipeline, originating from the specified port.
 func (e *Server) InjectPacket(contextID *fwdpb.ContextId, id *fwdpb.PortId, hid fwdpb.PacketHeaderId, frame []byte, preActions []*fwdpb.ActionDesc, debug bool, dir fwdpb.PortAction) error {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing packet"))
 	defer timer.Stop()
