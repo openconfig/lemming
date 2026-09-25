@@ -34,6 +34,7 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
@@ -312,11 +313,30 @@ func TestCPUPacketStream(t *testing.T) {
 	})
 }
 
+func wantDHCPTrapReq(ports ...uint16) *fwdpb.TableEntryAddRequest {
+	fwdReq := fwdconfig.TableEntryAddRequest("foo", trapTableID)
+	for _, port := range ports {
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(port),
+		)))
+	}
+	req := fwdReq.Build()
+	act := computePacketAction(saipb.PacketAction_PACKET_ACTION_TRAP)
+	for i := range req.Entries {
+		req.Entries[i].Actions = append(req.Entries[i].Actions, act)
+	}
+	return req
+}
+
 func TestCreateHostifTrap(t *testing.T) {
 	tests := []struct {
 		desc    string
 		req     *saipb.CreateHostifTrapRequest
 		want    *saipb.CreateHostifTrapResponse
+		wantReq *fwdpb.TableEntryAddRequest
 		wantErr string
 	}{{
 		desc: "p4rt trap",
@@ -338,6 +358,50 @@ func TestCreateHostifTrap(t *testing.T) {
 		want: &saipb.CreateHostifTrapResponse{
 			Oid: 1,
 		},
+	}, {
+		desc: "dhcp trap",
+		req: &saipb.CreateHostifTrapRequest{
+			Switch:       1,
+			TrapType:     saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCP.Enum(),
+			PacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
+		},
+		want: &saipb.CreateHostifTrapResponse{
+			Oid: 1,
+		},
+		wantReq: wantDHCPTrapReq(dhcpServerPort, dhcpClientPort),
+	}, {
+		desc: "dhcp l2 trap",
+		req: &saipb.CreateHostifTrapRequest{
+			Switch:       1,
+			TrapType:     saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCP_L2.Enum(),
+			PacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
+		},
+		want: &saipb.CreateHostifTrapResponse{
+			Oid: 1,
+		},
+		wantReq: wantDHCPTrapReq(dhcpServerPort, dhcpClientPort),
+	}, {
+		desc: "dhcpv6 trap",
+		req: &saipb.CreateHostifTrapRequest{
+			Switch:       1,
+			TrapType:     saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCPV6.Enum(),
+			PacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
+		},
+		want: &saipb.CreateHostifTrapResponse{
+			Oid: 1,
+		},
+		wantReq: wantDHCPTrapReq(dhcpv6ServerPort, dhcpv6ClientPort),
+	}, {
+		desc: "dhcpv6 l2 trap",
+		req: &saipb.CreateHostifTrapRequest{
+			Switch:       1,
+			TrapType:     saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCPV6_L2.Enum(),
+			PacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
+		},
+		want: &saipb.CreateHostifTrapResponse{
+			Oid: 1,
+		},
+		wantReq: wantDHCPTrapReq(dhcpv6ServerPort, dhcpv6ClientPort),
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -361,6 +425,14 @@ func TestCreateHostifTrap(t *testing.T) {
 			}
 			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
 				t.Errorf("CreateHostifTrap() failed: diff(-got,+want)\n:%s", d)
+			}
+			if tt.wantReq != nil {
+				if len(dplane.gotEntryAddReqs) == 0 {
+					t.Fatalf("CreateHostifTrap() expected TableEntryAddRequest, got none")
+				}
+				if d := cmp.Diff(dplane.gotEntryAddReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
+					t.Errorf("CreateHostifTrap() TableEntryAdd diff (-got,+want):\n%s", d)
+				}
 			}
 		})
 	}

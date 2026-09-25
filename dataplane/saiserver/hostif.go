@@ -260,9 +260,14 @@ var (
 )
 
 const (
-	bgpPort        = 179
-	trapTableID    = "trap-table"
-	wildcardPortID = 0
+	bgpPort          = 179
+	dhcpServerPort   = 67
+	dhcpClientPort   = 68
+	dhcpv6ServerPort = 547
+	dhcpv6ClientPort = 546
+	ipProtoUDP       = 17
+	trapTableID      = "trap-table"
+	wildcardPortID   = 0
 )
 
 func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHostifTrapRequest) (*saipb.CreateHostifTrapResponse, error) {
@@ -321,6 +326,34 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
 				WithUint16(bgpPort))),
+		)
+		entriesAdded = 2
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCP, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCP_L2:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(dhcpServerPort))),
+		)
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(dhcpClientPort))),
+		)
+		entriesAdded = 2
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCPV6, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCPV6_L2:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(dhcpv6ServerPort))),
+		)
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(dhcpv6ClientPort))),
 		)
 		entriesAdded = 2
 	default:
