@@ -23,6 +23,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/vxlan"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/hash/csum16"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -45,7 +46,7 @@ var portMapMu sync.RWMutex
 
 // PortMap maps UDP destination ports to protocol header IDs.
 var PortMap = map[uint16]fwdpb.PacketHeaderId{
-	4789: fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+	vxlan.DefaultPort: fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
 }
 
 // RegisterPort registers a protocol header ID for a given UDP destination port.
@@ -126,11 +127,22 @@ func (UDP) Modify(_ fwdpb.PacketHeaderId) error {
 
 // Rebuild updates the UDP header length and csum (if over IPv6).
 func (udp *UDP) Rebuild() error {
+	if len(udp.header) < udpBytes {
+		return nil
+	}
 	// If the envelope, payload and udp header are unmodified, skip updates.
 	e := udp.desc.EnvelopeDesc()
 	p := udp.desc.PayloadDesc()
 	if e != nil && !e.Dirty() && p != nil && !p.Dirty() && !udp.desc.Dirty() {
 		return nil
+	}
+
+	dstPort := uint16(udp.header.Field(dstOffset, portBytes).Value())
+	srcPort := uint16(udp.header.Field(srcOffset, portBytes).Value())
+	if dstPort == vxlan.DefaultPort && srcPort == 0 {
+		if entropyPort := vxlan.ComputeEntropySourcePort(udp.desc); entropyPort != 0 {
+			udp.header.Field(srcOffset, portBytes).SetValue(uint(entropyPort))
+		}
 	}
 
 	// Update the length and reset the checksum.

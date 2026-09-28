@@ -22,6 +22,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
+	"github.com/openconfig/lemming/dataplane/forwarding/util/hash/crc16"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -34,6 +35,11 @@ const (
 	vniOffset   = 4
 	vniBytes    = 3 // SizeUint24
 	iFlag       = 0x08
+
+	// EphemeralPortBase is the IANA dynamic/private port range base (49152) per RFC 7348 §5.
+	EphemeralPortBase = 0xC000
+	// EphemeralPortMask is the 14-bit mask for the dynamic port range (16383).
+	EphemeralPortMask = 0x3FFF
 )
 
 // VXLAN represents a VXLAN header in the packet.
@@ -114,6 +120,44 @@ func (VXLAN) Modify(_ fwdpb.PacketHeaderId) error {
 // Rebuild rebuilds the VXLAN header.
 func (v *VXLAN) Rebuild() error {
 	return nil
+}
+
+// InnerFlowKey extracts inner header invariant fields (5-tuple and MACs) per RFC 7348.
+// It queries Instance 1 (standard inner frame of a VXLAN-encapsulated packet).
+// Only invariant header fields are included;
+// (such as IP ID or TCP sequence numbers) are excluded to ensure deterministic ECMP flow stability.
+func InnerFlowKey(desc *protocol.Desc) []byte {
+	if desc == nil || desc.Packet == nil {
+		return nil
+	}
+	// Inner fields: MACs (12B) + IPv6/IPv4 IPs (32B) + Proto (1B) + L4 Ports (4B)
+	key := make([]byte, 0, 49)
+	fields := []fwdpb.PacketFieldNum{
+		fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+		fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+		fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
+		fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+		fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+		fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
+		fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
+	}
+	for _, num := range fields {
+		if f, err := desc.Packet.Field(fwdpacket.NewFieldIDFromNum(num, 1)); err == nil && len(f) > 0 {
+			key = append(key, f...)
+		}
+	}
+	return key
+}
+
+// ComputeEntropySourcePort calculates a 16-bit UDP source port within the dynamic range [49152, 65535]
+// based on the inner packet headers per RFC 7348 §5. Returns 0 if no inner header fields are found.
+func ComputeEntropySourcePort(desc *protocol.Desc) uint16 {
+	key := InnerFlowKey(desc)
+	if len(key) == 0 {
+		return 0
+	}
+	hashVal := crc16.ChecksumANSI(key)
+	return uint16(EphemeralPortBase | (hashVal & EphemeralPortMask))
 }
 
 // Parse parses a VXLAN header in the packet.
