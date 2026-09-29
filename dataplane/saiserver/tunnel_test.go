@@ -290,6 +290,34 @@ func TestTunnelMapAndEntry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RemoveTunnelMap() unexpected err: %v", err)
 	}
+
+	// Test VNI_TO_VIRTUAL_ROUTER_ID
+	decapMapResp, err := c.CreateTunnelMap(context.TODO(), &saipb.CreateTunnelMapRequest{
+		Type: saipb.TunnelMapType_TUNNEL_MAP_TYPE_VNI_TO_VIRTUAL_ROUTER_ID.Enum(),
+	})
+	if err != nil {
+		t.Fatalf("CreateTunnelMap(VNI_TO_VRF) unexpected err: %v", err)
+	}
+
+	decapEntryResp, err := c.CreateTunnelMapEntry(context.TODO(), &saipb.CreateTunnelMapEntryRequest{
+		TunnelMap:            proto.Uint64(decapMapResp.GetOid()),
+		TunnelMapType:        saipb.TunnelMapType_TUNNEL_MAP_TYPE_VNI_TO_VIRTUAL_ROUTER_ID.Enum(),
+		VniIdKey:             proto.Uint32(20001),
+		VirtualRouterIdValue: proto.Uint64(50),
+	})
+	if err != nil {
+		t.Fatalf("CreateTunnelMapEntry(VNI_TO_VRF) unexpected err: %v", err)
+	}
+	if decapEntryResp.GetOid() == 0 {
+		t.Errorf("CreateTunnelMapEntry(VNI_TO_VRF) returned 0 OID")
+	}
+
+	_, err = c.RemoveTunnelMapEntry(context.TODO(), &saipb.RemoveTunnelMapEntryRequest{
+		Oid: decapEntryResp.GetOid(),
+	})
+	if err != nil {
+		t.Fatalf("RemoveTunnelMapEntry(VNI_TO_VRF) unexpected err: %v", err)
+	}
 }
 
 func newTestTunnel(t testing.TB, api switchDataplaneAPI) (saipb.TunnelClient, *attrmgr.AttrMgr, func()) {

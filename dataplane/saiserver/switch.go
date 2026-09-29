@@ -189,6 +189,7 @@ const (
 	hostifToPortTable     = "cpu-input"
 	portToHostifTable     = "cpu-output"
 	tunTermTable          = "tun-term"
+	vniToVrfTable         = "vni-to-vrf-table"
 	VlanTable             = "vlan"
 	L2MCGroupTable        = "l2mcg"
 	policerTabler         = "policerTable"
@@ -735,6 +736,28 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 			Table: &fwdpb.TableDesc_Flow{
 				Flow: &fwdpb.FlowTableDesc{
 					BankCount: 1,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Default action is CONTINUE to allow unmapped VNIs to fall back to the default tunnel VRF.
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: vniToVrfTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI,
+						},
+					}},
 				},
 			},
 		},
