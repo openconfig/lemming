@@ -164,15 +164,21 @@ func termFieldsFromReq(req *saipb.CreateTunnelTermTableEntryRequest) ([]*fwdpb.P
 	fields := []*fwdpb.PacketFieldMaskedBytes{}
 
 	// It is valid for some request fields to be omitted, so initialize slices to the correct length for the given IP protocol.
-	isV4 := len(req.SrcIp) == 4 || len(req.DstIp) == 4
+	isV4 := len(req.SrcIp) == 4 || len(req.DstIp) == 4 || len(req.SrcIpMask) == 4 || len(req.DstIpMask) == 4
 	zeroIP := ipV6AnyMask
 	exactMask := ipV6ExactMask
 	headerID := fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
+	ipVersion := byte(6)
 	if isV4 {
 		zeroIP = ipV4AnyMask
 		exactMask = ipV4ExactMask
 		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
+		ipVersion = byte(4)
 	}
+
+	fields = append(fields,
+		fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION).WithBytes([]byte{ipVersion}, []byte{0xFF}).Build(),
+	)
 
 	srcIP := req.GetSrcIp()
 	if req.SrcIp == nil {
@@ -186,12 +192,35 @@ func termFieldsFromReq(req *saipb.CreateTunnelTermTableEntryRequest) ([]*fwdpb.P
 
 	srcIPMask := req.GetSrcIpMask()
 	if req.SrcIpMask == nil {
-		srcIPMask = zeroIP
+		srcIPMask = exactMask
 	}
 
 	dstIPMask := req.GetDstIpMask()
 	if req.DstIpMask == nil {
-		dstIPMask = zeroIP
+		dstIPMask = exactMask
+	}
+
+	// Match protocol-specific header fields (IP protocol and L4 ports) based on the tunnel type
+	// to ensure only encapsulated tunnel packets match the termination table and non-tunnel
+	// traffic is not inadvertently matched or decapsulated.
+	switch req.GetTunnelType() {
+	case saipb.TunnelType_TUNNEL_TYPE_VXLAN:
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).WithBytes([]byte{17}, []byte{0xFF}).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).WithUint16(vxlan.DefaultPort).Build(),
+		)
+	case saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE:
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).WithBytes([]byte{47}, []byte{0xFF}).Build(),
+		)
+	case saipb.TunnelType_TUNNEL_TYPE_IPINIP:
+		proto := byte(4)
+		if headerID == fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6 {
+			proto = 41
+		}
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).WithBytes([]byte{proto}, []byte{0xFF}).Build(),
+		)
 	}
 
 	switch req.GetType() {

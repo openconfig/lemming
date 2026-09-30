@@ -170,6 +170,13 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	if frame.Len() < vxlanBytes {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("vxlan: parse failed, frame length %v too small to contain a VXLAN header", frame.Len())
 	}
+	flags, err := frame.Peek(flagsOffset, flagsBytes)
+	if err != nil {
+		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("vxlan: unable to read flags: %v", err)
+	}
+	if flags.Value()&iFlag == 0 {
+		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("vxlan: invalid VXLAN header, I-flag not set (flags=%x)", flags.Value())
+	}
 	header, err := frame.ReadHeader(vxlanBytes)
 	if err != nil {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("vxlan: unable read header: %v", err)

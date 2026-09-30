@@ -50,11 +50,13 @@ func TestUDPParse(t *testing.T) {
 		t.Errorf("got frame len %d, want 4 payload bytes", fStd.Len())
 	}
 
-	// VXLAN UDP packet: sport = 1234 (0x04d2), dport = 4789 (4789), len = 12, csum = 0
+	// Valid VXLAN UDP packet: sport = 1234 (0x04d2), dport = 4789, len = 16
 	dportBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(dportBytes, 4789)
+	vxlanHdr := []byte{0x08, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x00}
 	rawVxlan := append([]byte{0x04, 0xd2}, dportBytes...)
-	rawVxlan = append(rawVxlan, []byte{0x00, 0x0c, 0x00, 0x00, 0xde, 0xad, 0xbe, 0xef}...)
+	rawVxlan = append(rawVxlan, []byte{0x00, 0x10, 0x00, 0x00}...)
+	rawVxlan = append(rawVxlan, vxlanHdr...)
 
 	fVxlan := frame.NewFrame(rawVxlan)
 	handlerVxlan, nextVxlan, err := parse(fVxlan, &protocol.Desc{})
@@ -67,8 +69,23 @@ func TestUDPParse(t *testing.T) {
 	if len(handlerVxlan.Header()) != udpBytes {
 		t.Errorf("got header len %d, want %d", len(handlerVxlan.Header()), udpBytes)
 	}
-	if fVxlan.Len() != 4 {
-		t.Errorf("got frame len %d, want 4 payload bytes", fVxlan.Len())
+	if fVxlan.Len() != 8 {
+		t.Errorf("got frame len %d, want 8 payload bytes", fVxlan.Len())
+	}
+
+	// Non-VXLAN payload on port 4789 (I-flag not set): should parse next as OPAQUE
+	nonVxlanPayload := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
+	rawNonVxlan := append([]byte{0x04, 0xd2}, dportBytes...)
+	rawNonVxlan = append(rawNonVxlan, []byte{0x00, 0x10, 0x00, 0x00}...)
+	rawNonVxlan = append(rawNonVxlan, nonVxlanPayload...)
+
+	fNonVxlan := frame.NewFrame(rawNonVxlan)
+	_, nextNonVxlan, err := parse(fNonVxlan, &protocol.Desc{})
+	if err != nil {
+		t.Fatalf("parse non-VXLAN UDP on port 4789 failed: %v", err)
+	}
+	if nextNonVxlan != fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE {
+		t.Errorf("non-VXLAN on port 4789: got next header %v, want OPAQUE", nextNonVxlan)
 	}
 }
 

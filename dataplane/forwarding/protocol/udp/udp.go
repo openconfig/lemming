@@ -200,7 +200,14 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	next := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
 	portMapMu.RLock()
 	if nextHeaderID, ok := PortMap[dstPort]; ok {
-		next = nextHeaderID
+		// Check if it is a VXLAN packet by checking the i flag bit of header
+		if nextHeaderID == fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN {
+			if peek, err := frame.Peek(0, 1); err == nil && peek.Value()&0x08 != 0 && frame.Len() >= 8 {
+				next = nextHeaderID
+			}
+		} else {
+			next = nextHeaderID
+		}
 	}
 	portMapMu.RUnlock()
 	return &UDP{
