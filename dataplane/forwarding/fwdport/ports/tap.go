@@ -118,7 +118,7 @@ func (p *tapPort) process() {
 		for {
 			select {
 			case <-p.doneCh:
-				log.Warningf("stopping readding tap packet to read packet: %v", p.devName)
+				log.Warningf("stopping reading tap packet to read packet: %v", p.devName)
 				p.file.Close()
 				return
 			default:
