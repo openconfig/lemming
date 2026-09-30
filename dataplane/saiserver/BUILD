@@ -25,6 +25,7 @@ go_library(
         "//dataplane/forwarding",
         "//dataplane/forwarding/fwdconfig",
         "//dataplane/forwarding/infra/fwdcontext",
+        "//dataplane/forwarding/protocol/vxlan",
         "//dataplane/proto/packetio",
         "//dataplane/proto/sai",
         "//dataplane/saiserver/attrmgr",

@@ -1,2 +1,3 @@
 scanners:
   - vuln
+ignorefile: .github/linters/.trivyignore

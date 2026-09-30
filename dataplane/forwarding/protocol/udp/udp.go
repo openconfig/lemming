@@ -19,6 +19,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
@@ -40,6 +41,20 @@ const (
 	protoUDP = 17 // UDP packet
 )
 
+var portMapMu sync.RWMutex
+
+// PortMap maps UDP destination ports to protocol header IDs.
+var PortMap = map[uint16]fwdpb.PacketHeaderId{
+	4789: fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+}
+
+// RegisterPort registers a protocol header ID for a given UDP destination port.
+func RegisterPort(port uint16, id fwdpb.PacketHeaderId) {
+	portMapMu.Lock()
+	defer portMapMu.Unlock()
+	PortMap[port] = id
+}
+
 // An UDP represents a UDP header in the packet. It can add, remove and update
 // the UDP header. The UDP payload is treated as OPAQUE.
 type UDP struct {
@@ -49,8 +64,7 @@ type UDP struct {
 
 // Header returns the UDP header.
 func (udp *UDP) Header() []byte {
-	header := append([]byte(nil), udp.header...)
-	return header
+	return append([]byte(nil), udp.header...)
 }
 
 // Trailer returns the no trailing bytes.
@@ -105,7 +119,7 @@ func (udp *UDP) Remove(id fwdpb.PacketHeaderId) error {
 	return nil
 }
 
-// Modify returns an error as the UDP header has not extensions.
+// Modify returns an error as the UDP header has no extensions.
 func (UDP) Modify(_ fwdpb.PacketHeaderId) error {
 	return errors.New("udp: Modify is unsupported")
 }
@@ -162,7 +176,6 @@ func add(_ fwdpb.PacketHeaderId, desc *protocol.Desc) (protocol.Handler, error) 
 }
 
 // parse parses a UDP header in the packet.
-// The payload of UDP is handled as an OPAQUE header.
 func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.PacketHeaderId, error) {
 	if frame.Len() < udpBytes {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("udp: parse failed, frame length %v too small to contain a UDP header", frame.Len())
@@ -171,7 +184,13 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	if err != nil {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("udp: unable read header: %v", err)
 	}
+	dstPort := uint16(header.Field(dstOffset, portBytes).Value())
 	next := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
+	portMapMu.RLock()
+	if nextHeaderID, ok := PortMap[dstPort]; ok {
+		next = nextHeaderID
+	}
+	portMapMu.RUnlock()
 	return &UDP{
 		header: header,
 		desc:   desc,

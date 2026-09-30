@@ -35,6 +35,7 @@ go_library(
         "//dataplane/forwarding/protocol/opaque",
         "//dataplane/forwarding/protocol/tcp",
         "//dataplane/forwarding/protocol/udp",
+        "//dataplane/forwarding/protocol/vxlan",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
     ],

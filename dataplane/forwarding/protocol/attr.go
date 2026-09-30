@@ -212,6 +212,9 @@ var FieldAttr = map[fwdpb.PacketFieldNum]struct {
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION: {
 		Sizes: []int{SizeUint8},
 	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI: {
+		Sizes: []int{SizeUint24},
+	},
 }
 
 // GroupAttr contains attributes for each packet header group.
@@ -322,6 +325,7 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP4,
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP6,
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ARP,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE,
 		},
 		fields: []fwdpb.PacketFieldNum{
@@ -334,6 +338,7 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_SPA,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_TMAC,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_SMAC,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI,
 		},
 	},
 }

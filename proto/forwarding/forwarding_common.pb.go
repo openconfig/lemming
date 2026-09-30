@@ -162,6 +162,7 @@ const (
 	PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_SECURE PacketHeaderId = 16
 	PacketHeaderId_PACKET_HEADER_ID_IP                 PacketHeaderId = 19
 	PacketHeaderId_PACKET_HEADER_ID_MPLS               PacketHeaderId = 20
+	PacketHeaderId_PACKET_HEADER_ID_VXLAN              PacketHeaderId = 21
 	PacketHeaderId_PACKET_HEADER_ID_COUNT              PacketHeaderId = 1000
 )
 
@@ -187,6 +188,7 @@ var (
 		16:   "PACKET_HEADER_ID_TUNNEL_6TO4_SECURE",
 		19:   "PACKET_HEADER_ID_IP",
 		20:   "PACKET_HEADER_ID_MPLS",
+		21:   "PACKET_HEADER_ID_VXLAN",
 		1000: "PACKET_HEADER_ID_COUNT",
 	}
 	PacketHeaderId_value = map[string]int32{
@@ -209,6 +211,7 @@ var (
 		"PACKET_HEADER_ID_TUNNEL_6TO4_SECURE": 16,
 		"PACKET_HEADER_ID_IP":                 19,
 		"PACKET_HEADER_ID_MPLS":               20,
+		"PACKET_HEADER_ID_VXLAN":              21,
 		"PACKET_HEADER_ID_COUNT":              1000,
 	}
 )
@@ -294,6 +297,7 @@ const (
 	PacketFieldNum_PACKET_FIELD_NUM_MPLS_TTL            PacketFieldNum = 68
 	PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT  PacketFieldNum = 69
 	PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION       PacketFieldNum = 70
+	PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI           PacketFieldNum = 71
 	PacketFieldNum_PACKET_FIELD_NUM_COUNT               PacketFieldNum = 1000
 )
 
@@ -351,6 +355,7 @@ var (
 		68:   "PACKET_FIELD_NUM_MPLS_TTL",
 		69:   "PACKET_FIELD_NUM_TARGET_EGRESS_PORT",
 		70:   "PACKET_FIELD_NUM_PACKET_ACTION",
+		71:   "PACKET_FIELD_NUM_VXLAN_VNI",
 		1000: "PACKET_FIELD_NUM_COUNT",
 	}
 	PacketFieldNum_value = map[string]int32{
@@ -405,6 +410,7 @@ var (
 		"PACKET_FIELD_NUM_MPLS_TTL":            68,
 		"PACKET_FIELD_NUM_TARGET_EGRESS_PORT":  69,
 		"PACKET_FIELD_NUM_PACKET_ACTION":       70,
+		"PACKET_FIELD_NUM_VXLAN_VNI":           71,
 		"PACKET_FIELD_NUM_COUNT":               1000,
 	}
 )
@@ -2532,7 +2538,7 @@ const file_proto_forwarding_forwarding_common_proto_rawDesc = "" +
 	"\x16PACKET_HEADER_GROUP_L4\x10\x05\x12\x1c\n" +
 	"\x18PACKET_HEADER_GROUP_L2_5\x10\x06\x12\x1f\n" +
 	"\x1bPACKET_HEADER_GROUP_PAYLOAD\x10\a\x12\x1d\n" +
-	"\x19PACKET_HEADER_GROUP_COUNT\x10\x14*\xe3\x04\n" +
+	"\x19PACKET_HEADER_GROUP_COUNT\x10\x14*\xff\x04\n" +
 	"\x0ePacketHeaderId\x12 \n" +
 	"\x1cPACKET_HEADER_ID_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15PACKET_HEADER_ID_NONE\x10\x01\x12\x1d\n" +
@@ -2553,8 +2559,9 @@ const file_proto_forwarding_forwarding_common_proto_rawDesc = "" +
 	"!PACKET_HEADER_ID_TUNNEL_6TO4_AUTO\x10\x0f\x12'\n" +
 	"#PACKET_HEADER_ID_TUNNEL_6TO4_SECURE\x10\x10\x12\x17\n" +
 	"\x13PACKET_HEADER_ID_IP\x10\x13\x12\x19\n" +
-	"\x15PACKET_HEADER_ID_MPLS\x10\x14\x12\x1b\n" +
-	"\x16PACKET_HEADER_ID_COUNT\x10\xe8\a*\xfd\r\n" +
+	"\x15PACKET_HEADER_ID_MPLS\x10\x14\x12\x1a\n" +
+	"\x16PACKET_HEADER_ID_VXLAN\x10\x15\x12\x1b\n" +
+	"\x16PACKET_HEADER_ID_COUNT\x10\xe8\a*\x9d\x0e\n" +
 	"\x0ePacketFieldNum\x12 \n" +
 	"\x1cPACKET_FIELD_NUM_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15PACKET_FIELD_NUM_NONE\x10\x01\x12\"\n" +
@@ -2607,7 +2614,8 @@ const file_proto_forwarding_forwarding_common_proto_rawDesc = "" +
 	"\x18PACKET_FIELD_NUM_MPLS_TC\x10C\x12\x1d\n" +
 	"\x19PACKET_FIELD_NUM_MPLS_TTL\x10D\x12'\n" +
 	"#PACKET_FIELD_NUM_TARGET_EGRESS_PORT\x10E\x12\"\n" +
-	"\x1ePACKET_FIELD_NUM_PACKET_ACTION\x10F\x12\x1b\n" +
+	"\x1ePACKET_FIELD_NUM_PACKET_ACTION\x10F\x12\x1e\n" +
+	"\x1aPACKET_FIELD_NUM_VXLAN_VNI\x10G\x12\x1b\n" +
 	"\x16PACKET_FIELD_NUM_COUNT\x10\xe8\a*\xf8\f\n" +
 	"\tCounterId\x12\x1a\n" +
 	"\x16COUNTER_ID_UNSPECIFIED\x10\x00\x12\x19\n" +

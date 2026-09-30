@@ -15,6 +15,7 @@ go_test(
         "tcp_test.go",
         "tunnel_test.go",
         "udp_test.go",
+        "vxlan_test.go",
     ],
     deps = [
         "//dataplane/forwarding/infra/fwdobject",
@@ -30,8 +31,10 @@ go_test(
         "//dataplane/forwarding/protocol/packettestutil",
         "//dataplane/forwarding/protocol/tcp",
         "//dataplane/forwarding/protocol/udp",
+        "//dataplane/forwarding/protocol/vxlan",
         "//dataplane/forwarding/util/frame",
         "//proto/forwarding",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_gopacket//layers",
     ],
