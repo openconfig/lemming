@@ -164,15 +164,21 @@ func termFieldsFromReq(req *saipb.CreateTunnelTermTableEntryRequest) ([]*fwdpb.P
 	fields := []*fwdpb.PacketFieldMaskedBytes{}
 
 	// It is valid for some request fields to be omitted, so initialize slices to the correct length for the given IP protocol.
-	isV4 := len(req.SrcIp) == 4 || len(req.DstIp) == 4
+	isV4 := len(req.SrcIp) == 4 || len(req.DstIp) == 4 || len(req.SrcIpMask) == 4 || len(req.DstIpMask) == 4
 	zeroIP := ipV6AnyMask
 	exactMask := ipV6ExactMask
 	headerID := fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
+	ipVersion := byte(6)
 	if isV4 {
 		zeroIP = ipV4AnyMask
 		exactMask = ipV4ExactMask
 		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
+		ipVersion = byte(4)
 	}
+
+	fields = append(fields,
+		fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION).WithBytes([]byte{ipVersion}, []byte{0xFF}).Build(),
+	)
 
 	srcIP := req.GetSrcIp()
 	if req.SrcIp == nil {
@@ -186,35 +192,66 @@ func termFieldsFromReq(req *saipb.CreateTunnelTermTableEntryRequest) ([]*fwdpb.P
 
 	srcIPMask := req.GetSrcIpMask()
 	if req.SrcIpMask == nil {
-		srcIPMask = zeroIP
+		srcIPMask = exactMask
 	}
 
 	dstIPMask := req.GetDstIpMask()
 	if req.DstIpMask == nil {
-		dstIPMask = zeroIP
+		dstIPMask = exactMask
+	}
+
+	// Match protocol-specific header fields (IP protocol and L4 ports) based on the tunnel type
+	// to ensure only encapsulated tunnel packets match the termination table and non-tunnel
+	// traffic is not inadvertently matched or decapsulated.
+	switch req.GetTunnelType() {
+	case saipb.TunnelType_TUNNEL_TYPE_VXLAN:
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).WithBytes([]byte{17}, []byte{0xFF}).Build(),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).WithUint16(vxlan.DefaultPort).Build(),
+		)
+	case saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE:
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).WithBytes([]byte{47}, []byte{0xFF}).Build(),
+		)
+	case saipb.TunnelType_TUNNEL_TYPE_IPINIP:
+		proto := byte(4)
+		if headerID == fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6 {
+			proto = 41
+		}
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).WithBytes([]byte{proto}, []byte{0xFF}).Build(),
+		)
 	}
 
 	switch req.GetType() {
 	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P: // src IP, dst IP
-		fields = append(fields,
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, exactMask), exactMask).Build(),
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, exactMask), exactMask).Build(),
-		)
+		if req.SrcIp != nil {
+			fields = append(fields, fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, exactMask), exactMask).Build())
+		}
+		if req.DstIp != nil {
+			fields = append(fields, fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, exactMask), exactMask).Build())
+		}
 	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2MP: // src IP, dst IP & mask
-		fields = append(fields,
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, exactMask), exactMask).Build(),
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, dstIPMask), dstIPMask).Build(),
-		)
+		if req.SrcIp != nil {
+			fields = append(fields, fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, exactMask), exactMask).Build())
+		}
+		if req.DstIp != nil {
+			fields = append(fields, fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, dstIPMask), dstIPMask).Build())
+		}
 	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2P: // src IP & mask, dst IP
-		fields = append(fields,
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, srcIPMask), srcIPMask).Build(),
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, exactMask), exactMask).Build(),
-		)
-	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2MP: // src IP & mask, dst IP &mask
-		fields = append(fields,
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, srcIPMask), srcIPMask).Build(),
-			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, dstIPMask), dstIPMask).Build(),
-		)
+		if req.SrcIp != nil {
+			fields = append(fields, fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, srcIPMask), srcIPMask).Build())
+		}
+		if req.DstIp != nil {
+			fields = append(fields, fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, exactMask), exactMask).Build())
+		}
+	case saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2MP: // src IP & mask, dst IP & mask
+		if req.SrcIp != nil {
+			fields = append(fields, fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(maskBytes(srcIP, srcIPMask), srcIPMask).Build())
+		}
+		if req.DstIp != nil {
+			fields = append(fields, fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(maskBytes(dstIP, dstIPMask), dstIPMask).Build())
+		}
 	default:
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_UNSPECIFIED, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetType())
 	}
@@ -258,39 +295,35 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 			},
 		})
 	case saipb.TunnelType_TUNNEL_TYPE_VXLAN:
-		actions = append(actions, &fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
-			Action: &fwdpb.ActionDesc_Decap{
-				Decap: &fwdpb.DecapActionDesc{
-					HeaderId: headerID,
-				},
-			},
-		}, &fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
-			Action: &fwdpb.ActionDesc_Decap{
-				Decap: &fwdpb.DecapActionDesc{
-					HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
-				},
-			},
-		}, &fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
-			Action: &fwdpb.ActionDesc_Decap{
-				Decap: &fwdpb.DecapActionDesc{
-					HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
-				},
-			},
-		})
+		if req.GetVrId() != 0 {
+			actions = append(actions,
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVrId())).Build(),
+			)
+		}
+		if req.GetActionTunnelId() != 0 {
+			actions = append(actions,
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetActionTunnelId())).Build(),
+			)
+		}
+		actions = append(actions,
+			fwdconfig.Action(fwdconfig.LookupAction(vniToVrfTable)).Build(),
+			fwdconfig.Action(fwdconfig.DecapAction(headerID)).Build(),
+			fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP)).Build(),
+			fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN)).Build(),
+		)
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetTunnelType())
 	}
-	if req.GetActionTunnelId() != 0 {
+	if req.GetTunnelType() != saipb.TunnelType_TUNNEL_TYPE_VXLAN {
+		if req.GetActionTunnelId() != 0 {
+			actions = append(actions,
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetActionTunnelId())).Build(),
+			)
+		}
 		actions = append(actions,
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetActionTunnelId())).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVrId())).Build(),
 		)
 	}
-	actions = append(actions,
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVrId())).Build(),
-	)
 
 	tReq := &fwdpb.TableEntryAddRequest{
 		ContextId: &fwdpb.ContextId{Id: t.dataplane.ID()},
@@ -356,10 +389,40 @@ func (t *tunnel) RemoveTunnelMap(ctx context.Context, req *saipb.RemoveTunnelMap
 
 func (t *tunnel) CreateTunnelMapEntry(ctx context.Context, req *saipb.CreateTunnelMapEntryRequest) (*saipb.CreateTunnelMapEntryResponse, error) {
 	id := t.mgr.NextID()
+	switch req.GetTunnelMapType() {
+	case saipb.TunnelMapType_TUNNEL_MAP_TYPE_VNI_TO_VIRTUAL_ROUTER_ID:
+		vni := req.GetVniIdKey()
+		vniBytes := []byte{byte(vni >> 16), byte(vni >> 8), byte(vni)}
+		vrf := req.GetVirtualRouterIdValue()
+		entry := fwdconfig.TableEntryAddRequest(t.dataplane.ID(), vniToVrfTable).
+			AppendEntry(
+				fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI).WithBytes(vniBytes))),
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(vrf),
+			).Build()
+		if _, err := t.dataplane.TableEntryAdd(ctx, entry); err != nil {
+			return nil, err
+		}
+	}
 	t.mgr.StoreAttributes(id, req)
 	return &saipb.CreateTunnelMapEntryResponse{Oid: id}, nil
 }
 
 func (t *tunnel) RemoveTunnelMapEntry(ctx context.Context, req *saipb.RemoveTunnelMapEntryRequest) (*saipb.RemoveTunnelMapEntryResponse, error) {
+	cReq := &saipb.CreateTunnelMapEntryRequest{}
+	if err := t.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), cReq); err != nil {
+		return nil, err
+	}
+	switch cReq.GetTunnelMapType() {
+	case saipb.TunnelMapType_TUNNEL_MAP_TYPE_VNI_TO_VIRTUAL_ROUTER_ID:
+		vni := cReq.GetVniIdKey()
+		vniBytes := []byte{byte(vni >> 16), byte(vni >> 8), byte(vni)}
+		entry := fwdconfig.TableEntryRemoveRequest(t.dataplane.ID(), vniToVrfTable).
+			AppendEntry(
+				fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI).WithBytes(vniBytes))),
+			).Build()
+		if _, err := t.dataplane.TableEntryRemove(ctx, entry); err != nil {
+			return nil, err
+		}
+	}
 	return &saipb.RemoveTunnelMapEntryResponse{}, nil
 }
