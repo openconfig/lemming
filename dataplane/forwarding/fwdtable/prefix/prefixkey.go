@@ -159,10 +159,13 @@ func (s *key) Set(bitpos int, v byte) {
 	s.bytes.set(s.bitStart+bitpos, v)
 }
 
-// TrimPrefix removes a key which is known to be a prefix.
-func (s *key) TrimPrefix(q *key) {
-	s.bitCount -= q.bitCount
-	s.bitStart += q.bitCount
+// TrimPrefix removes a key which is known to be a prefix and returns a new key.
+func (s *key) TrimPrefix(q *key) *key {
+	return &key{
+		bytes:    s.bytes,
+		bitCount: s.bitCount - q.bitCount,
+		bitStart: s.bitStart + q.bitCount,
+	}
 }
 
 // BitCount returns the number of bits in the key.
