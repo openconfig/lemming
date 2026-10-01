@@ -252,15 +252,12 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 					PortId: &fwdpb.PortId{
 						ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
 					},
-					Port: &fwdpb.PortDesc_Tap{
-						Tap: &fwdpb.TAPPortDesc{
-							DeviceName: fmt.Sprintf("port%d", id),
-						},
+					Port: &fwdpb.PortDesc_Genetlink{
+						Genetlink: &fwdpb.GenetlinkPortDesc{},
 					},
 				},
 			}
-			_, err := port.dataplane.PortCreate(ctx, fwdPort)
-			if err != nil {
+			if _, err := port.dataplane.PortCreate(ctx, fwdPort); err != nil {
 				return nil, err
 			}
 			stateReq := &fwdpb.PortStateRequest{
