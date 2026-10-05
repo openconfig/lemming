@@ -113,11 +113,11 @@ func (p *kernelPort) Update(upd *fwdpb.PortUpdateDesc) error {
 func (p *kernelPort) process() {
 	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
-		defer p.handle.Close()
 		for {
 			select {
 			case <-p.doneCh:
 				log.Warningf("src chan closed: %v", p.devName)
+				p.handle.Close()
 				return
 			default:
 				d, _, err := p.handle.ReadPacketData()
