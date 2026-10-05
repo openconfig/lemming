@@ -114,12 +114,12 @@ func (p *tapPort) Update(upd *fwdpb.PortUpdateDesc) error {
 func (p *tapPort) process() {
 	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
-		defer p.file.Close()
 		buf := make([]byte, packetBufferSize)
 		for {
 			select {
 			case <-p.doneCh:
 				log.Warningf("stopping reading tap packet to read packet: %v", p.devName)
+				p.file.Close()
 				return
 			default:
 				p.file.SetReadDeadline(time.Now().Add(time.Second))
