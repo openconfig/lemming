@@ -19,6 +19,7 @@ package ports
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -112,16 +113,17 @@ func (p *kernelPort) Update(upd *fwdpb.PortUpdateDesc) error {
 func (p *kernelPort) process() {
 	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
+		defer p.handle.Close()
 		for {
 			select {
 			case <-p.doneCh:
 				log.Warningf("src chan closed: %v", p.devName)
-				p.handle.Close()
 				return
 			default:
 				d, _, err := p.handle.ReadPacketData()
 				if err != nil {
 					log.Warningf("err reading packet data for %v: %v", p.devName, err)
+					time.Sleep(2 * time.Second)
 					continue
 				}
 				fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, d)
