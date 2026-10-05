@@ -129,7 +129,8 @@ func (p *tapPort) process() {
 				}
 				if err != nil {
 					log.Warningf("failed to read packet: %v", err)
-					return
+					time.Sleep(2 * time.Second)
+					continue
 				}
 				fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, buf[0:n])
 				if err != nil {
