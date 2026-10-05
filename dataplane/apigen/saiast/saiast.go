@@ -178,7 +178,9 @@ func handleFunc(name string, decl *cc.Declaration, directDecl *cc.DirectDeclarat
 		}
 
 		if paramList.ParameterDeclaration.DeclarationSpecifiers.TypeQualifier != nil && paramList.ParameterDeclaration.DeclarationSpecifiers.TypeQualifier.Case == cc.TypeQualifierConst {
-			pd.Typ = fmt.Sprintf("const %s", pd.Typ)
+			if !strings.HasPrefix(pd.Typ, "const ") {
+				pd.Typ = fmt.Sprintf("const %s", pd.Typ)
+			}
 		}
 		sf.Params = append(sf.Params, pd)
 	}
