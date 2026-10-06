@@ -26,7 +26,7 @@ import (
 	"github.com/stoewer/go-strcase"
 )
 
-// SAIAPI contains the information retreived from the AST.
+// SAIAPI contains the information retrieved from the AST.
 type SAIAPI struct {
 	Ifaces []*SAIInterface
 	Funcs  map[string]*SAIFunc
@@ -45,7 +45,7 @@ type SAIFunc struct {
 	Params     []TypeDecl
 }
 
-// TypeDecl stores the name and type of a declation.
+// TypeDecl stores the name and type of a declaration.
 type TypeDecl struct {
 	Name string
 	Typ  string

@@ -42,7 +42,7 @@ jobs:
           VALIDATE_GO: false
           VALIDATE_GO_MODULES: false
           VALIDATE_CLANG_FORMAT: false
-          VALIDATE_KUBERNETES_KUBEVAL: false
+          VALIDATE_KUBERNETES_KUBECONFORM: false
           VALIDATE_CHECKOV: false
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_BIOME_LINT: false
