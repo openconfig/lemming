@@ -942,12 +942,40 @@ func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEnt
 }
 
 func (r *route) RemoveRouteEntry(ctx context.Context, req *saipb.RemoveRouteEntryRequest) (*saipb.RemoveRouteEntryResponse, error) {
+	if req.GetEntry() == nil {
+		return nil, status.Error(codes.InvalidArgument, "missing route entry")
+	}
+	pBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(req.GetEntry())
+	if err != nil {
+		return nil, err
+	}
+	attr := &saipb.RouteEntryAttribute{}
+	if err := r.mgr.PopulateAllAttributes(string(pBytes), attr); err == nil && attr.NextHopId != nil {
+		attrReq := &saipb.GetSwitchAttributeRequest{
+			Oid:      req.GetEntry().GetSwitchId(),
+			AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT},
+		}
+		resp := &saipb.GetSwitchAttributeResponse{}
+		if err := r.mgr.PopulateAttributes(attrReq, resp); err == nil && resp.Attr.CpuPort != nil && *attr.NextHopId == *resp.Attr.CpuPort {
+			_, err := r.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+				ContextId: &fwdpb.ContextId{Id: r.dataplane.ID()},
+				TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+				EntryDesc: fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+						req.GetEntry().GetDestination().GetAddr(),
+						req.GetEntry().GetDestination().GetMask()),
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId()))).Build(),
+			})
+			return &saipb.RemoveRouteEntryResponse{}, err
+		}
+	}
+
 	fib := FIBV6Table
 	if len(req.GetEntry().GetDestination().GetAddr()) == 4 {
 		fib = FIBV4Table
 	}
 
-	_, err := r.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+	_, err = r.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
 		ContextId: &fwdpb.ContextId{Id: r.dataplane.ID()},
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
 		EntryDesc: fwdconfig.EntryDesc(
@@ -964,15 +992,19 @@ func (r *route) RemoveRouteEntry(ctx context.Context, req *saipb.RemoveRouteEntr
 }
 
 func (r *route) RemoveRouteEntries(ctx context.Context, re *saipb.RemoveRouteEntriesRequest) (*saipb.RemoveRouteEntriesResponse, error) {
-	resp := &saipb.RemoveRouteEntriesResponse{}
+	var errs errlist.List
+	resp := &saipb.RemoveRouteEntriesResponse{
+		Resps: make([]*saipb.RemoveRouteEntryResponse, 0, len(re.GetReqs())),
+	}
 	for _, req := range re.GetReqs() {
 		res, err := attrmgr.InvokeAndSave(ctx, r.mgr, r.RemoveRouteEntry, req)
-		if err != nil {
-			return nil, err
+		errs.Add(err)
+		if res == nil {
+			res = &saipb.RemoveRouteEntryResponse{}
 		}
 		resp.Resps = append(resp.Resps, res)
 	}
-	return resp, nil
+	return resp, errs.Err()
 }
 
 type routerInterface struct {
