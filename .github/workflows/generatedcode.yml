@@ -29,7 +29,7 @@ jobs:
         run: bazel run //:gazelle
       - name: Check Diff
         run: |
-          if test -n "$(git status --porcelain)"; then
+          if test -n "$(git status --porcelain -- ':(exclude)MODULE.bazel.lock')"; then
             # MODULE.bazel.lock file can change due to rules_python dependency packages.
             git diff HEAD -- ':(exclude)MODULE.bazel.lock'
             exit 1
@@ -54,7 +54,7 @@ jobs:
         run: tools/genproto.sh
       - name: Check Diff
         run: |
-          if test -n "$(git status --porcelain)"; then
+          if test -n "$(git status --porcelain -- ':(exclude)MODULE.bazel.lock')"; then
             # MODULE.bazel.lock file can change due to rules_python dependency packages.
             git diff HEAD -- ':(exclude)MODULE.bazel.lock'
             exit 1

@@ -282,6 +282,8 @@ swift_rules_dependencies()
 http_archive(
     name = "com_github_opencomputeproject_sai",
     build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 cc_library(
     name = "sai",
     hdrs = glob(["inc/*.h","experimental/*.h"]),

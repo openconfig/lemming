@@ -22,6 +22,12 @@ bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_distroless", version = "0.5.1")
 bazel_dep(name = "rules_oci", version = "2.3.0")
 
+single_version_override(
+    module_name = "openconfig_gnmi",
+    patch_strip = 0,
+    patches = ["//patches:gnmi.patch"],
+)
+
 archive_override(
     module_name = "p4runtime",
     integrity = "sha256-n2T6gGjkKtl5QRzJWhTjYG1G4Z6wjuUJszs+XAVBqmc=",
@@ -44,6 +50,8 @@ http_archive(
 http_archive(
     name = "com_github_opencomputeproject_sai",
     build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 exports_files(["meta/Doxyfile"])
 
 filegroup(

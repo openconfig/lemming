@@ -36,7 +36,6 @@ require (
 	github.com/openconfig/ygnmi v0.15.0
 	github.com/openconfig/ygot v0.35.0
 	github.com/osrg/gobgp/v3 v3.37.0
-	github.com/osrg/gobgp/v4 v4.10.0
 	github.com/p4lang/p4runtime v1.5.0
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
@@ -112,6 +111,7 @@ require (
 	github.com/go-openapi/swag/stringutils v0.29.2 // indirect
 	github.com/go-openapi/swag/typeutils v0.29.2 // indirect
 	github.com/go-openapi/swag/yamlutils v0.29.2 // indirect
+	github.com/go-test/deep v1.1.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/s2a-go v0.1.10 // indirect
