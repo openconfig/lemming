@@ -50,9 +50,9 @@ http_archive(
 
 http_archive(
     name = "rules_python",
-    sha256 = "98880e2942e66fbe23202bd4174c089a54a203c32fc1cbc1c6c86df9f97ad7e3",
-    strip_prefix = "rules_python-1.9.2",
-    url = "https://github.com/bazel-contrib/rules_python/releases/download/1.9.2/rules_python-1.9.2.tar.gz",
+    sha256 = "7338fac5da94920b9a2db88add662246e7c41cc5c357ea93670ef23f1f153d4f",
+    strip_prefix = "rules_python-2.4.1",
+    url = "https://github.com/bazel-contrib/rules_python/releases/download/2.4.1/rules_python-2.4.1.tar.gz",
 )
 
 http_archive(
@@ -65,10 +65,10 @@ http_archive(
 
 http_archive(
     name = "com_google_absl",
-    sha256 = "71358f2e72e945d280bfab44090eacb3f98e10fead31fd97876f05a835510d92",
-    strip_prefix = "abseil-cpp-20250512.2",
+    sha256 = "f9148fb00ec98a2396bdf875c99a78e6a70afa662b107862d92b285d857a8320",
+    strip_prefix = "abseil-cpp-20250814.2",
     urls = [
-        "https://github.com/abseil/abseil-cpp/releases/download/20250512.2/abseil-cpp-20250512.2.tar.gz",
+        "https://github.com/abseil/abseil-cpp/releases/download/20250814.2/abseil-cpp-20250814.2.tar.gz",
     ],
 )
 
@@ -282,6 +282,8 @@ swift_rules_dependencies()
 http_archive(
     name = "com_github_opencomputeproject_sai",
     build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 cc_library(
     name = "sai",
     hdrs = glob(["inc/*.h","experimental/*.h"]),

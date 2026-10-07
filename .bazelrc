@@ -2,6 +2,7 @@ build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
 build --incompatible_strict_action_env=true
 build --features=-supports_start_end_lib --host_features=-supports_start_end_lib
 common --experimental_repository_downloader_retries=10
+common --incompatible_autoload_externally=+@rules_cc
 
 
 build:remote --java_runtime_version=rbe_jdk

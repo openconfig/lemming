@@ -1,0 +1,11 @@
+--- bazel/generate_cc.bzl
++++ bazel/generate_cc.bzl
+@@ -194,7 +194,7 @@
+         ),
+         "plugin": attr.label(
+             executable = True,
+-            providers = ["files_to_run"],
++            providers = [DefaultInfo],
+             cfg = "exec",
+         ),
+         "flags": attr.string_list(
