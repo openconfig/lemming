@@ -1,16 +1,14 @@
 resources:
-- manager.yaml
+  - manager.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
 
 configMapGenerator:
-- files:
-  - controller_manager_config.yaml
-  name: manager-config
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+  - files:
+      - controller_manager_config.yaml
+    name: manager-config
 images:
-- name: controller
-  newName: us-west1-docker.pkg.dev/openconfig-lemming/release/operator
-  newTag: v0.2.3
+  - name: controller
+    newName: us-west1-docker.pkg.dev/openconfig-lemming/release/operator
+    newTag: v0.2.9

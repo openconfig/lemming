@@ -1181,48 +1181,61 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 	fwdSrv := &fwdNotifServer{
 		ch: make(chan *fwdpb.EventDesc, 1),
 	}
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	go func() {
 		errCh <- sw.dataplane.NotifySubscribe(req, fwdSrv)
 	}()
+
+	processEvent := func(ed *fwdpb.EventDesc) error {
+		num, err := strconv.Atoi(ed.GetPort().GetPortId().GetObjectId().GetId())
+		if err != nil {
+			slog.WarnContext(srv.Context(), "couldn't get numeric port id", "err", err)
+			return nil
+		}
+		oType := sw.mgr.GetType(ed.GetPort().GetPortId().GetObjectId().GetId())
+		switch oType {
+		case saipb.ObjectType_OBJECT_TYPE_PORT:
+		case saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT:
+		case saipb.ObjectType_OBJECT_TYPE_LAG:
+		default:
+			slog.InfoContext(srv.Context(), "skipping port state event", "type", oType)
+			return nil
+		}
+		status := saipb.PortOperStatus_PORT_OPER_STATUS_UNKNOWN
+		if ed.GetPort().PortInfo.OperStatus == fwdpb.PortState_PORT_STATE_ENABLED_UP {
+			status = saipb.PortOperStatus_PORT_OPER_STATUS_UP
+		} else if ed.GetPort().PortInfo.OperStatus == fwdpb.PortState_PORT_STATE_DISABLED_DOWN {
+			status = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN
+		}
+		// update port oper status in the attribute map
+		sw.mgr.StoreAttributes(uint64(num), &saipb.PortAttribute{
+			OperStatus: status.Enum(),
+		})
+		resp := &saipb.PortStateChangeNotificationResponse{
+			Data: []*saipb.PortOperStatusNotification{{
+				PortId:    uint64(num),
+				PortState: status,
+			}},
+		}
+		slog.InfoContext(srv.Context(), "send port event", "event", resp)
+		return srv.Send(resp)
+	}
+
 	for {
 		select {
 		case err := <-errCh:
-			return err
+			for {
+				select {
+				case ed := <-fwdSrv.ch:
+					if err := processEvent(ed); err != nil {
+						return err
+					}
+				default:
+					return err
+				}
+			}
 		case ed := <-fwdSrv.ch:
-			num, err := strconv.Atoi(ed.GetPort().GetPortId().GetObjectId().GetId())
-			if err != nil {
-				slog.WarnContext(srv.Context(), "couldn't get numeric port id", "err", err)
-				continue
-			}
-			oType := sw.mgr.GetType(ed.GetPort().GetPortId().GetObjectId().GetId())
-			switch oType {
-			case saipb.ObjectType_OBJECT_TYPE_PORT:
-			case saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT:
-			case saipb.ObjectType_OBJECT_TYPE_LAG:
-			default:
-				slog.InfoContext(srv.Context(), "skipping port state event", "type", oType)
-				continue
-			}
-			status := saipb.PortOperStatus_PORT_OPER_STATUS_UNKNOWN
-			if ed.GetPort().PortInfo.OperStatus == fwdpb.PortState_PORT_STATE_ENABLED_UP {
-				status = saipb.PortOperStatus_PORT_OPER_STATUS_UP
-			} else if ed.GetPort().PortInfo.OperStatus == fwdpb.PortState_PORT_STATE_DISABLED_DOWN {
-				status = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN
-			}
-			// update port oper status in the attribute map
-			sw.mgr.StoreAttributes(uint64(num), &saipb.PortAttribute{
-				OperStatus: status.Enum(),
-			})
-			resp := &saipb.PortStateChangeNotificationResponse{
-				Data: []*saipb.PortOperStatusNotification{{
-					PortId:    uint64(num),
-					PortState: status,
-				}},
-			}
-			slog.InfoContext(srv.Context(), "send port event", "event", resp)
-			err = srv.Send(resp)
-			if err != nil {
+			if err := processEvent(ed); err != nil {
 				return err
 			}
 		}

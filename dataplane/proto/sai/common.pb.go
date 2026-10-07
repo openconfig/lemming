@@ -33589,16 +33589,16 @@ const file_dataplane_proto_sai_common_proto_rawDesc = "" +
 	"\x10isolation_object\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x02H\x01R\x0fisolationObject\x88\x01\x01B\x15\n" +
 	"\x13_isolation_group_idB\x13\n" +
 	"\x11_isolation_object\"\xc6\x01\n" +
-	"\x12L2mcEntryAttribute\x12U\n" +
+	"\x12L2McEntryAttribute\x12U\n" +
 	"\rpacket_action\x18\x01 \x01(\x0e2#.lemming.dataplane.sai.PacketActionB\x06\xf0ܓ\xad\x0f\x01H\x00R\fpacketAction\x88\x01\x01\x123\n" +
 	"\x0foutput_group_id\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x02H\x01R\routputGroupId\x88\x01\x01B\x10\n" +
 	"\x0e_packet_actionB\x12\n" +
 	"\x10_output_group_id\"\x95\x01\n" +
-	"\x12L2mcGroupAttribute\x127\n" +
+	"\x12L2McGroupAttribute\x127\n" +
 	"\x11l2mc_output_count\x18\x01 \x01(\rB\x06\xf0ܓ\xad\x0f\x01H\x00R\x0fl2mcOutputCount\x88\x01\x01\x120\n" +
 	"\x10l2mc_member_list\x18\x02 \x03(\x04B\x06\xf0ܓ\xad\x0f\x02R\x0el2mcMemberListB\x14\n" +
 	"\x12_l2mc_output_count\"\xef\x01\n" +
-	"\x18L2mcGroupMemberAttribute\x12/\n" +
+	"\x18L2McGroupMemberAttribute\x12/\n" +
 	"\rl2mc_group_id\x18\x01 \x01(\x04B\x06\xf0ܓ\xad\x0f\x01H\x00R\vl2mcGroupId\x88\x01\x01\x121\n" +
 	"\x0el2mc_output_id\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x02H\x01R\fl2mcOutputId\x88\x01\x01\x125\n" +
 	"\x10l2mc_endpoint_ip\x18\x03 \x01(\fB\x06\xf0ܓ\xad\x0f\x03H\x02R\x0el2mcEndpointIp\x88\x01\x01B\x10\n" +
@@ -37994,9 +37994,9 @@ var file_dataplane_proto_sai_common_proto_goTypes = []any{
 	(*IpsecSaAttribute)(nil),                      // 277: lemming.dataplane.sai.IpsecSaAttribute
 	(*IsolationGroupAttribute)(nil),               // 278: lemming.dataplane.sai.IsolationGroupAttribute
 	(*IsolationGroupMemberAttribute)(nil),         // 279: lemming.dataplane.sai.IsolationGroupMemberAttribute
-	(*L2McEntryAttribute)(nil),                    // 280: lemming.dataplane.sai.L2mcEntryAttribute
-	(*L2McGroupAttribute)(nil),                    // 281: lemming.dataplane.sai.L2mcGroupAttribute
-	(*L2McGroupMemberAttribute)(nil),              // 282: lemming.dataplane.sai.L2mcGroupMemberAttribute
+	(*L2McEntryAttribute)(nil),                    // 280: lemming.dataplane.sai.L2McEntryAttribute
+	(*L2McGroupAttribute)(nil),                    // 281: lemming.dataplane.sai.L2McGroupAttribute
+	(*L2McGroupMemberAttribute)(nil),              // 282: lemming.dataplane.sai.L2McGroupMemberAttribute
 	(*LagAttribute)(nil),                          // 283: lemming.dataplane.sai.LagAttribute
 	(*LagMemberAttribute)(nil),                    // 284: lemming.dataplane.sai.LagMemberAttribute
 	(*MacsecAttribute)(nil),                       // 285: lemming.dataplane.sai.MacsecAttribute
@@ -38315,7 +38315,7 @@ var file_dataplane_proto_sai_common_proto_depIdxs = []int32{
 	61,  // 247: lemming.dataplane.sai.IpsecSaAttribute.ipsec_cipher:type_name -> lemming.dataplane.sai.IpsecCipher
 	150, // 248: lemming.dataplane.sai.IpsecSaAttribute.stats_count_mode:type_name -> lemming.dataplane.sai.StatsCountMode
 	66,  // 249: lemming.dataplane.sai.IsolationGroupAttribute.type:type_name -> lemming.dataplane.sai.IsolationGroupType
-	94,  // 250: lemming.dataplane.sai.L2mcEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	94,  // 250: lemming.dataplane.sai.L2McEntryAttribute.packet_action:type_name -> lemming.dataplane.sai.PacketAction
 	69,  // 251: lemming.dataplane.sai.MacsecAttribute.direction:type_name -> lemming.dataplane.sai.MacsecDirection
 	68,  // 252: lemming.dataplane.sai.MacsecAttribute.supported_cipher_suite_list:type_name -> lemming.dataplane.sai.MacsecCipherSuite
 	151, // 253: lemming.dataplane.sai.MacsecAttribute.stats_mode:type_name -> lemming.dataplane.sai.StatsMode
