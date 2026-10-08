@@ -21,6 +21,7 @@ import (
 	"runtime/debug"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -60,11 +61,10 @@ type Server struct {
 	// TODO(wenbli): Implement gnmi.Get and remove this.
 	GetResponses []interface{}
 
-	configMu     sync.Mutex
+	// mu protects configSchema, stateSchema, and updates to the shared cache.
+	mu           sync.Mutex
 	configSchema *ytypes.Schema
-
-	stateMu     sync.Mutex
-	stateSchema *ytypes.Schema
+	stateSchema  *ytypes.Schema
 
 	validators  []func(*oc.Root) error
 	reconcilers []reconciler.Reconciler
@@ -320,7 +320,32 @@ func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShado
 		unmarshalOpts = append(unmarshalOpts, &ytypes.PreferShadowPath{})
 	}
 	if err := ytypes.UnmarshalSetRequest(schema, req, unmarshalOpts...); err != nil {
-		return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
+		// Per gNMI specification (Section 3.4.4): deleting a path that does not exist
+		// is a no-op success. If UnmarshalSetRequest failed because a delete path had
+		// no match in the tree, retry deletes individually while tolerating "no match found".
+		if len(req.Delete) > 0 && strings.Contains(err.Error(), "no match found") {
+			reqWithoutDelete := &gpb.SetRequest{
+				Prefix:  req.Prefix,
+				Replace: req.Replace,
+				Update:  req.Update,
+			}
+			for _, del := range req.Delete {
+				singleDelReq := &gpb.SetRequest{
+					Prefix: req.Prefix,
+					Delete: []*gpb.Path{del},
+				}
+				if delErr := ytypes.UnmarshalSetRequest(schema, singleDelReq, unmarshalOpts...); delErr != nil {
+					if !strings.Contains(delErr.Error(), "no match found") {
+						return status.Errorf(codes.InvalidArgument, "failed to unmarshal delete path: %v", delErr)
+					}
+				}
+			}
+			if err := ytypes.UnmarshalSetRequest(schema, reqWithoutDelete, unmarshalOpts...); err != nil {
+				return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
+			}
+		} else {
+			return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
+		}
 	}
 	if preferShadowPath {
 		// Populate and defaults after any possible replace/delete operations.
@@ -405,6 +430,7 @@ func set(schema *ytypes.Schema, c *Collector, req *gpb.SetRequest, preferShadowP
 	if err := updateCache(c, schema.Root, prevRoot, req.Prefix.Origin, preferShadowPath, timestamp, user, auth); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
+
 	success = true
 
 	return nil
@@ -538,8 +564,8 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 
 	switch gnmiMode {
 	case ConfigMode:
-		s.configMu.Lock()
-		defer s.configMu.Unlock()
+		s.mu.Lock()
+		defer s.mu.Unlock()
 
 		log.V(2).Infof("config datastore service received SetRequest: %v", prototext.Format(req))
 		if s.configSchema == nil {
@@ -555,8 +581,8 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 			Timestamp: time.Now().UnixNano(),
 		}, err
 	case StateMode:
-		s.stateMu.Lock()
-		defer s.stateMu.Unlock()
+		s.mu.Lock()
+		defer s.mu.Unlock()
 
 		log.V(3).Infof("operational state datastore service received SetRequest: %v", req)
 		if s.stateSchema == nil {
