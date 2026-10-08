@@ -134,7 +134,7 @@ func (t *Table) match(in []byte) (*key, fwdaction.Actions) {
 
 		// Strip out the prefix and check if the 0 or 1 child is a prefix for
 		// the new key.
-		key.TrimPrefix(curr.prefix)
+		key = key.TrimPrefix(curr.prefix)
 		curr = curr.child[key.Bit(0)]
 		if curr == nil {
 			break
@@ -160,7 +160,7 @@ func (t *Table) add(pre *key, actions fwdaction.Actions) {
 		}
 
 		// Strip out the prefix and determine the next level based on the 0th bit.
-		key.TrimPrefix(curr.prefix)
+		key = key.TrimPrefix(curr.prefix)
 		child := curr.child[key.Bit(0)]
 
 		// If the child does not exist, add the new level for the result.
@@ -183,7 +183,7 @@ func (t *Table) add(pre *key, actions fwdaction.Actions) {
 		// common prefix.
 		p := prefixKey(child.prefix, key)
 		curr = newLevel(p, curr)
-		child.prefix.TrimPrefix(p)
+		child.prefix = child.prefix.TrimPrefix(p)
 		curr.child[child.prefix.Bit(0)] = child
 		child.parent = curr
 	}
@@ -205,7 +205,7 @@ func (t *Table) remove(prefix *key) error {
 
 		// Strip out the prefix and check if the 0 or 1 child is a prefix for
 		// the new key.
-		key.TrimPrefix(curr.prefix)
+		key = key.TrimPrefix(curr.prefix)
 		if curr = curr.child[key.Bit(0)]; curr == nil {
 			return fmt.Errorf("prefix: Unable to find entry for prefix %v", key)
 		}
