@@ -26,9 +26,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gnmi/errdiff"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 const (
@@ -380,3 +382,82 @@ func TestRemoveVlan(t *testing.T) {
 		t.Fatalf("RemoveVlan failed: %v", err)
 	}
 }
+
+func TestCreateVlanMemberTaggingMode(t *testing.T) {
+	const (
+		vlanID           = uint32(666)
+		untaggedPortID   = uint64(10)
+		taggedPortID     = uint64(20)
+		untaggedBridgeID = uint64(100)
+		taggedBridgeID   = uint64(200)
+	)
+
+	tests := []struct {
+		desc        string
+		bridgePort  uint64
+		taggingMode saipb.VlanTaggingMode
+		wantActions []*fwdpb.ActionDesc
+	}{{
+		desc:        "untagged member encapsulates 802.1Q header and sets VLAN tag",
+		bridgePort:  untaggedBridgeID,
+		taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED,
+		wantActions: []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vlanID))).Build(),
+		},
+	}, {
+		desc:        "tagged member preserves existing 802.1Q header without re-encapsulating",
+		bridgePort:  taggedBridgeID,
+		taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED,
+		wantActions: nil,
+	}}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestVlan(t, dplane)
+			defer stopFn()
+			ctx := context.Background()
+
+			mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+				DefaultStpInstId: proto.Uint64(testStpInstId),
+			})
+			mgr.StoreAttributes(untaggedBridgeID, &saipb.BridgePortAttribute{
+				PortId: proto.Uint64(untaggedPortID),
+			})
+			mgr.StoreAttributes(taggedBridgeID, &saipb.BridgePortAttribute{
+				PortId: proto.Uint64(taggedPortID),
+			})
+
+			vlanResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
+				Switch: 1,
+				VlanId: proto.Uint32(vlanID),
+			})
+			if err != nil {
+				t.Fatalf("CreateVlan failed: %v", err)
+			}
+
+			_, err = c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+				Switch:          1,
+				VlanId:          proto.Uint64(vlanResp.GetOid()),
+				BridgePortId:    proto.Uint64(tt.bridgePort),
+				VlanTaggingMode: tt.taggingMode.Enum(),
+			})
+			if err != nil {
+				t.Fatalf("CreateVlanMember failed: %v", err)
+			}
+
+			if len(dplane.gotEntryAddReqs) != 1 {
+				t.Fatalf("got %d TableEntryAdd requests, want 1", len(dplane.gotEntryAddReqs))
+			}
+			gotEntries := dplane.gotEntryAddReqs[0].GetEntries()
+			if len(gotEntries) != 1 {
+				t.Fatalf("got %d table entries, want 1", len(gotEntries))
+			}
+			if d := cmp.Diff(gotEntries[0].GetActions(), tt.wantActions, protocmp.Transform()); d != "" {
+				t.Errorf("CreateVlanMember() actions diff (-got +want):\n%s", d)
+			}
+		})
+	}
+}
+
