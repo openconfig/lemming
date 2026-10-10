@@ -2,7 +2,7 @@ module github.com/openconfig/lemming
 
 go 1.26.3
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 require (
 	cloud.google.com/go/cloudbuild v1.34.0
@@ -28,15 +28,15 @@ require (
 	github.com/openconfig/gnsi v1.9.1
 	github.com/openconfig/goyang v1.6.3
 	github.com/openconfig/gribi v1.9.1
-	github.com/openconfig/gribigo v0.1.3
-	github.com/openconfig/kne v0.3.2
+	github.com/openconfig/gribigo v0.2.0
+	github.com/openconfig/kne v0.3.3
 	github.com/openconfig/magna v0.0.0-20260408002632-b210de0f7ba8
 	github.com/openconfig/ondatra v0.14.8
 	github.com/openconfig/testt v0.0.0-20251119232631-fbbd49c39452
 	github.com/openconfig/ygnmi v0.15.0
 	github.com/openconfig/ygot v0.35.0
 	github.com/osrg/gobgp/v3 v3.37.0
-	github.com/p4lang/p4runtime v1.5.0
+	github.com/p4lang/p4runtime v1.6.0
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -54,25 +54,25 @@ require (
 	go.opentelemetry.io/otel/trace v1.46.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/oauth2 v0.37.0
-	golang.org/x/sys v0.48.0
-	google.golang.org/api v0.300.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc
+	golang.org/x/sys v0.49.0
+	google.golang.org/api v0.301.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20261005182115-fad411399dd8
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261005182115-fad411399dd8
 	google.golang.org/grpc v1.84.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.2
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/apimachinery v0.37.0
-	k8s.io/client-go v0.37.0
+	k8s.io/apimachinery v0.37.1
+	k8s.io/client-go v0.37.1
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.140.0
-	modernc.org/cc/v4 v4.29.7
+	modernc.org/cc/v4 v4.30.1
 )
 
 require (
 	bitbucket.org/creachadair/stringset v0.0.14 // indirect
 	cloud.google.com/go v0.123.0 // indirect
-	cloud.google.com/go/auth v0.24.0 // indirect
+	cloud.google.com/go/auth v0.24.1-0.20261001053825-dbc26066f70a // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.3.0 // indirect
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	cloud.google.com/go/iam v1.12.0 // indirect
@@ -114,7 +114,7 @@ require (
 	github.com/go-test/deep v1.1.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
-	github.com/google/s2a-go v0.1.10 // indirect
+	github.com/google/s2a-go v0.1.11 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.22 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
@@ -138,7 +138,7 @@ require (
 	github.com/openconfig/bootz v0.7.1 // indirect
 	github.com/openconfig/gnpsi v0.3.2 // indirect
 	github.com/openconfig/gocloser v0.0.0-20251119232641-34bca749fdb3 // indirect
-	github.com/openconfig/kne/third_party/meshnet v0.5.1 // indirect
+	github.com/openconfig/kne/third_party/meshnet v0.5.3 // indirect
 	github.com/openconfig/lemming/operator v0.2.9 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
@@ -148,7 +148,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/scrapli/scrapligo v1.4.1 // indirect
+	github.com/scrapli/scrapligo v1.4.2 // indirect
 	github.com/scrapli/scrapligocfg v1.0.0 // indirect
 	github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
@@ -181,9 +181,9 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/api v0.37.0 // indirect
+	k8s.io/api v0.37.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
-	k8s.io/streaming v0.37.0 // indirect
+	k8s.io/streaming v0.37.1 // indirect
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
 	lukechampine.com/uint128 v1.3.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
