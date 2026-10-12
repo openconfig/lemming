@@ -282,7 +282,6 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 	if err := hostif.mgr.PopulateAttributes(swReq, swAttr); err != nil {
 		return nil, err
 	}
-	entriesAdded := 1
 	switch tType := req.GetTrapType(); tType {
 	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_REQUEST, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_RESPONSE:
 		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
@@ -327,7 +326,6 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
 				WithUint16(bgpPort))),
 		)
-		entriesAdded = 2
 	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCP, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCP_L2:
 		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
@@ -341,7 +339,6 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
 				WithUint16(dhcpClientPort))),
 		)
-		entriesAdded = 2
 	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCPV6, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCPV6_L2:
 		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
@@ -355,15 +352,15 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
 				WithUint16(dhcpv6ClientPort))),
 		)
-		entriesAdded = 2
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
 	}
 
 	addReq := fwdReq.Build()
 	act := computePacketAction(req.GetPacketAction())
-	for i := 0; i < entriesAdded; i++ {
-		addReq.Entries[i].Actions = append(addReq.Entries[i].Actions, act)
+	trapIDAct := fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).WithUint64Value(id)).Build()
+	for i := range addReq.Entries {
+		addReq.Entries[i].Actions = append(addReq.Entries[i].Actions, act, trapIDAct)
 	}
 
 	if _, err := hostif.dataplane.TableEntryAdd(ctx, addReq); err != nil {

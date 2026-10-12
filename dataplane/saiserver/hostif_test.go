@@ -313,7 +313,7 @@ func TestCPUPacketStream(t *testing.T) {
 	})
 }
 
-func wantDHCPTrapReq(ports ...uint16) *fwdpb.TableEntryAddRequest {
+func wantDHCPTrapReq(trapID uint64, ports ...uint16) *fwdpb.TableEntryAddRequest {
 	fwdReq := fwdconfig.TableEntryAddRequest("foo", trapTableID)
 	for _, port := range ports {
 		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
@@ -325,8 +325,9 @@ func wantDHCPTrapReq(ports ...uint16) *fwdpb.TableEntryAddRequest {
 	}
 	req := fwdReq.Build()
 	act := computePacketAction(saipb.PacketAction_PACKET_ACTION_TRAP)
+	trapIDAct := fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).WithUint64Value(trapID)).Build()
 	for i := range req.Entries {
-		req.Entries[i].Actions = append(req.Entries[i].Actions, act)
+		req.Entries[i].Actions = append(req.Entries[i].Actions, act, trapIDAct)
 	}
 	return req
 }
@@ -368,7 +369,7 @@ func TestCreateHostifTrap(t *testing.T) {
 		want: &saipb.CreateHostifTrapResponse{
 			Oid: 1,
 		},
-		wantReq: wantDHCPTrapReq(dhcpServerPort, dhcpClientPort),
+		wantReq: wantDHCPTrapReq(1, dhcpServerPort, dhcpClientPort),
 	}, {
 		desc: "dhcp l2 trap",
 		req: &saipb.CreateHostifTrapRequest{
@@ -379,7 +380,7 @@ func TestCreateHostifTrap(t *testing.T) {
 		want: &saipb.CreateHostifTrapResponse{
 			Oid: 1,
 		},
-		wantReq: wantDHCPTrapReq(dhcpServerPort, dhcpClientPort),
+		wantReq: wantDHCPTrapReq(1, dhcpServerPort, dhcpClientPort),
 	}, {
 		desc: "dhcpv6 trap",
 		req: &saipb.CreateHostifTrapRequest{
@@ -390,7 +391,7 @@ func TestCreateHostifTrap(t *testing.T) {
 		want: &saipb.CreateHostifTrapResponse{
 			Oid: 1,
 		},
-		wantReq: wantDHCPTrapReq(dhcpv6ServerPort, dhcpv6ClientPort),
+		wantReq: wantDHCPTrapReq(1, dhcpv6ServerPort, dhcpv6ClientPort),
 	}, {
 		desc: "dhcpv6 l2 trap",
 		req: &saipb.CreateHostifTrapRequest{
@@ -401,7 +402,7 @@ func TestCreateHostifTrap(t *testing.T) {
 		want: &saipb.CreateHostifTrapResponse{
 			Oid: 1,
 		},
-		wantReq: wantDHCPTrapReq(dhcpv6ServerPort, dhcpv6ClientPort),
+		wantReq: wantDHCPTrapReq(1, dhcpv6ServerPort, dhcpv6ClientPort),
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
