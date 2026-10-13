@@ -194,6 +194,7 @@ const (
 	portToHostifTable     = "cpu-output"
 	tunTermTable          = "tun-term"
 	VlanTable             = "vlan"
+	EgressVlanTable       = "egress-vlan"
 	L2MCGroupTable        = "l2mcg"
 	FDBTable              = "fdb"
 	FloodTable            = "flood"
@@ -249,6 +250,8 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		sg:              sg,
 		mgr:             mgr,
 	}
+	vlan.lag = sw.Lag
+	sw.Lag.vlan = vlan
 	saipb.RegisterSwitchServer(s, sw)
 	saipb.RegisterStpServer(s, sw.stp)
 	return sw, nil
@@ -411,24 +414,28 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if _, err := sw.dataplane.TableCreate(ctx, portMAC); err != nil {
 		return nil, err
 	}
-	vlanReq := &fwdpb.TableCreateRequest{
+	egressVlanReq := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: VlanTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: EgressVlanTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
 						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
 						},
 					}},
 				},
 			},
 		},
 	}
-	if _, err := sw.dataplane.TableCreate(ctx, vlanReq); err != nil {
+	if _, err := sw.dataplane.TableCreate(ctx, egressVlanReq); err != nil {
 		return nil, err
 	}
 	l2mcGroupReq := &fwdpb.TableCreateRequest{
@@ -823,6 +830,34 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 
 	err = sw.createOutputTable(ctx, fmt.Sprint(cpuPortID))
 	if err != nil {
+		return nil, err
+	}
+
+	vlanReq := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: VlanTable}},
+			Actions: []*fwdpb.ActionDesc{
+				fwdconfig.Action(fwdconfig.LookupAction(outputTable)).Build(),
+				{ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT},
+			},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, vlanReq); err != nil {
 		return nil, err
 	}
 
@@ -1325,7 +1360,7 @@ func (sw *saiSwitch) FdbEventNotification(req *saipb.FdbEventNotificationRequest
 	}
 }
 
-func (sw *saiSwitch) onBridgeLearn(mac []byte, portID string) {
+func (sw *saiSwitch) onBridgeLearn(mac []byte, portID string, pktVlanID uint16) {
 	if sw.fdb == nil {
 		return
 	}
@@ -1334,25 +1369,41 @@ func (sw *saiSwitch) onBridgeLearn(mac []byte, portID string) {
 		slog.Warn("onBridgeLearn: failed to parse numeric port ID", "portID", portID, "err", err)
 		return
 	}
+	if sw.Lag != nil {
+		if lagID, ok := sw.Lag.lagByPortID(portNum); ok {
+			portNum = lagID
+		}
+	}
 
 	var bridgePortOID uint64
 	var vlanOID uint64
 	var vlanID uint32 = uint32(DefaultVlanId)
+	if pktVlanID != 0 {
+		vlanID = uint32(pktVlanID)
+	}
 
 	if sw.vlan != nil {
-		if member := sw.vlan.memberByPortId(portNum); member != nil {
+		var member *vlanMember
+		if pktVlanID != 0 {
+			member = sw.vlan.memberByPortIdAndVid(portNum, uint32(pktVlanID))
+		}
+		if member == nil {
+			member = sw.vlan.untaggedMemberByPortId(portNum)
+		}
+		if member == nil {
+			member = sw.vlan.memberByPortId(portNum)
+		}
+		if member != nil {
 			vlanID = member.Vid
 			if member.BridgePortID != 0 {
 				bridgePortOID = member.BridgePortID
 			}
-			if oid, ok := sw.vlan.oidByVid(vlanID); ok {
-				vlanOID = oid
-				slog.Info("onBridgeLearn: found VLAN for port", "portNum", portNum, "vlanID", vlanID, "vlanOID", vlanOID)
-			} else {
-				slog.Warn("onBridgeLearn: failed to get OID for VLAN", "vlanID", vlanID)
-			}
+		}
+		if oid, ok := sw.vlan.oidByVid(vlanID); ok {
+			vlanOID = oid
+			slog.Info("onBridgeLearn: found VLAN for port", "portNum", portNum, "vlanID", vlanID, "vlanOID", vlanOID)
 		} else {
-			slog.Warn("onBridgeLearn: no VLAN member found for port", "portNum", portNum)
+			slog.Warn("onBridgeLearn: failed to get OID for VLAN", "vlanID", vlanID)
 		}
 	} else {
 		slog.Warn("onBridgeLearn: vlan server is nil, using default vlan")
@@ -1429,6 +1480,9 @@ func (sw *saiSwitch) Reset() {
 	sw.vlan.Reset()
 	sw.port.Reset()
 	sw.hostif.Reset()
+	if sw.Lag != nil {
+		sw.Lag.Reset()
+	}
 	if sw.fdb != nil {
 		sw.fdb.Reset()
 	}

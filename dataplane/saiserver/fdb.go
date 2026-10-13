@@ -240,7 +240,7 @@ func (f *fdb) CreateFdbEntry(ctx context.Context, req *saipb.CreateFdbEntryReque
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 			fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithBytes(mac),
 		)),
-		fwdconfig.TransmitAction(fmt.Sprint(portID)),
+		fwdconfig.TransmitAction(fmt.Sprint(portID)).WithImmediate(true),
 	).Build()
 
 	if _, err := f.dataplane.TableEntryAdd(ctx, addReq); err != nil {
