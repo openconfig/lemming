@@ -15,21 +15,18 @@
 package sai
 
 import (
-	"crypto/tls"
 	"fmt"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	reflectpb "google.golang.org/grpc/reflection/grpc_reflection_v1"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"github.com/openconfig/lemming/dataplane/luciusctl/internal/transport"
 )
 
 func New() *cobra.Command {
@@ -50,7 +47,7 @@ Examples:
 `,
 		Aliases: []string{"get-attr"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conn, err := dial()
+			conn, err := transport.Dial()
 			if err != nil {
 				return err
 			}
@@ -89,7 +86,7 @@ Examples:
 			return nil
 		},
 		ValidArgsFunction: func(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			conn, err := dial()
+			conn, err := transport.Dial()
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveError
 			}
@@ -127,19 +124,4 @@ func keyPrefixMatch[T any](method map[string]T, prefix string) []string {
 	}
 	slices.Sort(matches)
 	return matches
-}
-
-func dial() (*grpc.ClientConn, error) {
-	insec, tlsSkipVerify := viper.GetBool("insecure"), viper.GetBool("tls_skip_verify")
-	if insec && tlsSkipVerify {
-		return nil, fmt.Errorf("both insecure and tls skip verify are set")
-	}
-	opts := grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		InsecureSkipVerify: tlsSkipVerify, // nolint:gosec
-	}))
-	if insec {
-		opts = grpc.WithTransportCredentials(insecure.NewCredentials())
-	}
-
-	return grpc.NewClient(viper.GetString("address"), opts)
 }

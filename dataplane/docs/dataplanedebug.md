@@ -9,6 +9,14 @@
 
 The lemctl CLI contains useful tools for debugging Lemming and Lucius.
 
+Live `lemctl lucius info` and `lemctl lucius sai` queries verify TLS certificates
+by default. Use `--tls_ca_cert ca.pem` to add a private CA to system trust roots;
+`--tls_skip_verify` is no longer supported. Plaintext `--insecure` requires a
+literal loopback IP and port, such as `127.0.0.1:50000` or `[::1]:50000`, and
+connects directly without a proxy. Hostnames, remote IPs, resolver targets, Unix
+sockets and scoped IPv6 addresses are rejected for plaintext. `--tls_ca_cert`
+cannot be combined with `--insecure`.
+
 To enable packet traces, the lucius containers must be logging at level 3 or
 higher. Add the "-v=3" arg in the topology file for all lucius containers.
 

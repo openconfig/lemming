@@ -6,11 +6,8 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/luciusctl/info",
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/luciusctl/internal/transport",
         "//proto/forwarding",
         "@com_github_spf13_cobra//:cobra",
-        "@com_github_spf13_viper//:viper",
-        "@org_golang_google_grpc//:grpc",
-        "@org_golang_google_grpc//credentials",
-        "@org_golang_google_grpc//credentials/insecure",
     ],
 )
