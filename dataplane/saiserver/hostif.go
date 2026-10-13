@@ -260,9 +260,14 @@ var (
 )
 
 const (
-	bgpPort        = 179
-	trapTableID    = "trap-table"
-	wildcardPortID = 0
+	bgpPort          = 179
+	dhcpServerPort   = 67
+	dhcpClientPort   = 68
+	dhcpv6ServerPort = 547
+	dhcpv6ClientPort = 546
+	ipProtoUDP       = 17
+	trapTableID      = "trap-table"
+	wildcardPortID   = 0
 )
 
 func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHostifTrapRequest) (*saipb.CreateHostifTrapResponse, error) {
@@ -277,7 +282,6 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 	if err := hostif.mgr.PopulateAttributes(swReq, swAttr); err != nil {
 		return nil, err
 	}
-	entriesAdded := 1
 	switch tType := req.GetTrapType(); tType {
 	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_REQUEST, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_RESPONSE:
 		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
@@ -322,15 +326,41 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
 				WithUint16(bgpPort))),
 		)
-		entriesAdded = 2
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCP, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCP_L2:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(dhcpServerPort))),
+		)
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(dhcpClientPort))),
+		)
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCPV6, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_DHCPV6_L2:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(dhcpv6ServerPort))),
+		)
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO).
+				WithBytes([]byte{ipProtoUDP}, []byte{0xFF}),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(dhcpv6ClientPort))),
+		)
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
 	}
 
 	addReq := fwdReq.Build()
 	act := computePacketAction(req.GetPacketAction())
-	for i := 0; i < entriesAdded; i++ {
-		addReq.Entries[i].Actions = append(addReq.Entries[i].Actions, act)
+	trapIDAct := fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).WithUint64Value(id)).Build()
+	for i := range addReq.Entries {
+		addReq.Entries[i].Actions = append(addReq.Entries[i].Actions, act, trapIDAct)
 	}
 
 	if _, err := hostif.dataplane.TableEntryAdd(ctx, addReq); err != nil {
