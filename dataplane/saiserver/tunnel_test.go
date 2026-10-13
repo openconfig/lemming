@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -223,30 +224,125 @@ func TestRemoveTunnel(t *testing.T) {
 }
 
 func TestTunnelTermTableEntry(t *testing.T) {
-	dplane := &fakeSwitchDataplane{}
-	c, _, stopFn := newTestTunnel(t, dplane)
-	defer stopFn()
+	tests := []struct {
+		desc          string
+		req           *saipb.CreateTunnelTermTableEntryRequest
+		wantFieldNums []fwdpb.PacketFieldNum
+		wantDstMask   []byte
+	}{
+		{
+			desc: "VXLAN P2P with proto and port",
+			req: &saipb.CreateTunnelTermTableEntryRequest{
+				TunnelType: saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+				Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
+				SrcIp:      []byte{1, 2, 3, 4},
+				DstIp:      []byte{5, 6, 7, 8},
+				VrId:       proto.Uint64(10),
+			},
+			wantFieldNums: []fwdpb.PacketFieldNum{
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+			},
+		},
+		{
+			desc: "GRE MP2P with proto only",
+			req: &saipb.CreateTunnelTermTableEntryRequest{
+				TunnelType: saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE.Enum(),
+				Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2P.Enum(),
+				DstIp:      []byte{5, 6, 7, 8},
+				VrId:       proto.Uint64(10),
+			},
+			wantFieldNums: []fwdpb.PacketFieldNum{
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+			},
+		},
+		{
+			desc: "IPinIP MP2MP with proto only",
+			req: &saipb.CreateTunnelTermTableEntryRequest{
+				TunnelType: saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+				Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2MP.Enum(),
+				VrId:       proto.Uint64(10),
+			},
+			wantFieldNums: []fwdpb.PacketFieldNum{
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+			},
+		},
+		{
+			desc: "IPinIP MP2MP with DstIp default mask",
+			req: &saipb.CreateTunnelTermTableEntryRequest{
+				TunnelType: saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+				Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2MP.Enum(),
+				DstIp:      []byte{10, 0, 0, 1},
+				VrId:       proto.Uint64(10),
+			},
+			wantFieldNums: []fwdpb.PacketFieldNum{
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+			},
+			wantDstMask: ipV4ExactMask,
+		},
+		{
+			desc: "IPv6 IPinIP MP2MP with DstIp default mask",
+			req: &saipb.CreateTunnelTermTableEntryRequest{
+				TunnelType: saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+				Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2MP.Enum(),
+				DstIp:      net.ParseIP("2607:f8b0:c005:d200::"),
+				VrId:       proto.Uint64(10),
+			},
+			wantFieldNums: []fwdpb.PacketFieldNum{
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+			},
+			wantDstMask: ipV6ExactMask,
+		},
+	}
 
-	req := &saipb.CreateTunnelTermTableEntryRequest{
-		TunnelType: saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
-		Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
-		SrcIp:      []byte{1, 2, 3, 4},
-		DstIp:      []byte{5, 6, 7, 8},
-		VrId:       proto.Uint64(10),
-	}
-	resp, err := c.CreateTunnelTermTableEntry(context.TODO(), req)
-	if err != nil {
-		t.Fatalf("CreateTunnelTermTableEntry() unexpected err: %v", err)
-	}
-	if resp.GetOid() == 0 {
-		t.Errorf("CreateTunnelTermTableEntry() returned 0 OID")
-	}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, _, stopFn := newTestTunnel(t, dplane)
+			defer stopFn()
 
-	_, err = c.RemoveTunnelTermTableEntry(context.TODO(), &saipb.RemoveTunnelTermTableEntryRequest{
-		Oid: resp.GetOid(),
-	})
-	if err != nil {
-		t.Fatalf("RemoveTunnelTermTableEntry() unexpected err: %v", err)
+			resp, err := c.CreateTunnelTermTableEntry(context.TODO(), tt.req)
+			if err != nil {
+				t.Fatalf("CreateTunnelTermTableEntry() unexpected err: %v", err)
+			}
+			if resp.GetOid() == 0 {
+				t.Errorf("CreateTunnelTermTableEntry() returned 0 OID")
+			}
+
+			flowEntry := dplane.gotEntryAddReqs[0].GetEntryDesc().GetFlow()
+			if flowEntry == nil {
+				t.Fatalf("entry is not a flow entry: %v", dplane.gotEntryAddReqs[0])
+			}
+			var gotFieldNums []fwdpb.PacketFieldNum
+			for _, f := range flowEntry.GetFields() {
+				gotFieldNums = append(gotFieldNums, f.GetFieldId().GetField().GetFieldNum())
+				if f.GetFieldId().GetField().GetFieldNum() == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST && len(tt.wantDstMask) > 0 {
+					if diff := cmp.Diff(f.GetMasks(), tt.wantDstMask); diff != "" {
+						t.Errorf("IP_ADDR_DST mask diff (-got +want):\n%s", diff)
+					}
+				}
+			}
+			if diff := cmp.Diff(gotFieldNums, tt.wantFieldNums); diff != "" {
+				t.Errorf("match fields diff (-got +want):\n%s", diff)
+			}
+
+			_, err = c.RemoveTunnelTermTableEntry(context.TODO(), &saipb.RemoveTunnelTermTableEntryRequest{
+				Oid: resp.GetOid(),
+			})
+			if err != nil {
+				t.Fatalf("RemoveTunnelTermTableEntry() unexpected err: %v", err)
+			}
+		})
 	}
 }
 
@@ -289,6 +385,34 @@ func TestTunnelMapAndEntry(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("RemoveTunnelMap() unexpected err: %v", err)
+	}
+
+	// Test VNI_TO_VIRTUAL_ROUTER_ID
+	decapMapResp, err := c.CreateTunnelMap(context.TODO(), &saipb.CreateTunnelMapRequest{
+		Type: saipb.TunnelMapType_TUNNEL_MAP_TYPE_VNI_TO_VIRTUAL_ROUTER_ID.Enum(),
+	})
+	if err != nil {
+		t.Fatalf("CreateTunnelMap(VNI_TO_VRF) unexpected err: %v", err)
+	}
+
+	decapEntryResp, err := c.CreateTunnelMapEntry(context.TODO(), &saipb.CreateTunnelMapEntryRequest{
+		TunnelMap:            proto.Uint64(decapMapResp.GetOid()),
+		TunnelMapType:        saipb.TunnelMapType_TUNNEL_MAP_TYPE_VNI_TO_VIRTUAL_ROUTER_ID.Enum(),
+		VniIdKey:             proto.Uint32(20001),
+		VirtualRouterIdValue: proto.Uint64(50),
+	})
+	if err != nil {
+		t.Fatalf("CreateTunnelMapEntry(VNI_TO_VRF) unexpected err: %v", err)
+	}
+	if decapEntryResp.GetOid() == 0 {
+		t.Errorf("CreateTunnelMapEntry(VNI_TO_VRF) returned 0 OID")
+	}
+
+	_, err = c.RemoveTunnelMapEntry(context.TODO(), &saipb.RemoveTunnelMapEntryRequest{
+		Oid: decapEntryResp.GetOid(),
+	})
+	if err != nil {
+		t.Fatalf("RemoveTunnelMapEntry(VNI_TO_VRF) unexpected err: %v", err)
 	}
 }
 

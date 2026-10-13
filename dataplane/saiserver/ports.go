@@ -63,9 +63,9 @@ var getInterface = net.InterfaceByName
 
 func getPreIngressPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),          // Decap the packet if we have a tunnel.
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),       // Match packet to interface.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),       // Match interface to VRF.
+		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),          // Decap the packet if we have a tunnel and set overlay VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(), // Run pre-ingress actions.
 		fwdconfig.Action(fwdconfig.LookupAction(MyMacTable)).Build(),            // Decide whether to process the packet.
 	}
@@ -244,7 +244,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum()
 			port.mgr.StoreAttributes(id, attrs)
 			// TODO: This should be a real error, improve once we a correct config solution.
-			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistant port.
+			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistent port.
 			fwdPort := &fwdpb.PortCreateRequest{
 				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 				Port: &fwdpb.PortDesc{
@@ -527,7 +527,7 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 // SetPortAttributes sets the attributes in the request.
 func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttributeRequest) (*saipb.SetPortAttributeResponse, error) {
 	if req.AdminState != nil {
-		// Skip ports that don't exsit.
+		// Skip ports that don't exist.
 		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetOid(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
 		p := &saipb.GetPortAttributeResponse{}
 		if err := port.mgr.PopulateAttributes(attrReq, p); err != nil {
@@ -709,7 +709,7 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 }
 
 func (port *port) Reset() {
-	slog.Info("reseting port")
+	slog.Info("resetting port")
 }
 
 type lagMember struct {

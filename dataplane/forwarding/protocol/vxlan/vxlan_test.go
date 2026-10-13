@@ -15,11 +15,17 @@
 package vxlan
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ip"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/tcp"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -151,6 +157,57 @@ func TestVXLANRemove(t *testing.T) {
 	err = handler.Remove(fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN)
 	if err != nil {
 		t.Errorf("Remove() with matching header ID failed: %v", err)
+	}
+}
+
+func TestVXLANEntropyCalculation(t *testing.T) {
+	vxlanHdr := []byte{0x08, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x00}
+	innerEth1 := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x08, 0x00}
+	innerEth2 := []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x08, 0x00}
+
+	innerIPAndTCP := []byte{
+		0x45, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00, 0x40, 0x06, 0x00, 0x00,
+		10, 0, 0, 1,
+		10, 0, 0, 2,
+		0x1f, 0x90, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+		0x50, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+
+	data1 := []byte("HTTP payload 1")
+	data2 := []byte("HTTP payload 2 different")
+
+	flow1Pkt1 := slices.Concat(vxlanHdr, innerEth1, innerIPAndTCP, data1)
+	flow1Pkt2 := slices.Concat(vxlanHdr, innerEth1, innerIPAndTCP, data2)
+	flow2Pkt := slices.Concat(vxlanHdr, innerEth2, innerIPAndTCP, data1)
+
+	pkt1, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN, flow1Pkt1)
+	if err != nil {
+		t.Fatalf("fwdpacket.New failed: %v", err)
+	}
+	pkt2, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN, flow1Pkt2)
+	if err != nil {
+		t.Fatalf("fwdpacket.New failed: %v", err)
+	}
+	pkt3, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN, flow2Pkt)
+	if err != nil {
+		t.Fatalf("fwdpacket.New failed: %v", err)
+	}
+
+	port1 := ComputeEntropySourcePort(&protocol.Desc{Packet: pkt1.(*protocol.Packet)})
+	port2 := ComputeEntropySourcePort(&protocol.Desc{Packet: pkt2.(*protocol.Packet)})
+	port3 := ComputeEntropySourcePort(&protocol.Desc{Packet: pkt3.(*protocol.Packet)})
+
+	if port1 < EphemeralPortBase {
+		t.Errorf("port1 = %d, want >= %d", port1, EphemeralPortBase)
+	}
+	if port1 != port2 {
+		t.Errorf("expected identical port for same flow with different payload: got %d vs %d", port1, port2)
+	}
+	if port1 == port3 {
+		t.Errorf("expected different ports for different flows: got %d for both", port1)
+	}
+	if got := ComputeEntropySourcePort(nil); got != 0 {
+		t.Errorf("ComputeEntropySourcePort(nil) = %d, want 0", got)
 	}
 }
 
