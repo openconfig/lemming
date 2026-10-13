@@ -241,7 +241,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		}
 		// For ports that don't exist, do not create dataplane ports.
 		if _, err := getInterface(dev); err != nil {
-			attrs.OperStatus = saipb.PortState_PORT_STATE_DISABLED_DOWN.Enum()
+			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 			port.mgr.StoreAttributes(id, attrs)
 			// TODO: This should be a real error, improve once we a correct config solution.
 			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistant port.
@@ -527,28 +527,16 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 // SetPortAttributes sets the attributes in the request.
 func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttributeRequest) (*saipb.SetPortAttributeResponse, error) {
 	if req.AdminState != nil {
-		// Skip ports that don't exsit.
-		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetOid(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
-		p := &saipb.GetPortAttributeResponse{}
-		if err := port.mgr.PopulateAttributes(attrReq, p); err != nil {
-			return nil, err
-		}
-		if p.GetAttr().GetOperStatus() == saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT {
-			return nil, nil
-		}
-
 		stateReq := &fwdpb.PortStateRequest{
 			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())}},
 		}
-		stateReq.Operation = &fwdpb.PortInfo{
-			AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
-		}
 		if req.GetAdminState() {
 			stateReq.Operation.AdminStatus = fwdpb.PortState_PORT_STATE_ENABLED_UP
+		} else {
+			stateReq.Operation.AdminStatus = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
 		}
-		_, err := port.dataplane.PortState(ctx, stateReq)
-		if err != nil {
+		if _, err := port.dataplane.PortState(ctx, stateReq); err != nil {
 			return nil, err
 		}
 	}
