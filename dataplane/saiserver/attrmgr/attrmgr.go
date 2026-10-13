@@ -18,6 +18,7 @@
 package attrmgr
 
 import (
+	"strconv"
 	"context"
 	"fmt"
 	"log/slog"
@@ -384,4 +385,19 @@ func (mgr *AttrMgr) getID(req, resp proto.Message) (string, error) {
 		return "", err
 	}
 	return string(pBytes), nil
+}
+
+// GetOIDsByType returns a list of OIDs that match the given ObjectType.
+func (mgr *AttrMgr) GetOIDsByType(t saipb.ObjectType) []uint64 {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
+	var oids []uint64
+	for id, ty := range mgr.idToType {
+		if ty == t {
+			if oid, err := strconv.ParseUint(id, 10, 64); err == nil {
+				oids = append(oids, oid)
+			}
+		}
+	}
+	return oids
 }

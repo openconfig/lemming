@@ -23,6 +23,7 @@ go_library(
     deps = [
         "//dataplane/dplaneopts",
         "//dataplane/forwarding",
+        "//dataplane/forwarding/fwdtable/bridge",
         "//dataplane/forwarding/fwdconfig",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/forwarding/protocol/vxlan",
@@ -46,6 +47,7 @@ go_test(
     srcs = [
         "acl_test.go",
         "bridge_test.go",
+        "fdb_test.go",
         "hostif_test.go",
         "l2mc_test.go",
         "mirror_test.go",
