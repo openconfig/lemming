@@ -1,11 +1,11 @@
 FROM docker.io/golang:1.27-bookworm AS build
+RUN apt-get update && apt-get upgrade -y && apt-get install -y libpcap-dev ca-certificates
 WORKDIR /build
 COPY go.* ./
 RUN go mod download
 COPY . .
 
 FROM build as release-build
-RUN apt-get update && apt-get install -y libpcap-dev ca-certificates
 RUN go install github.com/google/go-licenses@latest
 RUN --mount=type=cache,target=/root/.cache/go-build go build -o /out/lemming ./cmd/lemming
 RUN  go-licenses save ./cmd/lemming --save_path THIRD_PARTY_LICENSES
@@ -15,11 +15,11 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN --mount=type=cache,target=/root/.cache/go-build go build -gcflags='all=-N -l' -o /out/lemming ./cmd/lemming
 
 FROM docker.io/debian:bookworm-slim as debug
-RUN apt-get update && apt-get install -y --no-install-recommends libpcap-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends libpcap-dev ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=debug-build /out/lemming /lemming/lemming
 COPY --from=debug-build /go/bin/dlv /dlv/dlv
 
 FROM docker.io/debian:bookworm-slim as release
-RUN apt-get update && apt-get install -y --no-install-recommends libpcap-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends libpcap-dev ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=release-build /out/lemming /lemming/lemming
 COPY --from=release-build /build/THIRD_PARTY_LICENSES /lemming/THIRD_PARTY
