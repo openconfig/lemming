@@ -244,7 +244,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 			port.mgr.StoreAttributes(id, attrs)
 			// TODO: This should be a real error, improve once we a correct config solution.
-			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistant port.
+			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistent port.
 			fwdPort := &fwdpb.PortCreateRequest{
 				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 				Port: &fwdpb.PortDesc{
@@ -697,7 +697,7 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 }
 
 func (port *port) Reset() {
-	slog.Info("reseting port")
+	slog.Info("resetting port")
 }
 
 type lagMember struct {
