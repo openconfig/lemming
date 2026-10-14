@@ -531,6 +531,7 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())}},
 		}
+		stateReq.Operation = &fwdpb.PortInfo{}
 		if req.GetAdminState() {
 			stateReq.Operation.AdminStatus = fwdpb.PortState_PORT_STATE_ENABLED_UP
 		} else {
