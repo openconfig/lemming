@@ -28,8 +28,9 @@ func New() *cobra.Command {
 		Short: "lucius queries info from a running instance of lucius.",
 	}
 	cmd.PersistentFlags().StringP("address", "a", "", "Address of dataplane server")
-	cmd.PersistentFlags().Bool("insecure", false, "Use plaintext to dial server")
-	cmd.PersistentFlags().Bool("tls_skip_verify", false, "Use TLS without cert verification")
+	cmd.PersistentFlags().Bool("insecure", false, "Use plaintext only for a literal loopback IP and port")
+	cmd.PersistentFlags().Bool("tls_skip_verify", false, "Unsupported: use --tls_ca_cert instead")
+	cmd.PersistentFlags().String("tls_ca_cert", "", "PEM CA bundle to trust in addition to system certificate roots")
 
 	cobra.OnInitialize(func() { viper.BindPFlags(cmd.Flags()) })
 	viper.BindPFlags(cmd.Flags())
