@@ -129,7 +129,8 @@ func (p *tapPort) process() {
 				}
 				if err != nil {
 					log.Warningf("failed to read packet: %v", err)
-					return
+					time.Sleep(2 * time.Second)
+					continue
 				}
 				fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, buf[0:n])
 				if err != nil {
@@ -182,9 +183,9 @@ func stateFromAttrs(attrs *netlink.LinkAttrs) (fwdpb.PortState, fwdpb.PortState)
 
 	var state fwdpb.PortState
 	switch attrs.OperState {
-	case netlink.OperDown, netlink.OperLowerLayerDown:
+	case netlink.OperDown, netlink.OperLowerLayerDown, netlink.OperUnknown:
 		state = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
-	case netlink.OperUp, netlink.OperUnknown: // TAP interface may be unknown state because the dataplane doesn't bind to its fd, so treat unknown as up.
+	case netlink.OperUp:
 		state = fwdpb.PortState_PORT_STATE_ENABLED_UP
 	}
 	return adminState, state

@@ -688,9 +688,9 @@ const file_dataplane_proto_sai_l2mc_group_proto_rawDesc = "" +
 	"\x17RemoveL2mcGroupResponse\"s\n" +
 	"\x1cGetL2mcGroupAttributeRequest\x12\x10\n" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12A\n" +
-	"\tattr_type\x18\x02 \x03(\x0e2$.lemming.dataplane.sai.L2mcGroupAttrR\battrType\"^\n" +
+	"\tattr_type\x18\x02 \x03(\x0e2$.lemming.dataplane.sai.L2McGroupAttrR\battrType\"^\n" +
 	"\x1dGetL2mcGroupAttributeResponse\x12=\n" +
-	"\x04attr\x18\x01 \x01(\v2).lemming.dataplane.sai.L2mcGroupAttributeR\x04attr\"\x93\x02\n" +
+	"\x04attr\x18\x01 \x01(\v2).lemming.dataplane.sai.L2McGroupAttributeR\x04attr\"\x93\x02\n" +
 	"\x1cCreateL2mcGroupMemberRequest\x12\x16\n" +
 	"\x06switch\x18\x01 \x01(\x04R\x06switch\x12/\n" +
 	"\rl2mc_group_id\x18\x02 \x01(\x04B\x06\xf0ܓ\xad\x0f\x01H\x00R\vl2mcGroupId\x88\x01\x01\x121\n" +
@@ -706,14 +706,14 @@ const file_dataplane_proto_sai_l2mc_group_proto_rawDesc = "" +
 	"\x1dRemoveL2mcGroupMemberResponse\"\x7f\n" +
 	"\"GetL2mcGroupMemberAttributeRequest\x12\x10\n" +
 	"\x03oid\x18\x01 \x01(\x04R\x03oid\x12G\n" +
-	"\tattr_type\x18\x02 \x03(\x0e2*.lemming.dataplane.sai.L2mcGroupMemberAttrR\battrType\"j\n" +
+	"\tattr_type\x18\x02 \x03(\x0e2*.lemming.dataplane.sai.L2McGroupMemberAttrR\battrType\"j\n" +
 	"#GetL2mcGroupMemberAttributeResponse\x12C\n" +
-	"\x04attr\x18\x01 \x01(\v2/.lemming.dataplane.sai.L2mcGroupMemberAttributeR\x04attr*}\n" +
-	"\rL2mcGroupAttr\x12\x1f\n" +
+	"\x04attr\x18\x01 \x01(\v2/.lemming.dataplane.sai.L2McGroupMemberAttributeR\x04attr*}\n" +
+	"\rL2McGroupAttr\x12\x1f\n" +
 	"\x1bL2MC_GROUP_ATTR_UNSPECIFIED\x10\x00\x12%\n" +
 	"!L2MC_GROUP_ATTR_L2MC_OUTPUT_COUNT\x10\x01\x12$\n" +
 	" L2MC_GROUP_ATTR_L2MC_MEMBER_LIST\x10\x02*\xbf\x01\n" +
-	"\x13L2mcGroupMemberAttr\x12&\n" +
+	"\x13L2McGroupMemberAttr\x12&\n" +
 	"\"L2MC_GROUP_MEMBER_ATTR_UNSPECIFIED\x10\x00\x12(\n" +
 	"$L2MC_GROUP_MEMBER_ATTR_L2MC_GROUP_ID\x10\x01\x12)\n" +
 	"%L2MC_GROUP_MEMBER_ATTR_L2MC_OUTPUT_ID\x10\x02\x12+\n" +
@@ -741,8 +741,8 @@ func file_dataplane_proto_sai_l2mc_group_proto_rawDescGZIP() []byte {
 var file_dataplane_proto_sai_l2mc_group_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_dataplane_proto_sai_l2mc_group_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_dataplane_proto_sai_l2mc_group_proto_goTypes = []any{
-	(L2McGroupAttr)(0),                          // 0: lemming.dataplane.sai.L2mcGroupAttr
-	(L2McGroupMemberAttr)(0),                    // 1: lemming.dataplane.sai.L2mcGroupMemberAttr
+	(L2McGroupAttr)(0),                          // 0: lemming.dataplane.sai.L2McGroupAttr
+	(L2McGroupMemberAttr)(0),                    // 1: lemming.dataplane.sai.L2McGroupMemberAttr
 	(*CreateL2McGroupRequest)(nil),              // 2: lemming.dataplane.sai.CreateL2mcGroupRequest
 	(*CreateL2McGroupResponse)(nil),             // 3: lemming.dataplane.sai.CreateL2mcGroupResponse
 	(*RemoveL2McGroupRequest)(nil),              // 4: lemming.dataplane.sai.RemoveL2mcGroupRequest
@@ -755,14 +755,14 @@ var file_dataplane_proto_sai_l2mc_group_proto_goTypes = []any{
 	(*RemoveL2McGroupMemberResponse)(nil),       // 11: lemming.dataplane.sai.RemoveL2mcGroupMemberResponse
 	(*GetL2McGroupMemberAttributeRequest)(nil),  // 12: lemming.dataplane.sai.GetL2mcGroupMemberAttributeRequest
 	(*GetL2McGroupMemberAttributeResponse)(nil), // 13: lemming.dataplane.sai.GetL2mcGroupMemberAttributeResponse
-	(*L2McGroupAttribute)(nil),                  // 14: lemming.dataplane.sai.L2mcGroupAttribute
-	(*L2McGroupMemberAttribute)(nil),            // 15: lemming.dataplane.sai.L2mcGroupMemberAttribute
+	(*L2McGroupAttribute)(nil),                  // 14: lemming.dataplane.sai.L2McGroupAttribute
+	(*L2McGroupMemberAttribute)(nil),            // 15: lemming.dataplane.sai.L2McGroupMemberAttribute
 }
 var file_dataplane_proto_sai_l2mc_group_proto_depIdxs = []int32{
-	0,  // 0: lemming.dataplane.sai.GetL2mcGroupAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.L2mcGroupAttr
-	14, // 1: lemming.dataplane.sai.GetL2mcGroupAttributeResponse.attr:type_name -> lemming.dataplane.sai.L2mcGroupAttribute
-	1,  // 2: lemming.dataplane.sai.GetL2mcGroupMemberAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.L2mcGroupMemberAttr
-	15, // 3: lemming.dataplane.sai.GetL2mcGroupMemberAttributeResponse.attr:type_name -> lemming.dataplane.sai.L2mcGroupMemberAttribute
+	0,  // 0: lemming.dataplane.sai.GetL2mcGroupAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.L2McGroupAttr
+	14, // 1: lemming.dataplane.sai.GetL2mcGroupAttributeResponse.attr:type_name -> lemming.dataplane.sai.L2McGroupAttribute
+	1,  // 2: lemming.dataplane.sai.GetL2mcGroupMemberAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.L2McGroupMemberAttr
+	15, // 3: lemming.dataplane.sai.GetL2mcGroupMemberAttributeResponse.attr:type_name -> lemming.dataplane.sai.L2McGroupMemberAttribute
 	2,  // 4: lemming.dataplane.sai.L2mcGroup.CreateL2mcGroup:input_type -> lemming.dataplane.sai.CreateL2mcGroupRequest
 	4,  // 5: lemming.dataplane.sai.L2mcGroup.RemoveL2mcGroup:input_type -> lemming.dataplane.sai.RemoveL2mcGroupRequest
 	6,  // 6: lemming.dataplane.sai.L2mcGroup.GetL2mcGroupAttribute:input_type -> lemming.dataplane.sai.GetL2mcGroupAttributeRequest

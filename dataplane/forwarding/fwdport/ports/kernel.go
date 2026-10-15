@@ -19,6 +19,7 @@ package ports
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -122,6 +123,7 @@ func (p *kernelPort) process() {
 				d, _, err := p.handle.ReadPacketData()
 				if err != nil {
 					log.Warningf("err reading packet data for %v: %v", p.devName, err)
+					time.Sleep(2 * time.Second)
 					continue
 				}
 				fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, d)

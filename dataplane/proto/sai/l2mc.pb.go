@@ -462,10 +462,10 @@ const file_dataplane_proto_sai_l2mc_proto_rawDesc = "" +
 	"\x1dSetL2mcEntryAttributeResponse\"\x99\x01\n" +
 	"\x1cGetL2mcEntryAttributeRequest\x126\n" +
 	"\x05entry\x18\x01 \x01(\v2 .lemming.dataplane.sai.L2mcEntryR\x05entry\x12A\n" +
-	"\tattr_type\x18\x02 \x03(\x0e2$.lemming.dataplane.sai.L2mcEntryAttrR\battrType\"^\n" +
+	"\tattr_type\x18\x02 \x03(\x0e2$.lemming.dataplane.sai.L2McEntryAttrR\battrType\"^\n" +
 	"\x1dGetL2mcEntryAttributeResponse\x12=\n" +
-	"\x04attr\x18\x01 \x01(\v2).lemming.dataplane.sai.L2mcEntryAttributeR\x04attr*x\n" +
-	"\rL2mcEntryAttr\x12\x1f\n" +
+	"\x04attr\x18\x01 \x01(\v2).lemming.dataplane.sai.L2McEntryAttributeR\x04attr*x\n" +
+	"\rL2McEntryAttr\x12\x1f\n" +
 	"\x1bL2MC_ENTRY_ATTR_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dL2MC_ENTRY_ATTR_PACKET_ACTION\x10\x01\x12#\n" +
 	"\x1fL2MC_ENTRY_ATTR_OUTPUT_GROUP_ID\x10\x022\xfc\x03\n" +
@@ -490,7 +490,7 @@ func file_dataplane_proto_sai_l2mc_proto_rawDescGZIP() []byte {
 var file_dataplane_proto_sai_l2mc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_dataplane_proto_sai_l2mc_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_dataplane_proto_sai_l2mc_proto_goTypes = []any{
-	(L2McEntryAttr)(0),                    // 0: lemming.dataplane.sai.L2mcEntryAttr
+	(L2McEntryAttr)(0),                    // 0: lemming.dataplane.sai.L2McEntryAttr
 	(*CreateL2McEntryRequest)(nil),        // 1: lemming.dataplane.sai.CreateL2mcEntryRequest
 	(*CreateL2McEntryResponse)(nil),       // 2: lemming.dataplane.sai.CreateL2mcEntryResponse
 	(*RemoveL2McEntryRequest)(nil),        // 3: lemming.dataplane.sai.RemoveL2mcEntryRequest
@@ -501,7 +501,7 @@ var file_dataplane_proto_sai_l2mc_proto_goTypes = []any{
 	(*GetL2McEntryAttributeResponse)(nil), // 8: lemming.dataplane.sai.GetL2mcEntryAttributeResponse
 	(*L2McEntry)(nil),                     // 9: lemming.dataplane.sai.L2mcEntry
 	(PacketAction)(0),                     // 10: lemming.dataplane.sai.PacketAction
-	(*L2McEntryAttribute)(nil),            // 11: lemming.dataplane.sai.L2mcEntryAttribute
+	(*L2McEntryAttribute)(nil),            // 11: lemming.dataplane.sai.L2McEntryAttribute
 }
 var file_dataplane_proto_sai_l2mc_proto_depIdxs = []int32{
 	9,  // 0: lemming.dataplane.sai.CreateL2mcEntryRequest.entry:type_name -> lemming.dataplane.sai.L2mcEntry
@@ -510,8 +510,8 @@ var file_dataplane_proto_sai_l2mc_proto_depIdxs = []int32{
 	9,  // 3: lemming.dataplane.sai.SetL2mcEntryAttributeRequest.entry:type_name -> lemming.dataplane.sai.L2mcEntry
 	10, // 4: lemming.dataplane.sai.SetL2mcEntryAttributeRequest.packet_action:type_name -> lemming.dataplane.sai.PacketAction
 	9,  // 5: lemming.dataplane.sai.GetL2mcEntryAttributeRequest.entry:type_name -> lemming.dataplane.sai.L2mcEntry
-	0,  // 6: lemming.dataplane.sai.GetL2mcEntryAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.L2mcEntryAttr
-	11, // 7: lemming.dataplane.sai.GetL2mcEntryAttributeResponse.attr:type_name -> lemming.dataplane.sai.L2mcEntryAttribute
+	0,  // 6: lemming.dataplane.sai.GetL2mcEntryAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.L2McEntryAttr
+	11, // 7: lemming.dataplane.sai.GetL2mcEntryAttributeResponse.attr:type_name -> lemming.dataplane.sai.L2McEntryAttribute
 	1,  // 8: lemming.dataplane.sai.L2mc.CreateL2mcEntry:input_type -> lemming.dataplane.sai.CreateL2mcEntryRequest
 	3,  // 9: lemming.dataplane.sai.L2mc.RemoveL2mcEntry:input_type -> lemming.dataplane.sai.RemoveL2mcEntryRequest
 	5,  // 10: lemming.dataplane.sai.L2mc.SetL2mcEntryAttribute:input_type -> lemming.dataplane.sai.SetL2mcEntryAttributeRequest

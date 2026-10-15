@@ -35,14 +35,16 @@ func TableEntryAddRequest(ctxID, tableID string) *TableEntryAddRequestBuilder {
 // AppendEntry adds an entry and the actions to the requests.
 func (b *TableEntryAddRequestBuilder) AppendEntry(entry *EntryDescBuilder, actions ...ActionDescBuilder) *TableEntryAddRequestBuilder {
 	b.entries = append(b.entries, entry)
-	if len(actions) != 0 {
-		b.actions = append(b.actions, actions)
-	}
+	b.actions = append(b.actions, actions)
 	return b
 }
 
-// AppendEntry adds the actions to the requests.
+// AppendActions adds the actions to the requests.
 func (b *TableEntryAddRequestBuilder) AppendActions(actions ...ActionDescBuilder) *TableEntryAddRequestBuilder {
+	if len(b.actions) > 0 && len(b.actions) == len(b.entries) {
+		b.actions[len(b.actions) - 1] = append(b.actions[len(b.actions) - 1], actions...)
+		return b
+	}
 	b.actions = append(b.actions, actions)
 	return b
 }
@@ -59,9 +61,6 @@ func (b TableEntryAddRequestBuilder) Build() *fwdpb.TableEntryAddRequest {
 			EntryDesc: entry.Build(),
 		}
 		req.Entries = append(req.Entries, tableEntry)
-		if i >= len(b.actions) {
-			break
-		}
 		for _, act := range b.actions[i] {
 			d := &fwdpb.ActionDesc{
 				ActionType: act.actionType(),

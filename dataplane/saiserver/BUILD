@@ -60,6 +60,7 @@ go_test(
     embed = [":saiserver"],
     deps = [
         "//dataplane/dplaneopts",
+        "//dataplane/forwarding/fwdconfig",
         "//dataplane/forwarding/fwdport",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/forwarding/infra/fwdobject",

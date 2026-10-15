@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
@@ -1042,6 +1043,308 @@ func TestCreateRouteEntry(t *testing.T) {
 			}
 			if d := cmp.Diff(dplane.gotEntryAddReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
 				t.Errorf("CreateRouteEntry() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestRemoveRouteEntry(t *testing.T) {
+	tests := []struct {
+		desc      string
+		types     map[string]saipb.ObjectType
+		reqCreate *saipb.CreateRouteEntryRequest
+		reqRemove *saipb.RemoveRouteEntryRequest
+		wantReq   *fwdpb.TableEntryRemoveRequest
+		wantErr   string
+	}{{
+		desc:      "missing entry",
+		reqRemove: &saipb.RemoveRouteEntryRequest{},
+		wantErr:   "InvalidArgument",
+	}, {
+		desc:  "standard IPv4 FIB route",
+		types: map[string]saipb.ObjectType{"100": saipb.ObjectType_OBJECT_TYPE_PORT},
+		reqCreate: &saipb.CreateRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{10, 0, 0, 0},
+					Mask: []byte{255, 255, 255, 0},
+				},
+			},
+			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+			NextHopId:    proto.Uint64(100),
+		},
+		reqRemove: &saipb.RemoveRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{10, 0, 0, 0},
+					Mask: []byte{255, 255, 255, 0},
+				},
+			},
+		},
+		wantReq: &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
+			EntryDesc: fwdconfig.EntryDesc(
+				fwdconfig.PrefixEntry(
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(0),
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+						[]byte{10, 0, 0, 0},
+						[]byte{255, 255, 255, 0},
+					),
+				),
+			).Build(),
+		},
+	}, {
+		desc:  "standard IPv6 FIB route",
+		types: map[string]saipb.ObjectType{"100": saipb.ObjectType_OBJECT_TYPE_PORT},
+		reqCreate: &saipb.CreateRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					Mask: []byte{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				},
+			},
+			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+			NextHopId:    proto.Uint64(100),
+		},
+		reqRemove: &saipb.RemoveRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					Mask: []byte{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				},
+			},
+		},
+		wantReq: &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
+			EntryDesc: fwdconfig.EntryDesc(
+				fwdconfig.PrefixEntry(
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(0),
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+						[]byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+						[]byte{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					),
+				),
+			).Build(),
+		},
+	}, {
+		desc:  "CPU-port trap route",
+		types: map[string]saipb.ObjectType{"10": saipb.ObjectType_OBJECT_TYPE_PORT},
+		reqCreate: &saipb.CreateRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{10, 0, 0, 1},
+					Mask: []byte{255, 255, 255, 255},
+				},
+			},
+			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+			NextHopId:    proto.Uint64(10),
+		},
+		reqRemove: &saipb.RemoveRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{10, 0, 0, 1},
+					Mask: []byte{255, 255, 255, 255},
+				},
+			},
+		},
+		wantReq: &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+			EntryDesc: fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+				fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+					[]byte{10, 0, 0, 1},
+					[]byte{255, 255, 255, 255},
+				),
+				fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(0),
+			)).Build(),
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestRoute(t, dplane)
+			defer stopFn()
+			for k, v := range tt.types {
+				mgr.SetType(k, v)
+			}
+			mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+				CpuPort: proto.Uint64(10),
+			})
+			if tt.reqCreate != nil {
+				if _, err := c.CreateRouteEntry(context.TODO(), tt.reqCreate); err != nil {
+					t.Fatalf("CreateRouteEntry() unexpected err: %v", err)
+				}
+			}
+			_, gotErr := c.RemoveRouteEntry(context.TODO(), tt.reqRemove)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveRouteEntry() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(dplane.gotEntryRemoveReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
+				t.Errorf("RemoveRouteEntry() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestRemoveRouteEntries(t *testing.T) {
+	tests := []struct {
+		desc       string
+		types      map[string]saipb.ObjectType
+		createReqs []*saipb.CreateRouteEntryRequest
+		removeReqs []*saipb.RemoveRouteEntryRequest
+		wantReqs   []*fwdpb.TableEntryRemoveRequest
+		wantErr    string
+	}{{
+		desc: "success bulk remove",
+		types: map[string]saipb.ObjectType{
+			"10":  saipb.ObjectType_OBJECT_TYPE_PORT,
+			"100": saipb.ObjectType_OBJECT_TYPE_PORT,
+		},
+		createReqs: []*saipb.CreateRouteEntryRequest{{
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{10, 0, 0, 0},
+					Mask: []byte{255, 255, 255, 0},
+				},
+			},
+			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+			NextHopId:    proto.Uint64(100),
+		}, {
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					Mask: []byte{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				},
+			},
+			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+			NextHopId:    proto.Uint64(100),
+		}, {
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{10, 0, 0, 1},
+					Mask: []byte{255, 255, 255, 255},
+				},
+			},
+			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+			NextHopId:    proto.Uint64(10),
+		}},
+		removeReqs: []*saipb.RemoveRouteEntryRequest{{
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{10, 0, 0, 0},
+					Mask: []byte{255, 255, 255, 0},
+				},
+			},
+		}, {
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					Mask: []byte{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				},
+			},
+		}, {
+			Entry: &saipb.RouteEntry{
+				SwitchId: 1,
+				VrId:     0,
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{10, 0, 0, 1},
+					Mask: []byte{255, 255, 255, 255},
+				},
+			},
+		}},
+		wantReqs: []*fwdpb.TableEntryRemoveRequest{{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
+			EntryDesc: fwdconfig.EntryDesc(
+				fwdconfig.PrefixEntry(
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(0),
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+						[]byte{10, 0, 0, 0},
+						[]byte{255, 255, 255, 0},
+					),
+				),
+			).Build(),
+		}, {
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
+			EntryDesc: fwdconfig.EntryDesc(
+				fwdconfig.PrefixEntry(
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(0),
+					fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+						[]byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+						[]byte{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					),
+				),
+			).Build(),
+		}, {
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+			EntryDesc: fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+				fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+					[]byte{10, 0, 0, 1},
+					[]byte{255, 255, 255, 255},
+				),
+				fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(0),
+			)).Build(),
+		}},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestRoute(t, dplane)
+			defer stopFn()
+			for k, v := range tt.types {
+				mgr.SetType(k, v)
+			}
+			mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+				CpuPort: proto.Uint64(10),
+			})
+			for _, req := range tt.createReqs {
+				if _, err := c.CreateRouteEntry(context.TODO(), req); err != nil {
+					t.Fatalf("CreateRouteEntry() unexpected err: %v", err)
+				}
+			}
+			resp, gotErr := c.RemoveRouteEntries(context.TODO(), &saipb.RemoveRouteEntriesRequest{
+				Reqs: tt.removeReqs,
+			})
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveRouteEntries() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if len(resp.GetResps()) != len(tt.removeReqs) {
+				t.Fatalf("RemoveRouteEntries() unexpected num responses: got %d, want %d", len(resp.GetResps()), len(tt.removeReqs))
+			}
+			if d := cmp.Diff(dplane.gotEntryRemoveReqs, tt.wantReqs, protocmp.Transform()); d != "" {
+				t.Errorf("RemoveRouteEntries() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}
