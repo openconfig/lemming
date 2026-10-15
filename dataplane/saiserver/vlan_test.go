@@ -232,7 +232,7 @@ func TestVlanOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get members of the default VLAN: %v", err)
 	}
-	if len(testm) != 2 && len(defaultm) != 2 {
+	if len(testm) != 2 || len(defaultm) != 2 {
 		t.Fatalf("Failed to create a non-default VLAN")
 	}
 
@@ -251,7 +251,7 @@ func TestVlanOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get members of default VLAN: %v", err)
 	}
-	if len(testm) != 1 && len(defaultm) != 2 {
+	if len(testm) != 1 || len(defaultm) != 2 {
 		t.Errorf("Failed to remove a non-default VLAN member")
 	}
 
@@ -461,3 +461,210 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 	}
 }
 
+func TestCreateVlanMemberHybridPort(t *testing.T) {
+	const (
+		initialUntaggedVlanID = uint32(10)
+		untaggedVlanID        = uint32(42)
+		taggedVlanID          = uint32(666)
+		secondTaggedVlanID    = uint32(777)
+		hybridPortID          = uint64(55)
+		hybridBridgeID        = uint64(550)
+	)
+
+	type memberStep struct {
+		vlanID      uint32
+		taggingMode saipb.VlanTaggingMode
+	}
+
+	tests := []struct {
+		desc            string
+		steps           []memberStep
+		wantActiveVLANs []uint32
+		wantEmptyVLANs  []uint32
+	}{{
+		desc: "untagged then tagged preserves both memberships and keeps VlanTable unencapsulated",
+		steps: []memberStep{
+			{vlanID: untaggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED},
+			{vlanID: taggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED},
+		},
+		wantActiveVLANs: []uint32{untaggedVlanID, taggedVlanID},
+	}, {
+		desc: "tagged then untagged preserves both memberships and keeps VlanTable unencapsulated",
+		steps: []memberStep{
+			{vlanID: taggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED},
+			{vlanID: untaggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED},
+		},
+		wantActiveVLANs: []uint32{taggedVlanID, untaggedVlanID},
+	}, {
+		desc: "multiple tagged VLANs on trunk port preserve all tagged memberships",
+		steps: []memberStep{
+			{vlanID: taggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED},
+			{vlanID: secondTaggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED},
+		},
+		wantActiveVLANs: []uint32{taggedVlanID, secondTaggedVlanID},
+	}, {
+		desc: "replacing untagged VLAN on hybrid port evicts prior untagged VLAN while preserving tagged VLAN",
+		steps: []memberStep{
+			{vlanID: initialUntaggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED},
+			{vlanID: taggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED},
+			{vlanID: untaggedVlanID, taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED},
+		},
+		wantActiveVLANs: []uint32{untaggedVlanID, taggedVlanID},
+		wantEmptyVLANs:  []uint32{initialUntaggedVlanID},
+	}}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestVlan(t, dplane)
+			defer stopFn()
+			ctx := context.Background()
+
+			mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+				DefaultStpInstId: proto.Uint64(testStpInstId),
+			})
+			mgr.StoreAttributes(hybridBridgeID, &saipb.BridgePortAttribute{
+				PortId: proto.Uint64(hybridPortID),
+			})
+
+			vlanOIDs := map[uint32]uint64{}
+			for _, vid := range []uint32{initialUntaggedVlanID, untaggedVlanID, taggedVlanID, secondTaggedVlanID} {
+				resp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
+					Switch: 1,
+					VlanId: proto.Uint32(vid),
+				})
+				if err != nil {
+					t.Fatalf("CreateVlan(%d) failed: %v", vid, err)
+				}
+				vlanOIDs[vid] = resp.GetOid()
+			}
+
+			memberOIDs := map[uint32]uint64{}
+			for _, step := range tt.steps {
+				resp, err := c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+					Switch:          1,
+					VlanId:          proto.Uint64(vlanOIDs[step.vlanID]),
+					BridgePortId:    proto.Uint64(hybridBridgeID),
+					VlanTaggingMode: step.taggingMode.Enum(),
+				})
+				if err != nil {
+					t.Fatalf("CreateVlanMember(vlan=%d, mode=%v) failed: %v", step.vlanID, step.taggingMode, err)
+				}
+				memberOIDs[step.vlanID] = resp.GetOid()
+			}
+
+			if len(dplane.gotEntryAddReqs) != len(tt.steps) {
+				t.Fatalf("got %d TableEntryAdd requests, want %d", len(dplane.gotEntryAddReqs), len(tt.steps))
+			}
+			lastEntries := dplane.gotEntryAddReqs[len(dplane.gotEntryAddReqs)-1].GetEntries()
+			if len(lastEntries) != 1 {
+				t.Fatalf("got %d table entries in final request, want 1", len(lastEntries))
+			}
+			if gotActions := lastEntries[0].GetActions(); len(gotActions) != 0 {
+				t.Errorf("final VlanTable actions = %v, want empty actions on hybrid/trunk port", gotActions)
+			}
+
+			for _, vid := range tt.wantActiveVLANs {
+				attrResp, err := c.GetVlanAttribute(ctx, &saipb.GetVlanAttributeRequest{
+					Oid:      vlanOIDs[vid],
+					AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST},
+				})
+				if err != nil {
+					t.Fatalf("GetVlanAttribute(%d) failed: %v", vid, err)
+				}
+				wantList := []uint64{memberOIDs[vid]}
+				if d := cmp.Diff(attrResp.GetAttr().GetMemberList(), wantList); d != "" {
+					t.Errorf("VLAN %d MemberList diff (-got +want):\n%s", vid, d)
+				}
+			}
+
+			for _, vid := range tt.wantEmptyVLANs {
+				attrResp, err := c.GetVlanAttribute(ctx, &saipb.GetVlanAttributeRequest{
+					Oid:      vlanOIDs[vid],
+					AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST},
+				})
+				if err != nil {
+					t.Fatalf("GetVlanAttribute(%d) failed: %v", vid, err)
+				}
+				if got := attrResp.GetAttr().GetMemberList(); len(got) != 0 {
+					t.Errorf("evicted VLAN %d MemberList = %v, want empty", vid, got)
+				}
+			}
+		})
+	}
+
+	t.Run("removing tagged member from hybrid port restores untagged VlanTable actions and removing last member removes entry", func(t *testing.T) {
+		dplane := &fakeSwitchDataplane{}
+		c, mgr, stopFn := newTestVlan(t, dplane)
+		defer stopFn()
+		ctx := context.Background()
+
+		mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+			DefaultStpInstId: proto.Uint64(testStpInstId),
+		})
+		mgr.StoreAttributes(hybridBridgeID, &saipb.BridgePortAttribute{
+			PortId: proto.Uint64(hybridPortID),
+		})
+
+		untaggedVlanResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
+			Switch: 1,
+			VlanId: proto.Uint32(untaggedVlanID),
+		})
+		if err != nil {
+			t.Fatalf("CreateVlan(%d) failed: %v", untaggedVlanID, err)
+		}
+		taggedVlanResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
+			Switch: 1,
+			VlanId: proto.Uint32(taggedVlanID),
+		})
+		if err != nil {
+			t.Fatalf("CreateVlan(%d) failed: %v", taggedVlanID, err)
+		}
+
+		untaggedMemberResp, err := c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+			Switch:          1,
+			VlanId:          proto.Uint64(untaggedVlanResp.GetOid()),
+			BridgePortId:    proto.Uint64(hybridBridgeID),
+			VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+		})
+		if err != nil {
+			t.Fatalf("CreateVlanMember(untagged) failed: %v", err)
+		}
+		taggedMemberResp, err := c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+			Switch:          1,
+			VlanId:          proto.Uint64(taggedVlanResp.GetOid()),
+			BridgePortId:    proto.Uint64(hybridBridgeID),
+			VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED.Enum(),
+		})
+		if err != nil {
+			t.Fatalf("CreateVlanMember(tagged) failed: %v", err)
+		}
+
+		// Removing the tagged member should reprogram VlanTable for the remaining untagged member (not remove the entry).
+		if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: taggedMemberResp.GetOid()}); err != nil {
+			t.Fatalf("RemoveVlanMember(tagged) failed: %v", err)
+		}
+		if len(dplane.gotEntryRemoveReqs) != 0 {
+			t.Fatalf("got %d TableEntryRemove requests while untagged member still active, want 0", len(dplane.gotEntryRemoveReqs))
+		}
+		if len(dplane.gotEntryAddReqs) != 3 {
+			t.Fatalf("got %d TableEntryAdd requests after removing tagged member, want 3", len(dplane.gotEntryAddReqs))
+		}
+		wantUntaggedActions := []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(untaggedVlanID))).Build(),
+		}
+		restoredEntries := dplane.gotEntryAddReqs[2].GetEntries()
+		if d := cmp.Diff(restoredEntries[0].GetActions(), wantUntaggedActions, protocmp.Transform()); d != "" {
+			t.Errorf("restored VlanTable actions diff (-got +want):\n%s", d)
+		}
+
+		// Removing the final untagged member should remove the VlanTable entry.
+		if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: untaggedMemberResp.GetOid()}); err != nil {
+			t.Fatalf("RemoveVlanMember(untagged) failed: %v", err)
+		}
+		if len(dplane.gotEntryRemoveReqs) != 1 {
+			t.Fatalf("got %d TableEntryRemove requests after removing last member, want 1", len(dplane.gotEntryRemoveReqs))
+		}
+	})
+}
