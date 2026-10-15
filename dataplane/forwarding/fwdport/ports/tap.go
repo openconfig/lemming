@@ -183,9 +183,9 @@ func stateFromAttrs(attrs *netlink.LinkAttrs) (fwdpb.PortState, fwdpb.PortState)
 
 	var state fwdpb.PortState
 	switch attrs.OperState {
-	case netlink.OperDown, netlink.OperLowerLayerDown:
+	case netlink.OperDown, netlink.OperLowerLayerDown, netlink.OperUnknown:
 		state = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
-	case netlink.OperUp, netlink.OperUnknown: // TAP interface may be unknown state because the dataplane doesn't bind to its fd, so treat unknown as up.
+	case netlink.OperUp:
 		state = fwdpb.PortState_PORT_STATE_ENABLED_UP
 	}
 	return adminState, state
