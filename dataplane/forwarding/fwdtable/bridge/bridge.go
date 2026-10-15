@@ -37,17 +37,18 @@ import (
 type learnRequest struct {
 	mac     []byte
 	portNID []byte
+	vlanTag []byte
 }
 
 // String generates a debug string for a learn request.
 func (req *learnRequest) String() string {
-	return fmt.Sprintf("mac=%x, portNID=%v", req.mac, req.portNID)
+	return fmt.Sprintf("mac=%x, portNID=%v, vlanTag=%x", req.mac, req.portNID, req.vlanTag)
 }
 
 // DebugString generates a debug string for a learn request after the port has been
 // identified.
 func (req *learnRequest) DebugString(port fwdport.Port) string {
-	return fmt.Sprintf("mac=%x, portNID=%v, port=%v", req.mac, req.portNID, fwdport.GetID(port))
+	return fmt.Sprintf("mac=%x, portNID=%v, vlanTag=%x, port=%v", req.mac, req.portNID, req.vlanTag, fwdport.GetID(port))
 }
 
 // Table is a learning bridge table that learns source mac and input ports from
@@ -68,15 +69,28 @@ func (req *learnRequest) DebugString(port fwdport.Port) string {
 // learn request for the same mac address. Hence the channel used for learning
 // is buffered.
 type Table struct {
-	*exact.Table                     // exact table containing mac entries
-	learn        *queue.Queue        // unbounded queue for learn requests
-	ctx          *fwdcontext.Context // context for finding objects
-	notify       chan bool           // if not nil, a notification is generated when an entry is learned (test only)
+	*exact.Table                      // exact table containing mac entries
+	learn         *queue.Queue        // unbounded queue for learn requests
+	ctx           *fwdcontext.Context // context for finding objects
+	notify        chan bool           // if not nil, a notification is generated when an entry is learned (test only)
+	LearnCallback func(mac []byte, portID string, vlanID uint16)
+}
+
+// SetLearnCallback sets a callback invoked when a new MAC entry is dynamically learned.
+func (t *Table) SetLearnCallback(cb func(mac []byte, portID string, vlanID uint16)) {
+	t.ctx.Lock()
+	defer t.ctx.Unlock()
+	t.LearnCallback = cb
 }
 
 // Clear clears the table by deleting all its entries.
 func (t *Table) Clear() {
 	t.Table.Clear()
+}
+
+// Remove removes the entry matching the given MAC from the table.
+func (t *Table) Remove(mac []byte) error {
+	return t.Table.RemoveKey(mac)
 }
 
 // Cleanup cleans up the exact match table and stops learning.
@@ -152,6 +166,12 @@ func (t *Table) processLearn(v interface{}) {
 	// we try to learn a mac address that has a static entry.
 	if err := t.AddEntry(desc, []*fwdpb.ActionDesc{&ad}); err != nil {
 		log.Infof("bridge: Skipping learn for %v %v.", req.DebugString(port), err)
+	} else if t.LearnCallback != nil {
+		var vlanID uint16
+		if len(req.vlanTag) >= 2 {
+			vlanID = binary.BigEndian.Uint16(req.vlanTag[len(req.vlanTag)-2:])
+		}
+		t.LearnCallback(req.mac, string(fwdport.GetID(port).GetObjectId().GetId()), vlanID)
 	}
 }
 
@@ -171,16 +191,25 @@ func (t *Table) Learn(packet fwdpacket.Packet) error {
 	var lr learnRequest
 
 	macField := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0)
-	if lr.mac, err = packet.Field(macField); err != nil {
+	mac, err := packet.Field(macField)
+	if err != nil {
 		return fmt.Errorf("bridge: Unable to find source mac, %v", err)
 	}
-	if e := t.Find(lr.mac); e != nil {
+	if e := t.Find(mac); e != nil {
 		return nil
 	}
+	lr.mac = append([]byte(nil), mac...)
 
 	portField := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0)
-	if lr.portNID, err = packet.Field(portField); err != nil {
+	portNID, err := packet.Field(portField)
+	if err != nil {
 		return fmt.Errorf("bridge: Unable to find input port, %v", err)
+	}
+	lr.portNID = append([]byte(nil), portNID...)
+
+	vlanField := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0)
+	if vlanTag, err := packet.Field(vlanField); err == nil && len(vlanTag) > 0 {
+		lr.vlanTag = append([]byte(nil), vlanTag...)
 	}
 	return t.learn.Write(&lr)
 }

@@ -1273,10 +1273,11 @@ func (ri *routerInterface) RemoveRouterInterfaces(ctx context.Context, req *saip
 
 // vlanMember contains the info of a VLAN member.
 type vlanMember struct {
-	Oid    uint64
-	PortID uint64
-	Vid    uint32
-	Mode   saipb.VlanTaggingMode
+	Oid          uint64
+	PortID       uint64
+	Vid          uint32
+	Mode         saipb.VlanTaggingMode
+	BridgePortID uint64
 }
 
 type vlan struct {
@@ -1284,6 +1285,7 @@ type vlan struct {
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
+	lag       *lag
 	oidByVId  map[uint32]uint64                 // VID -> VLAN_OID
 	vlans     map[uint64]map[uint64]*vlanMember // VLAN_OID -> VLAN_Member_OID (port)
 }
@@ -1300,6 +1302,8 @@ func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server)
 }
 
 func (vlan *vlan) vidByOid(oid uint64) (uint32, error) {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
 	for v, o := range vlan.oidByVId {
 		if o == oid {
 			return v, nil
@@ -1309,6 +1313,8 @@ func (vlan *vlan) vidByOid(oid uint64) (uint32, error) {
 }
 
 func (vlan *vlan) memberByOid(oid uint64) *vlanMember {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
 	for _, v := range vlan.vlans {
 		for mOid, member := range v {
 			if mOid == oid {
@@ -1320,9 +1326,29 @@ func (vlan *vlan) memberByOid(oid uint64) *vlanMember {
 }
 
 func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	var best *vlanMember
 	for _, v := range vlan.vlans {
 		for _, member := range v {
 			if member.PortID == oid {
+				if best == nil ||
+					(member.Mode == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED && best.Mode != saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED) ||
+					(member.Mode == best.Mode && member.Vid > best.Vid) {
+					best = member
+				}
+			}
+		}
+	}
+	return best
+}
+
+func (vlan *vlan) memberByPortIdAndVid(portID uint64, vid uint32) *vlanMember {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	for _, v := range vlan.vlans {
+		for _, member := range v {
+			if member.PortID == portID && member.Vid == vid {
 				return member
 			}
 		}
@@ -1330,11 +1356,162 @@ func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
 	return nil
 }
 
+func (vlan *vlan) untaggedMemberByPortId(oid uint64) *vlanMember {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	var best *vlanMember
+	for _, v := range vlan.vlans {
+		for _, member := range v {
+			if member.PortID == oid && member.Mode != saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+				if best == nil || member.Vid > best.Vid {
+					best = member
+				}
+			}
+		}
+	}
+	return best
+}
+
+func (vlan *vlan) hasTaggedMember(portID uint64) bool {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	for _, v := range vlan.vlans {
+		for _, member := range v {
+			if member.PortID == portID && member.Mode == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (vlan *vlan) oidByVid(vid uint32) (uint64, bool) {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	oid, ok := vlan.oidByVId[vid]
+	return oid, ok
+}
+
+func (vlan *vlan) targetPhysicalPorts(portID uint64) []uint64 {
+	if vlan.mgr.GetType(fmt.Sprint(portID)) == saipb.ObjectType_OBJECT_TYPE_LAG {
+		if vlan.lag != nil {
+			return vlan.lag.memberPorts(portID)
+		}
+		return nil
+	}
+	return []uint64{portID}
+}
+
+func (vlan *vlan) programPhysicalPortVlan(ctx context.Context, physPortID uint64, vId uint32, mode saipb.VlanTaggingMode) error {
+	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(physPortID)},
+	})
+	if err != nil {
+		slog.InfoContext(ctx, "Failed to find NID for port", "port_id", physPortID, "err", err)
+		return err
+	}
+	if mode != saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+		egressReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), EgressVlanTable).AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT).WithUint64(nid.GetNid()),
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, uint16(vId))),
+			)),
+			fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN),
+		).Build()
+		if _, err := vlan.dataplane.TableEntryAdd(ctx, egressReq); err != nil {
+			return err
+		}
+	}
+	ingressVlanTag := uint16(0)
+	if mode == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+		ingressVlanTag = uint16(vId)
+	}
+	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+			fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()),
+			fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, ingressVlanTag)),
+		)),
+	).Build()
+	if mode != saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+		vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithValue(binary.BigEndian.AppendUint16(nil, uint16(vId)))).Build(),
+		}
+	}
+	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (vlan *vlan) unprogramPhysicalPortVlan(ctx context.Context, physPortID uint64, vId uint32, mode saipb.VlanTaggingMode, removeIngress bool) error {
+	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(physPortID)},
+	})
+	if err != nil {
+		slog.InfoContext(ctx, "Failed to find NID for port", "port_id", physPortID, "err", err)
+		return err
+	}
+	if removeIngress {
+		ingressVlanTag := uint16(0)
+		if mode == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+			ingressVlanTag = uint16(vId)
+		}
+		if _, err := vlan.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()),
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, ingressVlanTag)),
+			)),
+		).Build()); err != nil {
+			return err
+		}
+	}
+	if mode != saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+		if _, err := vlan.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(vlan.dataplane.ID(), EgressVlanTable).AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT).WithUint64(nid.GetNid()),
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, uint16(vId))),
+			)),
+		).Build()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (vlan *vlan) syncLagMemberPort(ctx context.Context, lagID, physPortID uint64, add bool) error {
+	vlan.mu.Lock()
+	var lagMembers []*vlanMember
+	for _, v := range vlan.vlans {
+		for _, member := range v {
+			if member.PortID == lagID {
+				lagMembers = append(lagMembers, member)
+			}
+		}
+	}
+	vlan.mu.Unlock()
+	for _, member := range lagMembers {
+		if add {
+			if err := vlan.programPhysicalPortVlan(ctx, physPortID, member.Vid, member.Mode); err != nil {
+				return err
+			}
+		} else {
+			if err := vlan.unprogramPhysicalPortVlan(ctx, physPortID, member.Vid, member.Mode, true); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
-	if _, ok := vlan.oidByVId[r.GetVlanId()]; ok {
+	if _, ok := vlan.oidByVid(r.GetVlanId()); ok {
 		return nil, fmt.Errorf("found existing VLAN %d", r.GetVlanId())
 	}
 	id := vlan.mgr.NextID()
+	vlan.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_VLAN)
 	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 
@@ -1358,8 +1535,40 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 		TamObject:                          []uint64{},
 	}
 	vlan.mgr.StoreAttributes(id, attrs)
+	vlan.mu.Lock()
 	vlan.vlans[id] = map[uint64]*vlanMember{}
 	vlan.oidByVId[r.GetVlanId()] = id
+	vlan.mu.Unlock()
+
+	floodID := fmt.Sprintf("vlan_flood_%d", r.GetVlanId())
+	_, _ = vlan.dataplane.PortCreate(ctx, &fwdpb.PortCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		Port: &fwdpb.PortDesc{
+			PortType: fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT,
+			PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: floodID}},
+		},
+	})
+	_, _ = vlan.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: floodID}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateAlgo{
+				AggregateAlgo: &fwdpb.AggregatePortAlgorithmUpdateDesc{
+					Hash: fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_FLOOD,
+				},
+			},
+		},
+	})
+	floodReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), FloodTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+			fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, uint16(r.GetVlanId()))),
+		)),
+		fwdconfig.TransmitAction(floodID),
+	).Build()
+	if _, err := vlan.dataplane.TableEntryAdd(ctx, floodReq); err != nil {
+		return nil, err
+	}
+
 	return &saipb.CreateVlanResponse{
 		Oid: id,
 	}, nil
@@ -1424,30 +1633,57 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 
 	portID := bpAttrResp.GetAttr().GetPortId()
 
-	// For the case where this port was assigned to a prior vlan, store the
-	// vlan member to remove it from cache later.
-	member := vlan.memberByPortId(portID)
+	// Only evict a prior untagged/priority-tagged VLAN membership when adding
+	// a new untagged/priority-tagged VLAN membership. A port can only have one
+	// PVID (untagged VLAN), whereas multiple tagged VLANs (or one untagged +
+	// multiple tagged VLANs on a hybrid port) can coexist on the same port.
+	var member *vlanMember
+	if r.GetVlanTaggingMode() != saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+		member = vlan.untaggedMemberByPortId(portID)
+	}
 
 	mOid := vlan.mgr.NextID()
-	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
-		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
-		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(portID)},
-	})
-	if err != nil {
-		slog.InfoContext(ctx, "Failed to find NID for port", "port_id", portID, "err", err)
-		return nil, err
+	vlan.mgr.SetType(fmt.Sprint(mOid), saipb.ObjectType_OBJECT_TYPE_VLAN_MEMBER)
+
+	physPorts := vlan.targetPhysicalPorts(portID)
+	if member != nil && member.Vid != vId {
+		for _, physPortID := range physPorts {
+			if err := vlan.unprogramPhysicalPortVlan(ctx, physPortID, member.Vid, member.Mode, false); err != nil {
+				return nil, err
+			}
+		}
+		oldFloodID := fmt.Sprintf("vlan_flood_%d", member.Vid)
+		_, _ = vlan.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+			ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: oldFloodID}},
+			Update: &fwdpb.PortUpdateDesc{
+				Port: &fwdpb.PortUpdateDesc_AggregateDel{
+					AggregateDel: &fwdpb.AggregatePortRemoveMemberUpdateDesc{
+						PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(portID)}},
+					},
+				},
+			},
+		})
 	}
-	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
-		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
-	if r.GetVlanTaggingMode() != saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
-		vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
-			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vId))).Build(),
+	for _, physPortID := range physPorts {
+		if err := vlan.programPhysicalPortVlan(ctx, physPortID, vId, r.GetVlanTaggingMode()); err != nil {
+			return nil, err
 		}
 	}
-	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
-		return nil, err
-	}
+
+	floodID := fmt.Sprintf("vlan_flood_%d", vId)
+	_, _ = vlan.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: floodID}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateAdd{
+				AggregateAdd: &fwdpb.AggregatePortAddMemberUpdateDesc{
+					PortId:        &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(portID)}},
+					InstanceCount: 1,
+				},
+			},
+		},
+	})
 	// Update the attributes and internal data.
 	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: vOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
 	vlanAttrResp := &saipb.GetVlanAttributeResponse{}
@@ -1457,12 +1693,21 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
 	vlan.mgr.StoreAttributes(vOid, vlanAttrResp.GetAttr())
 	vlan.mu.Lock()
-	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: portID, Vid: vId, Mode: r.GetVlanTaggingMode()}
+	vlan.vlans[vOid][mOid] = &vlanMember{
+		Oid:          mOid,
+		PortID:       portID,
+		Vid:          vId,
+		Mode:         r.GetVlanTaggingMode(),
+		BridgePortID: r.GetBridgePortId(),
+	}
 	vlan.mu.Unlock()
 
-	// Fetch the original vlan from the old vlan member and remove the member from that vlan
+	// Fetch the original vlan from the old untagged vlan member and remove the member from that vlan
 	if member != nil {
-		preVlanOid := vlan.oidByVId[member.Vid]
+		preVlanOid, ok := vlan.oidByVid(member.Vid)
+		if !ok {
+			return nil, fmt.Errorf("cannot find VLAN OID for VID %d", member.Vid)
+		}
 		vlanAttrReq = &saipb.GetVlanAttributeRequest{Oid: preVlanOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
 		vlanAttrResp = &saipb.GetVlanAttributeResponse{}
 		if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {
@@ -1486,8 +1731,6 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 
 func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMemberRequest) (*saipb.RemoveVlanMemberResponse, error) {
 	vlan.mu.Lock()
-	defer vlan.mu.Unlock()
-
 	var member *vlanMember
 	var targetVlanOid uint64
 	found := false
@@ -1500,24 +1743,45 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 			break
 		}
 	}
-
 	if !found {
+		vlan.mu.Unlock()
 		return nil, fmt.Errorf("cannot find member with OID %d", r.GetOid())
 	}
-	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
-		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
-		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(member.PortID)},
-	})
-	if err != nil {
-		slog.InfoContext(ctx, "Failed to find NID for port", "bridge_port", member.PortID, "err", err)
+	delete(vlan.vlans[targetVlanOid], r.GetOid())
+	vlan.mu.Unlock()
+
+	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: targetVlanOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
+	vlanAttrResp := &saipb.GetVlanAttributeResponse{}
+	if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {
 		return nil, err
 	}
-	if _, err := vlan.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
-		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()); err != nil {
-		return nil, err
+	newMemList := []uint64{}
+	for _, id := range vlanAttrResp.GetAttr().GetMemberList() {
+		if id != r.GetOid() {
+			newMemList = append(newMemList, id)
+		}
+	}
+	vlanAttrResp.GetAttr().MemberList = newMemList
+	vlan.mgr.StoreAttributes(targetVlanOid, vlanAttrResp.GetAttr())
+
+	for _, physPortID := range vlan.targetPhysicalPorts(member.PortID) {
+		if err := vlan.unprogramPhysicalPortVlan(ctx, physPortID, member.Vid, member.Mode, true); err != nil {
+			return nil, err
+		}
 	}
 
-	delete(vlan.vlans[targetVlanOid], r.GetOid())
+	floodID := fmt.Sprintf("vlan_flood_%d", member.Vid)
+	_, _ = vlan.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: floodID}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateDel{
+				AggregateDel: &fwdpb.AggregatePortRemoveMemberUpdateDesc{
+					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(member.PortID)}},
+				},
+			},
+		},
+	})
 
 	return &saipb.RemoveVlanMemberResponse{}, nil
 }
@@ -1536,6 +1800,8 @@ func (vlan *vlan) CreateVlanMembers(ctx context.Context, r *saipb.CreateVlanMemb
 
 func (vlan *vlan) Reset() {
 	slog.Info("resetting vlan")
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
 	vlan.oidByVId = map[uint32]uint64{}
 	vlan.vlans = map[uint64]map[uint64]*vlanMember{}
 }
@@ -1557,6 +1823,7 @@ func newBridge(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 
 func (b *bridge) CreateBridge(ctx context.Context, req *saipb.CreateBridgeRequest) (*saipb.CreateBridgeResponse, error) {
 	id := b.mgr.NextID()
+	b.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_BRIDGE)
 	attrs := &saipb.BridgeAttribute{
 		PortList:                   []uint64{},
 		UnknownUnicastFloodGroup:   proto.Uint64(0),
@@ -1587,6 +1854,7 @@ func (b *bridge) GetBridgeStats(ctx context.Context, req *saipb.GetBridgeStatsRe
 
 func (b *bridge) CreateBridgePort(ctx context.Context, req *saipb.CreateBridgePortRequest) (*saipb.CreateBridgePortResponse, error) {
 	oid := b.mgr.NextID()
+	b.mgr.SetType(fmt.Sprint(oid), saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT)
 	adminState := req.GetAdminState()
 	attrs := &saipb.BridgePortAttribute{
 		AdminState: proto.Bool(adminState),

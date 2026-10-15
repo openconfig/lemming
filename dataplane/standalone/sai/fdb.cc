@@ -99,6 +99,9 @@ sai_status_t l_create_fdb_entry(const sai_fdb_entry_t* fdb_entry,
 
   lemming::dataplane::sai::CreateFdbEntryRequest req =
       convert_create_fdb_entry(attr_count, attr_list);
+  if (fdb_entry != nullptr) {
+    *req.mutable_entry() = convert_from_fdb_entry(*fdb_entry);
+  }
   lemming::dataplane::sai::CreateFdbEntryResponse resp;
   grpc::ClientContext context;
 
@@ -121,6 +124,9 @@ sai_status_t l_remove_fdb_entry(const sai_fdb_entry_t* fdb_entry) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
   lemming::dataplane::sai::RemoveFdbEntryRequest req;
+  if (fdb_entry != nullptr) {
+    *req.mutable_entry() = convert_from_fdb_entry(*fdb_entry);
+  }
   lemming::dataplane::sai::RemoveFdbEntryResponse resp;
   grpc::ClientContext context;
 
@@ -144,6 +150,9 @@ sai_status_t l_set_fdb_entry_attribute(const sai_fdb_entry_t* fdb_entry,
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
   lemming::dataplane::sai::SetFdbEntryAttributeRequest req;
+  if (fdb_entry != nullptr) {
+    *req.mutable_entry() = convert_from_fdb_entry(*fdb_entry);
+  }
   lemming::dataplane::sai::SetFdbEntryAttributeResponse resp;
   grpc::ClientContext context;
 
@@ -196,6 +205,9 @@ sai_status_t l_get_fdb_entry_attribute(const sai_fdb_entry_t* fdb_entry,
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
   lemming::dataplane::sai::GetFdbEntryAttributeRequest req;
+  if (fdb_entry != nullptr) {
+    *req.mutable_entry() = convert_from_fdb_entry(*fdb_entry);
+  }
   lemming::dataplane::sai::GetFdbEntryAttributeResponse resp;
   grpc::ClientContext context;
 
@@ -284,6 +296,9 @@ sai_status_t l_create_fdb_entries(uint32_t object_count,
 
   for (uint32_t i = 0; i < object_count; i++) {
     auto r = convert_create_fdb_entry(attr_count[i], attr_list[i]);
+    if (fdb_entry != nullptr) {
+      *r.mutable_entry() = convert_from_fdb_entry(fdb_entry[i]);
+    }
     *req.add_reqs() = r;
   }
 
@@ -319,6 +334,11 @@ sai_status_t l_remove_fdb_entries(uint32_t object_count,
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < object_count; i++) {
+    lemming::dataplane::sai::RemoveFdbEntryRequest r;
+    if (fdb_entry != nullptr) {
+      *r.mutable_entry() = convert_from_fdb_entry(fdb_entry[i]);
+    }
+    *req.add_reqs() = r;
   }
 
   grpc::Status status = fdb->RemoveFdbEntries(&context, req, &resp);

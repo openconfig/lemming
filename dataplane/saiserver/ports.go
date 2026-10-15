@@ -21,6 +21,7 @@ import (
 	"net"
 	"slices"
 	"strconv"
+	"sync"
 
 	"github.com/vishvananda/netlink"
 	"google.golang.org/grpc"
@@ -100,8 +101,11 @@ func getL3Pipeline(skipIPValidation bool) []*fwdpb.ActionDesc {
 
 func getL2Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),          // Classify incoming packets to VLAN.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
-		fwdconfig.Action(fwdconfig.LookupAction(outputTable)).Build(),        // Take final decision on forward, drop, or trap.
+		fwdconfig.Action(fwdconfig.BridgeLearnAction(FDBTable)).Build(),      // Learn source MAC into FDB.
+		fwdconfig.Action(fwdconfig.LookupAction(FDBTable)).Build(),           // Match dest MAC in FDB.
+		fwdconfig.Action(fwdconfig.LookupAction(FloodTable)).Build(),         // Match VLAN tag if FDB misses.
 		{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},
@@ -301,8 +305,10 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs:  getPreIngressPipeline(),
-					Outputs: nil,
+					Inputs: getPreIngressPipeline(),
+					Outputs: []*fwdpb.ActionDesc{
+						fwdconfig.Action(fwdconfig.LookupAction(EgressVlanTable)).Build(),
+					},
 				},
 			},
 		},
@@ -349,23 +355,6 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
 	})
 
-	nid, err := port.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
-		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(id)},
-	})
-	if err != nil {
-		slog.InfoContext(ctx, "Failed to find NID for port", "port", id, "err", err)
-		return nil, err
-	}
-	vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
-		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
-	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(attrs.GetPortVlanId()))).Build(),
-	}
-	if _, err := port.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
-		return nil, err
-	}
 	return &saipb.CreatePortResponse{
 		Oid: id,
 	}, nil
@@ -708,8 +697,10 @@ type lagMember struct {
 
 type lag struct {
 	saipb.UnimplementedLagServer
+	mu          sync.Mutex
 	mgr         *attrmgr.AttrMgr
 	dataplane   switchDataplaneAPI
+	vlan        *vlan
 	memberships map[uint64]*lagMember
 }
 
@@ -724,11 +715,37 @@ func newLAG(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) 
 }
 
 func (l *lag) Reset() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.memberships = make(map[uint64]*lagMember)
+}
+
+func (l *lag) memberPorts(lagID uint64) []uint64 {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	var ports []uint64
+	for _, m := range l.memberships {
+		if m.lagID == lagID {
+			ports = append(ports, m.portID)
+		}
+	}
+	return ports
+}
+
+func (l *lag) lagByPortID(portID uint64) (uint64, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for _, m := range l.memberships {
+		if m.portID == portID {
+			return m.lagID, true
+		}
+	}
+	return 0, false
 }
 
 func (l *lag) CreateLag(ctx context.Context, _ *saipb.CreateLagRequest) (*saipb.CreateLagResponse, error) {
 	id := l.mgr.NextID()
+	l.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_LAG)
 
 	pReq := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: l.dataplane.ID()},
@@ -788,12 +805,24 @@ func (l *lag) CreateLagMember(ctx context.Context, req *saipb.CreateLagMemberReq
 	if err != nil {
 		return nil, err
 	}
+	l.mu.Lock()
 	l.memberships[id] = &lagMember{lagID: req.GetLagId(), portID: req.GetPortId()}
+	l.mu.Unlock()
+	if l.vlan != nil {
+		if err := l.vlan.syncLagMemberPort(ctx, req.GetLagId(), req.GetPortId(), true); err != nil {
+			return nil, err
+		}
+	}
 	return &saipb.CreateLagMemberResponse{Oid: id}, err
 }
 
 func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberRequest) (*saipb.RemoveLagMemberResponse, error) {
+	l.mu.Lock()
 	member, ok := l.memberships[req.GetOid()]
+	if ok {
+		delete(l.memberships, req.GetOid())
+	}
+	l.mu.Unlock()
 	if !ok {
 		slog.Warn("RemoveLagMember: member not found, ignoring", "oid", req.GetOid())
 		return &saipb.RemoveLagMemberResponse{}, nil
@@ -811,7 +840,15 @@ func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberReq
 		},
 	}
 	_, err := l.dataplane.PortUpdate(ctx, pReq)
-	return &saipb.RemoveLagMemberResponse{}, err
+	if err != nil {
+		return &saipb.RemoveLagMemberResponse{}, err
+	}
+	if l.vlan != nil {
+		if err := l.vlan.syncLagMemberPort(ctx, member.lagID, member.portID, false); err != nil {
+			return &saipb.RemoveLagMemberResponse{}, err
+		}
+	}
+	return &saipb.RemoveLagMemberResponse{}, nil
 }
 
 func (l *lag) RemoveLag(ctx context.Context, req *saipb.RemoveLagRequest) (*saipb.RemoveLagResponse, error) {

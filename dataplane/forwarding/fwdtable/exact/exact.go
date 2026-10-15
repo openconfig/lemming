@@ -154,6 +154,12 @@ type Table struct {
 func (t *Table) Clear() {
 	t.entriesMu.Lock()
 	defer t.entriesMu.Unlock()
+	if t.stale != nil {
+		t.staleMu.Lock()
+		t.stale.head = nil
+		t.stale.tail = nil
+		t.staleMu.Unlock()
+	}
 	for pos, head := range t.entries {
 		for entry := head; entry != nil; entry = entry.hashNext {
 			entry.actions.Cleanup()
@@ -297,6 +303,21 @@ func (t *Table) RemoveEntry(ed *fwdpb.EntryDesc) error {
 	entry := t.Find(key)
 	if entry == nil {
 		return fmt.Errorf("exact: RemoveEntry failed, cannot find key %v", key)
+	}
+	if t.stale != nil && entry.transient {
+		t.staleMu.Lock()
+		t.stale.remove(entry)
+		t.staleMu.Unlock()
+	}
+	t.remove(entry)
+	return nil
+}
+
+// RemoveKey removes the entry associated with the given key.
+func (t *Table) RemoveKey(key tableutil.Key) error {
+	entry := t.Find(key)
+	if entry == nil {
+		return fmt.Errorf("exact: RemoveKey failed, cannot find key %v", key)
 	}
 	if t.stale != nil && entry.transient {
 		t.staleMu.Lock()
