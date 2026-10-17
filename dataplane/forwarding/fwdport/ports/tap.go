@@ -280,6 +280,16 @@ func (tp tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	if err := unix.SetNonblock(fd, true); err != nil {
 		return nil, fmt.Errorf("failed to set tap in non-blocking mode: %v", err)
 	}
+	l, err := tp.ifaceMgr.LinkByName(kp.Tap.GetDeviceName())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tap interface %q: %w", kp.Tap.GetDeviceName(), err)
+	}
+	isUp := l.Attrs().Flags&net.FlagUp != 0
+	if kp.Tap.GetAdminState() && !isUp {
+		tp.ifaceMgr.LinkSetUp(l)
+	} else if !kp.Tap.GetAdminState() && isUp {
+		tp.ifaceMgr.LinkSetDown(l)
+	}
 	file := os.NewFile(uintptr(fd), "/dev/tun")
 	p := &tapPort{
 		ctx:          ctx,
