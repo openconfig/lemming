@@ -89,6 +89,8 @@ func (t *Table) Clear() {
 
 // Remove removes the entry matching the given MAC from the table.
 func (t *Table) Remove(mac []byte) error {
+	t.ctx.Lock()
+	defer t.ctx.Unlock()
 	return t.Table.RemoveKey(mac)
 }
 
