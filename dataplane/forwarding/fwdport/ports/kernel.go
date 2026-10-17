@@ -197,6 +197,9 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	if err != nil {
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}
+	if !kp.Kernel.GetAdminState() {
+		netlink.LinkSetDown(l)
+	}
 	p := &kernelPort{
 		ctx:          ctx,
 		handle:       handle,
