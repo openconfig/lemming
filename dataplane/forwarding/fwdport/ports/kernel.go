@@ -18,7 +18,6 @@ package ports
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"time"
 
@@ -191,17 +190,15 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		return nil, fmt.Errorf("failed to set arp_ignore to 2: %v", err)
 	}
 
-	isUp := l.Attrs().Flags&net.FlagUp != 0
-	if kp.Kernel.GetAdminState() && !isUp {
-		netlink.LinkSetUp(l)
-	} else if !kp.Kernel.GetAdminState() && isUp {
-		netlink.LinkSetDown(l)
-	}
+	netlink.LinkSetUp(l)
 
 	// Set snaplen to 64KB to capture max size IP packets
 	handle, err := pcap.OpenLive(kp.Kernel.GetDeviceName(), 65536, true, pcap.BlockForever)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
+	}
+	if !kp.Kernel.GetAdminState() {
+		netlink.LinkSetDown(l)
 	}
 	p := &kernelPort{
 		ctx:          ctx,
