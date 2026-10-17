@@ -152,6 +152,12 @@ type Table struct {
 
 // Clear removes all entries in the table by walking all entries in the table and deleting them.
 func (t *Table) Clear() {
+	t.staleMu.Lock()
+	if t.stale != nil {
+		t.stale.head = nil
+		t.stale.tail = nil
+	}
+	t.staleMu.Unlock()
 	t.entriesMu.Lock()
 	defer t.entriesMu.Unlock()
 	for pos, head := range t.entries {
@@ -294,15 +300,20 @@ func (t *Table) RemoveEntry(ed *fwdpb.EntryDesc) error {
 	if err != nil {
 		return fmt.Errorf("exact: RemoveEntry failed, err %v", err)
 	}
+	return t.RemoveKey(key)
+}
+
+// RemoveKey removes the entry associated with the given key.
+func (t *Table) RemoveKey(key tableutil.Key) error {
 	entry := t.Find(key)
 	if entry == nil {
-		return fmt.Errorf("exact: RemoveEntry failed, cannot find key %v", key)
+		return fmt.Errorf("exact: RemoveKey failed, cannot find key %v", key)
 	}
+	t.staleMu.Lock()
 	if t.stale != nil && entry.transient {
-		t.staleMu.Lock()
 		t.stale.remove(entry)
-		t.staleMu.Unlock()
 	}
+	t.staleMu.Unlock()
 	t.remove(entry)
 	return nil
 }
