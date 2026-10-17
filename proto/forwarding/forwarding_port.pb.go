@@ -450,6 +450,7 @@ func (x *CPUPortDesc) GetRemotePort() bool {
 type KernelPortDesc struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DeviceName    string                 `protobuf:"bytes,1,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
+	AdminState    bool                   `protobuf:"varint,2,opt,name=admin_state,json=adminState,proto3" json:"admin_state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -491,9 +492,17 @@ func (x *KernelPortDesc) GetDeviceName() string {
 	return ""
 }
 
+func (x *KernelPortDesc) GetAdminState() bool {
+	if x != nil {
+		return x.AdminState
+	}
+	return false
+}
+
 type TAPPortDesc struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DeviceName    string                 `protobuf:"bytes,1,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
+	AdminState    bool                   `protobuf:"varint,2,opt,name=admin_state,json=adminState,proto3" json:"admin_state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -533,6 +542,13 @@ func (x *TAPPortDesc) GetDeviceName() string {
 		return x.DeviceName
 	}
 	return ""
+}
+
+func (x *TAPPortDesc) GetAdminState() bool {
+	if x != nil {
+		return x.AdminState
+	}
+	return false
 }
 
 type FakePortDesc struct {
@@ -1669,13 +1685,17 @@ const file_proto_forwarding_forwarding_port_proto_rawDesc = "" +
 	"\fqueue_length\x18\x02 \x01(\x05R\vqueueLength\x12C\n" +
 	"\x10export_field_ids\x18\x03 \x03(\v2\x19.forwarding.PacketFieldIdR\x0eexportFieldIds\x12\x1f\n" +
 	"\vremote_port\x18\x04 \x01(\bR\n" +
-	"remotePort\"1\n" +
+	"remotePort\"R\n" +
 	"\x0eKernelPortDesc\x12\x1f\n" +
 	"\vdevice_name\x18\x01 \x01(\tR\n" +
-	"deviceName\".\n" +
+	"deviceName\x12\x1f\n" +
+	"\vadmin_state\x18\x02 \x01(\bR\n" +
+	"adminState\"O\n" +
 	"\vTAPPortDesc\x12\x1f\n" +
 	"\vdevice_name\x18\x01 \x01(\tR\n" +
-	"deviceName\"[\n" +
+	"deviceName\x12\x1f\n" +
+	"\vadmin_state\x18\x02 \x01(\bR\n" +
+	"adminState\"[\n" +
 	"\fFakePortDesc\x12\x17\n" +
 	"\ain_file\x18\x01 \x01(\tR\x06inFile\x12\x19\n" +
 	"\bout_file\x18\x02 \x01(\tR\aoutFile\x12\x17\n" +
