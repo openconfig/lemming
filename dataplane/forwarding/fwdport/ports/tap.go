@@ -286,9 +286,13 @@ func (tp tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	}
 	isUp := l.Attrs().Flags&net.FlagUp != 0
 	if kp.Tap.GetAdminState() && !isUp {
-		tp.ifaceMgr.LinkSetUp(l)
+		if err := tp.ifaceMgr.LinkSetUp(l); err != nil {
+			return nil, fmt.Errorf("failed to set tap interface %q up: %w", kp.Tap.GetDeviceName(), err)
+		}
 	} else if !kp.Tap.GetAdminState() && isUp {
-		tp.ifaceMgr.LinkSetDown(l)
+		if err := tp.ifaceMgr.LinkSetDown(l); err != nil {
+			return nil, fmt.Errorf("failed to set tap interface %q down: %w", kp.Tap.GetDeviceName(), err)
+		}
 	}
 	file := os.NewFile(uintptr(fd), "/dev/tun")
 	p := &tapPort{
