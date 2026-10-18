@@ -190,7 +190,9 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		return nil, fmt.Errorf("failed to set arp_ignore to 2: %v", err)
 	}
 
-	netlink.LinkSetUp(l)
+	if err := netlink.LinkSetUp(l); err != nil {
+		return nil, fmt.Errorf("failed to set link up: %v", err)
+	}
 
 	// Set snaplen to 64KB to capture max size IP packets
 	handle, err := pcap.OpenLive(kp.Kernel.GetDeviceName(), 65536, true, pcap.BlockForever)
@@ -198,7 +200,9 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}
 	if !kp.Kernel.GetAdminState() {
-		netlink.LinkSetDown(l)
+		if err := netlink.LinkSetDown(l); err != nil {
+			return nil, fmt.Errorf("failed to set link down: %v", err)
+		}
 	}
 	p := &kernelPort{
 		ctx:          ctx,
