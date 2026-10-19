@@ -63,12 +63,12 @@ func (req *learnRequest) DebugString(port fwdport.Port) string {
 // source mac and input port and enqueues them to a channel. A goroutine
 // monitors the channel and adds the corresponding entries. Before enqueuing
 // a learn request, the process function checks if the mac address already
-// exists. This prevents learning existing mac addresses continously. When a
+// exists. This prevents learning existing mac addresses continuously. When a
 // mac address is initially learned, it is possible to have more than one
 // learn request for the same mac address. Hence the channel used for learning
 // is buffered.
 type Table struct {
-	*exact.Table                     // exact table containing mac entries
+	*exact.Table                      // exact table containing mac entries
 	learn         *queue.Queue        // unbounded queue for learn requests
 	ctx           *fwdcontext.Context // context for finding objects
 	notify        chan bool           // if not nil, a notification is generated when an entry is learned (test only)
@@ -91,7 +91,7 @@ func (t *Table) Clear() {
 func (t *Table) Remove(mac []byte) error {
 	t.ctx.Lock()
 	defer t.ctx.Unlock()
-	return t.Table.RemoveKey(mac)
+	return t.RemoveKey(mac)
 }
 
 // Cleanup cleans up the exact match table and stops learning.
@@ -168,7 +168,7 @@ func (t *Table) processLearn(v interface{}) {
 	if err := t.AddEntry(desc, []*fwdpb.ActionDesc{&ad}); err != nil {
 		log.Infof("bridge: Skipping learn for %v %v.", req.DebugString(port), err)
 	} else if t.LearnCallback != nil {
-		t.LearnCallback(req.mac, string(fwdport.GetID(port).GetObjectId().GetId()))
+		t.LearnCallback(req.mac, fwdport.GetID(port).GetObjectId().GetId())
 	}
 }
 
