@@ -216,7 +216,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		SupportedFecMode:                 []saipb.PortFecMode{saipb.PortFecMode_PORT_FEC_MODE_NONE},
 		NumberOfIngressPriorityGroups:    proto.Uint32(0),
 		QosMaximumHeadroomSize:           proto.Uint32(0),
-		AdminState:                       proto.Bool(true),
+		AdminState:                       proto.Bool(req.GetAdminState()),
 		AutoNegMode:                      proto.Bool(req.GetAutoNegMode()),
 		Mtu:                              proto.Uint32(1514),
 		HwLaneList:                       req.HwLaneList,
@@ -237,12 +237,11 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		fwdPort.Port.Port = &fwdpb.PortDesc_Kernel{
 			Kernel: &fwdpb.KernelPortDesc{
 				DeviceName: dev,
+				AdminState: req.GetAdminState(),
 			},
 		}
 		// For ports that don't exist, do not create dataplane ports.
 		if _, err := getInterface(dev); err != nil {
-			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
-			port.mgr.StoreAttributes(id, attrs)
 			// TODO: This should be a real error, improve once we a correct config solution.
 			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistent port.
 			fwdPort := &fwdpb.PortCreateRequest{
@@ -255,25 +254,16 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 					Port: &fwdpb.PortDesc_Tap{
 						Tap: &fwdpb.TAPPortDesc{
 							DeviceName: fmt.Sprintf("port%d", id),
+							AdminState: req.GetAdminState(),
 						},
 					},
 				},
 			}
-			_, err := port.dataplane.PortCreate(ctx, fwdPort)
-			if err != nil {
+			if _, err := port.dataplane.PortCreate(ctx, fwdPort); err != nil {
 				return nil, err
 			}
-			stateReq := &fwdpb.PortStateRequest{
-				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-				Operation: &fwdpb.PortInfo{
-					AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
-				},
-			}
-			if _, err := port.dataplane.PortState(ctx, stateReq); err != nil {
-				return nil, err
-			}
-
+			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
+			port.mgr.StoreAttributes(id, attrs)
 			return &saipb.CreatePortResponse{
 				Oid: id,
 			}, nil
@@ -310,23 +300,11 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	if _, err := port.dataplane.PortUpdate(ctx, update); err != nil {
 		return nil, err
 	}
-	attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
-	if req.AdminState == nil || req.GetAdminState() == false {
-		stateReq := &fwdpb.PortStateRequest{
-			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-			Operation: &fwdpb.PortInfo{
-				AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
-			},
-		}
-		_, err := port.dataplane.PortState(ctx, stateReq)
-		if err != nil {
-			return nil, err
-		}
-		attrs.AdminState = proto.Bool(false)
+	if req.GetAdminState() {
+		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
+	} else {
 		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 	}
-
 	port.mgr.StoreAttributes(id, attrs)
 
 	// Update the switch's port list.

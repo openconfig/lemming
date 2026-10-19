@@ -102,7 +102,7 @@ func TestCreatePort(t *testing.T) {
 			SupportedFecMode:                 []saipb.PortFecMode{saipb.PortFecMode_PORT_FEC_MODE_NONE},
 			NumberOfIngressPriorityGroups:    proto.Uint32(0),
 			QosMaximumHeadroomSize:           proto.Uint32(0),
-			AdminState:                       proto.Bool(true),
+			AdminState:                       proto.Bool(false),
 			AutoNegMode:                      proto.Bool(false),
 			Mtu:                              proto.Uint32(1514),
 			PortVlanId:                       proto.Uint32(DefaultVlanId),
