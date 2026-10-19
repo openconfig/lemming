@@ -262,11 +262,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			if _, err := port.dataplane.PortCreate(ctx, fwdPort); err != nil {
 				return nil, err
 			}
-			if req.GetAdminState() {
-				attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
-			} else {
-				attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
-			}
+			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 			port.mgr.StoreAttributes(id, attrs)
 			return &saipb.CreatePortResponse{
 				Oid: id,
