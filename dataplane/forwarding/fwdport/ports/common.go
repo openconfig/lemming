@@ -104,12 +104,12 @@ func startStateWatch(updCh chan netlink.LinkUpdate, doneCh chan struct{}, devNam
 					log.Infof("update chan close for dev: %v", devName)
 					return
 				}
-				if upd.Link == nil || upd.Attrs() == nil || upd.Attrs().Name != devName {
+				if upd.Attrs() == nil || upd.Attrs().Name != devName {
 					continue
 				}
 				admin, oper := stateFromAttrs(upd.Attrs())
 				log.V(1).Infof("dataplane receive link update: port %q, admin %v, oper %v", devName, admin.String(), oper.String())
-				ctx.Notify(&fwdpb.EventDesc{
+				if err := ctx.Notify(&fwdpb.EventDesc{
 					Event: fwdpb.Event_EVENT_PORT,
 					Desc: &fwdpb.EventDesc_Port{
 						Port: &fwdpb.PortEventDesc{
@@ -121,7 +121,9 @@ func startStateWatch(updCh chan netlink.LinkUpdate, doneCh chan struct{}, devNam
 							},
 						},
 					},
-				})
+				}); err != nil {
+					log.Warningf("failed to notify port state update: %v", err)
+				}
 			}
 		}
 	}()
