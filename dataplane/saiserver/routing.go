@@ -1281,7 +1281,7 @@ type vlanMember struct {
 }
 
 type vlan struct {
-	mu sync.Mutex
+	mu sync.RWMutex
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
@@ -1301,6 +1301,8 @@ func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server)
 }
 
 func (vlan *vlan) vidByOid(oid uint64) (uint32, error) {
+	vlan.mu.RLock()
+	defer vlan.mu.RUnlock()
 	for v, o := range vlan.oidByVId {
 		if o == oid {
 			return v, nil
@@ -1310,6 +1312,8 @@ func (vlan *vlan) vidByOid(oid uint64) (uint32, error) {
 }
 
 func (vlan *vlan) memberByOid(oid uint64) *vlanMember {
+	vlan.mu.RLock()
+	defer vlan.mu.RUnlock()
 	for _, v := range vlan.vlans {
 		for mOid, member := range v {
 			if mOid == oid {
@@ -1321,8 +1325,8 @@ func (vlan *vlan) memberByOid(oid uint64) *vlanMember {
 }
 
 func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
-	vlan.mu.Lock()
-	defer vlan.mu.Unlock()
+	vlan.mu.RLock()
+	defer vlan.mu.RUnlock()
 	for _, v := range vlan.vlans {
 		for _, member := range v {
 			if member.PortID == oid {
@@ -1333,9 +1337,10 @@ func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
 	return nil
 }
 
+// oidByVid returns the VLAN OID for the given VLAN ID.
 func (vlan *vlan) oidByVid(vid uint32) (uint64, bool) {
-	vlan.mu.Lock()
-	defer vlan.mu.Unlock()
+	vlan.mu.RLock()
+	defer vlan.mu.RUnlock()
 	oid, ok := vlan.oidByVId[vid]
 	return oid, ok
 }
@@ -1369,8 +1374,10 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 		TamObject:                          []uint64{},
 	}
 	vlan.mgr.StoreAttributes(id, attrs)
+	vlan.mu.Lock()
 	vlan.vlans[id] = map[uint64]*vlanMember{}
 	vlan.oidByVId[r.GetVlanId()] = id
+	vlan.mu.Unlock()
 	return &saipb.CreateVlanResponse{
 		Oid: id,
 	}, nil
@@ -1469,7 +1476,12 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
 	vlan.mgr.StoreAttributes(vOid, vlanAttrResp.GetAttr())
 	vlan.mu.Lock()
-	vlan.vlans[vOid][mOid] = &vlanMember{
+	members, ok := vlan.vlans[vOid]
+	if !ok {
+		vlan.mu.Unlock()
+		return nil, fmt.Errorf("cannot find VLAN with OID %d", vOid)
+	}
+	members[mOid] = &vlanMember{
 		Oid:          mOid,
 		PortID:       portID,
 		Vid:          vId,
@@ -1480,7 +1492,10 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 
 	// Fetch the original vlan from the old vlan member and remove the member from that vlan
 	if member != nil {
-		preVlanOid, _ := vlan.oidByVid(member.Vid)
+		preVlanOid, ok := vlan.oidByVid(member.Vid)
+		if !ok {
+			return nil, fmt.Errorf("cannot find VLAN OID for VID %d", member.Vid)
+		}
 		vlanAttrReq = &saipb.GetVlanAttributeRequest{Oid: preVlanOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
 		vlanAttrResp = &saipb.GetVlanAttributeResponse{}
 		if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {
@@ -1503,9 +1518,11 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 }
 
 func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMemberRequest) (*saipb.RemoveVlanMemberResponse, error) {
+	// Claim the member under the lock so that concurrent removals of the same
+	// OID cannot both proceed, then release the lock before issuing dataplane
+	// RPCs so vlan.mu is never held across calls into the dataplane. If the
+	// dataplane removal fails, the claim is undone so the call can be retried.
 	vlan.mu.Lock()
-	defer vlan.mu.Unlock()
-
 	var member *vlanMember
 	var targetVlanOid uint64
 	found := false
@@ -1520,24 +1537,38 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 	}
 
 	if !found {
+		vlan.mu.Unlock()
 		return nil, fmt.Errorf("cannot find member with OID %d", r.GetOid())
 	}
+	delete(vlan.vlans[targetVlanOid], r.GetOid())
+	vlan.mu.Unlock()
+
 	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
 		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(member.PortID)},
 	})
 	if err != nil {
 		slog.InfoContext(ctx, "Failed to find NID for port", "bridge_port", member.PortID, "err", err)
+		vlan.restoreMember(targetVlanOid, member)
 		return nil, err
 	}
 	if _, err := vlan.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()); err != nil {
+		vlan.restoreMember(targetVlanOid, member)
 		return nil, err
 	}
 
-	delete(vlan.vlans[targetVlanOid], r.GetOid())
-
 	return &saipb.RemoveVlanMemberResponse{}, nil
+}
+
+// restoreMember re-inserts a member claimed by RemoveVlanMember after its
+// dataplane removal failed, unless the parent VLAN has since been removed.
+func (vlan *vlan) restoreMember(vlanOid uint64, member *vlanMember) {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	if members, ok := vlan.vlans[vlanOid]; ok {
+		members[member.Oid] = member
+	}
 }
 
 func (vlan *vlan) CreateVlanMembers(ctx context.Context, r *saipb.CreateVlanMembersRequest) (*saipb.CreateVlanMembersResponse, error) {
@@ -1554,6 +1585,8 @@ func (vlan *vlan) CreateVlanMembers(ctx context.Context, r *saipb.CreateVlanMemb
 
 func (vlan *vlan) Reset() {
 	slog.Info("resetting vlan")
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
 	vlan.oidByVId = map[uint32]uint64{}
 	vlan.vlans = map[uint64]map[uint64]*vlanMember{}
 }
