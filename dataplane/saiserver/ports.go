@@ -343,8 +343,8 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		slog.InfoContext(ctx, "Failed to find NID for port", "port", id, "err", err)
 		return nil, err
 	}
-	vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
-		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
+	// Untagged frames (VLAN_TAG 0) on the port are classified into its PVID.
+	vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(vlanTableEntryDesc(nid.GetNid(), 0)).Build()
 	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(attrs.GetPortVlanId()))).Build(),
