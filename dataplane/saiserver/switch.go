@@ -243,6 +243,8 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		sg:              sg,
 		mgr:             mgr,
 	}
+	vlan.lag = sw.Lag
+	sw.Lag.vlan = vlan
 	saipb.RegisterSwitchServer(s, sw)
 	saipb.RegisterStpServer(s, sw.stp)
 	return sw, nil

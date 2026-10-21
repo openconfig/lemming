@@ -1282,9 +1282,20 @@ type vlanMember struct {
 
 type vlan struct {
 	mu sync.RWMutex
+	// memberMu serializes VLAN membership changes (CreateVlanMember,
+	// RemoveVlanMember) and LAG membership changes (CreateLagMember,
+	// RemoveLagMember) together with their VlanTable programming. Without it,
+	// a port joining or leaving a LAG concurrently with the LAG joining or
+	// leaving a VLAN can snapshot each other's state before it changes and
+	// issue the dataplane add/remove in the wrong order, leaking or missing
+	// the (port, VLAN) entry. Lock order: memberMu -> vlan.mu -> lag.mu.
+	// memberMu is only taken by SAI handlers; it is held across dataplane
+	// RPCs and must never be acquired from dataplane callbacks.
+	memberMu sync.Mutex
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
+	lag       *lag                              // resolves LAG VLAN members to their member ports
 	oidByVId  map[uint32]uint64                 // VID -> VLAN_OID
 	vlans     map[uint64]map[uint64]*vlanMember // VLAN_OID -> VLAN_Member_OID (port)
 }
@@ -1418,6 +1429,34 @@ func (vlan *vlan) programPortVlan(ctx context.Context, portID uint64, vId uint32
 	return err
 }
 
+// targetPhysicalPorts returns the physical ports whose VlanTable entries
+// implement a VLAN membership of portID: the LAG's current member ports if
+// portID is a LAG, otherwise portID itself.
+func (vlan *vlan) targetPhysicalPorts(portID uint64) []uint64 {
+	if vlan.mgr.GetType(fmt.Sprint(portID)) == saipb.ObjectType_OBJECT_TYPE_LAG {
+		if vlan.lag != nil {
+			return vlan.lag.memberPorts(portID)
+		}
+		return nil
+	}
+	return []uint64{portID}
+}
+
+// lagVlanMembers returns a snapshot of the VLAN memberships of lagID.
+func (vlan *vlan) lagVlanMembers(lagID uint64) []vlanMember {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	var members []vlanMember
+	for _, v := range vlan.vlans {
+		for _, member := range v {
+			if member.PortID == lagID {
+				members = append(members, *member)
+			}
+		}
+	}
+	return members
+}
+
 // unprogramPortVlan removes the VlanTable entry for a VLAN membership of
 // portID without disturbing the port's other VLAN memberships.
 func (vlan *vlan) unprogramPortVlan(ctx context.Context, portID uint64, vId uint32, mode saipb.VlanTaggingMode) error {
@@ -1508,6 +1547,8 @@ func (vlan *vlan) GetVlanAttribute(ctx context.Context, req *saipb.GetVlanAttrib
 }
 
 func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMemberRequest) (*saipb.CreateVlanMemberResponse, error) {
+	vlan.memberMu.Lock()
+	defer vlan.memberMu.Unlock()
 	vOid := r.GetVlanId()
 	vId, err := vlan.vidByOid(vOid)
 	if err != nil {
@@ -1538,9 +1579,13 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	mOid := vlan.mgr.NextID()
 	vlan.mgr.SetType(fmt.Sprint(mOid), saipb.ObjectType_OBJECT_TYPE_VLAN_MEMBER)
 	// For an untagged replacement this overwrites the prior member's (port, 0)
-	// VlanTable entry in place.
-	if err := vlan.programPortVlan(ctx, portID, vId, r.GetVlanTaggingMode()); err != nil {
-		return nil, err
+	// VlanTable entry in place. LAG memberships are programmed on each of the
+	// LAG's current member ports, since PACKET_PORT_INPUT carries the physical
+	// ingress port.
+	for _, physPortID := range vlan.targetPhysicalPorts(portID) {
+		if err := vlan.programPortVlan(ctx, physPortID, vId, r.GetVlanTaggingMode()); err != nil {
+			return nil, err
+		}
 	}
 	// Update the attributes and internal data.
 	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: vOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
@@ -1593,6 +1638,8 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 }
 
 func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMemberRequest) (*saipb.RemoveVlanMemberResponse, error) {
+	vlan.memberMu.Lock()
+	defer vlan.memberMu.Unlock()
 	// Claim the member under the lock so that concurrent removals of the same
 	// OID cannot both proceed, then release the lock before issuing dataplane
 	// RPCs so vlan.mu is never held across calls into the dataplane. If the
@@ -1616,11 +1663,21 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 		return nil, fmt.Errorf("cannot find member with OID %d", r.GetOid())
 	}
 	delete(vlan.vlans[targetVlanOid], r.GetOid())
+	physPorts := vlan.targetPhysicalPorts(member.PortID) // vlan.mu -> lag.mu
 	vlan.mu.Unlock()
 
-	if err := vlan.unprogramPortVlan(ctx, member.PortID, member.Vid, member.Mode); err != nil {
-		vlan.restoreMember(targetVlanOid, member)
-		return nil, err
+	for i, physPortID := range physPorts {
+		if err := vlan.unprogramPortVlan(ctx, physPortID, member.Vid, member.Mode); err != nil {
+			// Re-program the ports already unprogrammed and restore the
+			// member so that a retry sees consistent state.
+			for _, done := range physPorts[:i] {
+				if rerr := vlan.programPortVlan(ctx, done, member.Vid, member.Mode); rerr != nil {
+					slog.WarnContext(ctx, "RemoveVlanMember: failed to roll back VlanTable entry", "port_id", done, "vid", member.Vid, "err", rerr)
+				}
+			}
+			vlan.restoreMember(targetVlanOid, member)
+			return nil, err
+		}
 	}
 
 	// Remove the member OID from the parent VLAN's MEMBER_LIST attribute
