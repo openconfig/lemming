@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"testing"
 
@@ -233,8 +234,8 @@ func TestVlanOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get members of the default VLAN: %v", err)
 	}
-	if len(testm) != 2 && len(defaultm) != 2 {
-		t.Fatalf("Failed to create a non-default VLAN")
+	if len(testm) != 2 || len(defaultm) != 2 {
+		t.Fatalf("Failed to create a non-default VLAN: got testm=%v defaultm=%v", testm, defaultm)
 	}
 
 	// Remove one port from the non-default VLAN.
@@ -252,8 +253,11 @@ func TestVlanOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get members of default VLAN: %v", err)
 	}
-	if len(testm) != 1 && len(defaultm) != 2 {
-		t.Errorf("Failed to remove a non-default VLAN member")
+	if len(testm) != 1 || len(defaultm) != 2 {
+		t.Errorf("Failed to remove a non-default VLAN member: got testm=%v defaultm=%v", testm, defaultm)
+	}
+	if slices.Contains(testm, testVLANMembers[0]) {
+		t.Errorf("removed VLAN member %d still in MEMBER_LIST %v", testVLANMembers[0], testm)
 	}
 
 	// Remove the non-default VLAN.
@@ -615,6 +619,16 @@ func TestRemoveVlanMemberRetryAfterDataplaneError(t *testing.T) {
 		t.Fatalf("CreateVlanMember failed: %v", err)
 	}
 
+	getMemberList := func() []uint64 {
+		t.Helper()
+		req := &saipb.GetVlanAttributeRequest{Oid: vlanResp.GetOid(), AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
+		resp := &saipb.GetVlanAttributeResponse{}
+		if err := mgr.PopulateAttributes(req, resp); err != nil {
+			t.Fatalf("PopulateAttributes(%d) failed: %v", vlanResp.GetOid(), err)
+		}
+		return resp.GetAttr().GetMemberList()
+	}
+
 	dplane.failRemove = true
 	if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: memberResp.GetOid()}); err == nil {
 		t.Fatalf("RemoveVlanMember with failing dataplane succeeded, want error")
@@ -622,11 +636,17 @@ func TestRemoveVlanMemberRetryAfterDataplaneError(t *testing.T) {
 	if m := v.memberByOid(memberResp.GetOid()); m == nil {
 		t.Fatalf("VLAN member %d forgotten after failed RemoveVlanMember, want it retained for retry", memberResp.GetOid())
 	}
+	if got := getMemberList(); !slices.Contains(got, memberResp.GetOid()) {
+		t.Errorf("MEMBER_LIST = %v after failed RemoveVlanMember, want it to still contain %d", got, memberResp.GetOid())
+	}
 
 	if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: memberResp.GetOid()}); err != nil {
 		t.Fatalf("RemoveVlanMember retry failed: %v", err)
 	}
 	if m := v.memberByOid(memberResp.GetOid()); m != nil {
 		t.Errorf("VLAN member %d still present after successful RemoveVlanMember", memberResp.GetOid())
+	}
+	if got := getMemberList(); slices.Contains(got, memberResp.GetOid()) {
+		t.Errorf("MEMBER_LIST = %v after successful RemoveVlanMember, want %d removed", got, memberResp.GetOid())
 	}
 }

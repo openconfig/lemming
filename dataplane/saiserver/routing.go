@@ -1558,6 +1558,22 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 		return nil, err
 	}
 
+	// Remove the member OID from the parent VLAN's MEMBER_LIST attribute
+	// only once the dataplane removal has succeeded.
+	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: targetVlanOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
+	vlanAttrResp := &saipb.GetVlanAttributeResponse{}
+	if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {
+		return nil, err
+	}
+	newMemList := []uint64{}
+	for _, id := range vlanAttrResp.GetAttr().GetMemberList() {
+		if id != r.GetOid() {
+			newMemList = append(newMemList, id)
+		}
+	}
+	vlanAttrResp.GetAttr().MemberList = newMemList
+	vlan.mgr.StoreAttributes(targetVlanOid, vlanAttrResp.GetAttr())
+
 	return &saipb.RemoveVlanMemberResponse{}, nil
 }
 
