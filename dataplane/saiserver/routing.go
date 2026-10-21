@@ -1273,10 +1273,11 @@ func (ri *routerInterface) RemoveRouterInterfaces(ctx context.Context, req *saip
 
 // vlanMember contains the info of a VLAN member.
 type vlanMember struct {
-	Oid    uint64
-	PortID uint64
-	Vid    uint32
-	Mode   saipb.VlanTaggingMode
+	Oid          uint64
+	PortID       uint64
+	Vid          uint32
+	Mode         saipb.VlanTaggingMode
+	BridgePortID uint64
 }
 
 type vlan struct {
@@ -1320,6 +1321,8 @@ func (vlan *vlan) memberByOid(oid uint64) *vlanMember {
 }
 
 func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
 	for _, v := range vlan.vlans {
 		for _, member := range v {
 			if member.PortID == oid {
@@ -1330,11 +1333,19 @@ func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
 	return nil
 }
 
+func (vlan *vlan) oidByVid(vid uint32) (uint64, bool) {
+	vlan.mu.Lock()
+	defer vlan.mu.Unlock()
+	oid, ok := vlan.oidByVId[vid]
+	return oid, ok
+}
+
 func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
-	if _, ok := vlan.oidByVId[r.GetVlanId()]; ok {
+	if _, ok := vlan.oidByVid(r.GetVlanId()); ok {
 		return nil, fmt.Errorf("found existing VLAN %d", r.GetVlanId())
 	}
 	id := vlan.mgr.NextID()
+	vlan.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_VLAN)
 	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 
@@ -1429,6 +1440,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	member := vlan.memberByPortId(portID)
 
 	mOid := vlan.mgr.NextID()
+	vlan.mgr.SetType(fmt.Sprint(mOid), saipb.ObjectType_OBJECT_TYPE_VLAN_MEMBER)
 	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
 		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(portID)},
@@ -1457,12 +1469,18 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
 	vlan.mgr.StoreAttributes(vOid, vlanAttrResp.GetAttr())
 	vlan.mu.Lock()
-	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: portID, Vid: vId, Mode: r.GetVlanTaggingMode()}
+	vlan.vlans[vOid][mOid] = &vlanMember{
+		Oid:          mOid,
+		PortID:       portID,
+		Vid:          vId,
+		Mode:         r.GetVlanTaggingMode(),
+		BridgePortID: r.GetBridgePortId(),
+	}
 	vlan.mu.Unlock()
 
 	// Fetch the original vlan from the old vlan member and remove the member from that vlan
 	if member != nil {
-		preVlanOid := vlan.oidByVId[member.Vid]
+		preVlanOid, _ := vlan.oidByVid(member.Vid)
 		vlanAttrReq = &saipb.GetVlanAttributeRequest{Oid: preVlanOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
 		vlanAttrResp = &saipb.GetVlanAttributeResponse{}
 		if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {
@@ -1557,6 +1575,7 @@ func newBridge(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 
 func (b *bridge) CreateBridge(ctx context.Context, req *saipb.CreateBridgeRequest) (*saipb.CreateBridgeResponse, error) {
 	id := b.mgr.NextID()
+	b.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_BRIDGE)
 	attrs := &saipb.BridgeAttribute{
 		PortList:                   []uint64{},
 		UnknownUnicastFloodGroup:   proto.Uint64(0),
@@ -1587,6 +1606,7 @@ func (b *bridge) GetBridgeStats(ctx context.Context, req *saipb.GetBridgeStatsRe
 
 func (b *bridge) CreateBridgePort(ctx context.Context, req *saipb.CreateBridgePortRequest) (*saipb.CreateBridgePortResponse, error) {
 	oid := b.mgr.NextID()
+	b.mgr.SetType(fmt.Sprint(oid), saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT)
 	adminState := req.GetAdminState()
 	attrs := &saipb.BridgePortAttribute{
 		AdminState: proto.Bool(adminState),
