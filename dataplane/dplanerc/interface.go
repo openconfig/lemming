@@ -208,7 +208,7 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().Name().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().SubinterfaceAny().Enabled().Config().PathStruct(), // TODO: Support the parent interface config/enabled controling the subinterface state.
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Enabled().Config().PathStruct(), // TODO: Support the parent interface config/enabled controlling the subinterface state.
 		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv4().AddressAny().Ip().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv6().AddressAny().Ip().Config().PathStruct(),
@@ -761,7 +761,7 @@ func (ni *Reconciler) reconcileIPs(config, state *oc.Interface) {
 		}
 		data, ok := ni.ocInterfaceData[intfRef]
 		if !ok {
-			log.Infof("skipping ip reconcilation for %+v", intfRef)
+			log.Infof("skipping ip reconciliation for %+v", intfRef)
 			continue
 		}
 
