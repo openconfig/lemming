@@ -698,6 +698,7 @@ type lag struct {
 	mu          sync.Mutex // protects memberships
 	mgr         *attrmgr.AttrMgr
 	dataplane   switchDataplaneAPI
+	vlan        *vlan // used to (un)program VLAN memberships of LAG member ports
 	memberships map[uint64]*lagMember
 }
 
@@ -717,8 +718,24 @@ func (l *lag) Reset() {
 	l.memberships = make(map[uint64]*lagMember)
 }
 
+// memberPorts returns the physical member ports of the given LAG.
+func (l *lag) memberPorts(lagID uint64) []uint64 {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	var ports []uint64
+	for _, m := range l.memberships {
+		if m.lagID == lagID {
+			ports = append(ports, m.portID)
+		}
+	}
+	slices.Sort(ports)
+	return ports
+}
+
 func (l *lag) CreateLag(ctx context.Context, _ *saipb.CreateLagRequest) (*saipb.CreateLagResponse, error) {
 	id := l.mgr.NextID()
+	// Set the type early so VLAN membership resolution can identify the LAG.
+	l.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_LAG)
 
 	pReq := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: l.dataplane.ID()},
@@ -760,6 +777,12 @@ func (l *lag) CreateLag(ctx context.Context, _ *saipb.CreateLagRequest) (*saipb.
 }
 
 func (l *lag) CreateLagMember(ctx context.Context, req *saipb.CreateLagMemberRequest) (*saipb.CreateLagMemberResponse, error) {
+	if l.vlan != nil {
+		// Serialize with VLAN membership changes so the new member port and
+		// the LAG's VLAN memberships are programmed in a single order.
+		l.vlan.memberMu.Lock()
+		defer l.vlan.memberMu.Unlock()
+	}
 	id := l.mgr.NextID()
 
 	pReq := &fwdpb.PortUpdateRequest{
@@ -781,10 +804,24 @@ func (l *lag) CreateLagMember(ctx context.Context, req *saipb.CreateLagMemberReq
 	l.mu.Lock()
 	l.memberships[id] = &lagMember{lagID: req.GetLagId(), portID: req.GetPortId()}
 	l.mu.Unlock()
-	return &saipb.CreateLagMemberResponse{Oid: id}, err
+	if l.vlan != nil {
+		// Program the LAG's existing VLAN memberships onto the new member port.
+		for _, m := range l.vlan.lagVlanMembers(req.GetLagId()) {
+			if err := l.vlan.programPortVlan(ctx, req.GetPortId(), m.Vid, m.Mode); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return &saipb.CreateLagMemberResponse{Oid: id}, nil
 }
 
 func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberRequest) (*saipb.RemoveLagMemberResponse, error) {
+	if l.vlan != nil {
+		// Serialize with VLAN membership changes so the departing member port
+		// and the LAG's VLAN memberships are unprogrammed in a single order.
+		l.vlan.memberMu.Lock()
+		defer l.vlan.memberMu.Unlock()
+	}
 	// Claim the membership under the lock so concurrent removals of the same
 	// OID cannot both proceed; the dataplane update runs without the lock.
 	l.mu.Lock()
@@ -815,6 +852,14 @@ func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberReq
 		l.memberships[req.GetOid()] = member
 		l.mu.Unlock()
 		return nil, err
+	}
+	if l.vlan != nil {
+		// Remove the LAG's VLAN memberships from the departing member port.
+		for _, m := range l.vlan.lagVlanMembers(member.lagID) {
+			if err := l.vlan.unprogramPortVlan(ctx, member.portID, m.Vid, m.Mode); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return &saipb.RemoveLagMemberResponse{}, nil
 }
