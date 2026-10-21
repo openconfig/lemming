@@ -318,10 +318,7 @@ func TestTunnelEncapDecap(t *testing.T) {
 	createTunnelDecapEntry(t, dut2, dut2Rif2, 0, saipb.TunnelType_TUNNEL_TYPE_IPINIP, "", "20.20.20.20/32")
 	createConnectedRouteAndNeighbor(t, dut2, dut2Rif2, 0, fmt.Sprint(dut2Port2.IPv4, "/", dut2Port2.IPv4Len), atePort2.IPv4, atePort2.MAC)
 
-	loss := testTraffic(t, ate, ateTop, atePort1, atePort2)
-	if loss > 1 {
-		t.Errorf("loss %f, greater than 1", loss)
-	}
+	testTraffic(t, ate, ateTop, atePort1, atePort2)
 }
 
 // configureATE configures port1 and port2 on the ATE.
@@ -337,9 +334,9 @@ func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 }
 
 // testTraffic generates traffic flow from source network to
-// destination network via srcEndPoint to dstEndPoint and checks for
-// packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint attrs.Attributes) float32 {
+// destination network via srcEndPoint to dstEndPoint and checks that
+// all packets are received.
+func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint attrs.Attributes) {
 	otg := ate.OTG()
 	top.Flows().Clear().Items()
 
@@ -364,9 +361,8 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	otg.PushConfig(t, top)
 
 	otg.StartTraffic(t)
+	defer otg.StopTraffic(t)
 
 	gnmi.Await(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State(), 5*time.Second, txPkts)
-	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
-	lossPct := (txPkts - rxPkts) * 100 / txPkts
-	return float32(lossPct)
+	gnmi.Await(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State(), 5*time.Second, txPkts)
 }

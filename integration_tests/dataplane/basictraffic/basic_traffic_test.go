@@ -188,10 +188,7 @@ func TestTraffic(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
 
-	loss := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2)
-	if loss > 1 {
-		t.Errorf("loss %f, greater than 1", loss)
-	}
+	testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2)
 }
 
 // configureATE configures port1 and port2 on the ATE.
@@ -207,9 +204,9 @@ func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 }
 
 // testTraffic generates traffic flow from source network to
-// destination network via srcEndPoint to dstEndPoint and checks for
-// packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes) float32 {
+// destination network via srcEndPoint to dstEndPoint and checks that
+// all packets are received.
+func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes) {
 	otg := ate.OTG()
 	top.Flows().Clear().Items()
 
@@ -233,9 +230,8 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 
 	otg.PushConfig(t, top)
 	otg.StartTraffic(t)
+	defer otg.StopTraffic(t)
 
 	gnmi.Await(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State(), 5*time.Second, txPkts)
-	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
-	lossPct := (txPkts - rxPkts) * 100 / txPkts
-	return float32(lossPct)
+	gnmi.Await(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State(), 5*time.Second, txPkts)
 }
