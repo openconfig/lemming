@@ -532,6 +532,12 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 				},
 			})
 		case saipb.TunnelType_TUNNEL_TYPE_VXLAN:
+			if len(req.GetTunnelMac()) > 0 {
+				actions = append(actions,
+					fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST)).Build(),
+					fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetTunnelMac())).Build(),
+				)
+			}
 			actions = append(actions, &fwdpb.ActionDesc{
 				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
 				Action: &fwdpb.ActionDesc_Encap{
@@ -554,6 +560,11 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 					},
 				},
 			})
+			if req.GetTunnelVni() != 0 {
+				vni := req.GetTunnelVni()
+				vniBytes := []byte{byte(vni >> 16), byte(vni >> 8), byte(vni)}
+				actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI).WithValue(vniBytes)).Build())
+			}
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unsupported tunnel type: %v", tunnel.GetAttr().GetType())
 		}
@@ -562,18 +573,6 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithValue(req.GetIp())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetTunnelId())).Build(),
-		)
-
-		if req.GetTunnelVni() != 0 {
-			vni := req.GetTunnelVni()
-			vniBytes := []byte{byte(vni >> 16), byte(vni >> 8), byte(vni)}
-			actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI).WithValue(vniBytes)).Build())
-		}
-		if len(req.GetTunnelMac()) > 0 {
-			actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetTunnelMac())).Build())
-		}
-
-		actions = append(actions,
 			fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)).Build(),
 			fwdconfig.Action(fwdconfig.LookupAction(TunnelEncap)).Build(),
 		)
