@@ -18,5 +18,6 @@ go_test(
     size = "small",
     srcs = ["transport_test.go"],
     embed = [":transport"],
-    deps = ["@com_github_spf13_viper//:viper"],
+    # keep: Viper is inherited from :transport.
+    deps = [],
 )
