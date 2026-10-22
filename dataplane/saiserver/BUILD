@@ -24,6 +24,7 @@ go_library(
         "//dataplane/dplaneopts",
         "//dataplane/forwarding",
         "//dataplane/forwarding/fwdconfig",
+        "//dataplane/forwarding/fwdtable/bridge",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/forwarding/protocol/vxlan",
         "//dataplane/proto/packetio",
