@@ -18,12 +18,14 @@ package ports
 
 import (
 	"net"
+	"sync"
 
 	log "github.com/golang/glog"
 	"github.com/vishvananda/netlink"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
+	"github.com/openconfig/lemming/dataplane/kernel"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -86,45 +88,100 @@ func getAndSetState(name string, ifMgr stateIfaceMgr, pi *fwdpb.PortInfo) (*fwdp
 	default:
 		return reply, nil
 	}
-	if err == nil {
-		reply.Status.AdminStatus = pi.AdminStatus
+	if err != nil {
+		return nil, err
 	}
-	return reply, err
+	reply.Status.AdminStatus = pi.AdminStatus
+	return reply, nil
 }
 
-func startStateWatch(updCh chan netlink.LinkUpdate, doneCh chan struct{}, devName string, port fwdport.Port, ctx *fwdcontext.Context) {
-	go func() {
-		for {
-			select {
-			case <-doneCh:
-				log.Warningf("state watch stopping for dev: %v", devName)
+type linkSubscriber interface {
+	LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error
+}
+
+type portTarget struct {
+	port fwdport.Port
+	ctx  *fwdcontext.Context
+}
+
+type linkStateWatcher struct {
+	mu       sync.Mutex
+	ifaceMgr linkSubscriber
+	ports    map[string]portTarget
+	doneCh   chan struct{}
+}
+
+var defaultLinkWatcher = &linkStateWatcher{
+	ifaceMgr: &kernel.Interfaces{},
+	ports:    make(map[string]portTarget),
+}
+
+func (w *linkStateWatcher) watch(devName string, port fwdport.Port, ctx *fwdcontext.Context) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if len(w.ports) == 0 {
+		updCh := make(chan netlink.LinkUpdate)
+		doneCh := make(chan struct{})
+		if err := w.ifaceMgr.LinkSubscribe(updCh, doneCh); err != nil {
+			return err
+		}
+		w.doneCh = doneCh
+		go w.run(updCh, doneCh)
+	}
+	w.ports[devName] = portTarget{port: port, ctx: ctx}
+	return nil
+}
+
+func (w *linkStateWatcher) unwatch(devName string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	delete(w.ports, devName)
+	if len(w.ports) == 0 && w.doneCh != nil {
+		close(w.doneCh)
+		w.doneCh = nil
+	}
+}
+
+func (w *linkStateWatcher) run(updCh <-chan netlink.LinkUpdate, doneCh <-chan struct{}) {
+	for {
+		select {
+		case <-doneCh:
+			log.Warningf("shared link state watch stopping")
+			return
+		case upd, ok := <-updCh:
+			if !ok {
+				log.Infof("shared link update chan closed")
 				return
-			case upd, ok := <-updCh:
-				if !ok {
-					log.Infof("update chan close for dev: %v", devName)
-					return
-				}
-				if upd.Attrs() == nil || upd.Attrs().Name != devName {
-					continue
-				}
-				admin, oper := stateFromAttrs(upd.Attrs())
-				log.V(1).Infof("dataplane receive link update: port %q, admin %v, oper %v", devName, admin.String(), oper.String())
-				if err := ctx.Notify(&fwdpb.EventDesc{
-					Event: fwdpb.Event_EVENT_PORT,
-					Desc: &fwdpb.EventDesc_Port{
-						Port: &fwdpb.PortEventDesc{
-							Context: &fwdpb.ContextId{Id: ctx.ID},
-							PortId:  &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: string(port.ID())}},
-							PortInfo: &fwdpb.PortInfo{
-								AdminStatus: admin,
-								OperStatus:  oper,
-							},
+			}
+			if upd.Attrs() == nil {
+				continue
+			}
+			devName := upd.Attrs().Name
+			w.mu.Lock()
+			target, ok := w.ports[devName]
+			w.mu.Unlock()
+			if !ok {
+				continue
+			}
+			admin, oper := stateFromAttrs(upd.Attrs())
+			log.V(1).Infof("dataplane receive link update: port %q, admin %v, oper %v", devName, admin.String(), oper.String())
+			if err := target.ctx.Notify(&fwdpb.EventDesc{
+				Event: fwdpb.Event_EVENT_PORT,
+				Desc: &fwdpb.EventDesc_Port{
+					Port: &fwdpb.PortEventDesc{
+						Context: &fwdpb.ContextId{Id: target.ctx.ID},
+						PortId:  &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: string(target.port.ID())}},
+						PortInfo: &fwdpb.PortInfo{
+							AdminStatus: admin,
+							OperStatus:  oper,
 						},
 					},
-				}); err != nil {
-					log.Warningf("failed to notify port state update: %v", err)
-				}
+				},
+			}); err != nil {
+				log.Errorf("failed to notify port state update: %v", err)
 			}
 		}
-	}()
+	}
 }
