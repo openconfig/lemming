@@ -17,6 +17,9 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
+	"sync"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -26,6 +29,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gnmi/errdiff"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
@@ -232,8 +236,8 @@ func TestVlanOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get members of the default VLAN: %v", err)
 	}
-	if len(testm) != 2 && len(defaultm) != 2 {
-		t.Fatalf("Failed to create a non-default VLAN")
+	if len(testm) != 2 || len(defaultm) != 2 {
+		t.Fatalf("Failed to create a non-default VLAN: got testm=%v defaultm=%v", testm, defaultm)
 	}
 
 	// Remove one port from the non-default VLAN.
@@ -251,8 +255,11 @@ func TestVlanOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get members of default VLAN: %v", err)
 	}
-	if len(testm) != 1 && len(defaultm) != 2 {
-		t.Errorf("Failed to remove a non-default VLAN member")
+	if len(testm) != 1 || len(defaultm) != 2 {
+		t.Errorf("Failed to remove a non-default VLAN member: got testm=%v defaultm=%v", testm, defaultm)
+	}
+	if slices.Contains(testm, testVLANMembers[0]) {
+		t.Errorf("removed VLAN member %d still in MEMBER_LIST %v", testVLANMembers[0], testm)
 	}
 
 	// Remove the non-default VLAN.
@@ -396,11 +403,13 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 		desc        string
 		bridgePort  uint64
 		taggingMode saipb.VlanTaggingMode
+		wantTag     uint16
 		wantActions []*fwdpb.ActionDesc
 	}{{
 		desc:        "untagged member encapsulates 802.1Q header and sets VLAN tag",
 		bridgePort:  untaggedBridgeID,
 		taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED,
+		wantTag:     0,
 		wantActions: []*fwdpb.ActionDesc{
 			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vlanID))).Build(),
@@ -409,6 +418,7 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 		desc:        "tagged member preserves existing 802.1Q header without re-encapsulating",
 		bridgePort:  taggedBridgeID,
 		taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED,
+		wantTag:     uint16(vlanID),
 		wantActions: nil,
 	}}
 
@@ -457,7 +467,690 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 			if d := cmp.Diff(gotEntries[0].GetActions(), tt.wantActions, protocmp.Transform()); d != "" {
 				t.Errorf("CreateVlanMember() actions diff (-got +want):\n%s", d)
 			}
+			wantEntry := vlanTableEntryDesc(uint64(untaggedPortID), tt.wantTag).Build()
+			if tt.taggingMode == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
+				wantEntry = vlanTableEntryDesc(uint64(taggedPortID), tt.wantTag).Build()
+			}
+			if d := cmp.Diff(gotEntries[0].GetEntryDesc(), wantEntry, protocmp.Transform()); d != "" {
+				t.Errorf("CreateVlanMember() VlanTable key diff (-got +want):\n%s", d)
+			}
 		})
 	}
 }
 
+func TestCreateVlanMemberHybridPort(t *testing.T) {
+	const (
+		vlan42ID  = uint32(42)
+		vlan100ID = uint32(100)
+		vlan666ID = uint32(666)
+		portID    = uint64(55)
+		bridgeID  = uint64(550)
+	)
+
+	setup := func(t *testing.T) (saipb.VlanClient, *attrmgr.AttrMgr, *fakeSwitchDataplane, func()) {
+		t.Helper()
+		dplane := &fakeSwitchDataplane{}
+		c, mgr, stopFn := newTestVlan(t, dplane)
+		mgr.StoreAttributes(1, &saipb.SwitchAttribute{DefaultStpInstId: proto.Uint64(testStpInstId)})
+		mgr.StoreAttributes(bridgeID, &saipb.BridgePortAttribute{PortId: proto.Uint64(portID)})
+		return c, mgr, dplane, stopFn
+	}
+	createVlan := func(t *testing.T, c saipb.VlanClient, vid uint32) uint64 {
+		t.Helper()
+		resp, err := c.CreateVlan(context.Background(), &saipb.CreateVlanRequest{Switch: 1, VlanId: proto.Uint32(vid)})
+		if err != nil {
+			t.Fatalf("CreateVlan(%d) failed: %v", vid, err)
+		}
+		return resp.GetOid()
+	}
+	createMember := func(t *testing.T, c saipb.VlanClient, vlanOID uint64, mode saipb.VlanTaggingMode) uint64 {
+		t.Helper()
+		resp, err := c.CreateVlanMember(context.Background(), &saipb.CreateVlanMemberRequest{
+			Switch:          1,
+			VlanId:          proto.Uint64(vlanOID),
+			BridgePortId:    proto.Uint64(bridgeID),
+			VlanTaggingMode: mode.Enum(),
+		})
+		if err != nil {
+			t.Fatalf("CreateVlanMember(vlan OID %d, %v) failed: %v", vlanOID, mode, err)
+		}
+		return resp.GetOid()
+	}
+	getVLANMembers := func(t *testing.T, mgr *attrmgr.AttrMgr, vlanOID uint64) []uint64 {
+		t.Helper()
+		req := &saipb.GetVlanAttributeRequest{Oid: vlanOID, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
+		resp := &saipb.GetVlanAttributeResponse{}
+		if err := mgr.PopulateAttributes(req, resp); err != nil {
+			t.Fatalf("PopulateAttributes(%d) failed: %v", vlanOID, err)
+		}
+		return resp.GetAttr().GetMemberList()
+	}
+	wantUntaggedActions := func(vid uint32) []*fwdpb.ActionDesc {
+		return []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vid))).Build(),
+		}
+	}
+	// lastVlanTableAdd returns the most recent VlanTable entry added for (portID, vlanTag).
+	lastVlanTableAdd := func(dplane *fakeSwitchDataplane, vlanTag uint16) *fwdpb.TableEntryAddRequest_Entry {
+		want := vlanTableEntryDesc(portID, vlanTag).Build()
+		for i := len(dplane.gotEntryAddReqs) - 1; i >= 0; i-- {
+			req := dplane.gotEntryAddReqs[i]
+			if req.GetTableId().GetObjectId().GetId() != VlanTable {
+				continue
+			}
+			for _, e := range req.GetEntries() {
+				if cmp.Equal(e.GetEntryDesc(), want, protocmp.Transform()) {
+					return e
+				}
+			}
+		}
+		return nil
+	}
+	checkVlanTableEntry := func(t *testing.T, dplane *fakeSwitchDataplane, vlanTag uint16, wantActions []*fwdpb.ActionDesc) {
+		t.Helper()
+		e := lastVlanTableAdd(dplane, vlanTag)
+		if e == nil {
+			t.Fatalf("missing VlanTable entry for (port %d, VLAN_TAG %d)", portID, vlanTag)
+		}
+		if d := cmp.Diff(e.GetActions(), wantActions, protocmp.Transform()); d != "" {
+			t.Errorf("VlanTable(port %d, VLAN_TAG %d) actions diff (-got +want):\n%s", portID, vlanTag, d)
+		}
+	}
+
+	t.Run("untagged first then tagged", func(t *testing.T) {
+		c, mgr, dplane, stopFn := setup(t)
+		defer stopFn()
+		v42, v666 := createVlan(t, c, vlan42ID), createVlan(t, c, vlan666ID)
+		m42 := createMember(t, c, v42, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED)
+		m666 := createMember(t, c, v666, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED)
+
+		if got := getVLANMembers(t, mgr, v42); !cmp.Equal(got, []uint64{m42}) {
+			t.Errorf("VLAN 42 members = %v, want [%d]", got, m42)
+		}
+		if got := getVLANMembers(t, mgr, v666); !cmp.Equal(got, []uint64{m666}) {
+			t.Errorf("VLAN 666 members = %v, want [%d]", got, m666)
+		}
+		checkVlanTableEntry(t, dplane, 0, wantUntaggedActions(vlan42ID))
+		checkVlanTableEntry(t, dplane, uint16(vlan666ID), nil)
+	})
+
+	t.Run("tagged first then untagged", func(t *testing.T) {
+		c, mgr, dplane, stopFn := setup(t)
+		defer stopFn()
+		v42, v666 := createVlan(t, c, vlan42ID), createVlan(t, c, vlan666ID)
+		m666 := createMember(t, c, v666, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED)
+		m42 := createMember(t, c, v42, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED)
+
+		if got := getVLANMembers(t, mgr, v42); !cmp.Equal(got, []uint64{m42}) {
+			t.Errorf("VLAN 42 members = %v, want [%d]", got, m42)
+		}
+		if got := getVLANMembers(t, mgr, v666); !cmp.Equal(got, []uint64{m666}) {
+			t.Errorf("VLAN 666 members = %v, want [%d]", got, m666)
+		}
+		checkVlanTableEntry(t, dplane, 0, wantUntaggedActions(vlan42ID))
+		checkVlanTableEntry(t, dplane, uint16(vlan666ID), nil)
+	})
+
+	t.Run("multiple tagged VLANs on a trunk port", func(t *testing.T) {
+		c, mgr, dplane, stopFn := setup(t)
+		defer stopFn()
+		v100, v666 := createVlan(t, c, vlan100ID), createVlan(t, c, vlan666ID)
+		m100 := createMember(t, c, v100, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED)
+		m666 := createMember(t, c, v666, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED)
+
+		if got := getVLANMembers(t, mgr, v100); !cmp.Equal(got, []uint64{m100}) {
+			t.Errorf("VLAN 100 members = %v, want [%d]", got, m100)
+		}
+		if got := getVLANMembers(t, mgr, v666); !cmp.Equal(got, []uint64{m666}) {
+			t.Errorf("VLAN 666 members = %v, want [%d]", got, m666)
+		}
+		checkVlanTableEntry(t, dplane, uint16(vlan100ID), nil)
+		checkVlanTableEntry(t, dplane, uint16(vlan666ID), nil)
+	})
+
+	t.Run("replacing the untagged VLAN preserves tagged memberships", func(t *testing.T) {
+		c, mgr, dplane, stopFn := setup(t)
+		defer stopFn()
+		v1, v42, v666 := createVlan(t, c, DefaultVlanId), createVlan(t, c, vlan42ID), createVlan(t, c, vlan666ID)
+		createMember(t, c, v1, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED)
+		m666 := createMember(t, c, v666, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED)
+		m42 := createMember(t, c, v42, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED)
+
+		if got := getVLANMembers(t, mgr, v1); len(got) != 0 {
+			t.Errorf("VLAN 1 members = %v, want empty after untagged replacement", got)
+		}
+		if got := getVLANMembers(t, mgr, v42); !cmp.Equal(got, []uint64{m42}) {
+			t.Errorf("VLAN 42 members = %v, want [%d]", got, m42)
+		}
+		if got := getVLANMembers(t, mgr, v666); !cmp.Equal(got, []uint64{m666}) {
+			t.Errorf("VLAN 666 members = %v, want [%d]", got, m666)
+		}
+		checkVlanTableEntry(t, dplane, 0, wantUntaggedActions(vlan42ID))
+		checkVlanTableEntry(t, dplane, uint16(vlan666ID), nil)
+	})
+
+	t.Run("removing members of a hybrid port removes only their own entries", func(t *testing.T) {
+		c, mgr, dplane, stopFn := setup(t)
+		defer stopFn()
+		ctx := context.Background()
+		v42, v666 := createVlan(t, c, vlan42ID), createVlan(t, c, vlan666ID)
+		m42 := createMember(t, c, v42, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED)
+		m666 := createMember(t, c, v666, saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED)
+
+		if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: m666}); err != nil {
+			t.Fatalf("RemoveVlanMember(666) failed: %v", err)
+		}
+		if got := getVLANMembers(t, mgr, v666); len(got) != 0 {
+			t.Errorf("VLAN 666 members = %v, want empty after RemoveVlanMember", got)
+		}
+		if got := getVLANMembers(t, mgr, v42); !cmp.Equal(got, []uint64{m42}) {
+			t.Errorf("VLAN 42 members = %v, want [%d]", got, m42)
+		}
+		// Removing the untagged member must remove the (port, 0) entry rather
+		// than fail on an entry already removed with the tagged member.
+		if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: m42}); err != nil {
+			t.Fatalf("RemoveVlanMember(42) failed: %v", err)
+		}
+		var gotRemoved []*fwdpb.EntryDesc
+		for _, req := range dplane.gotEntryRemoveReqs {
+			if req.GetTableId().GetObjectId().GetId() != VlanTable {
+				continue
+			}
+			for _, e := range req.GetEntries() {
+				gotRemoved = append(gotRemoved, e)
+			}
+		}
+		wantRemoved := []*fwdpb.EntryDesc{
+			vlanTableEntryDesc(portID, uint16(vlan666ID)).Build(),
+			vlanTableEntryDesc(portID, 0).Build(),
+		}
+		if d := cmp.Diff(gotRemoved, wantRemoved, protocmp.Transform()); d != "" {
+			t.Errorf("removed VlanTable entries diff (-got +want):\n%s", d)
+		}
+	})
+}
+
+// lockedVlanDataplane serializes access to the fakeSwitchDataplane methods used
+// by the vlan server so that concurrency tests only flag races in the vlan server.
+type lockedVlanDataplane struct {
+	*fakeSwitchDataplane
+	mu sync.Mutex
+}
+
+func (l *lockedVlanDataplane) ObjectNID(ctx context.Context, req *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.fakeSwitchDataplane.ObjectNID(ctx, req)
+}
+
+func (l *lockedVlanDataplane) TableEntryAdd(ctx context.Context, req *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.fakeSwitchDataplane.TableEntryAdd(ctx, req)
+}
+
+func (l *lockedVlanDataplane) TableEntryRemove(ctx context.Context, req *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.fakeSwitchDataplane.TableEntryRemove(ctx, req)
+}
+
+// TestVlanConcurrentAccess exercises the vlan server's internal maps from
+// concurrent SAI calls and lookup helpers. It is intended to be run with -race.
+func TestVlanConcurrentAccess(t *testing.T) {
+	const workers = 8
+	dplane := &lockedVlanDataplane{fakeSwitchDataplane: &fakeSwitchDataplane{}}
+	var v *vlan
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		v = newVlan(mgr, dplane, srv)
+	})
+	defer stopFn()
+	c := saipb.NewVlanClient(conn)
+	ctx := context.Background()
+
+	mgr.StoreAttributes(1, &saipb.SwitchAttribute{DefaultStpInstId: proto.Uint64(testStpInstId)})
+	for i := 0; i < workers; i++ {
+		portID := uint64(1000 + i)
+		mgr.StoreAttributes(portID+10000, &saipb.BridgePortAttribute{PortId: proto.Uint64(portID)})
+	}
+
+	done := make(chan struct{})
+	var readers sync.WaitGroup
+	readers.Add(1)
+	go func() {
+		defer readers.Done()
+		for {
+			select {
+			case <-done:
+				return
+			default:
+			}
+			for i := 0; i < workers; i++ {
+				v.memberByPortId(uint64(1000 + i))
+				if oid, ok := v.oidByVid(uint32(100 + i)); ok {
+					v.vidByOid(oid)
+					v.memberByOid(oid)
+				}
+			}
+		}
+	}()
+
+	var writers sync.WaitGroup
+	errCh := make(chan error, workers)
+	for i := 0; i < workers; i++ {
+		writers.Add(1)
+		go func(i int) {
+			defer writers.Done()
+			vResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{Switch: 1, VlanId: proto.Uint32(uint32(100 + i))})
+			if err != nil {
+				errCh <- fmt.Errorf("CreateVlan(%d) failed: %v", 100+i, err)
+				return
+			}
+			mResp, err := c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+				Switch:       1,
+				VlanId:       proto.Uint64(vResp.GetOid()),
+				BridgePortId: proto.Uint64(uint64(1000+i) + 10000),
+			})
+			if err != nil {
+				errCh <- fmt.Errorf("CreateVlanMember(%d) failed: %v", 100+i, err)
+				return
+			}
+			if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: mResp.GetOid()}); err != nil {
+				errCh <- fmt.Errorf("RemoveVlanMember(%d) failed: %v", mResp.GetOid(), err)
+				return
+			}
+			if _, err := c.RemoveVlan(ctx, &saipb.RemoveVlanRequest{Oid: vResp.GetOid()}); err != nil {
+				errCh <- fmt.Errorf("RemoveVlan(%d) failed: %v", vResp.GetOid(), err)
+			}
+		}(i)
+	}
+	writers.Wait()
+	close(done)
+	readers.Wait()
+	close(errCh)
+	for err := range errCh {
+		t.Error(err)
+	}
+
+	for i := 0; i < workers; i++ {
+		if _, ok := v.oidByVid(uint32(100 + i)); ok {
+			t.Errorf("VLAN %d still present after RemoveVlan", 100+i)
+		}
+		if m := v.memberByPortId(uint64(1000 + i)); m != nil {
+			t.Errorf("port %d still has VLAN member %+v after RemoveVlanMember", 1000+i, m)
+		}
+	}
+}
+
+// failingRemoveDataplane fails the next TableEntryRemove call when failRemove is set.
+type failingRemoveDataplane struct {
+	*fakeSwitchDataplane
+	failRemove bool
+}
+
+func (f *failingRemoveDataplane) TableEntryRemove(ctx context.Context, req *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+	if f.failRemove {
+		f.failRemove = false
+		return nil, fmt.Errorf("injected TableEntryRemove failure")
+	}
+	return f.fakeSwitchDataplane.TableEntryRemove(ctx, req)
+}
+
+func TestRemoveVlanMemberRetryAfterDataplaneError(t *testing.T) {
+	dplane := &failingRemoveDataplane{fakeSwitchDataplane: &fakeSwitchDataplane{}}
+	var v *vlan
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		v = newVlan(mgr, dplane, srv)
+	})
+	defer stopFn()
+	c := saipb.NewVlanClient(conn)
+	ctx := context.Background()
+
+	mgr.StoreAttributes(1, &saipb.SwitchAttribute{DefaultStpInstId: proto.Uint64(testStpInstId)})
+	const bridgePortOid, portID = uint64(100), uint64(10)
+	mgr.StoreAttributes(bridgePortOid, &saipb.BridgePortAttribute{PortId: proto.Uint64(portID)})
+
+	vlanResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{Switch: 1, VlanId: proto.Uint32(10)})
+	if err != nil {
+		t.Fatalf("CreateVlan failed: %v", err)
+	}
+	memberResp, err := c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		Switch:       1,
+		VlanId:       proto.Uint64(vlanResp.GetOid()),
+		BridgePortId: proto.Uint64(bridgePortOid),
+	})
+	if err != nil {
+		t.Fatalf("CreateVlanMember failed: %v", err)
+	}
+
+	getMemberList := func() []uint64 {
+		t.Helper()
+		req := &saipb.GetVlanAttributeRequest{Oid: vlanResp.GetOid(), AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
+		resp := &saipb.GetVlanAttributeResponse{}
+		if err := mgr.PopulateAttributes(req, resp); err != nil {
+			t.Fatalf("PopulateAttributes(%d) failed: %v", vlanResp.GetOid(), err)
+		}
+		return resp.GetAttr().GetMemberList()
+	}
+
+	dplane.failRemove = true
+	if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: memberResp.GetOid()}); err == nil {
+		t.Fatalf("RemoveVlanMember with failing dataplane succeeded, want error")
+	}
+	if m := v.memberByOid(memberResp.GetOid()); m == nil {
+		t.Fatalf("VLAN member %d forgotten after failed RemoveVlanMember, want it retained for retry", memberResp.GetOid())
+	}
+	if got := getMemberList(); !slices.Contains(got, memberResp.GetOid()) {
+		t.Errorf("MEMBER_LIST = %v after failed RemoveVlanMember, want it to still contain %d", got, memberResp.GetOid())
+	}
+
+	if _, err := c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: memberResp.GetOid()}); err != nil {
+		t.Fatalf("RemoveVlanMember retry failed: %v", err)
+	}
+	if m := v.memberByOid(memberResp.GetOid()); m != nil {
+		t.Errorf("VLAN member %d still present after successful RemoveVlanMember", memberResp.GetOid())
+	}
+	if got := getMemberList(); slices.Contains(got, memberResp.GetOid()) {
+		t.Errorf("MEMBER_LIST = %v after successful RemoveVlanMember, want %d removed", got, memberResp.GetOid())
+	}
+}
+
+func TestVlanLagMembership(t *testing.T) {
+	const (
+		physPort1   = uint64(10010)
+		physPort2   = uint64(10020)
+		lagBridgeID = uint64(10500)
+	)
+	dplane := &fakeSwitchDataplane{}
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		if _, err := newSwitch(mgr, dplane, srv, &dplaneopts.Options{}); err != nil {
+			t.Fatalf("newSwitch failed: %v", err)
+		}
+	})
+	defer stopFn()
+	ctx := context.Background()
+	swClient := saipb.NewSwitchClient(conn)
+	vlanClient := saipb.NewVlanClient(conn)
+	lagClient := saipb.NewLagClient(conn)
+
+	swResp, err := swClient.CreateSwitch(ctx, &saipb.CreateSwitchRequest{})
+	if err != nil {
+		t.Fatalf("CreateSwitch failed: %v", err)
+	}
+	lagResp, err := lagClient.CreateLag(ctx, &saipb.CreateLagRequest{Switch: swResp.GetOid()})
+	if err != nil {
+		t.Fatalf("CreateLag failed: %v", err)
+	}
+	lagOID := lagResp.GetOid()
+	if got := mgr.GetType(fmt.Sprint(lagOID)); got != saipb.ObjectType_OBJECT_TYPE_LAG {
+		t.Fatalf("LAG object type = %v, want OBJECT_TYPE_LAG", got)
+	}
+	mgr.StoreAttributes(lagBridgeID, &saipb.BridgePortAttribute{PortId: proto.Uint64(lagOID)})
+
+	lm1, err := lagClient.CreateLagMember(ctx, &saipb.CreateLagMemberRequest{
+		Switch: swResp.GetOid(),
+		LagId:  proto.Uint64(lagOID),
+		PortId: proto.Uint64(physPort1),
+	})
+	if err != nil {
+		t.Fatalf("CreateLagMember(physPort1) failed: %v", err)
+	}
+
+	v42, err := vlanClient.CreateVlan(ctx, &saipb.CreateVlanRequest{Switch: swResp.GetOid(), VlanId: proto.Uint32(42)})
+	if err != nil {
+		t.Fatalf("CreateVlan(42) failed: %v", err)
+	}
+	v666, err := vlanClient.CreateVlan(ctx, &saipb.CreateVlanRequest{Switch: swResp.GetOid(), VlanId: proto.Uint32(666)})
+	if err != nil {
+		t.Fatalf("CreateVlan(666) failed: %v", err)
+	}
+
+	// vlanTableOps returns the VlanTable entries added/removed since the given offsets.
+	addOff, removeOff := 0, 0
+	vlanTableOps := func() (added, removed []*fwdpb.EntryDesc) {
+		for _, req := range dplane.gotEntryAddReqs[addOff:] {
+			if req.GetTableId().GetObjectId().GetId() == VlanTable {
+				for _, e := range req.GetEntries() {
+					added = append(added, e.GetEntryDesc())
+				}
+			}
+		}
+		for _, req := range dplane.gotEntryRemoveReqs[removeOff:] {
+			if req.GetTableId().GetObjectId().GetId() == VlanTable {
+				removed = append(removed, req.GetEntries()...)
+			}
+		}
+		addOff, removeOff = len(dplane.gotEntryAddReqs), len(dplane.gotEntryRemoveReqs)
+		return added, removed
+	}
+	checkOps := func(t *testing.T, step string, wantAdded, wantRemoved []*fwdpb.EntryDesc) {
+		t.Helper()
+		gotAdded, gotRemoved := vlanTableOps()
+		if d := cmp.Diff(gotAdded, wantAdded, protocmp.Transform()); d != "" {
+			t.Errorf("%s: added VlanTable entries diff (-got +want):\n%s", step, d)
+		}
+		if d := cmp.Diff(gotRemoved, wantRemoved, protocmp.Transform()); d != "" {
+			t.Errorf("%s: removed VlanTable entries diff (-got +want):\n%s", step, d)
+		}
+	}
+	vlanTableOps() // Discard entries programmed by CreateSwitch/CreateVlan.
+
+	// Adding the LAG to VLAN 42 (untagged) programs its existing member port.
+	if _, err := vlanClient.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		Switch:          swResp.GetOid(),
+		VlanId:          proto.Uint64(v42.GetOid()),
+		BridgePortId:    proto.Uint64(lagBridgeID),
+		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+	}); err != nil {
+		t.Fatalf("CreateVlanMember(LAG, 42) failed: %v", err)
+	}
+	checkOps(t, "CreateVlanMember(LAG, 42 untagged)", []*fwdpb.EntryDesc{vlanTableEntryDesc(physPort1, 0).Build()}, nil)
+
+	// A port joining the LAG inherits the LAG's VLAN memberships.
+	if _, err := lagClient.CreateLagMember(ctx, &saipb.CreateLagMemberRequest{
+		Switch: swResp.GetOid(),
+		LagId:  proto.Uint64(lagOID),
+		PortId: proto.Uint64(physPort2),
+	}); err != nil {
+		t.Fatalf("CreateLagMember(physPort2) failed: %v", err)
+	}
+	checkOps(t, "CreateLagMember(physPort2)", []*fwdpb.EntryDesc{vlanTableEntryDesc(physPort2, 0).Build()}, nil)
+
+	// Adding the LAG to VLAN 666 (tagged) programs every member port.
+	m666, err := vlanClient.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		Switch:          swResp.GetOid(),
+		VlanId:          proto.Uint64(v666.GetOid()),
+		BridgePortId:    proto.Uint64(lagBridgeID),
+		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED.Enum(),
+	})
+	if err != nil {
+		t.Fatalf("CreateVlanMember(LAG, 666) failed: %v", err)
+	}
+	checkOps(t, "CreateVlanMember(LAG, 666 tagged)", []*fwdpb.EntryDesc{
+		vlanTableEntryDesc(physPort1, 666).Build(),
+		vlanTableEntryDesc(physPort2, 666).Build(),
+	}, nil)
+
+	// A port leaving the LAG loses all of the LAG's VLAN memberships.
+	if _, err := lagClient.RemoveLagMember(ctx, &saipb.RemoveLagMemberRequest{Oid: lm1.GetOid()}); err != nil {
+		t.Fatalf("RemoveLagMember(physPort1) failed: %v", err)
+	}
+	gotAdded, gotRemoved := vlanTableOps()
+	if len(gotAdded) != 0 {
+		t.Errorf("RemoveLagMember(physPort1): unexpected VlanTable entries added: %v", gotAdded)
+	}
+	// The LAG's VLAN memberships are visited in map order; compare as a set.
+	byString := func(a, b *fwdpb.EntryDesc) int { return strings.Compare(a.String(), b.String()) }
+	wantRemoved := []*fwdpb.EntryDesc{vlanTableEntryDesc(physPort1, 0).Build(), vlanTableEntryDesc(physPort1, 666).Build()}
+	slices.SortFunc(gotRemoved, byString)
+	slices.SortFunc(wantRemoved, byString)
+	if d := cmp.Diff(gotRemoved, wantRemoved, protocmp.Transform()); d != "" {
+		t.Errorf("RemoveLagMember(physPort1): removed VlanTable entries diff (-got +want):\n%s", d)
+	}
+
+	// Removing the LAG's VLAN 666 membership only touches remaining member ports.
+	if _, err := vlanClient.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: m666.GetOid()}); err != nil {
+		t.Fatalf("RemoveVlanMember(LAG, 666) failed: %v", err)
+	}
+	checkOps(t, "RemoveVlanMember(LAG, 666)", nil, []*fwdpb.EntryDesc{vlanTableEntryDesc(physPort2, 666).Build()})
+}
+
+// vlanTableTrackingDataplane is a thread-safe fake that tracks the set of live
+// VlanTable entries and rejects removal of entries that are not programmed.
+type vlanTableTrackingDataplane struct {
+	*fakeSwitchDataplane
+	mu   sync.Mutex
+	live map[string]bool
+}
+
+// vlanTableEntryKey returns a key for an entry. The proto text format is
+// stable within a single test binary run.
+func vlanTableEntryKey(ed *fwdpb.EntryDesc) string {
+	return ed.String()
+}
+
+func (d *vlanTableTrackingDataplane) TableEntryAdd(ctx context.Context, req *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if req.GetTableId().GetObjectId().GetId() == VlanTable {
+		for _, e := range req.GetEntries() {
+			d.live[vlanTableEntryKey(e.GetEntryDesc())] = true
+		}
+	}
+	return d.fakeSwitchDataplane.TableEntryAdd(ctx, req)
+}
+
+func (d *vlanTableTrackingDataplane) TableEntryRemove(ctx context.Context, req *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if req.GetTableId().GetObjectId().GetId() == VlanTable {
+		for _, e := range req.GetEntries() {
+			k := vlanTableEntryKey(e)
+			if !d.live[k] {
+				return nil, fmt.Errorf("VlanTable entry not programmed: %s", k)
+			}
+			delete(d.live, k)
+		}
+	}
+	return nil, nil
+}
+
+func (d *vlanTableTrackingDataplane) ObjectNID(ctx context.Context, req *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.fakeSwitchDataplane.ObjectNID(ctx, req)
+}
+
+func (d *vlanTableTrackingDataplane) PortUpdate(ctx context.Context, req *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.fakeSwitchDataplane.PortUpdate(ctx, req)
+}
+
+// TestVlanLagMembershipConcurrent races ports joining/leaving a LAG against the
+// LAG joining/leaving VLANs and checks that every (member port, VLAN) VlanTable
+// entry is programmed and unprogrammed exactly once. Run with -race.
+func TestVlanLagMembershipConcurrent(t *testing.T) {
+	const (
+		iterations  = 20
+		lagBridgeID = uint64(20500)
+	)
+	physPorts := []uint64{20010, 20020, 20030, 20040}
+	vids := []uint32{100, 101, 102, 103}
+
+	dplane := &vlanTableTrackingDataplane{fakeSwitchDataplane: &fakeSwitchDataplane{}, live: map[string]bool{}}
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		if _, err := newSwitch(mgr, dplane, srv, &dplaneopts.Options{}); err != nil {
+			t.Fatalf("newSwitch failed: %v", err)
+		}
+	})
+	defer stopFn()
+	ctx := context.Background()
+	swClient := saipb.NewSwitchClient(conn)
+	vlanClient := saipb.NewVlanClient(conn)
+	lagClient := saipb.NewLagClient(conn)
+
+	swResp, err := swClient.CreateSwitch(ctx, &saipb.CreateSwitchRequest{})
+	if err != nil {
+		t.Fatalf("CreateSwitch failed: %v", err)
+	}
+	lagResp, err := lagClient.CreateLag(ctx, &saipb.CreateLagRequest{Switch: swResp.GetOid()})
+	if err != nil {
+		t.Fatalf("CreateLag failed: %v", err)
+	}
+	mgr.StoreAttributes(lagBridgeID, &saipb.BridgePortAttribute{PortId: proto.Uint64(lagResp.GetOid())})
+	vlanOIDs := map[uint32]uint64{}
+	for _, vid := range vids {
+		resp, err := vlanClient.CreateVlan(ctx, &saipb.CreateVlanRequest{Switch: swResp.GetOid(), VlanId: proto.Uint32(vid)})
+		if err != nil {
+			t.Fatalf("CreateVlan(%d) failed: %v", vid, err)
+		}
+		vlanOIDs[vid] = resp.GetOid()
+	}
+	// Only track VlanTable entries for the LAG member ports.
+	dplane.mu.Lock()
+	dplane.live = map[string]bool{}
+	dplane.mu.Unlock()
+
+	var wg sync.WaitGroup
+	errCh := make(chan error, (len(physPorts)+len(vids))*iterations)
+	for _, port := range physPorts {
+		wg.Add(1)
+		go func(port uint64) {
+			defer wg.Done()
+			for i := 0; i < iterations; i++ {
+				resp, err := lagClient.CreateLagMember(ctx, &saipb.CreateLagMemberRequest{
+					Switch: swResp.GetOid(),
+					LagId:  proto.Uint64(lagResp.GetOid()),
+					PortId: proto.Uint64(port),
+				})
+				if err != nil {
+					errCh <- fmt.Errorf("CreateLagMember(%d) failed: %v", port, err)
+					return
+				}
+				if _, err := lagClient.RemoveLagMember(ctx, &saipb.RemoveLagMemberRequest{Oid: resp.GetOid()}); err != nil {
+					errCh <- fmt.Errorf("RemoveLagMember(%d) failed: %v", port, err)
+					return
+				}
+			}
+		}(port)
+	}
+	for _, vid := range vids {
+		wg.Add(1)
+		go func(vid uint32) {
+			defer wg.Done()
+			for i := 0; i < iterations; i++ {
+				resp, err := vlanClient.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+					Switch:          swResp.GetOid(),
+					VlanId:          proto.Uint64(vlanOIDs[vid]),
+					BridgePortId:    proto.Uint64(lagBridgeID),
+					VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED.Enum(),
+				})
+				if err != nil {
+					errCh <- fmt.Errorf("CreateVlanMember(LAG, %d) failed: %v", vid, err)
+					return
+				}
+				if _, err := vlanClient.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{Oid: resp.GetOid()}); err != nil {
+					errCh <- fmt.Errorf("RemoveVlanMember(LAG, %d) failed: %v", vid, err)
+					return
+				}
+			}
+		}(vid)
+	}
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		t.Error(err)
+	}
+
+	dplane.mu.Lock()
+	defer dplane.mu.Unlock()
+	if len(dplane.live) != 0 {
+		var leaked []string
+		for k := range dplane.live {
+			leaked = append(leaked, k)
+		}
+		t.Errorf("VlanTable entries leaked after all LAG and VLAN members were removed:\n%s", strings.Join(leaked, "\n"))
+	}
+}

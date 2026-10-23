@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -667,6 +668,182 @@ func TestLagMember(t *testing.T) {
 	}
 	if d := cmp.Diff(dplane.gotPortUpdateReqs[1], want, protocmp.Transform()); d != "" {
 		t.Errorf("RemoveLagMember() failed: diff(-got,+want)\n:%s", d)
+	}
+}
+
+func TestRemoveLagMemberForgetsMembership(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	var l *lag
+	conn, _, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		l = newLAG(mgr, dplane, srv)
+	})
+	defer stopFn()
+	c := saipb.NewLagClient(conn)
+
+	createResp, err := c.CreateLagMember(context.Background(), &saipb.CreateLagMemberRequest{
+		LagId:  proto.Uint64(1),
+		PortId: proto.Uint64(2),
+	})
+	if err != nil {
+		t.Fatalf("CreateLagMember() unexpected err: %v", err)
+	}
+	if _, err := c.RemoveLagMember(context.Background(), &saipb.RemoveLagMemberRequest{Oid: createResp.Oid}); err != nil {
+		t.Fatalf("RemoveLagMember() unexpected err: %v", err)
+	}
+	l.mu.Lock()
+	_, ok := l.memberships[createResp.Oid]
+	l.mu.Unlock()
+	if ok {
+		t.Errorf("LAG membership %d still tracked after RemoveLagMember", createResp.Oid)
+	}
+
+	// A repeated removal of the same member OID (bypassing the attrmgr
+	// interceptor) must not issue another AggregateDel to the dataplane.
+	if _, err := l.RemoveLagMember(context.Background(), &saipb.RemoveLagMemberRequest{Oid: createResp.Oid}); err != nil {
+		t.Fatalf("repeated RemoveLagMember() unexpected err: %v", err)
+	}
+	if got := len(dplane.gotPortUpdateReqs); got != 2 {
+		t.Errorf("got %d PortUpdate requests after repeated RemoveLagMember, want 2", got)
+	}
+}
+
+func TestSwitchResetClearsLagMemberships(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	var sw *saiSwitch
+	conn, _, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		var err error
+		if sw, err = newSwitch(mgr, dplane, srv, &dplaneopts.Options{}); err != nil {
+			t.Fatalf("newSwitch() unexpected err: %v", err)
+		}
+	})
+	defer stopFn()
+	c := saipb.NewLagClient(conn)
+
+	if _, err := c.CreateLagMember(context.Background(), &saipb.CreateLagMemberRequest{
+		LagId:  proto.Uint64(1),
+		PortId: proto.Uint64(2),
+	}); err != nil {
+		t.Fatalf("CreateLagMember() unexpected err: %v", err)
+	}
+	sw.Lag.mu.Lock()
+	gotBefore := len(sw.Lag.memberships)
+	sw.Lag.mu.Unlock()
+	if gotBefore != 1 {
+		t.Fatalf("got %d LAG memberships before Reset, want 1", gotBefore)
+	}
+
+	sw.Reset()
+
+	sw.Lag.mu.Lock()
+	gotAfter := len(sw.Lag.memberships)
+	sw.Lag.mu.Unlock()
+	if gotAfter != 0 {
+		t.Errorf("got %d LAG memberships after switch Reset, want 0", gotAfter)
+	}
+}
+
+// failingPortUpdateDataplane fails the next PortUpdate call when failUpdate is set.
+type failingPortUpdateDataplane struct {
+	*fakeSwitchDataplane
+	failUpdate bool
+}
+
+func (f *failingPortUpdateDataplane) PortUpdate(ctx context.Context, req *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+	if f.failUpdate {
+		f.failUpdate = false
+		return nil, fmt.Errorf("injected PortUpdate failure")
+	}
+	return f.fakeSwitchDataplane.PortUpdate(ctx, req)
+}
+
+func TestRemoveLagMemberRetryAfterDataplaneError(t *testing.T) {
+	dplane := &failingPortUpdateDataplane{fakeSwitchDataplane: &fakeSwitchDataplane{}}
+	var l *lag
+	conn, _, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		l = newLAG(mgr, dplane, srv)
+	})
+	defer stopFn()
+	c := saipb.NewLagClient(conn)
+
+	createResp, err := c.CreateLagMember(context.Background(), &saipb.CreateLagMemberRequest{
+		LagId:  proto.Uint64(1),
+		PortId: proto.Uint64(2),
+	})
+	if err != nil {
+		t.Fatalf("CreateLagMember() unexpected err: %v", err)
+	}
+
+	dplane.failUpdate = true
+	if _, err := c.RemoveLagMember(context.Background(), &saipb.RemoveLagMemberRequest{Oid: createResp.Oid}); err == nil {
+		t.Fatalf("RemoveLagMember() with failing dataplane succeeded, want error")
+	}
+	l.mu.Lock()
+	_, ok := l.memberships[createResp.Oid]
+	l.mu.Unlock()
+	if !ok {
+		t.Fatalf("LAG membership %d forgotten after failed RemoveLagMember, want it retained for retry", createResp.Oid)
+	}
+
+	if _, err := c.RemoveLagMember(context.Background(), &saipb.RemoveLagMemberRequest{Oid: createResp.Oid}); err != nil {
+		t.Fatalf("RemoveLagMember() retry unexpected err: %v", err)
+	}
+	l.mu.Lock()
+	_, ok = l.memberships[createResp.Oid]
+	l.mu.Unlock()
+	if ok {
+		t.Errorf("LAG membership %d still tracked after successful RemoveLagMember", createResp.Oid)
+	}
+}
+
+// lockedLagDataplane serializes PortUpdate on the fakeSwitchDataplane so that
+// concurrency tests only flag races in the lag server.
+type lockedLagDataplane struct {
+	*fakeSwitchDataplane
+	mu sync.Mutex
+}
+
+func (l *lockedLagDataplane) PortUpdate(ctx context.Context, req *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.fakeSwitchDataplane.PortUpdate(ctx, req)
+}
+
+// TestLagMemberConcurrent creates and removes LAG members concurrently. It is
+// intended to be run with -race.
+func TestLagMemberConcurrent(t *testing.T) {
+	const workers = 8
+	dplane := &lockedLagDataplane{fakeSwitchDataplane: &fakeSwitchDataplane{}}
+	c, stopFn := newTestLAG(t, dplane)
+	defer stopFn()
+
+	var wg sync.WaitGroup
+	errCh := make(chan error, workers)
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			resp, err := c.CreateLagMember(context.Background(), &saipb.CreateLagMemberRequest{
+				LagId:  proto.Uint64(1),
+				PortId: proto.Uint64(uint64(100 + i)),
+			})
+			if err != nil {
+				errCh <- fmt.Errorf("CreateLagMember(%d) failed: %v", 100+i, err)
+				return
+			}
+			if _, err := c.RemoveLagMember(context.Background(), &saipb.RemoveLagMemberRequest{Oid: resp.Oid}); err != nil {
+				errCh <- fmt.Errorf("RemoveLagMember(%d) failed: %v", resp.Oid, err)
+			}
+		}(i)
+	}
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		t.Error(err)
+	}
+	dplane.mu.Lock()
+	defer dplane.mu.Unlock()
+	if got, want := len(dplane.gotPortUpdateReqs), 2*workers; got != want {
+		t.Errorf("got %d PortUpdate requests, want %d", got, want)
 	}
 }
 
