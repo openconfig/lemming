@@ -16,15 +16,12 @@ package info
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/openconfig/lemming/dataplane/luciusctl/internal/transport"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -73,7 +70,7 @@ func New() *cobra.Command {
 }
 
 func listFn(cmd *cobra.Command, _ []string) error {
-	conn, err := dial()
+	conn, err := transport.Dial()
 	if err != nil {
 		return fmt.Errorf("failed to dial dataplane: %v", err)
 	}
@@ -92,7 +89,7 @@ func listFn(cmd *cobra.Command, _ []string) error {
 }
 
 func infoElement(ctx context.Context, name string, infoType fwdpb.InfoType, packet string) error {
-	conn, err := dial()
+	conn, err := transport.Dial()
 	if err != nil {
 		return fmt.Errorf("failed to dial dataplane: %v", err)
 	}
@@ -115,19 +112,4 @@ func infoElement(ctx context.Context, name string, infoType fwdpb.InfoType, pack
 	}
 	fmt.Println(resp.GetContent())
 	return nil
-}
-
-func dial() (*grpc.ClientConn, error) {
-	insec, tlsSkipVerify := viper.GetBool("insecure"), viper.GetBool("tls_skip_verify")
-	if insec && tlsSkipVerify {
-		return nil, fmt.Errorf("both insecure and tls skip verify are set")
-	}
-	opts := grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		InsecureSkipVerify: tlsSkipVerify, // nolint:gosec
-	}))
-	if insec {
-		opts = grpc.WithTransportCredentials(insecure.NewCredentials())
-	}
-
-	return grpc.NewClient(viper.GetString("address"), opts)
 }
