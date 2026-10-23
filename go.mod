@@ -36,6 +36,7 @@ require (
 	github.com/openconfig/ygnmi v0.15.0
 	github.com/openconfig/ygot v0.35.0
 	github.com/osrg/gobgp/v3 v3.37.0
+	github.com/osrg/gobgp/v4 v4.10.0
 	github.com/p4lang/p4runtime v1.5.0
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
