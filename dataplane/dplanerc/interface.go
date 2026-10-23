@@ -208,7 +208,7 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().Name().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().SubinterfaceAny().Enabled().Config().PathStruct(), // TODO: Support the parent interface config/enabled controling the subinterface state.
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Enabled().Config().PathStruct(), // TODO: Support the parent interface config/enabled controlling the subinterface state.
 		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv4().AddressAny().Ip().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv6().AddressAny().Ip().Config().PathStruct(),
@@ -761,7 +761,7 @@ func (ni *Reconciler) reconcileIPs(config, state *oc.Interface) {
 		}
 		data, ok := ni.ocInterfaceData[intfRef]
 		if !ok {
-			log.Infof("skipping ip reconcilation for %+v", intfRef)
+			log.Infof("skipping ip reconciliation for %+v", intfRef)
 			continue
 		}
 
@@ -1141,8 +1141,36 @@ func (ni *Reconciler) handleNeighborUpdate(ctx context.Context, nu *netlink.Neig
 }
 
 const (
-	internalSuffix = "-internal"
+	internalSuffix      = "-internal"
+	shortInternalSuffix = "-int"
+	// maxIfNameLen is the maximum length of a Linux network interface name
+	// (IFNAMSIZ minus the trailing NUL byte).
+	maxIfNameLen = unix.IFNAMSIZ - 1
 )
+
+// hostifName returns the name of the TAP (hostif) interface created for the
+// interface with the given name and kernel ifindex. The name must fit within
+// the Linux interface name limit (IFNAMSIZ), otherwise TAP creation fails.
+// Names are chosen as:
+//  1. "<name>-internal" if it fits (e.g. eth1-internal).
+//  2. "<name>-int" if it fits (e.g. eth1000-int).
+//  3. "if<ifindex>-int" otherwise (e.g. if1234-int), which is unique because
+//     the ifindex is unique within a network namespace.
+func hostifName(name string, ifIndex int) string {
+	if n := name + internalSuffix; len(n) <= maxIfNameLen {
+		return n
+	}
+	if n := name + shortInternalSuffix; len(n) <= maxIfNameLen {
+		return n
+	}
+	return fmt.Sprintf("if%d%s", ifIndex, shortInternalSuffix)
+}
+
+// isHostifName reports whether name is a hostif (TAP) interface name
+// created by hostifName.
+func isHostifName(name string) bool {
+	return strings.HasSuffix(name, internalSuffix) || strings.HasSuffix(name, shortInternalSuffix)
+}
 
 // setupPorts creates the dataplane ports and TAP interfaces for all interfaces on the device.
 func (ni *Reconciler) setupPorts(ctx context.Context) error {
@@ -1153,10 +1181,10 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 
 	for idx, i := range ifs {
 		// Skip loopback, k8s pod interface, and tap interfaces.
-		if i.Attrs().Name == "lo" || i.Attrs().Name == "eth0" || strings.HasSuffix(i.Attrs().Name, internalSuffix) {
+		if i.Attrs().Name == "lo" || i.Attrs().Name == "eth0" || isHostifName(i.Attrs().Name) {
 			continue
 		}
-		log.Info("creating interfaces for %v", i.Attrs().Name)
+		log.Infof("creating interfaces for %v", i.Attrs().Name)
 		ocIntf := ocInterface{
 			name:    i.Attrs().Name,
 			subintf: 0,
@@ -1183,7 +1211,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		}
 		data.portNID = nid.Nid
 
-		hostifName := i.Attrs().Name + internalSuffix
+		hostifName := hostifName(i.Attrs().Name, i.Attrs().Index)
 		hostifResp, err := ni.hostifClient.CreateHostif(ctx, &saipb.CreateHostifRequest{
 			Switch:     ni.switchID,
 			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
