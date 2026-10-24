@@ -43,16 +43,16 @@ http_archive(
 
 http_archive(
     name = "rules_cc",
-    sha256 = "bd7124a844d0403b4b353bcea34d6c8b2ba88dc26881c26c9ee668da89b71846",
-    strip_prefix = "rules_cc-0.2.25",
-    urls = ["https://github.com/bazelbuild/rules_cc/archive/refs/tags/0.2.25.tar.gz"],
+    sha256 = "6bcf1b46d9e629cbe4c96d7bfc56f61034c2193b7b16001201282ea50bef5d91",
+    strip_prefix = "rules_cc-0.2.27",
+    urls = ["https://github.com/bazelbuild/rules_cc/archive/refs/tags/0.2.27.tar.gz"],
 )
 
 http_archive(
     name = "rules_python",
-    sha256 = "7338fac5da94920b9a2db88add662246e7c41cc5c357ea93670ef23f1f153d4f",
-    strip_prefix = "rules_python-2.4.1",
-    url = "https://github.com/bazel-contrib/rules_python/releases/download/2.4.1/rules_python-2.4.1.tar.gz",
+    sha256 = "05088402fa356af097064dbccd7082a061171ef39fbd748fab946e9775f46a16",
+    strip_prefix = "rules_python-2.4.5",
+    url = "https://github.com/bazel-contrib/rules_python/releases/download/2.4.5/rules_python-2.4.5.tar.gz",
 )
 
 http_archive(
@@ -74,8 +74,8 @@ http_archive(
 
 http_archive(
     name = "build_bazel_rules_swift",
-    sha256 = "02a942ca5a2903e33bf4ceee399a13db3064d124da4c67769004bd3fb00d00c0",
-    url = "https://github.com/bazelbuild/rules_swift/releases/download/4.1.2/rules_swift.4.1.2.tar.gz",
+    sha256 = "d2a96eed71684877051e88dd2c2a772edbdb754de488cee066dd72cce240cfc6",
+    url = "https://github.com/bazelbuild/rules_swift/releases/download/4.2.2/rules_swift.4.2.2.tar.gz",
 )
 
 http_archive(
@@ -87,10 +87,10 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "4306d89e9541b5ce31108c2bd34c319dbfd6589a272dcbdc04dccdd89ff009d9",
+    sha256 = "d4a6e93dc63944172bc3b915a11bfa8d7391c9f1fdc11d7e43724f497617f0e5",
     urls = [
-        "https://mirror.bazel.build/github.com/bazel-contrib/rules_go/releases/download/v0.64.1/rules_go-v0.64.1.zip",
-        "https://github.com/bazel-contrib/rules_go/releases/download/v0.64.1/rules_go-v0.64.1.zip",
+        "https://mirror.bazel.build/github.com/bazel-contrib/rules_go/releases/download/v0.65.0/rules_go-v0.65.0.zip",
+        "https://github.com/bazel-contrib/rules_go/releases/download/v0.65.0/rules_go-v0.65.0.zip",
     ],
 )
 
@@ -128,18 +128,18 @@ http_archive(
 
 http_archive(
     name = "googleapis",
-    sha256 = "ede2eacbd38557942e940c9493657df67d05f3c2e46a8ff87b93f59fd4337625",
-    strip_prefix = "googleapis-a948d8393381f5bf385fd25313ea10544dcff60f",
+    sha256 = "87f3ec7863f65322956ba85ebe3b8efb3a5774321be8a2dab8a3a180855c4ca0",
+    strip_prefix = "googleapis-dff1cd0c7ff8c26ff4c9f7a87cbe175fb5124d4e",
     urls = [
-        "https://github.com/googleapis/googleapis/archive/a948d8393381f5bf385fd25313ea10544dcff60f.zip",
+        "https://github.com/googleapis/googleapis/archive/dff1cd0c7ff8c26ff4c9f7a87cbe175fb5124d4e.zip",
     ],
 )
 
 http_archive(
     name = "rules_distroless",
-    sha256 = "88e3227de9ad4adc046f70750a5480cebce663815d369a073dd3a3bcaea257cb",
-    strip_prefix = "rules_distroless-0.10.0",
-    url = "https://github.com/GoogleContainerTools/rules_distroless/releases/download/v0.10.0/rules_distroless-v0.10.0.tar.gz",
+    sha256 = "1d74bebf851385a92858337acd98f612bea446588d6b1ea7a46400bb13c9a50c",
+    strip_prefix = "rules_distroless-0.11.0",
+    url = "https://github.com/GoogleContainerTools/rules_distroless/releases/download/v0.11.0/rules_distroless-v0.11.0.tar.gz",
 )
 
 http_archive(
@@ -152,9 +152,9 @@ http_archive(
 # The non-polyfill version of this is needed by rules_proto below.
 http_archive(
     name = "bazel_features",
-    sha256 = "5450bfb2c8b4bc961c75368838f86156f563cc9adef1be7d504fc5619d54daab",
-    strip_prefix = "bazel_features-1.51.0",
-    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.51.0/bazel_features-v1.51.0.tar.gz",
+    sha256 = "99232c34de353633c384188afa372d86a9dedbd19c4b46f99ac88a1ff11bb299",
+    strip_prefix = "bazel_features-1.53.0",
+    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.53.0/bazel_features-v1.53.0.tar.gz",
 )
 
 load("@bazel_features//:deps.bzl", "bazel_features_deps")
@@ -293,9 +293,9 @@ cc_library(
 """,
     patch_args = ["-p1"],
     patches = ["//patches:sai.patch"],
-    sha256 = "199d2cd32408b6470ce0c43beee660cc468e29e72921f1e93e64d4a8eb80246a",
-    strip_prefix = "SAI-1.19.0",
-    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.19.0.tar.gz"],
+    sha256 = "8c6551c36f95fd0e6bc290b94be1f18ff048d24d3aaf996946ba8b3dde44904b",
+    strip_prefix = "SAI-1.19.2",
+    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.19.2.tar.gz"],
 )
 
 http_archive(
@@ -316,14 +316,14 @@ load("@rules_oci//oci:pull.bzl", "oci_pull")
 
 oci_pull(
     name = "debian_bookworm",
-    digest = "sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c",  # bookworm as of 06/20/24
+    digest = "sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308",  # bookworm as of 06/20/24
     image = "debian",
     platforms = ["linux/amd64"],
 )
 
 oci_pull(
     name = "distroless_static_debug_nonroot",
-    digest = "sha256:58133991db06659feaabe0f4e97a35cebf15ef4ea08f8a4c6d2ee5f75e4aa6a0",  # debug-nonroot as of 06/20/24
+    digest = "sha256:15f8637509792e05b97d83451b0b6ccfa4abd548f997e406ac1e72c87fe1fa78",  # debug-nonroot as of 06/20/24
     image = "gcr.io/distroless/static",
     platforms = ["linux/amd64"],
 )
