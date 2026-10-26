@@ -254,7 +254,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 					},
 					Port: &fwdpb.PortDesc_Tap{
 						Tap: &fwdpb.TAPPortDesc{
-							DeviceName: fmt.Sprintf("port%d", id),
+							DeviceName: dev,
 							AdminState: req.GetAdminState(),
 						},
 					},
