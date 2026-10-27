@@ -24,6 +24,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gnmi/errdiff"
 	"github.com/vishvananda/netlink"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/porttestutil"
@@ -47,10 +48,6 @@ func (f *fakeStateIfaceMgr) SetState(name string, up bool) error {
 	f.gotName = name
 	f.gotUp = &up
 	return f.setStateErr
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }
 
 func TestGetAndSetState(t *testing.T) {
@@ -169,7 +166,7 @@ func TestGetAndSetState(t *testing.T) {
 				OperStatus:  fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
 			},
 		},
-		wantSetUp: boolPtr(true),
+		wantSetUp: proto.Bool(true),
 	}, {
 		desc: "set state disable down",
 		ifMgr: &fakeStateIfaceMgr{
@@ -189,7 +186,7 @@ func TestGetAndSetState(t *testing.T) {
 				OperStatus:  fwdpb.PortState_PORT_STATE_ENABLED_UP,
 			},
 		},
-		wantSetUp: boolPtr(false),
+		wantSetUp: proto.Bool(false),
 	}, {
 		desc: "set state unspecified admin status",
 		ifMgr: &fakeStateIfaceMgr{
@@ -223,7 +220,7 @@ func TestGetAndSetState(t *testing.T) {
 		pi: &fwdpb.PortInfo{
 			AdminStatus: fwdpb.PortState_PORT_STATE_ENABLED_UP,
 		},
-		wantSetUp: boolPtr(true),
+		wantSetUp: proto.Bool(true),
 		wantErr:   "set state failed",
 	}}
 
