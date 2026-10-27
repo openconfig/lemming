@@ -39,10 +39,18 @@ jobs:
       - name: Install pcap
         run: |
           sudo apt-get install libpcap-dev libnl-genl-3-dev libnl-3-dev
+      - name: Show disk usage (debug)
+        run: |
+          df -h / /tmp "${RUNNER_TEMP}"
+          findmnt /tmp || true
       - name: golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         env:
           CGO_ENABLED: 1
+          # Ubuntu 26.04 runners mount /tmp as a size/quota-limited tmpfs. The
+          # Go build work directory (cgo outputs, importcfg, etc.) defaults to
+          # /tmp and can exceed that quota, so place it on the runner disk.
+          GOTMPDIR: ${{ runner.temp }}
         with:
           # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
           version: latest
