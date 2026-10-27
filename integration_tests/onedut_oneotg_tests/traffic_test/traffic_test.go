@@ -97,8 +97,8 @@ var (
 func configureOTG(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	top := gosnappi.NewConfig()
 
-	p1 := ate.Port(t, "port1")
-	p2 := ate.Port(t, "port2")
+	p1 := ate.Port(t, "eth1")
+	p2 := ate.Port(t, "eth2")
 
 	atePort1.AddToOTG(top, p1, &dutPort1)
 	atePort2.AddToOTG(top, p2, &dutPort2)
@@ -113,16 +113,16 @@ var gatewayMap = map[attrs.Attributes]attrs.Attributes{
 
 // configureDUT configures port1 and port2 on the DUT.
 func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
-	p1 := dut.Port(t, "port1")
+	p1 := dut.Port(t, "eth1")
 	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), dutPort1.NewOCInterface(p1.Name(), dut))
 
-	p2 := dut.Port(t, "port2")
+	p2 := dut.Port(t, "eth2")
 	gnmi.Replace(t, dut, ocpath.Root().Interface(p2.Name()).Config(), dutPort2.NewOCInterface(p2.Name(), dut))
 
-	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
-	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv4().Address(dutPort2.IPv4).Ip().State(), time.Minute, dutPort2.IPv4)
-	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv6().Address(dutPort1.IPv6).Ip().State(), time.Minute, dutPort1.IPv6)
-	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv6().Address(dutPort2.IPv6).Ip().State(), time.Minute, dutPort2.IPv6)
+	gnmi.Await(t, dut, ocpath.Root().Interface(p1.Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
+	gnmi.Await(t, dut, ocpath.Root().Interface(p2.Name()).Subinterface(0).Ipv4().Address(dutPort2.IPv4).Ip().State(), time.Minute, dutPort2.IPv4)
+	gnmi.Await(t, dut, ocpath.Root().Interface(p1.Name()).Subinterface(0).Ipv6().Address(dutPort1.IPv6).Ip().State(), time.Minute, dutPort1.IPv6)
+	gnmi.Await(t, dut, ocpath.Root().Interface(p2.Name()).Subinterface(0).Ipv6().Address(dutPort2.IPv6).Ip().State(), time.Minute, dutPort2.IPv6)
 }
 
 func waitOTGARPEntry(t *testing.T) {
@@ -220,13 +220,13 @@ func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, time
 
 // testCounters test packet counters and should be called after testTraffic
 func testCounters(t *testing.T, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts uint64) {
-	got := gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Counters().InPkts().State())
+	got := gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "eth1").Name()).Counters().InPkts().State())
 	t.Logf("DUT port 1 in-pkts: %d", got)
 	if got < wantTxPkts {
 		t.Errorf("DUT got less packets (%d) than OTG sent (%d)", got, wantTxPkts)
 	}
 
-	got = gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Counters().OutPkts().State())
+	got = gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "eth2").Name()).Counters().OutPkts().State())
 	t.Logf("DUT port 2 out-pkts: %d", got)
 	if got < wantRxPkts {
 		t.Errorf("DUT got sent less packets (%d) than OTG received (%d)", got, wantRxPkts)
