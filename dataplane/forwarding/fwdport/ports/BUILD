@@ -69,6 +69,7 @@ go_test(
         "@com_github_google_gopacket//pcapgo",
         "@com_github_openconfig_gnmi//errdiff",
         "@com_github_vishvananda_netlink//:netlink",
+        "@org_golang_google_protobuf//proto",
         "@org_golang_google_protobuf//testing/protocmp",
         "@org_uber_go_mock//gomock",
     ],
