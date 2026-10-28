@@ -93,6 +93,29 @@ func TestHostifNameUnique(t *testing.T) {
 	}
 }
 
+func TestPortLane(t *testing.T) {
+	tests := []struct {
+		name     string
+		fallback int
+		want     uint32
+	}{
+		{name: "eth1", fallback: 1, want: 1},
+		{name: "eth9", fallback: 9, want: 9},
+		// eth10 sorts between eth1 and eth2, so its index in the link list is 2.
+		{name: "eth10", fallback: 2, want: 10},
+		{name: "eth1500", fallback: 7, want: 1500},
+		{name: "eth01", fallback: 5, want: 5},
+		{name: "eth", fallback: 3, want: 3},
+		{name: "eth1a", fallback: 4, want: 4},
+		{name: "Ethernet1", fallback: 6, want: 6},
+	}
+	for _, tt := range tests {
+		if got := portLane(tt.name, tt.fallback); got != tt.want {
+			t.Errorf("portLane(%q, %d) got %d, want %d", tt.name, tt.fallback, got, tt.want)
+		}
+	}
+}
+
 func TestIsHostifName(t *testing.T) {
 	tests := []struct {
 		in   string

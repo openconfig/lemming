@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1167,6 +1168,22 @@ func hostifName(name string, ifIndex int) string {
 	return fmt.Sprintf("if%d%s", ifIndex, shortInternalSuffix)
 }
 
+// portLane returns the hardware lane to use for the port backed by the kernel
+// interface with the given name. The saiserver binds a port to the kernel
+// interface "eth<lane>", so for "ethN" interfaces the lane must be N. The
+// position of the interface in the (name-sorted) link list can't be used: once
+// there are more than ten ports, "eth10" sorts before "eth2". Interfaces not
+// named "ethN" fall back to the given index.
+func portLane(name string, fallback int) uint32 {
+	if n, ok := strings.CutPrefix(name, "eth"); ok {
+		// Require the canonical form so that e.g. "eth01" isn't mapped to "eth1".
+		if lane, err := strconv.ParseUint(n, 10, 32); err == nil && strconv.FormatUint(lane, 10) == n {
+			return uint32(lane)
+		}
+	}
+	return uint32(fallback)
+}
+
 // isHostifName reports whether name is a hostif (TAP) interface name
 // created by hostifName.
 func isHostifName(name string) bool {
@@ -1197,7 +1214,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 
 		portResp, err := ni.portClient.CreatePort(ctx, &saipb.CreatePortRequest{
 			Switch:     ni.switchID,
-			HwLaneList: []uint32{uint32(idx)},
+			HwLaneList: []uint32{portLane(i.Attrs().Name, idx)},
 			AdminState: proto.Bool(true),
 		})
 		if err != nil {
