@@ -1183,6 +1183,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 	for idx, i := range ifs {
 		// Skip loopback, k8s pod interface, and tap interfaces.
 		if i.Attrs().Name == "lo" || i.Attrs().Name == "eth0" || isHostifName(i.Attrs().Name) {
+			log.V(1).Infof("skipping interface %q", i.Attrs().Name)
 			continue
 		}
 		log.Infof("creating interfaces for %v", i.Attrs().Name)
