@@ -532,6 +532,12 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 				},
 			})
 		case saipb.TunnelType_TUNNEL_TYPE_VXLAN:
+			if len(req.GetTunnelMac()) > 0 {
+				actions = append(actions,
+					fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST)).Build(),
+					fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetTunnelMac())).Build(),
+				)
+			}
 			actions = append(actions, &fwdpb.ActionDesc{
 				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
 				Action: &fwdpb.ActionDesc_Encap{
@@ -554,6 +560,11 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 					},
 				},
 			})
+			if req.GetTunnelVni() != 0 {
+				vni := req.GetTunnelVni()
+				vniBytes := []byte{byte(vni >> 16), byte(vni >> 8), byte(vni)}
+				actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI).WithValue(vniBytes)).Build())
+			}
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unsupported tunnel type: %v", tunnel.GetAttr().GetType())
 		}
@@ -562,18 +573,6 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithValue(req.GetIp())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetTunnelId())).Build(),
-		)
-
-		if req.GetTunnelVni() != 0 {
-			vni := req.GetTunnelVni()
-			vniBytes := []byte{byte(vni >> 16), byte(vni >> 8), byte(vni)}
-			actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI).WithValue(vniBytes)).Build())
-		}
-		if len(req.GetTunnelMac()) > 0 {
-			actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetTunnelMac())).Build())
-		}
-
-		actions = append(actions,
 			fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)).Build(),
 			fwdconfig.Action(fwdconfig.LookupAction(TunnelEncap)).Build(),
 		)
@@ -1371,6 +1370,24 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 	vlan.mgr.StoreAttributes(id, attrs)
 	vlan.vlans[id] = map[uint64]*vlanMember{}
 	vlan.oidByVId[r.GetVlanId()] = id
+
+	floodID := fmt.Sprintf("vlan_flood_%d", r.GetVlanId())
+	if _, err := vlan.dataplane.PortCreate(ctx, &fwdpb.PortCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		Port:      &fwdpb.PortDesc{PortType: fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT, PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: floodID}}},
+	}); err != nil {
+		return nil, err
+	}
+	if _, err := vlan.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: floodID}},
+		Update: &fwdpb.PortUpdateDesc{Port: &fwdpb.PortUpdateDesc_AggregateAlgo{
+			AggregateAlgo: &fwdpb.AggregatePortAlgorithmUpdateDesc{Hash: fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_FLOOD},
+		}},
+	}); err != nil {
+		return nil, err
+	}
+
 	return &saipb.CreateVlanResponse{
 		Oid: id,
 	}, nil
@@ -1454,10 +1471,54 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 	if r.GetVlanTaggingMode() != saipb.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED {
 		vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
 			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vId))).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithValue(binary.BigEndian.AppendUint16(nil, uint16(vId)))).Build(),
 		}
 	}
 	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
+		return nil, err
+	}
+	outputActions := []*fwdpb.ActionDesc{}
+	if r.GetVlanTaggingMode() == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED || r.GetVlanTaggingMode() == saipb.VlanTaggingMode_VLAN_TAGGING_MODE_PRIORITY_TAGGED {
+		outputActions = []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+		}
+	}
+	portUpd := &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(portID)}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_Kernel{
+				Kernel: &fwdpb.KernelPortUpdateDesc{
+					Inputs:  getPreIngressPipeline(),
+					Outputs: outputActions,
+				},
+			},
+		},
+	}
+	if _, err := vlan.dataplane.PortUpdate(ctx, portUpd); err != nil {
+		return nil, err
+	}
+
+	floodID := fmt.Sprintf("vlan_flood_%d", vId)
+	if _, err := vlan.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: floodID}},
+		Update: &fwdpb.PortUpdateDesc{Port: &fwdpb.PortUpdateDesc_AggregateAdd{
+			AggregateAdd: &fwdpb.AggregatePortAddMemberUpdateDesc{PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(portID)}}, InstanceCount: 1},
+		}},
+	}); err != nil {
+		return nil, err
+	}
+	floodReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), FloodTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+			fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, uint16(vId))),
+			fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{1}),
+		)),
+		fwdconfig.TransmitAction(floodID),
+		fwdconfig.BridgeLearnAction(FDBTable),
+		fwdconfig.LookupAction(FDBTable),
+	).Build()
+	if _, err := vlan.dataplane.TableEntryAdd(ctx, floodReq); err != nil {
 		return nil, err
 	}
 	// Update the attributes and internal data.
@@ -1532,6 +1593,16 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 	}
 	if _, err := vlan.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()); err != nil {
+		return nil, err
+	}
+	floodID := fmt.Sprintf("vlan_flood_%d", member.Vid)
+	if _, err := vlan.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: floodID}},
+		Update: &fwdpb.PortUpdateDesc{Port: &fwdpb.PortUpdateDesc_AggregateDel{
+			AggregateDel: &fwdpb.AggregatePortRemoveMemberUpdateDesc{PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(member.PortID)}}},
+		}},
+	}); err != nil {
 		return nil, err
 	}
 

@@ -139,6 +139,18 @@ func TestCreateTunnel(t *testing.T) {
 					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 					Action: &fwdpb.ActionDesc_Update{
 						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_COPY,
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP,
+								Instance: 1,
+							}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP}},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
 							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
 							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
@@ -153,6 +165,119 @@ func TestCreateTunnel(t *testing.T) {
 							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
 							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xd2},
+						},
+					},
+				}},
+			}},
+		},
+	}, {
+		desc: "vxlan tunnel pipe ttl",
+		req: &saipb.CreateTunnelRequest{
+			Type:              saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+			EncapTtlMode:      saipb.TunnelTtlMode_TUNNEL_TTL_MODE_PIPE_MODEL.Enum(),
+			EncapTtlVal:       proto.Uint32(32),
+			UnderlayInterface: proto.Uint64(10),
+		},
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: TunnelEncap}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Exact{
+						Exact: &fwdpb.ExactEntryDesc{
+							Fields: []*fwdpb.PacketFieldBytes{{
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID},
+								},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+							}},
+						},
+					},
+				},
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE}},
+							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP}},
+							Value:   []byte{32},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xb5},
+						},
+					},
+				}},
+			}},
+		},
+	}, {
+		desc: "vxlan tunnel pipe default ttl",
+		req: &saipb.CreateTunnelRequest{
+			Type:              saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+			EncapTtlMode:      saipb.TunnelTtlMode_TUNNEL_TTL_MODE_PIPE_MODEL.Enum(),
+			UnderlayInterface: proto.Uint64(10),
+		},
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: TunnelEncap}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Exact{
+						Exact: &fwdpb.ExactEntryDesc{
+							Fields: []*fwdpb.PacketFieldBytes{{
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID},
+								},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+							}},
+						},
+					},
+				},
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE}},
+							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP}},
+							Value:   []byte{defaultEncapTTL},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xb5},
 						},
 					},
 				}},

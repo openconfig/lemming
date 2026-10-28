@@ -23,7 +23,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
@@ -50,16 +49,15 @@ func init() {
 // this ensures kernel correctly responds to lower level protocols such as ARP, ICMP, etc.
 type tapPort struct {
 	fwdobject.Base
-	input        fwdaction.Actions
-	output       fwdaction.Actions
-	desc         *fwdpb.PortDesc
-	ctx          *fwdcontext.Context // Forwarding context containing the port
-	fd           int
-	devName      string
-	doneCh       chan struct{}
-	linkUpdateCh chan netlink.LinkUpdate
-	file         *os.File
-	ifaceMgr     kernel.Interfaces
+	input    fwdaction.Actions
+	output   fwdaction.Actions
+	desc     *fwdpb.PortDesc
+	ctx      *fwdcontext.Context // Forwarding context containing the port
+	fd       int
+	devName  string
+	doneCh   chan struct{}
+	file     *os.File
+	ifaceMgr kernel.Interfaces
 }
 
 // Desc returns the port description proto.
@@ -82,6 +80,7 @@ func (p *tapPort) Type() fwdpb.PortType {
 func (p *tapPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()
+	defaultLinkWatcher.unwatch(p.devName)
 	close(p.doneCh)
 	p.input = nil
 	p.output = nil
@@ -112,7 +111,6 @@ func (p *tapPort) Update(upd *fwdpb.PortUpdateDesc) error {
 }
 
 func (p *tapPort) process() {
-	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
 		buf := make([]byte, packetBufferSize)
 		for {
@@ -204,19 +202,18 @@ func (tp tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	}
 	file := os.NewFile(uintptr(fd), "/dev/tun")
 	p := &tapPort{
-		ctx:          ctx,
-		file:         file,
-		fd:           fd,
-		devName:      kp.Tap.GetDeviceName(),
-		desc:         portDesc,
-		doneCh:       make(chan struct{}),
-		linkUpdateCh: make(chan netlink.LinkUpdate),
+		ctx:     ctx,
+		file:    file,
+		fd:      fd,
+		devName: kp.Tap.GetDeviceName(),
+		desc:    portDesc,
+		doneCh:  make(chan struct{}),
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {
 		return nil, err
 	}
-	if err := tp.ifaceMgr.LinkSubscribe(p.linkUpdateCh, p.doneCh); err != nil {
+	if err := defaultLinkWatcher.watch(p.devName, p, p.ctx); err != nil {
 		return nil, err
 	}
 
