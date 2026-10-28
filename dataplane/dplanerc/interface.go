@@ -1155,7 +1155,8 @@ const (
 //  1. "<name>-internal" if it fits (e.g. eth1-internal).
 //  2. "<name>-int" if it fits (e.g. eth1000-int).
 //  3. "if<ifindex>-int" otherwise (e.g. if1234-int), which is unique because
-//     the ifindex is unique within a network namespace.
+//     the ifindex is unique within a network namespace. Note that ifindex is
+//     assumed to remain under 10 digits in practice, keeping the length within IFNAMSIZ.
 func hostifName(name string, ifIndex int) string {
 	if n := name + internalSuffix; len(n) <= maxIfNameLen {
 		return n
