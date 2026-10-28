@@ -68,3 +68,5 @@ go_test(
         "@org_golang_google_protobuf//proto",
     ],
 )
+
+exports_files(["go.zip.sums.json"])

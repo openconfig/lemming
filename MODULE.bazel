@@ -4,7 +4,7 @@ module(
 )
 
 bazel_dep(name = "abseil-cpp", version = "20240722.0.bcr.2")
-bazel_dep(name = "gazelle", version = "0.45.0", repo_name = "bazel_gazelle")
+bazel_dep(name = "gazelle", version = "0.54.0.sonic.1", repo_name = "bazel_gazelle")
 bazel_dep(name = "glog", version = "0.7.1", repo_name = "com_github_google_glog")
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a")
 bazel_dep(name = "grpc", version = "1.70.1", repo_name = "com_github_grpc_grpc")
@@ -69,6 +69,8 @@ go_sdk.download(version = "1.26.6")
 
 go_deps = use_extension("@bazel_gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_work = "//:go.work")
+go_deps.zip_lock(file = "//:go.zip.sums.json")
+use_repo(go_deps, go_zip_lock_plan = "bazel_gazelle_go_repository_config")
 use_repo(
     go_deps,
     "com_github_fatih_color",
