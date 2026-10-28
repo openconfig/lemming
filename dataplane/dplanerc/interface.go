@@ -1213,23 +1213,26 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		}
 		data.portNID = nid.Nid
 
-		hostifName := hostifName(i.Attrs().Name, i.Attrs().Index)
+		tapName := hostifName(i.Attrs().Name, i.Attrs().Index)
+		if tapName != i.Attrs().Name+internalSuffix {
+			log.Infof("interface %q using shortened TAP name %q", i.Attrs().Name, tapName)
+		}
 		hostifResp, err := ni.hostifClient.CreateHostif(ctx, &saipb.CreateHostifRequest{
 			Switch:     ni.switchID,
 			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
 			ObjId:      &portResp.Oid,
-			Name:       []byte(hostifName),
+			Name:       []byte(tapName),
 			OperStatus: proto.Bool(false),
 		})
 		if err != nil {
-			return fmt.Errorf("failed to create host interface %q: %w", hostifName, err)
+			return fmt.Errorf("failed to create host interface %q for port %q: %w", tapName, i.Attrs().Name, err)
 		}
 		data.hostifID = hostifResp.Oid
-		data.hostifDevName = hostifName
+		data.hostifDevName = tapName
 
-		tap, err := ni.ifaceMgr.LinkByName(hostifName)
+		tap, err := ni.ifaceMgr.LinkByName(tapName)
 		if err != nil {
-			return fmt.Errorf("failed to find tap interface %q: %w", hostifName, err)
+			return fmt.Errorf("failed to find tap interface %q for port %q: %w", tapName, i.Attrs().Name, err)
 		}
 		data.hostifIfIndex = tap.Attrs().Index
 
