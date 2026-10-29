@@ -16,7 +16,6 @@ package saiserver
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 	"testing"
 
@@ -404,7 +403,7 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 		taggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED,
 		wantActions: []*fwdpb.ActionDesc{
 			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithValue(binary.BigEndian.AppendUint16(nil, uint16(vlanID)))).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vlanID))).Build(),
 		},
 	}, {
 		desc:        "tagged member preserves existing 802.1Q header without re-encapsulating",
@@ -448,8 +447,8 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 				t.Fatalf("CreateVlanMember failed: %v", err)
 			}
 
-			if len(dplane.gotEntryAddReqs) != 2 {
-				t.Fatalf("got %d TableEntryAdd requests, want 2", len(dplane.gotEntryAddReqs))
+			if len(dplane.gotEntryAddReqs) != 1 {
+				t.Fatalf("got %d TableEntryAdd requests, want 1", len(dplane.gotEntryAddReqs))
 			}
 			gotEntries := dplane.gotEntryAddReqs[0].GetEntries()
 			if len(gotEntries) != 1 {
@@ -461,3 +460,4 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 		})
 	}
 }
+
