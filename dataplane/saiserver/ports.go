@@ -240,19 +240,17 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 				AdminState: req.GetAdminState(),
 			},
 		}
-		// For ports that don't exist, do not create dataplane ports.
 		if _, err := getInterface(dev); err != nil {
-			// TODO: This should be a real error, improve once we a correct config solution.
-			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistent port.
+			// Create a dummy port so we don't get errors for a nonexistent port.
 			fwdPort := &fwdpb.PortCreateRequest{
 				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 				Port: &fwdpb.PortDesc{
-					PortType: fwdpb.PortType_PORT_TYPE_TAP,
+					PortType: fwdpb.PortType_PORT_TYPE_GENETLINK,
 					PortId: &fwdpb.PortId{
 						ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
 					},
-					Port: &fwdpb.PortDesc_Tap{
-						Tap: &fwdpb.TAPPortDesc{
+					Port: &fwdpb.PortDesc_Genetlink{
+						Genetlink: &fwdpb.GenetlinkPortDesc{
 							DeviceName: dev,
 							AdminState: req.GetAdminState(),
 						},
@@ -534,6 +532,10 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 			return nil, fmt.Errorf("port %v has no lanes", req.GetOid())
 		}
 		dev := fmt.Sprintf("eth%v", portAttr.GetAttr().GetHwLaneList()[0])
+		if _, err := getInterface(dev); err != nil {
+			// Skip setting MTU if the interface doesn't exist. These could be fake ports.
+			return &saipb.SetPortAttributeResponse{}, nil
+		}
 		slog.InfoContext(ctx, "setting port mtu", "oid", req.GetOid(), "dev", dev, "mtu", req.GetMtu())
 		link, err := netlink.LinkByName(dev)
 		if err != nil {

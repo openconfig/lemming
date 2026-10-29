@@ -167,10 +167,6 @@ func (w *linkStateWatcher) run(updCh <-chan netlink.LinkUpdate, doneCh <-chan st
 				continue
 			}
 			admin, oper := stateFromAttrs(upd.Attrs())
-			if portType := target.port.Type(); portType == fwdpb.PortType_PORT_TYPE_TAP {
-				// Dummy ports created by Lucius should not be set to enabled up.
-				oper = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
-			}
 			log.V(1).Infof("dataplane receive link update: port %q, admin %v, oper %v", devName, admin.String(), oper.String())
 			if err := target.ctx.Notify(&fwdpb.EventDesc{
 				Event: fwdpb.Event_EVENT_PORT,
