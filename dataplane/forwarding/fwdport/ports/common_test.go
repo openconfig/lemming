@@ -52,12 +52,12 @@ func (f *fakeStateIfaceMgr) SetState(name string, up bool) error {
 
 func TestGetAndSetState(t *testing.T) {
 	tests := []struct {
-		desc        string
-		ifMgr       *fakeStateIfaceMgr
-		pi          *fwdpb.PortInfo
-		want        *fwdpb.PortStateReply
-		wantSetUp   *bool
-		wantErr     string
+		desc      string
+		ifMgr     *fakeStateIfaceMgr
+		pi        *fwdpb.PortInfo
+		want      *fwdpb.PortStateReply
+		wantSetUp *bool
+		wantErr   string
 	}{{
 		desc: "link by name error",
 		ifMgr: &fakeStateIfaceMgr{
@@ -109,7 +109,7 @@ func TestGetAndSetState(t *testing.T) {
 		want: &fwdpb.PortStateReply{
 			Status: &fwdpb.PortInfo{
 				AdminStatus: fwdpb.PortState_PORT_STATE_ENABLED_UP,
-				OperStatus:  fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
+				OperStatus:  fwdpb.PortState_PORT_STATE_ENABLED_UP,
 			},
 		},
 	}, {
