@@ -66,7 +66,7 @@ func (p *tapPort) Desc() *fwdpb.PortDesc {
 }
 
 func (p *tapPort) String() string {
-	desc := fmt.Sprintf("Type=%v;DeviceName=%v;<Input=%v>;<Output=%v>", fwdpb.PortType_PORT_TYPE_KERNEL, p.fd, p.input, p.output)
+	desc := fmt.Sprintf("Type=%v;DeviceName=%v;<Input=%v>;<Output=%v>", fwdpb.PortType_PORT_TYPE_KERNEL, p.devName, p.input, p.output)
 	if state, err := p.State(nil); err == nil {
 		desc += fmt.Sprintf("<State=%v>;", state)
 	}
