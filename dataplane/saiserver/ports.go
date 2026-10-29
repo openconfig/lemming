@@ -240,10 +240,8 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 				AdminState: req.GetAdminState(),
 			},
 		}
-		// For ports that don't exist, do not create dataplane ports.
 		if _, err := getInterface(dev); err != nil {
-			// TODO: This should be a real error, improve once we a correct config solution.
-			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistent port.
+			// Create a dummy port so we don't get errors for a nonexistent port.
 			fwdPort := &fwdpb.PortCreateRequest{
 				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 				Port: &fwdpb.PortDesc{
