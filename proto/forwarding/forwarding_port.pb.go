@@ -613,8 +613,8 @@ func (x *FakePortDesc) GetHwLane() uint32 {
 
 type GenetlinkPortDesc struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FamilyName    string                 `protobuf:"bytes,1,opt,name=family_name,json=familyName,proto3" json:"family_name,omitempty"`
-	GroupName     string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
+	DeviceName    string                 `protobuf:"bytes,1,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
+	AdminState    bool                   `protobuf:"varint,2,opt,name=admin_state,json=adminState,proto3" json:"admin_state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -649,18 +649,18 @@ func (*GenetlinkPortDesc) Descriptor() ([]byte, []int) {
 	return file_proto_forwarding_forwarding_port_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GenetlinkPortDesc) GetFamilyName() string {
+func (x *GenetlinkPortDesc) GetDeviceName() string {
 	if x != nil {
-		return x.FamilyName
+		return x.DeviceName
 	}
 	return ""
 }
 
-func (x *GenetlinkPortDesc) GetGroupName() string {
+func (x *GenetlinkPortDesc) GetAdminState() bool {
 	if x != nil {
-		return x.GroupName
+		return x.AdminState
 	}
-	return ""
+	return false
 }
 
 type PortCreateRequest struct {
@@ -1699,12 +1699,12 @@ const file_proto_forwarding_forwarding_port_proto_rawDesc = "" +
 	"\fFakePortDesc\x12\x17\n" +
 	"\ain_file\x18\x01 \x01(\tR\x06inFile\x12\x19\n" +
 	"\bout_file\x18\x02 \x01(\tR\aoutFile\x12\x17\n" +
-	"\ahw_lane\x18\x03 \x01(\rR\x06hwLane\"S\n" +
+	"\ahw_lane\x18\x03 \x01(\rR\x06hwLane\"U\n" +
 	"\x11GenetlinkPortDesc\x12\x1f\n" +
-	"\vfamily_name\x18\x01 \x01(\tR\n" +
-	"familyName\x12\x1d\n" +
-	"\n" +
-	"group_name\x18\x02 \x01(\tR\tgroupName\"s\n" +
+	"\vdevice_name\x18\x01 \x01(\tR\n" +
+	"deviceName\x12\x1f\n" +
+	"\vadmin_state\x18\x02 \x01(\bR\n" +
+	"adminState\"s\n" +
 	"\x11PortCreateRequest\x12(\n" +
 	"\x04port\x18\x01 \x01(\v2\x14.forwarding.PortDescR\x04port\x124\n" +
 	"\n" +
