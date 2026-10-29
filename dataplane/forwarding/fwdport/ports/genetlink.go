@@ -34,10 +34,10 @@ func init() {
 // port running on a remote CPU port.
 type genetlinkPort struct {
 	fwdobject.Base
-	input  fwdaction.Actions
-	output fwdaction.Actions
-	desc   *fwdpb.PortDesc
-	ctx    *fwdcontext.Context // Forwarding context containing the port
+	desc       *fwdpb.PortDesc
+	devName    string
+	adminState fwdpb.PortState
+	ctx        *fwdcontext.Context // Forwarding context containing the port
 }
 
 // Desc returns the port description proto.
@@ -46,7 +46,7 @@ func (p *genetlinkPort) Desc() *fwdpb.PortDesc {
 }
 
 func (p *genetlinkPort) String() string {
-	desc := fmt.Sprintf("Type=%v;<Input=%v>;<Output=%v>", fwdpb.PortType_PORT_TYPE_KERNEL, p.input, p.output)
+	desc := fmt.Sprintf("Type=%v;DeviceName=%v;", fwdpb.PortType_PORT_TYPE_GENETLINK, p.devName)
 	if state, err := p.State(nil); err == nil {
 		desc += fmt.Sprintf("<State=%v>;", state)
 	}
@@ -58,58 +58,34 @@ func (p *genetlinkPort) Type() fwdpb.PortType {
 }
 
 func (p *genetlinkPort) Cleanup() {
-	p.input.Cleanup()
-	p.output.Cleanup()
-	p.input = nil
-	p.output = nil
 }
 
 // Update updates the actions of the port.
 func (p *genetlinkPort) Update(upd *fwdpb.PortUpdateDesc) error {
-	var err error
 	defer func() {
-		if err != nil {
-			p.Cleanup()
-		}
+		p.Cleanup()
 	}()
-	genUpd, ok := upd.Port.(*fwdpb.PortUpdateDesc_Genetlink)
-	if !ok {
-		return fmt.Errorf("invalid type for port update")
-	}
-
-	// Acquire new actions before releasing the old ones.
-	if p.input, err = fwdaction.NewActions(genUpd.Genetlink.GetInputs(), p.ctx); err != nil {
-		return fmt.Errorf("ports: input actions for port %v failed, err %v", p, err)
-	}
-	if p.output, err = fwdaction.NewActions(genUpd.Genetlink.GetOutputs(), p.ctx); err != nil {
-		return fmt.Errorf("ports: output actions for port %v failed, err %v", p, err)
-	}
 	return nil
 }
 
-// Write writes a packet out. If successful, the port returns
-// fwdaction.CONSUME.
 func (p *genetlinkPort) Write(fwdpacket.Packet) (fwdaction.State, error) {
 	return fwdaction.CONSUME, nil
 }
 
 // Actions returns the port actions of the specified type
 func (p *genetlinkPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
-	switch dir {
-	case fwdpb.PortAction_PORT_ACTION_INPUT:
-		return p.input
-	case fwdpb.PortAction_PORT_ACTION_OUTPUT:
-		return p.output
-	}
 	return nil
 }
 
 // State returns the state of the port.
-func (p *genetlinkPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+func (p *genetlinkPort) State(pi *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+	if pi != nil {
+		p.adminState = pi.AdminStatus
+	}
 	return &fwdpb.PortStateReply{
 		Status: &fwdpb.PortInfo{
-			OperStatus:  fwdpb.PortState_PORT_STATE_ENABLED_UP,
-			AdminStatus: fwdpb.PortState_PORT_STATE_ENABLED_UP,
+			OperStatus:  fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
+			AdminStatus: p.adminState,
 		},
 	}, nil
 }
@@ -117,9 +93,25 @@ func (p *genetlinkPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 type genetlinkBuilder struct{}
 
 // Build creates a new port.
-func (genetlinkBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
-	return &genetlinkPort{
-		ctx:  ctx,
-		desc: pd,
-	}, nil
+func (genetlinkBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+	kp, ok := portDesc.Port.(*fwdpb.PortDesc_Genetlink)
+	if !ok {
+		return nil, fmt.Errorf("invalid port type in proto")
+	}
+	var adminState fwdpb.PortState
+	if kp.Genetlink.GetAdminState() {
+		adminState = fwdpb.PortState_PORT_STATE_ENABLED_UP
+	} else {
+		adminState = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
+	}
+	p := genetlinkPort{
+		ctx:        ctx,
+		desc:       portDesc,
+		adminState: adminState,
+	}
+	list := append(fwdport.CounterList, fwdaction.CounterList...)
+	if err := p.InitCounters("", list...); err != nil {
+		return nil, err
+	}
+	return &p, nil
 }
