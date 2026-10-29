@@ -77,8 +77,8 @@ message FakePortDesc {
 }
 
 message GenetlinkPortDesc {
-  string family_name = 1;
-  string group_name = 2;
+  string device_name = 1;
+  bool admin_state = 2;
 }
 
 
@@ -112,7 +112,7 @@ message PortUpdateRequest {
 }
 
 message PortUpdateReply {
-  
+
 }
 
 // A CPUPortUpdateDesc updates the CPU port's input and output actions.
@@ -127,7 +127,7 @@ message KernelPortUpdateDesc {
   repeated ActionDesc outputs = 2;
 }
 
-// A GenetlinkPortUpdateDesc updates the Genetlink port's 
+// A GenetlinkPortUpdateDesc updates the Genetlink port's
 // input and output actions.
 message GenetlinkPortUpdateDesc {
   repeated ActionDesc inputs = 1;
