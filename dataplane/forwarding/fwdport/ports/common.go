@@ -35,19 +35,20 @@ type stateIfaceMgr interface {
 }
 
 func stateFromAttrs(attrs *netlink.LinkAttrs) (fwdpb.PortState, fwdpb.PortState) {
-	adminState := fwdpb.PortState_PORT_STATE_DISABLED_DOWN
+	var adminState fwdpb.PortState
 	if attrs.Flags&net.FlagUp != 0 {
 		adminState = fwdpb.PortState_PORT_STATE_ENABLED_UP
+	} else {
+		adminState = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
 	}
-
-	var state fwdpb.PortState
+	var operState fwdpb.PortState
 	switch attrs.OperState {
-	case netlink.OperDown, netlink.OperLowerLayerDown, netlink.OperUnknown:
-		state = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
-	case netlink.OperUp:
-		state = fwdpb.PortState_PORT_STATE_ENABLED_UP
+	case netlink.OperDown, netlink.OperLowerLayerDown:
+		operState = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
+	case netlink.OperUp, netlink.OperUnknown:
+		operState = fwdpb.PortState_PORT_STATE_ENABLED_UP
 	}
-	return adminState, state
+	return adminState, operState
 }
 
 func getPortState(name string, ifMgr stateIfaceMgr) (fwdpb.PortState, fwdpb.PortState, error) {
@@ -166,6 +167,10 @@ func (w *linkStateWatcher) run(updCh <-chan netlink.LinkUpdate, doneCh <-chan st
 				continue
 			}
 			admin, oper := stateFromAttrs(upd.Attrs())
+			if portType := target.port.Type(); portType == fwdpb.PortType_PORT_TYPE_TAP {
+				// Dummy ports created by Lucius should not be set to enabled up.
+				oper = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
+			}
 			log.V(1).Infof("dataplane receive link update: port %q, admin %v, oper %v", devName, admin.String(), oper.String())
 			if err := target.ctx.Notify(&fwdpb.EventDesc{
 				Event: fwdpb.Event_EVENT_PORT,
