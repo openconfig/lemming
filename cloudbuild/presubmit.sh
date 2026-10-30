@@ -15,14 +15,14 @@
 
 set -xe
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 function dumpinfo {
-    if [ -d "/tmp/cluster-log" ]; then
-        gcloud storage cp --recursive --gzip-local-all /tmp/cluster-log "gs://lemming-test-logs/$BUILD"
-    fi
+	if [ -d "/tmp/cluster-log" ]; then
+		gcloud storage cp --recursive --gzip-local-all /tmp/cluster-log "gs://lemming-test-logs/$BUILD"
+	fi
 }
 
-sudo tee /etc/google-cloud-ops-agent/config.yaml << EOF 
+sudo tee /etc/google-cloud-ops-agent/config.yaml <<EOF
 logging:
   receivers:
     kne-pods:
@@ -38,7 +38,7 @@ EOF
 sudo service google-cloud-ops-agent restart
 
 echo "$BUILD"
-cat << EOF > ~/.bazelrc
+cat <<EOF >~/.bazelrc
 build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
 build --google_default_credentials
 EOF
@@ -46,10 +46,10 @@ EOF
 export PATH=${PATH}:/usr/local/go/bin
 gopath=$(go env GOPATH)
 export PATH=${PATH}:$gopath/bin
-curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
-sudo install skaffold /usr/local/bin/
-curl -Lo bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 && \
-sudo install bazel /usr/local/bin/
+curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 &&
+	sudo install skaffold /usr/local/bin/
+curl -Lo bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 &&
+	sudo install bazel /usr/local/bin/
 sudo apt-get -o DPkg::Lock::Timeout=600 -y install libpcap-dev libnl-genl-3-dev libnl-3-dev
 
 cd /tmp/workspace
@@ -65,7 +65,7 @@ trap dumpinfo EXIT
 trap 'rc=$?' ERR
 
 make itest
-# Reenable these tests once not flaky.
+# Re-enable these tests once not flaky.
 # cd cloudbuild && ./fp-test.sh
 
 exit "${rc}"
