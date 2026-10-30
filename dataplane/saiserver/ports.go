@@ -21,6 +21,7 @@ import (
 	"net"
 	"slices"
 	"strconv"
+	"sync"
 
 	"github.com/vishvananda/netlink"
 	"google.golang.org/grpc"
@@ -694,6 +695,7 @@ type lagMember struct {
 
 type lag struct {
 	saipb.UnimplementedLagServer
+	mu          sync.Mutex // protects memberships
 	mgr         *attrmgr.AttrMgr
 	dataplane   switchDataplaneAPI
 	memberships map[uint64]*lagMember
@@ -710,6 +712,8 @@ func newLAG(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) 
 }
 
 func (l *lag) Reset() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.memberships = make(map[uint64]*lagMember)
 }
 
@@ -774,12 +778,21 @@ func (l *lag) CreateLagMember(ctx context.Context, req *saipb.CreateLagMemberReq
 	if err != nil {
 		return nil, err
 	}
+	l.mu.Lock()
 	l.memberships[id] = &lagMember{lagID: req.GetLagId(), portID: req.GetPortId()}
+	l.mu.Unlock()
 	return &saipb.CreateLagMemberResponse{Oid: id}, err
 }
 
 func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberRequest) (*saipb.RemoveLagMemberResponse, error) {
+	// Claim the membership under the lock so concurrent removals of the same
+	// OID cannot both proceed; the dataplane update runs without the lock.
+	l.mu.Lock()
 	member, ok := l.memberships[req.GetOid()]
+	if ok {
+		delete(l.memberships, req.GetOid())
+	}
+	l.mu.Unlock()
 	if !ok {
 		slog.Warn("RemoveLagMember: member not found, ignoring", "oid", req.GetOid())
 		return &saipb.RemoveLagMemberResponse{}, nil
@@ -796,8 +809,14 @@ func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberReq
 			},
 		},
 	}
-	_, err := l.dataplane.PortUpdate(ctx, pReq)
-	return &saipb.RemoveLagMemberResponse{}, err
+	if _, err := l.dataplane.PortUpdate(ctx, pReq); err != nil {
+		// Undo the claim so the removal can be retried.
+		l.mu.Lock()
+		l.memberships[req.GetOid()] = member
+		l.mu.Unlock()
+		return nil, err
+	}
+	return &saipb.RemoveLagMemberResponse{}, nil
 }
 
 func (l *lag) RemoveLag(ctx context.Context, req *saipb.RemoveLagRequest) (*saipb.RemoveLagResponse, error) {
