@@ -114,6 +114,28 @@ const (
 	numSchedulerGroups = 12
 )
 
+func (port *port) updatePortList(id uint64) error {
+	switchID, ok := port.mgr.GetSwitchID()
+	if !ok {
+		return fmt.Errorf("failed to get switch ID")
+	}
+	switchAttrs := &saipb.SwitchAttribute{}
+	if err := port.mgr.PopulateAllAttributes(switchID, switchAttrs); err != nil {
+		return fmt.Errorf("failed to get switch attributes: %v", err)
+	}
+	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
+	if err != nil {
+		return err
+	}
+	portList := switchAttrs.GetPortList()
+	portList = append(portList, id)
+	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
+		PortList:            portList,
+		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
+	})
+	return nil
+}
+
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
 func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
@@ -264,6 +286,9 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			}
 			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 			port.mgr.StoreAttributes(id, attrs)
+			if err := port.updatePortList(id); err != nil {
+				return nil, err
+			}
 			return &saipb.CreatePortResponse{
 				Oid: id,
 			}, nil
@@ -306,26 +331,9 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 	}
 	port.mgr.StoreAttributes(id, attrs)
-
-	// Update the switch's port list.
-	switchID, ok := port.mgr.GetSwitchID()
-	if !ok {
-		return nil, fmt.Errorf("failed to get switch ID")
-	}
-	switchAttrs := &saipb.SwitchAttribute{}
-	if err := port.mgr.PopulateAllAttributes(switchID, switchAttrs); err != nil {
-		return nil, fmt.Errorf("failed to get switch attributes: %v", err)
-	}
-	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
-	if err != nil {
+	if err := port.updatePortList(id); err != nil {
 		return nil, err
 	}
-	portList := switchAttrs.GetPortList()
-	portList = append(portList, id)
-	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
-		PortList:            portList,
-		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
-	})
 
 	nid, err := port.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
