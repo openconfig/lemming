@@ -23,7 +23,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
@@ -50,16 +49,15 @@ func init() {
 // this ensures kernel correctly responds to lower level protocols such as ARP, ICMP, etc.
 type tapPort struct {
 	fwdobject.Base
-	input        fwdaction.Actions
-	output       fwdaction.Actions
-	desc         *fwdpb.PortDesc
-	ctx          *fwdcontext.Context // Forwarding context containing the port
-	fd           int
-	devName      string
-	doneCh       chan struct{}
-	linkUpdateCh chan netlink.LinkUpdate
-	file         *os.File
-	ifaceMgr     kernel.Interfaces
+	input    fwdaction.Actions
+	output   fwdaction.Actions
+	desc     *fwdpb.PortDesc
+	ctx      *fwdcontext.Context // Forwarding context containing the port
+	fd       int
+	devName  string
+	doneCh   chan struct{}
+	file     *os.File
+	ifaceMgr kernel.Interfaces
 }
 
 // Desc returns the port description proto.
@@ -82,6 +80,7 @@ func (p *tapPort) Type() fwdpb.PortType {
 func (p *tapPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()
+	defaultLinkWatcher.unwatch(p.devName)
 	close(p.doneCh)
 	p.input = nil
 	p.output = nil
@@ -112,7 +111,6 @@ func (p *tapPort) Update(upd *fwdpb.PortUpdateDesc) error {
 }
 
 func (p *tapPort) process() {
-	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
 		buf := make([]byte, packetBufferSize)
 		for {
@@ -166,101 +164,14 @@ func (p *tapPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 	return nil
 }
 
-func getPortState(name string, ifMgr *kernel.Interfaces) (fwdpb.PortState, fwdpb.PortState, error) {
-	iface, err := ifMgr.LinkByName(name)
-	if err != nil {
-		return fwdpb.PortState_PORT_STATE_UNSPECIFIED, fwdpb.PortState_PORT_STATE_UNSPECIFIED, err
-	}
-	admin, oper := stateFromAttrs(iface.Attrs())
-	return admin, oper, nil
-}
-
-func stateFromAttrs(attrs *netlink.LinkAttrs) (fwdpb.PortState, fwdpb.PortState) {
-	adminState := fwdpb.PortState_PORT_STATE_DISABLED_DOWN
-	if attrs.Flags&net.FlagUp != 0 {
-		adminState = fwdpb.PortState_PORT_STATE_ENABLED_UP
-	}
-
-	var state fwdpb.PortState
-	switch attrs.OperState {
-	case netlink.OperDown, netlink.OperLowerLayerDown, netlink.OperUnknown:
-		state = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
-	case netlink.OperUp:
-		state = fwdpb.PortState_PORT_STATE_ENABLED_UP
-	}
-	return adminState, state
-}
-
-// getAndSetState returns the state of the port and optionally sets the state to the new value.
-// Note: the reply doesn't contain the updated oper-status (if applicable).
-func getAndSetState(name string, ifMgr *kernel.Interfaces, pi *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
-	adminState, operState, err := getPortState(name, ifMgr)
+// State returns the oper state of the port.
+func (p *tapPort) State(pi *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+	reply, err := getAndSetState(p.devName, &p.ifaceMgr, pi)
 	if err != nil {
 		return nil, err
 	}
-	reply := &fwdpb.PortStateReply{
-		Status: &fwdpb.PortInfo{
-			OperStatus:  operState,
-			AdminStatus: adminState,
-		},
-	}
-	if pi == nil {
-		log.V(1).Infof("dataplane read port %q: admin state %v, oper state %v", name, adminState.String(), operState.String())
-		return reply, nil
-	}
-	log.V(1).Infof("dataplane write port %q: admin state %v, oper state %v, setting to %v", name, adminState.String(), operState.String(), pi.AdminStatus.String())
-	if adminState == pi.GetAdminStatus() {
-		return reply, nil
-	}
-	if pi.AdminStatus == fwdpb.PortState_PORT_STATE_DISABLED_DOWN {
-		err = ifMgr.SetState(name, false)
-	} else if pi.AdminStatus == fwdpb.PortState_PORT_STATE_ENABLED_UP {
-		err = ifMgr.SetState(name, true)
-	}
-	if err != nil {
-		reply.Status.AdminStatus = pi.AdminStatus
-	}
-	return reply, err
-}
-
-func startStateWatch(updCh chan netlink.LinkUpdate, doneCh chan struct{}, devName string, port fwdport.Port, ctx *fwdcontext.Context) {
-	go func() {
-		for {
-			select {
-			case <-doneCh:
-				log.Warningf("state watch stopping for dev: %v", devName)
-				return
-			case upd, ok := <-updCh:
-				if !ok {
-					log.Info("update chan close for dev: %v", devName)
-					return
-				}
-				if upd.Attrs() == nil || upd.Attrs().Name != devName {
-					continue
-				}
-				admin, oper := stateFromAttrs(upd.Attrs())
-				log.V(1).Infof("dataplane receive link update: port %q, admin %v, oper %v", devName, admin.String(), oper.String())
-				ctx.Notify(&fwdpb.EventDesc{
-					Event: fwdpb.Event_EVENT_PORT,
-					Desc: &fwdpb.EventDesc_Port{
-						Port: &fwdpb.PortEventDesc{
-							Context: &fwdpb.ContextId{Id: ctx.ID},
-							PortId:  &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: string(port.ID())}},
-							PortInfo: &fwdpb.PortInfo{
-								AdminStatus: admin,
-								OperStatus:  oper,
-							},
-						},
-					},
-				})
-			}
-		}
-	}()
-}
-
-// State returns the oper state of the port.
-func (p *tapPort) State(pi *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
-	return getAndSetState(p.devName, &p.ifaceMgr, pi)
+	reply.Status.OperStatus = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
+	return reply, nil
 }
 
 type tapBuilder struct {
@@ -280,21 +191,34 @@ func (tp tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	if err := unix.SetNonblock(fd, true); err != nil {
 		return nil, fmt.Errorf("failed to set tap in non-blocking mode: %v", err)
 	}
+	l, err := tp.ifaceMgr.LinkByName(kp.Tap.GetDeviceName())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tap interface %q: %w", kp.Tap.GetDeviceName(), err)
+	}
+	isUp := l.Attrs().Flags&net.FlagUp != 0
+	if kp.Tap.GetAdminState() && !isUp {
+		if err := tp.ifaceMgr.LinkSetUp(l); err != nil {
+			return nil, fmt.Errorf("failed to set tap interface %q up: %w", kp.Tap.GetDeviceName(), err)
+		}
+	} else if !kp.Tap.GetAdminState() && isUp {
+		if err := tp.ifaceMgr.LinkSetDown(l); err != nil {
+			return nil, fmt.Errorf("failed to set tap interface %q down: %w", kp.Tap.GetDeviceName(), err)
+		}
+	}
 	file := os.NewFile(uintptr(fd), "/dev/tun")
 	p := &tapPort{
-		ctx:          ctx,
-		file:         file,
-		fd:           fd,
-		devName:      kp.Tap.GetDeviceName(),
-		desc:         portDesc,
-		doneCh:       make(chan struct{}),
-		linkUpdateCh: make(chan netlink.LinkUpdate),
+		ctx:     ctx,
+		file:    file,
+		fd:      fd,
+		devName: kp.Tap.GetDeviceName(),
+		desc:    portDesc,
+		doneCh:  make(chan struct{}),
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {
 		return nil, err
 	}
-	if err := tp.ifaceMgr.LinkSubscribe(p.linkUpdateCh, p.doneCh); err != nil {
+	if err := defaultLinkWatcher.watch(p.devName, p, p.ctx); err != nil {
 		return nil, err
 	}
 

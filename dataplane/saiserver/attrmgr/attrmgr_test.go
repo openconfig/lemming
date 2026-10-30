@@ -17,6 +17,7 @@ package attrmgr
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -223,5 +224,20 @@ func TestGetType(t *testing.T) {
 				t.Fatalf("Interceptor() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
+	}
+}
+
+func TestGetOIDsByType(t *testing.T) {
+	mgr := New()
+	mgr.SetType("1", saipb.ObjectType_OBJECT_TYPE_VLAN)
+	mgr.SetType("2", saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT)
+	mgr.SetType("3", saipb.ObjectType_OBJECT_TYPE_VLAN)
+	mgr.SetType("non-numeric", saipb.ObjectType_OBJECT_TYPE_VLAN)
+
+	got := mgr.GetOIDsByType(saipb.ObjectType_OBJECT_TYPE_VLAN)
+	slices.Sort(got)
+	want := []uint64{1, 3}
+	if d := cmp.Diff(got, want); d != "" {
+		t.Fatalf("GetOIDsByType() unexpected diff (-got,+want):\n%s", d)
 	}
 }

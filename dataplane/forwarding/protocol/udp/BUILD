@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/protocol",
+        "//dataplane/forwarding/protocol/vxlan",
         "//dataplane/forwarding/util/frame",
         "//dataplane/forwarding/util/hash/csum16",
         "//proto/forwarding",
@@ -21,6 +22,12 @@ go_test(
     deps = [
         "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/protocol",
+        "//dataplane/forwarding/protocol/ethernet",
+        "//dataplane/forwarding/protocol/ip",
+        "//dataplane/forwarding/protocol/metadata",
+        "//dataplane/forwarding/protocol/opaque",
+        "//dataplane/forwarding/protocol/tcp",
+        "//dataplane/forwarding/protocol/vxlan",
         "//dataplane/forwarding/util/frame",
         "//proto/forwarding",
         "@com_github_google_go_cmp//cmp",

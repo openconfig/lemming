@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package fwdconfig contains builders for varius proto types.
+// Package fwdconfig contains builders for various proto types.
 package fwdconfig
 
 import (
@@ -408,4 +408,26 @@ func (m *MirrorActionBuilder) set(a *fwdpb.ActionDesc) {
 
 func (m *MirrorActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_MIRROR
+}
+
+// BridgeLearnActionBuilder is a builder for a bridge learn action.
+type BridgeLearnActionBuilder struct {
+	tableID string
+}
+
+// BridgeLearnAction returns a new bridge learn action builder.
+func BridgeLearnAction(tableID string) *BridgeLearnActionBuilder {
+	return &BridgeLearnActionBuilder{tableID: tableID}
+}
+
+func (b *BridgeLearnActionBuilder) set(a *fwdpb.ActionDesc) {
+	a.Action = &fwdpb.ActionDesc_Bridge{
+		Bridge: &fwdpb.BridgeLearnActionDesc{
+			TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: b.tableID}},
+		},
+	}
+}
+
+func (b *BridgeLearnActionBuilder) actionType() fwdpb.ActionType {
+	return fwdpb.ActionType_ACTION_TYPE_BRIDGE_LEARN
 }

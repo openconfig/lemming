@@ -678,6 +678,37 @@ func TestCreateNextHop(t *testing.T) {
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
 			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
 				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_COPY,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+								},
+							},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
+						},
+					},
+				}, {
 					ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
 					Action: &fwdpb.ActionDesc_Encap{
 						Encap: &fwdpb.EncapActionDesc{
@@ -696,6 +727,20 @@ func TestCreateNextHop(t *testing.T) {
 					Action: &fwdpb.ActionDesc_Encap{
 						Encap: &fwdpb.EncapActionDesc{
 							HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x12, 0x34, 0x56},
 						},
 					},
 				}, {
@@ -738,34 +783,6 @@ func TestCreateNextHop(t *testing.T) {
 							},
 							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
 							Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
-						},
-					},
-				}, {
-					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-					Action: &fwdpb.ActionDesc_Update{
-						Update: &fwdpb.UpdateActionDesc{
-							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
-							FieldId: &fwdpb.PacketFieldId{
-								Field: &fwdpb.PacketField{
-									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI,
-								},
-							},
-							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
-							Value: []byte{0x12, 0x34, 0x56},
-						},
-					},
-				}, {
-					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-					Action: &fwdpb.ActionDesc_Update{
-						Update: &fwdpb.UpdateActionDesc{
-							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
-							FieldId: &fwdpb.PacketFieldId{
-								Field: &fwdpb.PacketField{
-									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
-								},
-							},
-							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
-							Value: []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
 						},
 					},
 				}, {

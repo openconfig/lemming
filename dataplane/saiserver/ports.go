@@ -114,6 +114,28 @@ const (
 	numSchedulerGroups = 12
 )
 
+func (port *port) updatePortList(id uint64) error {
+	switchID, ok := port.mgr.GetSwitchID()
+	if !ok {
+		return fmt.Errorf("failed to get switch ID")
+	}
+	switchAttrs := &saipb.SwitchAttribute{}
+	if err := port.mgr.PopulateAllAttributes(switchID, switchAttrs); err != nil {
+		return fmt.Errorf("failed to get switch attributes: %v", err)
+	}
+	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
+	if err != nil {
+		return err
+	}
+	portList := switchAttrs.GetPortList()
+	portList = append(portList, id)
+	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
+		PortList:            portList,
+		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
+	})
+	return nil
+}
+
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
 func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
@@ -216,7 +238,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		SupportedFecMode:                 []saipb.PortFecMode{saipb.PortFecMode_PORT_FEC_MODE_NONE},
 		NumberOfIngressPriorityGroups:    proto.Uint32(0),
 		QosMaximumHeadroomSize:           proto.Uint32(0),
-		AdminState:                       proto.Bool(true),
+		AdminState:                       proto.Bool(req.GetAdminState()),
 		AutoNegMode:                      proto.Bool(req.GetAutoNegMode()),
 		Mtu:                              proto.Uint32(1514),
 		HwLaneList:                       req.HwLaneList,
@@ -237,12 +259,11 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		fwdPort.Port.Port = &fwdpb.PortDesc_Kernel{
 			Kernel: &fwdpb.KernelPortDesc{
 				DeviceName: dev,
+				AdminState: req.GetAdminState(),
 			},
 		}
 		// For ports that don't exist, do not create dataplane ports.
 		if _, err := getInterface(dev); err != nil {
-			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
-			port.mgr.StoreAttributes(id, attrs)
 			// TODO: This should be a real error, improve once we a correct config solution.
 			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistent port.
 			fwdPort := &fwdpb.PortCreateRequest{
@@ -254,26 +275,20 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 					},
 					Port: &fwdpb.PortDesc_Tap{
 						Tap: &fwdpb.TAPPortDesc{
-							DeviceName: fmt.Sprintf("port%d", id),
+							DeviceName: dev,
+							AdminState: req.GetAdminState(),
 						},
 					},
 				},
 			}
-			_, err := port.dataplane.PortCreate(ctx, fwdPort)
-			if err != nil {
+			if _, err := port.dataplane.PortCreate(ctx, fwdPort); err != nil {
 				return nil, err
 			}
-			stateReq := &fwdpb.PortStateRequest{
-				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-				Operation: &fwdpb.PortInfo{
-					AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
-				},
-			}
-			if _, err := port.dataplane.PortState(ctx, stateReq); err != nil {
+			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
+			port.mgr.StoreAttributes(id, attrs)
+			if err := port.updatePortList(id); err != nil {
 				return nil, err
 			}
-
 			return &saipb.CreatePortResponse{
 				Oid: id,
 			}, nil
@@ -310,44 +325,15 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	if _, err := port.dataplane.PortUpdate(ctx, update); err != nil {
 		return nil, err
 	}
-	attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
-	if req.AdminState == nil || req.GetAdminState() == false {
-		stateReq := &fwdpb.PortStateRequest{
-			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-			Operation: &fwdpb.PortInfo{
-				AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
-			},
-		}
-		_, err := port.dataplane.PortState(ctx, stateReq)
-		if err != nil {
-			return nil, err
-		}
-		attrs.AdminState = proto.Bool(false)
+	if req.GetAdminState() {
+		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
+	} else {
 		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 	}
-
 	port.mgr.StoreAttributes(id, attrs)
-
-	// Update the switch's port list.
-	switchID, ok := port.mgr.GetSwitchID()
-	if !ok {
-		return nil, fmt.Errorf("failed to get switch ID")
-	}
-	switchAttrs := &saipb.SwitchAttribute{}
-	if err := port.mgr.PopulateAllAttributes(switchID, switchAttrs); err != nil {
-		return nil, fmt.Errorf("failed to get switch attributes: %v", err)
-	}
-	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
-	if err != nil {
+	if err := port.updatePortList(id); err != nil {
 		return nil, err
 	}
-	portList := switchAttrs.GetPortList()
-	portList = append(portList, id)
-	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
-		PortList:            portList,
-		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
-	})
 
 	nid, err := port.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},

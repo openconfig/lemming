@@ -45,15 +45,14 @@ func init() {
 // kernelPort is a ports that receives from and writes a linux network device.
 type kernelPort struct {
 	fwdobject.Base
-	devName      string
-	input        fwdaction.Actions
-	output       fwdaction.Actions
-	desc         *fwdpb.PortDesc
-	ctx          *fwdcontext.Context // Forwarding context containing the port
-	handle       packetHandle
-	doneCh       chan struct{}
-	linkUpdateCh chan netlink.LinkUpdate
-	ifaceMgr     kernel.Interfaces
+	devName  string
+	input    fwdaction.Actions
+	output   fwdaction.Actions
+	desc     *fwdpb.PortDesc
+	ctx      *fwdcontext.Context // Forwarding context containing the port
+	handle   packetHandle
+	doneCh   chan struct{}
+	ifaceMgr kernel.Interfaces
 }
 
 type packetHandle interface {
@@ -82,6 +81,7 @@ func (p *kernelPort) Type() fwdpb.PortType {
 func (p *kernelPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()
+	defaultLinkWatcher.unwatch(p.devName)
 	close(p.doneCh)
 	p.input = nil
 	p.output = nil
@@ -111,7 +111,6 @@ func (p *kernelPort) Update(upd *fwdpb.PortUpdateDesc) error {
 }
 
 func (p *kernelPort) process() {
-	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
 		for {
 			select {
@@ -190,26 +189,32 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		return nil, fmt.Errorf("failed to set arp_ignore to 2: %v", err)
 	}
 
-	netlink.LinkSetUp(l)
+	if err := netlink.LinkSetUp(l); err != nil {
+		return nil, fmt.Errorf("failed to set link up: %v", err)
+	}
 
 	// Set snaplen to 64KB to capture max size IP packets
 	handle, err := pcap.OpenLive(kp.Kernel.GetDeviceName(), 65536, true, pcap.BlockForever)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}
+	if !kp.Kernel.GetAdminState() {
+		if err := netlink.LinkSetDown(l); err != nil {
+			return nil, fmt.Errorf("failed to set link down: %v", err)
+		}
+	}
 	p := &kernelPort{
-		ctx:          ctx,
-		handle:       handle,
-		devName:      kp.Kernel.DeviceName,
-		desc:         portDesc,
-		doneCh:       make(chan struct{}),
-		linkUpdateCh: make(chan netlink.LinkUpdate),
+		ctx:     ctx,
+		handle:  handle,
+		devName: kp.Kernel.DeviceName,
+		desc:    portDesc,
+		doneCh:  make(chan struct{}),
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {
 		return nil, err
 	}
-	if err := p.ifaceMgr.LinkSubscribe(p.linkUpdateCh, p.doneCh); err != nil {
+	if err := defaultLinkWatcher.watch(p.devName, p, p.ctx); err != nil {
 		return nil, err
 	}
 
