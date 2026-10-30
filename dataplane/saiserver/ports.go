@@ -64,7 +64,6 @@ var getInterface = net.InterfaceByName
 func getPreIngressPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),          // Decap the packet if we have a tunnel.
-		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),             // Classify incoming packets to VLAN.
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),       // Match packet to interface.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),       // Match interface to VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(), // Run pre-ingress actions.
@@ -102,7 +101,7 @@ func getL3Pipeline(skipIPValidation bool) []*fwdpb.ActionDesc {
 func getL2Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
-		fwdconfig.Action(fwdconfig.LookupAction(FloodTable)).Build(),         // Match VLAN tag or fallback to outputTable.
+		fwdconfig.Action(fwdconfig.LookupAction(outputTable)).Build(),        // Take final decision on forward, drop, or trap.
 		{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},
@@ -114,6 +113,28 @@ const (
 	numCpuQueues       = 48
 	numSchedulerGroups = 12
 )
+
+func (port *port) updatePortList(id uint64) error {
+	switchID, ok := port.mgr.GetSwitchID()
+	if !ok {
+		return fmt.Errorf("failed to get switch ID")
+	}
+	switchAttrs := &saipb.SwitchAttribute{}
+	if err := port.mgr.PopulateAllAttributes(switchID, switchAttrs); err != nil {
+		return fmt.Errorf("failed to get switch attributes: %v", err)
+	}
+	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
+	if err != nil {
+		return err
+	}
+	portList := switchAttrs.GetPortList()
+	portList = append(portList, id)
+	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
+		PortList:            portList,
+		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
+	})
+	return nil
+}
 
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
@@ -265,6 +286,9 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			}
 			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 			port.mgr.StoreAttributes(id, attrs)
+			if err := port.updatePortList(id); err != nil {
+				return nil, err
+			}
 			return &saipb.CreatePortResponse{
 				Oid: id,
 			}, nil
@@ -307,27 +331,27 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 	}
 	port.mgr.StoreAttributes(id, attrs)
-
-	// Update the switch's port list.
-	switchID, ok := port.mgr.GetSwitchID()
-	if !ok {
-		return nil, fmt.Errorf("failed to get switch ID")
-	}
-	switchAttrs := &saipb.SwitchAttribute{}
-	if err := port.mgr.PopulateAllAttributes(switchID, switchAttrs); err != nil {
-		return nil, fmt.Errorf("failed to get switch attributes: %v", err)
-	}
-	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
-	if err != nil {
+	if err := port.updatePortList(id); err != nil {
 		return nil, err
 	}
-	portList := switchAttrs.GetPortList()
-	portList = append(portList, id)
-	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
-		PortList:            portList,
-		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
-	})
 
+	nid, err := port.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+	})
+	if err != nil {
+		slog.InfoContext(ctx, "Failed to find NID for port", "port", id, "err", err)
+		return nil, err
+	}
+	vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
+	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(attrs.GetPortVlanId()))).Build(),
+	}
+	if _, err := port.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
+		return nil, err
+	}
 	return &saipb.CreatePortResponse{
 		Oid: id,
 	}, nil

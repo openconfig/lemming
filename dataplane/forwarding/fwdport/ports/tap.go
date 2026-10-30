@@ -166,7 +166,12 @@ func (p *tapPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 
 // State returns the oper state of the port.
 func (p *tapPort) State(pi *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
-	return getAndSetState(p.devName, &p.ifaceMgr, pi)
+	reply, err := getAndSetState(p.devName, &p.ifaceMgr, pi)
+	if err != nil {
+		return nil, err
+	}
+	reply.Status.OperStatus = fwdpb.PortState_PORT_STATE_DISABLED_DOWN
+	return reply, nil
 }
 
 type tapBuilder struct {

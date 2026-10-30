@@ -16,11 +16,18 @@ package udp
 
 import (
 	"encoding/binary"
+	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ip"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/tcp"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/vxlan"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -164,3 +171,107 @@ func TestUDPMethods(t *testing.T) {
 		}
 	}
 }
+
+func createAndRebuildUDPPacket(t *testing.T, srcPort, dstPort uint16, payload []byte) (uint16, []byte) {
+	t.Helper()
+	udpHdr := make([]byte, udpBytes)
+	binary.BigEndian.PutUint16(udpHdr[srcOffset:], srcPort)
+	binary.BigEndian.PutUint16(udpHdr[dstOffset:], dstPort)
+	binary.BigEndian.PutUint16(udpHdr[lenOffset:], uint16(udpBytes+len(payload)))
+
+	raw := append(udpHdr, payload...)
+	pkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP, raw)
+	if err != nil {
+		t.Fatalf("fwdpacket.New failed: %v", err)
+	}
+
+	srcFieldID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0)
+	// Dirty the UDP header so Rebuild is executed during Frame().
+	if err := pkt.Update(srcFieldID, fwdpacket.OpSet, udpHdr[srcOffset:srcOffset+portBytes]); err != nil {
+		t.Fatalf("pkt.Update srcPort failed: %v", err)
+	}
+
+	rebuiltFrame := pkt.Frame()
+	rebuiltSrcBytes, err := pkt.Field(srcFieldID)
+	if err != nil {
+		t.Fatalf("pkt.Field srcPort failed: %v", err)
+	}
+	rebuiltSrcPort := binary.BigEndian.Uint16(rebuiltSrcBytes)
+	return rebuiltSrcPort, rebuiltFrame
+}
+
+func TestUDPHeaderRebuild(t *testing.T) {
+	vxlanHdr := []byte{0x08, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x00}
+	innerEth := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x08, 0x00}
+	innerIPAndTCP := []byte{
+		0x45, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00, 0x40, 0x06, 0x00, 0x00,
+		10, 0, 0, 1, // src ip
+		10, 0, 0, 2, // dst ip
+		0x1f, 0x90, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+		0x50, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+	data := []byte("UDP payload data")
+	flowPkt := slices.Concat(vxlanHdr, innerEth, innerIPAndTCP, data)
+
+	t.Run("VXLAN entropy source port calculation", func(t *testing.T) {
+		gotPort, frameBytes := createAndRebuildUDPPacket(t, 0, vxlan.DefaultPort, flowPkt)
+
+		// RFC 7348 §5: Must be within dynamic/private ephemeral range [49152, 65535]
+		if gotPort < 49152 {
+			t.Errorf("got source port %d, want within [49152, 65535]", gotPort)
+		}
+
+		// Verify frame bytes match the queried source port
+		framePort := binary.BigEndian.Uint16(frameBytes[srcOffset : srcOffset+portBytes])
+		if framePort != gotPort {
+			t.Errorf("frame source port %d does not match field source port %d", framePort, gotPort)
+		}
+	})
+
+	t.Run("Non-VXLAN destination port retains srcPort 0", func(t *testing.T) {
+		// Standard UDP packet targeting DNS port 53 with srcPort 0
+		portDNS, frameDNS := createAndRebuildUDPPacket(t, 0, 53, data)
+		if portDNS != 0 {
+			t.Errorf("standard UDP dstPort=53: got srcPort %d, want 0", portDNS)
+		}
+		framePort := binary.BigEndian.Uint16(frameDNS[srcOffset : srcOffset+portBytes])
+		if framePort != 0 {
+			t.Errorf("standard UDP frame dstPort=53: got srcPort %d, want 0", framePort)
+		}
+	})
+
+	t.Run("Pre-set source port retains explicit value", func(t *testing.T) {
+		// VXLAN packet with explicit pre-set srcPort 12345
+		portVXLAN, frameVXLAN := createAndRebuildUDPPacket(t, 12345, vxlan.DefaultPort, flowPkt)
+		if portVXLAN != 12345 {
+			t.Errorf("VXLAN with pre-set srcPort=12345: got %d, want 12345", portVXLAN)
+		}
+		framePortVXLAN := binary.BigEndian.Uint16(frameVXLAN[srcOffset : srcOffset+portBytes])
+		if framePortVXLAN != 12345 {
+			t.Errorf("VXLAN frame with pre-set srcPort=12345: got %d, want 12345", framePortVXLAN)
+		}
+
+		// Standard UDP packet with pre-set srcPort 12345
+		portDNS, _ := createAndRebuildUDPPacket(t, 12345, 53, data)
+		if portDNS != 12345 {
+			t.Errorf("standard UDP with pre-set srcPort=12345: got %d, want 12345", portDNS)
+		}
+	})
+
+	t.Run("Direct Rebuild with empty payload retains srcPort 0", func(t *testing.T) {
+		h, err := add(fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP, &protocol.Desc{})
+		if err != nil {
+			t.Fatalf("add failed: %v", err)
+		}
+		udpHandler := h.(*UDP)
+		udpHandler.header.Field(dstOffset, portBytes).SetValue(vxlan.DefaultPort)
+		udpHandler.header.Field(srcOffset, portBytes).SetValue(0)
+		if err := udpHandler.Rebuild(); err != nil {
+			t.Fatalf("udpHandler.Rebuild() failed: %v", err)
+		}
+		if got := udpHandler.header.Field(srcOffset, portBytes).Value(); got != 0 {
+			t.Errorf("Rebuild with empty payload: got srcPort %d, want 0", got)
+		}
+	})
+}
+
