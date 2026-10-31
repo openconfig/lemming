@@ -901,7 +901,7 @@ func TestTunnelTermDuplicateAndPriority(t *testing.T) {
 		p2mpPrio, _ := termEntryPriority(p2mpReq)
 		mp2mpPrio, _ := termEntryPriority(mp2mpReq)
 
-		if !(p2pPrio < p2mpPrio && p2mpPrio < mp2mpPrio) {
+		if p2pPrio >= p2mpPrio || p2mpPrio >= mp2mpPrio {
 			t.Errorf("term priority rank order invalid: p2p=%d, p2mp=%d, mp2mp=%d", p2pPrio, p2mpPrio, mp2mpPrio)
 		}
 
@@ -915,7 +915,7 @@ func TestTunnelTermDuplicateAndPriority(t *testing.T) {
 		}
 		highPrio, _ := termEntryPriority(highSaiPrioReq)
 		lowPrio, _ := termEntryPriority(lowSaiPrioReq)
-		if !(highPrio < lowPrio) {
+		if highPrio >= lowPrio {
 			t.Errorf("higher SAI priority must yield lower numeric Lucius priority: highSAI=%d, lowSAI=%d", highPrio, lowPrio)
 		}
 	})
