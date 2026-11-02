@@ -31,7 +31,7 @@ const (
 	PortType_PORT_TYPE_KERNEL         PortType = 3
 	PortType_PORT_TYPE_TAP            PortType = 4
 	PortType_PORT_TYPE_FAKE           PortType = 5
-	PortType_PORT_TYPE_GENETLINK      PortType = 6
+	PortType_PORT_TYPE_DUMMY          PortType = 6
 )
 
 // Enum value maps for PortType.
@@ -43,7 +43,7 @@ var (
 		3: "PORT_TYPE_KERNEL",
 		4: "PORT_TYPE_TAP",
 		5: "PORT_TYPE_FAKE",
-		6: "PORT_TYPE_GENETLINK",
+		6: "PORT_TYPE_DUMMY",
 	}
 	PortType_value = map[string]int32{
 		"PORT_TYPE_UNSPECIFIED":    0,
@@ -52,7 +52,7 @@ var (
 		"PORT_TYPE_KERNEL":         3,
 		"PORT_TYPE_TAP":            4,
 		"PORT_TYPE_FAKE":           5,
-		"PORT_TYPE_GENETLINK":      6,
+		"PORT_TYPE_DUMMY":          6,
 	}
 )
 
@@ -243,7 +243,7 @@ type PortDesc struct {
 	//	*PortDesc_Kernel
 	//	*PortDesc_Tap
 	//	*PortDesc_Fake
-	//	*PortDesc_Genetlink
+	//	*PortDesc_Dummy
 	Port          isPortDesc_Port `protobuf_oneof:"port"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -336,10 +336,10 @@ func (x *PortDesc) GetFake() *FakePortDesc {
 	return nil
 }
 
-func (x *PortDesc) GetGenetlink() *GenetlinkPortDesc {
+func (x *PortDesc) GetDummy() *DummyPortDesc {
 	if x != nil {
-		if x, ok := x.Port.(*PortDesc_Genetlink); ok {
-			return x.Genetlink
+		if x, ok := x.Port.(*PortDesc_Dummy); ok {
+			return x.Dummy
 		}
 	}
 	return nil
@@ -365,8 +365,8 @@ type PortDesc_Fake struct {
 	Fake *FakePortDesc `protobuf:"bytes,6,opt,name=fake,proto3,oneof"`
 }
 
-type PortDesc_Genetlink struct {
-	Genetlink *GenetlinkPortDesc `protobuf:"bytes,7,opt,name=genetlink,proto3,oneof"`
+type PortDesc_Dummy struct {
+	Dummy *DummyPortDesc `protobuf:"bytes,7,opt,name=dummy,proto3,oneof"`
 }
 
 func (*PortDesc_Cpu) isPortDesc_Port() {}
@@ -377,7 +377,7 @@ func (*PortDesc_Tap) isPortDesc_Port() {}
 
 func (*PortDesc_Fake) isPortDesc_Port() {}
 
-func (*PortDesc_Genetlink) isPortDesc_Port() {}
+func (*PortDesc_Dummy) isPortDesc_Port() {}
 
 type CPUPortDesc struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -611,7 +611,7 @@ func (x *FakePortDesc) GetHwLane() uint32 {
 	return 0
 }
 
-type GenetlinkPortDesc struct {
+type DummyPortDesc struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DeviceName    string                 `protobuf:"bytes,1,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
 	AdminState    bool                   `protobuf:"varint,2,opt,name=admin_state,json=adminState,proto3" json:"admin_state,omitempty"`
@@ -619,20 +619,20 @@ type GenetlinkPortDesc struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GenetlinkPortDesc) Reset() {
-	*x = GenetlinkPortDesc{}
+func (x *DummyPortDesc) Reset() {
+	*x = DummyPortDesc{}
 	mi := &file_proto_forwarding_forwarding_port_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GenetlinkPortDesc) String() string {
+func (x *DummyPortDesc) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GenetlinkPortDesc) ProtoMessage() {}
+func (*DummyPortDesc) ProtoMessage() {}
 
-func (x *GenetlinkPortDesc) ProtoReflect() protoreflect.Message {
+func (x *DummyPortDesc) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_forwarding_forwarding_port_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -644,19 +644,19 @@ func (x *GenetlinkPortDesc) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GenetlinkPortDesc.ProtoReflect.Descriptor instead.
-func (*GenetlinkPortDesc) Descriptor() ([]byte, []int) {
+// Deprecated: Use DummyPortDesc.ProtoReflect.Descriptor instead.
+func (*DummyPortDesc) Descriptor() ([]byte, []int) {
 	return file_proto_forwarding_forwarding_port_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GenetlinkPortDesc) GetDeviceName() string {
+func (x *DummyPortDesc) GetDeviceName() string {
 	if x != nil {
 		return x.DeviceName
 	}
 	return ""
 }
 
-func (x *GenetlinkPortDesc) GetAdminState() bool {
+func (x *DummyPortDesc) GetAdminState() bool {
 	if x != nil {
 		return x.AdminState
 	}
@@ -769,7 +769,7 @@ type PortUpdateDesc struct {
 	//	*PortUpdateDesc_AggregateDel
 	//	*PortUpdateDesc_AggregateAlgo
 	//	*PortUpdateDesc_Kernel
-	//	*PortUpdateDesc_Genetlink
+	//	*PortUpdateDesc_Dummy
 	Port          isPortUpdateDesc_Port `protobuf_oneof:"port"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -866,10 +866,10 @@ func (x *PortUpdateDesc) GetKernel() *KernelPortUpdateDesc {
 	return nil
 }
 
-func (x *PortUpdateDesc) GetGenetlink() *GenetlinkPortUpdateDesc {
+func (x *PortUpdateDesc) GetDummy() *DummyPortUpdateDesc {
 	if x != nil {
-		if x, ok := x.Port.(*PortUpdateDesc_Genetlink); ok {
-			return x.Genetlink
+		if x, ok := x.Port.(*PortUpdateDesc_Dummy); ok {
+			return x.Dummy
 		}
 	}
 	return nil
@@ -903,8 +903,8 @@ type PortUpdateDesc_Kernel struct {
 	Kernel *KernelPortUpdateDesc `protobuf:"bytes,6,opt,name=kernel,proto3,oneof"`
 }
 
-type PortUpdateDesc_Genetlink struct {
-	Genetlink *GenetlinkPortUpdateDesc `protobuf:"bytes,7,opt,name=genetlink,proto3,oneof"`
+type PortUpdateDesc_Dummy struct {
+	Dummy *DummyPortUpdateDesc `protobuf:"bytes,7,opt,name=dummy,proto3,oneof"`
 }
 
 func (*PortUpdateDesc_Cpu) isPortUpdateDesc_Port() {}
@@ -919,7 +919,7 @@ func (*PortUpdateDesc_AggregateAlgo) isPortUpdateDesc_Port() {}
 
 func (*PortUpdateDesc_Kernel) isPortUpdateDesc_Port() {}
 
-func (*PortUpdateDesc_Genetlink) isPortUpdateDesc_Port() {}
+func (*PortUpdateDesc_Dummy) isPortUpdateDesc_Port() {}
 
 type PortUpdateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1121,7 +1121,7 @@ func (x *KernelPortUpdateDesc) GetOutputs() []*ActionDesc {
 	return nil
 }
 
-type GenetlinkPortUpdateDesc struct {
+type DummyPortUpdateDesc struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Inputs        []*ActionDesc          `protobuf:"bytes,1,rep,name=inputs,proto3" json:"inputs,omitempty"`
 	Outputs       []*ActionDesc          `protobuf:"bytes,2,rep,name=outputs,proto3" json:"outputs,omitempty"`
@@ -1129,20 +1129,20 @@ type GenetlinkPortUpdateDesc struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GenetlinkPortUpdateDesc) Reset() {
-	*x = GenetlinkPortUpdateDesc{}
+func (x *DummyPortUpdateDesc) Reset() {
+	*x = DummyPortUpdateDesc{}
 	mi := &file_proto_forwarding_forwarding_port_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GenetlinkPortUpdateDesc) String() string {
+func (x *DummyPortUpdateDesc) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GenetlinkPortUpdateDesc) ProtoMessage() {}
+func (*DummyPortUpdateDesc) ProtoMessage() {}
 
-func (x *GenetlinkPortUpdateDesc) ProtoReflect() protoreflect.Message {
+func (x *DummyPortUpdateDesc) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_forwarding_forwarding_port_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1154,19 +1154,19 @@ func (x *GenetlinkPortUpdateDesc) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GenetlinkPortUpdateDesc.ProtoReflect.Descriptor instead.
-func (*GenetlinkPortUpdateDesc) Descriptor() ([]byte, []int) {
+// Deprecated: Use DummyPortUpdateDesc.ProtoReflect.Descriptor instead.
+func (*DummyPortUpdateDesc) Descriptor() ([]byte, []int) {
 	return file_proto_forwarding_forwarding_port_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *GenetlinkPortUpdateDesc) GetInputs() []*ActionDesc {
+func (x *DummyPortUpdateDesc) GetInputs() []*ActionDesc {
 	if x != nil {
 		return x.Inputs
 	}
 	return nil
 }
 
-func (x *GenetlinkPortUpdateDesc) GetOutputs() []*ActionDesc {
+func (x *DummyPortUpdateDesc) GetOutputs() []*ActionDesc {
 	if x != nil {
 		return x.Outputs
 	}
@@ -1670,15 +1670,15 @@ var File_proto_forwarding_forwarding_port_proto protoreflect.FileDescriptor
 const file_proto_forwarding_forwarding_port_proto_rawDesc = "" +
 	"\n" +
 	"&proto/forwarding/forwarding_port.proto\x12\n" +
-	"forwarding\x1a\x17google/rpc/status.proto\x1a(proto/forwarding/forwarding_action.proto\x1a(proto/forwarding/forwarding_common.proto\"\xf1\x02\n" +
+	"forwarding\x1a\x17google/rpc/status.proto\x1a(proto/forwarding/forwarding_action.proto\x1a(proto/forwarding/forwarding_common.proto\"\xe5\x02\n" +
 	"\bPortDesc\x121\n" +
 	"\tport_type\x18\x01 \x01(\x0e2\x14.forwarding.PortTypeR\bportType\x12+\n" +
 	"\aport_id\x18\x02 \x01(\v2\x12.forwarding.PortIdR\x06portId\x12+\n" +
 	"\x03cpu\x18\x03 \x01(\v2\x17.forwarding.CPUPortDescH\x00R\x03cpu\x124\n" +
 	"\x06kernel\x18\x04 \x01(\v2\x1a.forwarding.KernelPortDescH\x00R\x06kernel\x12+\n" +
 	"\x03tap\x18\x05 \x01(\v2\x17.forwarding.TAPPortDescH\x00R\x03tap\x12.\n" +
-	"\x04fake\x18\x06 \x01(\v2\x18.forwarding.FakePortDescH\x00R\x04fake\x12=\n" +
-	"\tgenetlink\x18\a \x01(\v2\x1d.forwarding.GenetlinkPortDescH\x00R\tgenetlinkB\x06\n" +
+	"\x04fake\x18\x06 \x01(\v2\x18.forwarding.FakePortDescH\x00R\x04fake\x121\n" +
+	"\x05dummy\x18\a \x01(\v2\x19.forwarding.DummyPortDescH\x00R\x05dummyB\x06\n" +
 	"\x04port\"\xb1\x01\n" +
 	"\vCPUPortDesc\x12\x19\n" +
 	"\bqueue_id\x18\x01 \x01(\tR\aqueueId\x12!\n" +
@@ -1699,8 +1699,8 @@ const file_proto_forwarding_forwarding_port_proto_rawDesc = "" +
 	"\fFakePortDesc\x12\x17\n" +
 	"\ain_file\x18\x01 \x01(\tR\x06inFile\x12\x19\n" +
 	"\bout_file\x18\x02 \x01(\tR\aoutFile\x12\x17\n" +
-	"\ahw_lane\x18\x03 \x01(\rR\x06hwLane\"U\n" +
-	"\x11GenetlinkPortDesc\x12\x1f\n" +
+	"\ahw_lane\x18\x03 \x01(\rR\x06hwLane\"Q\n" +
+	"\rDummyPortDesc\x12\x1f\n" +
 	"\vdevice_name\x18\x01 \x01(\tR\n" +
 	"deviceName\x12\x1f\n" +
 	"\vadmin_state\x18\x02 \x01(\bR\n" +
@@ -1710,15 +1710,15 @@ const file_proto_forwarding_forwarding_port_proto_rawDesc = "" +
 	"\n" +
 	"context_id\x18\x02 \x01(\v2\x15.forwarding.ContextIdR\tcontextId\"M\n" +
 	"\x0fPortCreateReply\x12:\n" +
-	"\fobject_index\x18\x02 \x01(\v2\x17.forwarding.ObjectIndexR\vobjectIndex\"\x95\x04\n" +
+	"\fobject_index\x18\x02 \x01(\v2\x17.forwarding.ObjectIndexR\vobjectIndex\"\x89\x04\n" +
 	"\x0ePortUpdateDesc\x121\n" +
 	"\x03cpu\x18\x01 \x01(\v2\x1d.forwarding.CPUPortUpdateDescH\x00R\x03cpu\x12C\n" +
 	"\taggregate\x18\x02 \x01(\v2#.forwarding.AggregatePortUpdateDescH\x00R\taggregate\x12S\n" +
 	"\raggregate_add\x18\x03 \x01(\v2,.forwarding.AggregatePortAddMemberUpdateDescH\x00R\faggregateAdd\x12V\n" +
 	"\raggregate_del\x18\x04 \x01(\v2/.forwarding.AggregatePortRemoveMemberUpdateDescH\x00R\faggregateDel\x12U\n" +
 	"\x0eaggregate_algo\x18\x05 \x01(\v2,.forwarding.AggregatePortAlgorithmUpdateDescH\x00R\raggregateAlgo\x12:\n" +
-	"\x06kernel\x18\x06 \x01(\v2 .forwarding.KernelPortUpdateDescH\x00R\x06kernel\x12C\n" +
-	"\tgenetlink\x18\a \x01(\v2#.forwarding.GenetlinkPortUpdateDescH\x00R\tgenetlinkB\x06\n" +
+	"\x06kernel\x18\x06 \x01(\v2 .forwarding.KernelPortUpdateDescH\x00R\x06kernel\x127\n" +
+	"\x05dummy\x18\a \x01(\v2\x1f.forwarding.DummyPortUpdateDescH\x00R\x05dummyB\x06\n" +
 	"\x04port\"\xaa\x01\n" +
 	"\x11PortUpdateRequest\x12+\n" +
 	"\aport_id\x18\x01 \x01(\v2\x12.forwarding.PortIdR\x06portId\x124\n" +
@@ -1731,8 +1731,8 @@ const file_proto_forwarding_forwarding_port_proto_rawDesc = "" +
 	"\aoutputs\x18\x02 \x03(\v2\x16.forwarding.ActionDescR\aoutputs\"x\n" +
 	"\x14KernelPortUpdateDesc\x12.\n" +
 	"\x06inputs\x18\x01 \x03(\v2\x16.forwarding.ActionDescR\x06inputs\x120\n" +
-	"\aoutputs\x18\x02 \x03(\v2\x16.forwarding.ActionDescR\aoutputs\"{\n" +
-	"\x17GenetlinkPortUpdateDesc\x12.\n" +
+	"\aoutputs\x18\x02 \x03(\v2\x16.forwarding.ActionDescR\aoutputs\"w\n" +
+	"\x13DummyPortUpdateDesc\x12.\n" +
 	"\x06inputs\x18\x01 \x03(\v2\x16.forwarding.ActionDescR\x06inputs\x120\n" +
 	"\aoutputs\x18\x02 \x03(\v2\x16.forwarding.ActionDescR\aoutputs\"v\n" +
 	"\x15AggregateSelectAction\x12+\n" +
@@ -1766,15 +1766,15 @@ const file_proto_forwarding_forwarding_port_proto_rawDesc = "" +
 	"context_id\x18\x02 \x01(\v2\x15.forwarding.ContextIdR\tcontextId\x122\n" +
 	"\toperation\x18\x03 \x01(\v2\x14.forwarding.PortInfoR\toperation\">\n" +
 	"\x0ePortStateReply\x12,\n" +
-	"\x06status\x18\x01 \x01(\v2\x14.forwarding.PortInfoR\x06status*\xb1\x01\n" +
+	"\x06status\x18\x01 \x01(\v2\x14.forwarding.PortInfoR\x06status*\xad\x01\n" +
 	"\bPortType\x12\x19\n" +
 	"\x15PORT_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12PORT_TYPE_CPU_PORT\x10\x01\x12\x1c\n" +
 	"\x18PORT_TYPE_AGGREGATE_PORT\x10\x02\x12\x14\n" +
 	"\x10PORT_TYPE_KERNEL\x10\x03\x12\x11\n" +
 	"\rPORT_TYPE_TAP\x10\x04\x12\x12\n" +
-	"\x0ePORT_TYPE_FAKE\x10\x05\x12\x17\n" +
-	"\x13PORT_TYPE_GENETLINK\x10\x06*\xae\x01\n" +
+	"\x0ePORT_TYPE_FAKE\x10\x05\x12\x13\n" +
+	"\x0fPORT_TYPE_DUMMY\x10\x06*\xae\x01\n" +
 	"\x16AggregateHashAlgorithm\x12(\n" +
 	"$AGGREGATE_HASH_ALGORITHM_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eAGGREGATE_HASH_ALGORITHM_CRC16\x10\x02\x12\"\n" +
@@ -1813,7 +1813,7 @@ var file_proto_forwarding_forwarding_port_proto_goTypes = []any{
 	(*KernelPortDesc)(nil),                      // 6: forwarding.KernelPortDesc
 	(*TAPPortDesc)(nil),                         // 7: forwarding.TAPPortDesc
 	(*FakePortDesc)(nil),                        // 8: forwarding.FakePortDesc
-	(*GenetlinkPortDesc)(nil),                   // 9: forwarding.GenetlinkPortDesc
+	(*DummyPortDesc)(nil),                       // 9: forwarding.DummyPortDesc
 	(*PortCreateRequest)(nil),                   // 10: forwarding.PortCreateRequest
 	(*PortCreateReply)(nil),                     // 11: forwarding.PortCreateReply
 	(*PortUpdateDesc)(nil),                      // 12: forwarding.PortUpdateDesc
@@ -1821,7 +1821,7 @@ var file_proto_forwarding_forwarding_port_proto_goTypes = []any{
 	(*PortUpdateReply)(nil),                     // 14: forwarding.PortUpdateReply
 	(*CPUPortUpdateDesc)(nil),                   // 15: forwarding.CPUPortUpdateDesc
 	(*KernelPortUpdateDesc)(nil),                // 16: forwarding.KernelPortUpdateDesc
-	(*GenetlinkPortUpdateDesc)(nil),             // 17: forwarding.GenetlinkPortUpdateDesc
+	(*DummyPortUpdateDesc)(nil),                 // 17: forwarding.DummyPortUpdateDesc
 	(*AggregateSelectAction)(nil),               // 18: forwarding.AggregateSelectAction
 	(*AggregatePortUpdateDesc)(nil),             // 19: forwarding.AggregatePortUpdateDesc
 	(*AggregatePortAddMemberUpdateDesc)(nil),    // 20: forwarding.AggregatePortAddMemberUpdateDesc
@@ -1844,7 +1844,7 @@ var file_proto_forwarding_forwarding_port_proto_depIdxs = []int32{
 	6,  // 3: forwarding.PortDesc.kernel:type_name -> forwarding.KernelPortDesc
 	7,  // 4: forwarding.PortDesc.tap:type_name -> forwarding.TAPPortDesc
 	8,  // 5: forwarding.PortDesc.fake:type_name -> forwarding.FakePortDesc
-	9,  // 6: forwarding.PortDesc.genetlink:type_name -> forwarding.GenetlinkPortDesc
+	9,  // 6: forwarding.PortDesc.dummy:type_name -> forwarding.DummyPortDesc
 	28, // 7: forwarding.CPUPortDesc.export_field_ids:type_name -> forwarding.PacketFieldId
 	4,  // 8: forwarding.PortCreateRequest.port:type_name -> forwarding.PortDesc
 	29, // 9: forwarding.PortCreateRequest.context_id:type_name -> forwarding.ContextId
@@ -1855,7 +1855,7 @@ var file_proto_forwarding_forwarding_port_proto_depIdxs = []int32{
 	21, // 14: forwarding.PortUpdateDesc.aggregate_del:type_name -> forwarding.AggregatePortRemoveMemberUpdateDesc
 	22, // 15: forwarding.PortUpdateDesc.aggregate_algo:type_name -> forwarding.AggregatePortAlgorithmUpdateDesc
 	16, // 16: forwarding.PortUpdateDesc.kernel:type_name -> forwarding.KernelPortUpdateDesc
-	17, // 17: forwarding.PortUpdateDesc.genetlink:type_name -> forwarding.GenetlinkPortUpdateDesc
+	17, // 17: forwarding.PortUpdateDesc.dummy:type_name -> forwarding.DummyPortUpdateDesc
 	27, // 18: forwarding.PortUpdateRequest.port_id:type_name -> forwarding.PortId
 	29, // 19: forwarding.PortUpdateRequest.context_id:type_name -> forwarding.ContextId
 	12, // 20: forwarding.PortUpdateRequest.update:type_name -> forwarding.PortUpdateDesc
@@ -1863,8 +1863,8 @@ var file_proto_forwarding_forwarding_port_proto_depIdxs = []int32{
 	31, // 22: forwarding.CPUPortUpdateDesc.outputs:type_name -> forwarding.ActionDesc
 	31, // 23: forwarding.KernelPortUpdateDesc.inputs:type_name -> forwarding.ActionDesc
 	31, // 24: forwarding.KernelPortUpdateDesc.outputs:type_name -> forwarding.ActionDesc
-	31, // 25: forwarding.GenetlinkPortUpdateDesc.inputs:type_name -> forwarding.ActionDesc
-	31, // 26: forwarding.GenetlinkPortUpdateDesc.outputs:type_name -> forwarding.ActionDesc
+	31, // 25: forwarding.DummyPortUpdateDesc.inputs:type_name -> forwarding.ActionDesc
+	31, // 26: forwarding.DummyPortUpdateDesc.outputs:type_name -> forwarding.ActionDesc
 	27, // 27: forwarding.AggregateSelectAction.port_id:type_name -> forwarding.PortId
 	31, // 28: forwarding.AggregateSelectAction.actions:type_name -> forwarding.ActionDesc
 	27, // 29: forwarding.AggregatePortUpdateDesc.port_ids:type_name -> forwarding.PortId
@@ -1903,7 +1903,7 @@ func file_proto_forwarding_forwarding_port_proto_init() {
 		(*PortDesc_Kernel)(nil),
 		(*PortDesc_Tap)(nil),
 		(*PortDesc_Fake)(nil),
-		(*PortDesc_Genetlink)(nil),
+		(*PortDesc_Dummy)(nil),
 	}
 	file_proto_forwarding_forwarding_port_proto_msgTypes[8].OneofWrappers = []any{
 		(*PortUpdateDesc_Cpu)(nil),
@@ -1912,7 +1912,7 @@ func file_proto_forwarding_forwarding_port_proto_init() {
 		(*PortUpdateDesc_AggregateDel)(nil),
 		(*PortUpdateDesc_AggregateAlgo)(nil),
 		(*PortUpdateDesc_Kernel)(nil),
-		(*PortUpdateDesc_Genetlink)(nil),
+		(*PortUpdateDesc_Dummy)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
