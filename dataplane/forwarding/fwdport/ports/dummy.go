@@ -29,9 +29,8 @@ func init() {
 	fwdport.Register(fwdpb.PortType_PORT_TYPE_DUMMY, dummyBuilder{})
 }
 
-// dummyPort is a ports that receives from and writes a linux network device.
-// Note: This is a "virtual" port, it doesn't perform any IO, but represents a dummy
-// port running on a remote CPU port.
+// dummyPort is a ports that drops all packets written to it. It is used to
+// represent a port that is not present in the forwarding plane.
 type dummyPort struct {
 	fwdobject.Base
 	desc       *fwdpb.PortDesc
