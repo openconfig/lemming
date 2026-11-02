@@ -107,6 +107,7 @@ func (dummyBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fw
 	p := dummyPort{
 		ctx:        ctx,
 		desc:       portDesc,
+		devName:    kp.Dummy.GetDeviceName(),
 		adminState: adminState,
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
