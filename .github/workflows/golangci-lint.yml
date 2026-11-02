@@ -29,6 +29,10 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
+      - name: Put /tmp back on the root disk
+        run: |
+          sudo systemctl mask tmp.mount
+          sudo umount -l /tmp
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: 1.27.1
@@ -43,7 +47,6 @@ jobs:
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         env:
           CGO_ENABLED: 1
-          GOTMPDIR: ${{ runner.temp }}
         with:
           # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
           version: latest
