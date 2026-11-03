@@ -22,3 +22,6 @@ build:docker-bullseye --experimental_docker_image=us-west1-docker.pkg.dev/openco
 build:docker-bullseye --spawn_strategy=docker --strategy=Javac=docker --genrule_strategy=docker
 build:docker-bullseye --experimental_docker_verbose
 build:docker-bullseye --experimental_enable_docker_sandbox
+
+common --registry=https://raw.githubusercontent.com/songqing-sq/sonic-bazel-registry/45a1ebca790a038c73353cd2417cd2df06fb1f1e
+common --registry=https://bcr.bazel.build/
