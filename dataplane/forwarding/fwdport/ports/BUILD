@@ -10,6 +10,7 @@ go_library(
         "fake.go",
         "group.go",
         "kernel.go",
+        "tap.go",
     ],
     importpath = "github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports",
     visibility = ["//visibility:public"],
@@ -52,7 +53,6 @@ go_test(
     srcs = [
         "common_test.go",
         "cpu_test.go",
-        "dummy_test.go",
         "fake_test.go",
         "group_test.go",
         "kernel_test.go",
@@ -78,16 +78,17 @@ go_test(
         "@com_github_google_gopacket//layers",
         "@com_github_google_gopacket//pcapgo",
         "@com_github_openconfig_gnmi//errdiff",
-        "@org_golang_google_protobuf//testing/protocmp",
         "@org_uber_go_mock//gomock",
     ] + select({
         "@io_bazel_rules_go//go/platform:android": [
             "@com_github_vishvananda_netlink//:netlink",
             "@org_golang_google_protobuf//proto",
+            "@org_golang_google_protobuf//testing/protocmp",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
             "@com_github_vishvananda_netlink//:netlink",
             "@org_golang_google_protobuf//proto",
+            "@org_golang_google_protobuf//testing/protocmp",
         ],
         "//conditions:default": [],
     }),
