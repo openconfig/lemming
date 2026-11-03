@@ -15,7 +15,6 @@
 package ports
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
