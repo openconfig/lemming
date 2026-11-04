@@ -340,8 +340,10 @@ func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShado
 					}
 				}
 			}
-			if err := ytypes.UnmarshalSetRequest(schema, reqWithoutDelete, unmarshalOpts...); err != nil {
-				return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
+			if len(req.Replace) > 0 || len(req.Update) > 0 {
+				if err := ytypes.UnmarshalSetRequest(schema, reqWithoutDelete, unmarshalOpts...); err != nil {
+					return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
+				}
 			}
 		} else {
 			return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
