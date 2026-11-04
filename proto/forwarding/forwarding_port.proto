@@ -31,7 +31,7 @@ enum PortType {
   PORT_TYPE_KERNEL = 3;          // Port that is kernel network interface.
   PORT_TYPE_TAP = 4; // Port that is kernel TAP interface.
   PORT_TYPE_FAKE = 5; // Fake port type that uses files for packet io.
-  PORT_TYPE_GENETLINK = 6; // Port that use genetlink.
+  PORT_TYPE_DUMMY = 6; // Port that is a dummy port.
 }
 
 // A PortDesc describes a forwarding port. It is assumed that the descriptor
@@ -45,7 +45,7 @@ message PortDesc {
     KernelPortDesc kernel = 4;
     TAPPortDesc tap = 5;
     FakePortDesc fake = 6;
-    GenetlinkPortDesc genetlink = 7;
+    DummyPortDesc dummy = 7;
   }
 }
 
@@ -76,9 +76,9 @@ message FakePortDesc {
   uint32 hw_lane = 3;
 }
 
-message GenetlinkPortDesc {
-  string family_name = 1;
-  string group_name = 2;
+message DummyPortDesc {
+  string device_name = 1;
+  bool admin_state = 2;
 }
 
 
@@ -100,7 +100,7 @@ message PortUpdateDesc {
     AggregatePortRemoveMemberUpdateDesc aggregate_del = 4;
     AggregatePortAlgorithmUpdateDesc aggregate_algo = 5;
     KernelPortUpdateDesc kernel = 6;
-    GenetlinkPortUpdateDesc genetlink = 7;
+    DummyPortUpdateDesc dummy = 7;
   }
 }
 
@@ -112,7 +112,7 @@ message PortUpdateRequest {
 }
 
 message PortUpdateReply {
-  
+
 }
 
 // A CPUPortUpdateDesc updates the CPU port's input and output actions.
@@ -127,9 +127,9 @@ message KernelPortUpdateDesc {
   repeated ActionDesc outputs = 2;
 }
 
-// A GenetlinkPortUpdateDesc updates the Genetlink port's 
+// A DummyPortUpdateDesc updates the dummy port's
 // input and output actions.
-message GenetlinkPortUpdateDesc {
+message DummyPortUpdateDesc {
   repeated ActionDesc inputs = 1;
   repeated ActionDesc outputs = 2;
 }
