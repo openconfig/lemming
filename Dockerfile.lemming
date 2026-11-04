@@ -8,7 +8,7 @@ COPY . .
 FROM build as release-build
 RUN go install github.com/google/go-licenses@latest
 RUN --mount=type=cache,target=/root/.cache/go-build go build -o /out/lemming ./cmd/lemming
-RUN  go-licenses save ./cmd/lemming --save_path THIRD_PARTY_LICENSES
+RUN go-licenses save ./cmd/lemming --save_path THIRD_PARTY_LICENSES --ignore github.com/p4lang/p4runtime
 
 FROM build as debug-build
 RUN go install github.com/go-delve/delve/cmd/dlv@latest

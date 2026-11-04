@@ -15,6 +15,8 @@
 package protocol
 
 import (
+	"fmt"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -90,6 +92,19 @@ func (d *Desc) PayloadID() fwdpb.PacketHeaderId {
 // PayloadDesc returns the payload's desc.
 func (d *Desc) PayloadDesc() *Desc {
 	return d.next
+}
+
+// PayloadField returns the value of id from the first payload descriptor (d.next
+// onwards) that implements the field. This lets an outer tunnel header (such as
+// VXLAN/UDP) read fields from its inner headers without matching itself or the
+// headers outside it.
+func (d *Desc) PayloadField(id fwdpacket.FieldID) ([]byte, error) {
+	for desc := d.next; desc != nil; desc = desc.next {
+		if f, err := desc.handler.Field(id); err == nil {
+			return f, nil
+		}
+	}
+	return nil, fmt.Errorf("protocol: PayloadField %v failed, not in payload", id)
 }
 
 // Payload returns the payload. The payload of a desc is represented by the

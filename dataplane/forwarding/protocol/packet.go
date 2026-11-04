@@ -370,6 +370,22 @@ func NewPacket(start fwdpb.PacketHeaderId, frame *frame.Frame) (*Packet, error) 
 	return p, nil
 }
 
+// FirstDesc returns the first descriptor in the packet chain (typically METADATA).
+func (p *Packet) FirstDesc() *Desc {
+	if d := p.headers[Sequence[0]]; d != nil {
+		return d
+	}
+	for _, seq := range Sequence {
+		if d := p.headers[seq]; d != nil {
+			for d.prev != nil {
+				d = d.prev
+			}
+			return d
+		}
+	}
+	return nil
+}
+
 // Decap removes the header specified by id. The header is marked as dirty.
 func (p *Packet) Decap(id fwdpb.PacketHeaderId) error {
 	attr, ok := HeaderAttr[id]
