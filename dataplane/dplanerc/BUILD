@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "dplanerc",
@@ -47,4 +47,10 @@ go_library(
         ],
         "//conditions:default": [],
     }),
+)
+
+go_test(
+    name = "dplanerc_test",
+    srcs = ["interface_test.go"],
+    embed = [":dplanerc"],
 )
