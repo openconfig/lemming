@@ -1228,7 +1228,6 @@ func TestDeleteOperations(t *testing.T) {
 		}
 
 		// Delete container /interfaces/interface[name=eth1]/subinterfaces
-		subinterfacesPath := ocpath.Root().Interface("eth1").SubinterfaceAny().Config()
 		// Raw gNMI Set delete for container path:
 		gnmiClient := gpb.NewGNMIClient(conn)
 		containerPath := &gpb.Path{
@@ -1245,7 +1244,6 @@ func TestDeleteOperations(t *testing.T) {
 		}); err != nil {
 			t.Errorf("Delete container /interfaces/interface[name=eth1]/subinterfaces returned error: %v, want nil", err)
 		}
-		_ = subinterfacesPath
 	})
 
 	t.Run("configure and delete cycles leave zero residue and are idempotent", func(t *testing.T) {
@@ -1287,5 +1285,3 @@ func TestDeleteOperations(t *testing.T) {
 		}
 	})
 }
-
-
