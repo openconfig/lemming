@@ -190,6 +190,9 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *opb.Testbed, runTime tim
 		fmt.Println("Deploying KNE topology")
 
 		if err := lb.tm.Create(ctx, 5*time.Minute); err != nil {
+			if delErr := lb.tm.Delete(ctx); delErr != nil {
+				return nil, fmt.Errorf("failed to create topology: %v (cleanup also failed: %v)", err, delErr)
+			}
 			return nil, fmt.Errorf("failed to create topology: %v", err)
 		}
 
