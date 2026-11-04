@@ -413,9 +413,15 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
+					// Keyed on (input port, VLAN tag) so that one untagged and
+					// multiple tagged VLAN memberships can coexist on a port.
 					FieldIds: []*fwdpb.PacketFieldId{{
 						Field: &fwdpb.PacketField{
 							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
 						},
 					}},
 				},
