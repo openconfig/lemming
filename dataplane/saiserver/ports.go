@@ -114,7 +114,7 @@ const (
 	numSchedulerGroups = 12
 )
 
-func (port *port) getQueues(ctx context.Context, id uint64, count int) ([]uint64, error) {
+func (port *port) createQueue(ctx context.Context, id uint64, count int) ([]uint64, error) {
 	var queues []uint64
 	for i := 0; i < count; i++ {
 		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{
@@ -135,7 +135,7 @@ func (port *port) getQueues(ctx context.Context, id uint64, count int) ([]uint64
 	return queues, nil
 }
 
-func (port *port) getSgs(ctx context.Context, id uint64, queues []uint64) ([]uint64, error) {
+func (port *port) createSchedulerGroups(ctx context.Context, id uint64, queues []uint64) ([]uint64, error) {
 	var sgs []uint64
 	for i := 0; i < len(queues); i++ {
 		sgResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.sg.CreateSchedulerGroup, &saipb.CreateSchedulerGroupRequest{
@@ -155,7 +155,7 @@ func (port *port) getSgs(ctx context.Context, id uint64, queues []uint64) ([]uin
 	return sgs, nil
 }
 
-func (port *port) storeSwitchAttribute(id uint64) error {
+func (port *port) updatePortList(id uint64) error {
 	switchID, ok := port.mgr.GetSwitchID()
 	if !ok {
 		return fmt.Errorf("failed to get switch ID")
@@ -178,11 +178,11 @@ func (port *port) storeSwitchAttribute(id uint64) error {
 }
 
 func (port *port) storeAttributes(ctx context.Context, req *saipb.CreatePortRequest, id uint64, vlanID uint32, operStatus *saipb.PortOperStatus) error {
-	queues, err := port.getQueues(ctx, id, numQueues)
+	queues, err := port.createQueue(ctx, id, numQueues)
 	if err != nil {
 		return err
 	}
-	sgs, err := port.getSgs(ctx, id, queues)
+	sgs, err := port.createSchedulerGroups(ctx, id, queues)
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (port *port) storeAttributes(ctx context.Context, req *saipb.CreatePortRequ
 		OperStatus:                       operStatus,
 	}
 	port.mgr.StoreAttributes(id, attrs)
-	if err := port.storeSwitchAttribute(id); err != nil {
+	if err := port.updatePortList(id); err != nil {
 		return err
 	}
 	return nil
@@ -401,11 +401,11 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	queues, err := port.getQueues(ctx, id, numCpuQueues)
+	queues, err := port.createQueue(ctx, id, numCpuQueues)
 	if err != nil {
 		return 0, err
 	}
-	sgs, err := port.getSgs(ctx, id, queues)
+	sgs, err := port.createSchedulerGroups(ctx, id, queues)
 	if err != nil {
 		return 0, err
 	}
