@@ -275,7 +275,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	} else {
 		operStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
 	}
-	vlanSetup := true
+	isDummyPort := false
 	switch port.opts.PortType {
 	case fwdpb.PortType_PORT_TYPE_KERNEL:
 		if _, err := getInterface(dev); err != nil {
@@ -288,7 +288,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 				},
 			}
 			operStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
-			vlanSetup = false
+			isDummyPort = true
 		} else {
 			fwdPort.Port.Port = &fwdpb.PortDesc_Kernel{
 				Kernel: &fwdpb.KernelPortDesc{
@@ -311,20 +311,6 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	if err != nil {
 		return nil, err
 	}
-	if _, err := port.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
-		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-		Update: &fwdpb.PortUpdateDesc{
-			Port: &fwdpb.PortUpdateDesc_Kernel{
-				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs:  getPreIngressPipeline(),
-					Outputs: nil,
-				},
-			},
-		},
-	}); err != nil {
-		return nil, err
-	}
 	vlanID := uint32(DefaultVlanId)
 	if req.PortVlanId != nil {
 		vlanID = req.GetPortVlanId()
@@ -332,7 +318,21 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	if err := port.storeAttributes(ctx, req, id, vlanID, operStatus); err != nil {
 		return nil, err
 	}
-	if vlanSetup {
+	if !isDummyPort {
+		if _, err := port.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+			Update: &fwdpb.PortUpdateDesc{
+				Port: &fwdpb.PortUpdateDesc_Kernel{
+					Kernel: &fwdpb.KernelPortUpdateDesc{
+						Inputs:  getPreIngressPipeline(),
+						Outputs: nil,
+					},
+				},
+			},
+		}); err != nil {
+			return nil, err
+		}
 		nid := reply.GetObjectIndex().GetIndex()
 		vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid)))).Build()
