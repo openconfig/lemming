@@ -125,33 +125,29 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv6().Address(dutPort2.IPv6).Ip().State(), time.Minute, dutPort2.IPv6)
 }
 
-func waitOTGARPEntry(t *testing.T) {
-	ate := ondatra.ATE(t, "ate")
-
-	val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
-		return v.IsPresent()
-	}).Await(t)
-	if !ok {
-		t.Fatal("failed to get neighbor")
+func waitOTGARPEntry(t *testing.T, otg *otg.OTG, top gosnappi.Config) {
+	t.Helper()
+	for _, d := range top.Devices().Items() {
+		for _, eth := range d.Ethernets().Items() {
+			intf := otgpath.Root().Interface(eth.Name())
+			if _, ok := gnmi.WatchAll(t, otg, intf.Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
+				return v.IsPresent()
+			}).Await(t); !ok {
+				t.Fatalf("failed to get IPv4 neighbor on %s", eth.Name())
+			}
+			if _, ok := gnmi.WatchAll(t, otg, intf.Ipv6NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
+				return v.IsPresent()
+			}).Await(t); !ok {
+				t.Fatalf("failed to get IPv6 neighbor on %s", eth.Name())
+			}
+		}
 	}
-	lla, _ := val.Val()
-	t.Logf("Neighbor %v", lla)
-
-	val, ok = gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv6NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
-		return v.IsPresent()
-	}).Await(t)
-	if !ok {
-		t.Fatal("failed to get neighbor")
-	}
-	lla, _ = val.Val()
-	t.Logf("Neighbor %v", lla)
 }
 
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
-// packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) float32 {
-	waitOTGARPEntry(t)
+// packet loss and returns the number of tx and rx packets.
+func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) (uint64, uint64) {
 	top := otg.FetchConfig(t)
 	top.Flows().Clear().Items()
 	flowipv4 := top.Flows().Add().SetName("Flow")
@@ -165,25 +161,28 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attr
 	v4.Src().SetValue(srcEndPoint.IPv4)
 	v4.Dst().Increment().SetStart(startAddress).SetCount(24)
 	otg.PushConfig(t, top)
+	otg.StartProtocols(t)
+	waitOTGARPEntry(t, otg, top)
 
 	otg.StartTraffic(t)
 	time.Sleep(dur)
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
-	time.Sleep(5 * time.Second)
-
+	gnmi.Await(t, otg, gnmi.OTG().Flow("Flow").Transmit().State(), dur, false)
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
-	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
-	lossPct := (txPkts - rxPkts) * 100 / txPkts
-	return float32(lossPct)
+	val, _ := gnmi.Watch(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State(), dur, func(v *ygnmi.Value[uint64]) bool {
+		got, ok := v.Val()
+		return ok && got == txPkts
+	}).Await(t)
+	rxPkts, _ := val.Val()
+	return txPkts, rxPkts
 }
 
 // testTrafficv6 generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
-// packet loss and returns loss percentage as float.
-func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) float32 {
-	waitOTGARPEntry(t)
+// packet loss and returns the number of tx and rx packets.
+func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) (uint64, uint64) {
 	top := otg.FetchConfig(t)
 	top.Flows().Clear().Items()
 	flowipv6 := top.Flows().Add().SetName("Flow2")
@@ -197,18 +196,22 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.At
 	v6.Src().SetValue(srcEndPoint.IPv6)
 	v6.Dst().Increment().SetStart(startAddress).SetCount(24)
 	otg.PushConfig(t, top)
+	otg.StartProtocols(t)
+	waitOTGARPEntry(t, otg, top)
 
 	otg.StartTraffic(t)
 	time.Sleep(dur)
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
-	time.Sleep(5 * time.Second)
-
+	gnmi.Await(t, otg, gnmi.OTG().Flow("Flow2").Transmit().State(), dur, false)
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().OutPkts().State())
-	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().InPkts().State())
-	lossPct := (txPkts - rxPkts) * 100 / txPkts
-	return float32(lossPct)
+	val, _ := gnmi.Watch(t, otg, gnmi.OTG().Flow("Flow2").Counters().InPkts().State(), dur, func(v *ygnmi.Value[uint64]) bool {
+		got, ok := v.Val()
+		return ok && got == txPkts
+	}).Await(t)
+	rxPkts, _ := val.Val()
+	return txPkts, rxPkts
 }
 
 // awaitTimeout calls a fluent client Await, adding a timeout to the context.
@@ -220,15 +223,23 @@ func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, time
 
 // testCounters test packet counters and should be called after testTraffic
 func testCounters(t *testing.T, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts uint64) {
-	got := gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Counters().InPkts().State())
+	val, ok := gnmi.Watch(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Counters().InPkts().State(), 5*time.Second, func(v *ygnmi.Value[uint64]) bool {
+		got, ok := v.Val()
+		return ok && got >= wantTxPkts
+	}).Await(t)
+	got, _ := val.Val()
 	t.Logf("DUT port 1 in-pkts: %d", got)
-	if got < wantTxPkts {
+	if !ok {
 		t.Errorf("DUT got less packets (%d) than OTG sent (%d)", got, wantTxPkts)
 	}
 
-	got = gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Counters().OutPkts().State())
+	val, ok = gnmi.Watch(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Counters().OutPkts().State(), 5*time.Second, func(v *ygnmi.Value[uint64]) bool {
+		got, ok := v.Val()
+		return ok && got >= wantRxPkts
+	}).Await(t)
+	got, _ = val.Val()
 	t.Logf("DUT port 2 out-pkts: %d", got)
-	if got < wantRxPkts {
+	if !ok {
 		t.Errorf("DUT got sent less packets (%d) than OTG received (%d)", got, wantRxPkts)
 	}
 }
@@ -492,19 +503,18 @@ func TestGRIBIEntry(t *testing.T) {
 			}
 
 			testTrafficFn := testTraffic
-			flowName := "Flow"
 			if tc.v6Traffic {
 				testTrafficFn = testTrafficv6
-				flowName = "Flow2"
 			}
 
-			if loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second); loss > 1 {
-				t.Errorf("Loss: got %g, want <= 1", loss)
+			gotTxPkts, gotRxPkts := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second)
+			if gotRxPkts != gotTxPkts {
+				t.Errorf("got %d received packets, want %d", gotRxPkts, gotTxPkts)
 			}
 
 			// counters are not erased, so have to accumulate the packets from previous subtests.
-			txPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().OutPkts().State())
-			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().InPkts().State())
+			txPkts += gotTxPkts
+			rxPkts += gotRxPkts
 			testCounters(t, dut, txPkts, rxPkts)
 
 			slices.Reverse(tc.entries)
@@ -517,8 +527,8 @@ func TestGRIBIEntry(t *testing.T) {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
-			if loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second); loss != 100 {
-				t.Errorf("Loss: got %g, want 100", loss)
+			if _, gotRxPkts := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second); gotRxPkts != 0 {
+				t.Errorf("got %d received packets, want 0", gotRxPkts)
 			}
 
 			// TODO: Test flush once it's implemented.
