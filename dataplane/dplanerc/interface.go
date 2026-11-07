@@ -1197,12 +1197,30 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		return err
 	}
 
+	var portLinks []netlink.Link
+	var portReqs []*saipb.CreatePortRequest
 	for idx, i := range ifs {
 		// Skip loopback, k8s pod interface, and tap interfaces.
 		if i.Attrs().Name == "lo" || i.Attrs().Name == "eth0" || isHostifName(i.Attrs().Name) {
 			log.V(1).Infof("skipping interface %q", i.Attrs().Name)
 			continue
 		}
+		portLinks = append(portLinks, i)
+		portReqs = append(portReqs, &saipb.CreatePortRequest{
+			Switch:     ni.switchID,
+			HwLaneList: []uint32{portLane(i.Attrs().Name, idx)},
+			AdminState: proto.Bool(true),
+		})
+	}
+	portsResp, err := ni.portClient.CreatePorts(ctx, &saipb.CreatePortsRequest{
+		Reqs: portReqs,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create ports: %w", err)
+	}
+
+	for idx, i := range portLinks {
+		portResp := portsResp.GetResps()[idx]
 		log.Infof("creating interfaces for %v", i.Attrs().Name)
 		ocIntf := ocInterface{
 			name:    i.Attrs().Name,
@@ -1210,17 +1228,8 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		}
 		data := &interfaceData{
 			networkInstance: fakedevice.DefaultNetworkInstance,
+			portID:          portResp.Oid,
 		}
-
-		portResp, err := ni.portClient.CreatePort(ctx, &saipb.CreatePortRequest{
-			Switch:     ni.switchID,
-			HwLaneList: []uint32{portLane(i.Attrs().Name, idx)},
-			AdminState: proto.Bool(true),
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create port %q: %w", i.Attrs().Name, err)
-		}
-		data.portID = portResp.Oid
 		nid, err := ni.fwdClient.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 			ContextId: &fwdpb.ContextId{Id: ni.contextID},
 			ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(portResp.Oid)},
