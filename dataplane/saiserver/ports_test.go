@@ -558,6 +558,7 @@ func newTestPort(t testing.TB, api switchDataplaneAPI, opts *dplaneopts.Options)
 		swID := mgr.NextID()
 		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 			DefaultStpInstId: proto.Uint64(101),
+			PortList:         []uint64{},
 		})
 		mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 		resp, err := vlan.CreateVlan(context.Background(), &saipb.CreateVlanRequest{
