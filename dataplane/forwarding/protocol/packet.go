@@ -386,13 +386,44 @@ func (p *Packet) FirstDesc() *Desc {
 	return nil
 }
 
+// outermost returns the descriptor in the outermost frame belonging to group,
+// or nil if the outermost frame does not contain that group.
+func (p *Packet) outermost(group fwdpb.PacketHeaderGroup) *Desc {
+	targetPos := GroupAttr[group].Position
+	for d := p.FirstDesc(); d != nil; d = d.next {
+		if d.group == group {
+			return d
+		}
+		// Because headers within a single frame always have strictly increasing
+		// Position (0 -> 1 -> 3 -> 4 -> 5), as soon as d hits a header whose
+		// Position > targetPos (for example, we are looking for L3 (Position 3),
+		// and we encounter UDP (Position 4) or VXLAN (Position 5)), we know the
+		// outermost frame does not have that header yet.
+		if GroupAttr[d.group].Position > targetPos {
+			return nil
+		}
+	}
+	return nil
+}
+
+// innermost returns the innermost descriptor in the packet belonging to group.
+func (p *Packet) innermost(group fwdpb.PacketHeaderGroup) *Desc {
+	var found *Desc
+	for d := p.FirstDesc(); d != nil; d = d.next {
+		if d.group == group {
+			found = d
+		}
+	}
+	return found
+}
+
 // Decap removes the header specified by id. The header is marked as dirty.
 func (p *Packet) Decap(id fwdpb.PacketHeaderId) error {
 	attr, ok := HeaderAttr[id]
 	if !ok {
 		return fmt.Errorf("Decap %v failed for packet %v, unknown header", id, p)
 	}
-	header := p.headers[attr.Group]
+	header := p.outermost(attr.Group)
 	if header == nil {
 		return fmt.Errorf("Decap %v failed for packet %v, non existing header %v", id, p, attr.Group)
 	}
@@ -409,7 +440,9 @@ func (p *Packet) Decap(id fwdpb.PacketHeaderId) error {
 		if header.prev != nil {
 			header.prev.next = header.next
 		}
-		p.headers[attr.Group] = nil
+		if p.headers[attr.Group] == header {
+			p.headers[attr.Group] = p.innermost(attr.Group)
+		}
 	}
 	p.rebuildHeaders(header.prev)
 	return nil
@@ -423,9 +456,8 @@ func (p *Packet) Encap(id fwdpb.PacketHeaderId) error {
 	if !ok {
 		return fmt.Errorf("Encap header %v failed for packet %v, unknown header", id, p)
 	}
-
-	// Add the encap to an existing Header in the group.
-	if header := p.headers[attr.Group]; header != nil {
+	// Handles VxLAN case when PACKET_HEADER_GROUP_PAYLOAD is being encapped
+	if header := p.outermost(attr.Group); header != nil && attr.Group != fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_PAYLOAD {
 		if err := header.handler.Modify(id); err != nil {
 			return fmt.Errorf("Encap header %v failed for packet %v, err %v", id, p, err)
 		}
@@ -438,15 +470,19 @@ func (p *Packet) Encap(id fwdpb.PacketHeaderId) error {
 	if attr.Add == nil {
 		return fmt.Errorf("Encap header %v failed for packet %v, cannot add header", id, p)
 	}
-
-	// Find the position of the new Header in the frame and add it.
 	group := GroupAttr[attr.Group]
 	if group.Position <= 0 {
 		return fmt.Errorf("Encap %v failed for packet %v, cannot add header at position %v", id, p, group.Position)
 	}
 	var prev *Desc
-	for pos := group.Position - 1; pos >= 0 && prev == nil; pos-- {
-		prev = p.headers[Sequence[pos]]
+	if attr.Group == fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_PAYLOAD {
+		// Encapsulating a payload-group tunnel header (e.g. VXLAN) starts a new
+		// outer frame in front of the current frame.
+		prev = p.FirstDesc()
+	} else {
+		for pos := group.Position - 1; pos >= 0 && prev == nil; pos-- {
+			prev = p.outermost(Sequence[pos])
+		}
 	}
 	if prev == nil {
 		return fmt.Errorf("Encap %v failed for packet %v, malformed packet", id, p)
@@ -466,7 +502,9 @@ func (p *Packet) Encap(id fwdpb.PacketHeaderId) error {
 		prev.next.prev = header
 	}
 	prev.next = header
-	p.headers[attr.Group] = header
+	if p.headers[attr.Group] == nil {
+		p.headers[attr.Group] = header
+	}
 	header.MarkDirty(true)
 	p.rebuildHeaders(header)
 	return nil

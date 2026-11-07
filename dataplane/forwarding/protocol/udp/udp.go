@@ -179,11 +179,11 @@ func (udp *UDP) Rebuild() error {
 	var sum csum16.Sum
 	_, _ = sum.Write(udp.Header())
 	_, _ = sum.Write(udp.desc.Payload())
-	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
+	if f, err = udp.desc.EnvelopeField(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("udp: Rebuild failed: %v", err)
 	}
 	_, _ = sum.Write(f)
-	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
+	if f, err = udp.desc.EnvelopeField(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("udp: Rebuild failed: %v", err)
 	}
 	_, _ = sum.Write(f)

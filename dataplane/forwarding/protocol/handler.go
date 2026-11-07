@@ -167,6 +167,14 @@ func (d *Desc) EnvelopeDesc() *Desc {
 	return d.prev
 }
 
+// EnvelopeField returns the value of id in the encapsulating header (d.prev).
+func (d *Desc) EnvelopeField(id fwdpacket.FieldID) ([]byte, error) {
+	if d.prev == nil {
+		return nil, fmt.Errorf("protocol: EnvelopeField %v failed, no envelope", id)
+	}
+	return d.prev.handler.Field(id)
+}
+
 // Dirty returns true if the header is dirty.
 func (d *Desc) Dirty() bool {
 	return d.dirty

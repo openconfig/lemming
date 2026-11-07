@@ -1414,3 +1414,183 @@ func TestVXLANPacketParsing(t *testing.T) {
 	}
 }
 
+func TestVXLANPacketEncapDecap(t *testing.T) {
+	innerEthernet := []byte{
+		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, // dst mac
+		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xfe, // src mac
+		0x08, 0x00, // ethertype ipv4
+	}
+	innerIP := []byte{
+		0x45, 0x01, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x40, 0xff, 0xf5, 0x6b,
+		0xc0, 0xa8, 0x01, 0x64, // src ip: 192.168.1.100
+		0xc0, 0xa8, 0x01, 0xc8, // dst ip: 192.168.1.200
+		0x00, 0x00,
+	}
+
+	origFrame := append(append([]byte(nil), innerEthernet...), innerIP...)
+	p, err := protocol.NewPacket(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, frame.NewFrame(append([]byte(nil), origFrame...)))
+	if err != nil {
+		t.Fatalf("NewPacket failed: %v", err)
+	}
+
+	// Perform VXLAN encap sequence matching SAI NextHop + TunnelEncap pipeline:
+	// 1. Encap VXLAN, UDP, outer IP4
+	for _, hid := range []fwdpb.PacketHeaderId{
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+	} {
+		if err := p.Encap(hid); err != nil {
+			t.Fatalf("Encap(%v) failed: %v", hid, err)
+		}
+	}
+
+	// 2. Set VNI, inner ETHER_MAC_SRC (from inner ETHER_MAC_DST), inner ETHER_MAC_DST (TunnelMac)
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI, 0), fwdpacket.OpSet, []byte{0x00, 0x4e, 0x21}); err != nil {
+		t.Fatalf("Update(VXLAN_VNI) failed: %v", err)
+	}
+	innerDstMAC, err := p.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0))
+	if err != nil {
+		t.Fatalf("Field(ETHER_MAC_DST) failed: %v", err)
+	}
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0), fwdpacket.OpSet, innerDstMAC); err != nil {
+		t.Fatalf("Update(inner ETHER_MAC_SRC) failed: %v", err)
+	}
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0), fwdpacket.OpSet, []byte{0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0xee}); err != nil {
+		t.Fatalf("Update(inner ETHER_MAC_DST) failed: %v", err)
+	}
+
+	// 3. Simulate outputTable: Decap(ETHERNET) when no outer L2 header exists
+	// must fail without removing Inner Ethernet, and Encap(ETHERNET) then adds
+	// the outer Ethernet header.
+	if err := p.Decap(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET); err == nil {
+		t.Fatalf("Decap(ETHERNET) without outer L2 header succeeded unexpectedly")
+	}
+	if err := p.Encap(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET); err != nil {
+		t.Fatalf("Encap(ETHERNET) failed: %v", err)
+	}
+
+	// 4. Populate outer IP, UDP, and Ethernet fields
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0), fwdpacket.OpSet, []byte{10, 0, 1, 1}); err != nil {
+		t.Fatalf("Update(outer IP_ADDR_SRC) failed: %v", err)
+	}
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0), fwdpacket.OpSet, []byte{10, 0, 1, 2}); err != nil {
+		t.Fatalf("Update(outer IP_ADDR_DST) failed: %v", err)
+	}
+	innerTTL, err := p.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 1))
+	if err != nil {
+		t.Fatalf("Field(inner IP_HOP) failed: %v", err)
+	}
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0), fwdpacket.OpSet, innerTTL); err != nil {
+		t.Fatalf("Update(outer IP_HOP) failed: %v", err)
+	}
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0), fwdpacket.OpSet, []byte{0x12, 0xb5}); err != nil {
+		t.Fatalf("Update(L4_PORT_DST) failed: %v", err)
+	}
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0), fwdpacket.OpSet, []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x66}); err != nil {
+		t.Fatalf("Update(outer ETHER_MAC_SRC) failed: %v", err)
+	}
+	if err := p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0), fwdpacket.OpSet, []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55}); err != nil {
+		t.Fatalf("Update(outer ETHER_MAC_DST) failed: %v", err)
+	}
+
+	// Query UDP source port before Frame() to verify on-demand entropy computation.
+	sportBeforeRebuild, err := p.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0))
+	if err != nil {
+		t.Fatalf("Field(L4_PORT_SRC) before Frame() failed: %v", err)
+	}
+	sportVal := int(sportBeforeRebuild[0])<<8 | int(sportBeforeRebuild[1])
+	if sportVal < 49152 || sportVal > 65535 {
+		t.Errorf("entropy UDP source port before Frame() = %d, want in [49152, 65535]", sportVal)
+	}
+
+	// Rebuild frame and reparse to verify wire format.
+	encapBytes := p.Frame()
+	reparsed, err := protocol.NewPacket(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, frame.NewFrame(append([]byte(nil), encapBytes...)))
+	if err != nil {
+		t.Fatalf("NewPacket(encapBytes) failed: %v", err)
+	}
+
+	wantFields := []struct {
+		name string
+		id   fwdpacket.FieldID
+		want []byte
+	}{
+		{"Outer MAC Dst", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0), []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55}},
+		{"Outer MAC Src", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0), []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x66}},
+		{"Outer EtherType", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0), []byte{0x08, 0x00}},
+		{"Outer IP Src", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0), []byte{10, 0, 1, 1}},
+		{"Outer IP Dst", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0), []byte{10, 0, 1, 2}},
+		{"Outer IP TTL", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0), []byte{0x40}},
+		{"Outer IP Proto", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO, 0), []byte{17}},
+		{"Outer UDP Sport", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0), sportBeforeRebuild},
+		{"Outer UDP Dport", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0), []byte{0x12, 0xb5}},
+		{"VXLAN VNI", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VXLAN_VNI, 0), []byte{0x00, 0x4e, 0x21}},
+		{"Inner MAC Dst", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 1), []byte{0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0xee}},
+		{"Inner MAC Src", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 1), []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+		{"Inner IP Src", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 1), []byte{192, 168, 1, 100}},
+		{"Inner IP Dst", fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 1), []byte{192, 168, 1, 200}},
+	}
+	for _, tc := range wantFields {
+		got, err := reparsed.Field(tc.id)
+		if err != nil {
+			t.Fatalf("%s: Field(%v) failed: %v", tc.name, tc.id, err)
+		}
+		if diff := cmp.Diff(got, tc.want); diff != "" {
+			t.Errorf("%s: diff (-got +want):\n%s", tc.name, diff)
+		}
+	}
+
+	// Now test VXLAN Decap on reparsed packet (matching SAI termination + L2 rewrite).
+	for _, hid := range []fwdpb.PacketHeaderId{
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+	} {
+		if err := reparsed.Decap(hid); err != nil {
+			t.Fatalf("Decap(%v) failed: %v", hid, err)
+		}
+	}
+
+	wantDecap := append([]byte(nil),
+		0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0xee,
+		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+		0x08, 0x00,
+	)
+	wantDecap = append(wantDecap, innerIP...)
+	if diff := cmp.Diff(reparsed.Frame(), wantDecap); diff != "" {
+		t.Errorf("Decap frame diff (-got +want):\n%s", diff)
+	}
+
+	// Also verify IPv6 VXLAN outer encapsulation computes UDP checksum over outer IPv6 addresses.
+	p6, err := protocol.NewPacket(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, frame.NewFrame(append([]byte(nil), origFrame...)))
+	if err != nil {
+		t.Fatalf("NewPacket(p6) failed: %v", err)
+	}
+	for _, hid := range []fwdpb.PacketHeaderId{
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN,
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6,
+		fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+	} {
+		if err := p6.Encap(hid); err != nil {
+			t.Fatalf("p6.Encap(%v) failed: %v", hid, err)
+		}
+	}
+	if err := p6.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0), fwdpacket.OpSet, []byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}); err != nil {
+		t.Fatalf("p6.Update(IP_ADDR_SRC) failed: %v", err)
+	}
+	if err := p6.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0), fwdpacket.OpSet, []byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}); err != nil {
+		t.Fatalf("p6.Update(IP_ADDR_DST) failed: %v", err)
+	}
+	if err := p6.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0), fwdpacket.OpSet, []byte{0x12, 0xb5}); err != nil {
+		t.Fatalf("p6.Update(L4_PORT_DST) failed: %v", err)
+	}
+	f6 := p6.Frame()
+	// Outer Ethernet (14B) + Outer IPv6 (40B) + UDP (8B: checksum at offset 54+6=60..62)
+	if len(f6) < 62 || (f6[60] == 0 && f6[61] == 0) {
+		t.Errorf("IPv6 VXLAN outer UDP checksum was not computed (got %x)", f6[60:62])
+	}
+}
+
