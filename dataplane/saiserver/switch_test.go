@@ -311,7 +311,12 @@ func (f *fakeSwitchDataplane) FindContext(*fwdpb.ContextId) (*fwdcontext.Context
 
 func (f *fakeSwitchDataplane) PortCreate(_ context.Context, req *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
 	f.gotPortCreateReqs = append(f.gotPortCreateReqs, req)
-	return nil, nil
+	id, _ := strconv.ParseUint(req.GetPort().GetPortId().GetObjectId().GetId(), 10, 64)
+	return &fwdpb.PortCreateReply{
+		ObjectIndex: &fwdpb.ObjectIndex{
+			Index: id,
+		},
+	}, nil
 }
 
 func (f *fakeSwitchDataplane) PortUpdate(_ context.Context, req *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {

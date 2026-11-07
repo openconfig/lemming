@@ -114,6 +114,47 @@ const (
 	numSchedulerGroups = 12
 )
 
+func (port *port) createQueue(ctx context.Context, id uint64, count int) ([]uint64, error) {
+	var queues []uint64
+	for i := 0; i < count; i++ {
+		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{
+			Type:                saipb.QueueType_QUEUE_TYPE_ALL.Enum(),
+			Port:                proto.Uint64(id),
+			Index:               proto.Uint32(uint32(i)),
+			ParentSchedulerNode: proto.Uint64(id),
+			WredProfileId:       proto.Uint64(0),
+			BufferProfileId:     proto.Uint64(0),
+			SchedulerProfileId:  proto.Uint64(0),
+			TamObject:           []uint64{},
+		})
+		if err != nil {
+			return nil, err
+		}
+		queues = append(queues, qResp.GetOid())
+	}
+	return queues, nil
+}
+
+func (port *port) createSchedulerGroups(ctx context.Context, id uint64, queues []uint64) ([]uint64, error) {
+	var sgs []uint64
+	for i := 0; i < len(queues); i++ {
+		sgResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.sg.CreateSchedulerGroup, &saipb.CreateSchedulerGroupRequest{
+			PortId:             proto.Uint64(id),
+			SchedulerProfileId: proto.Uint64(0),
+			ParentNode:         proto.Uint64(id),
+		})
+		if err != nil {
+			return nil, err
+		}
+		port.mgr.StoreAttributes(sgResp.GetOid(), &saipb.SchedulerGroupAttribute{
+			ChildCount: proto.Uint32(1),
+			ChildList:  []uint64{queues[i]},
+		})
+		sgs = append(sgs, sgResp.GetOid())
+	}
+	return sgs, nil
+}
+
 func (port *port) updatePortList(id uint64) error {
 	switchID, ok := port.mgr.GetSwitchID()
 	if !ok {
@@ -136,56 +177,14 @@ func (port *port) updatePortList(id uint64) error {
 	return nil
 }
 
-// CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
-// Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
-func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
-	id := port.mgr.NextID()
-	// Set the type early, otherwise the initial port notifs won't send.
-	port.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_PORT)
-
-	if len(req.HwLaneList) == 0 {
-		return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
+func (port *port) storeAttributes(ctx context.Context, req *saipb.CreatePortRequest, id uint64, vlanID uint32, operStatus *saipb.PortOperStatus) error {
+	queues, err := port.createQueue(ctx, id, numQueues)
+	if err != nil {
+		return err
 	}
-	dev := fmt.Sprintf("eth%v", req.HwLaneList[0])
-
-	queues := []uint64{}
-	for i := 0; i < numQueues; i++ {
-		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{
-			Type:                saipb.QueueType_QUEUE_TYPE_ALL.Enum(),
-			Port:                proto.Uint64(id),
-			Index:               proto.Uint32(uint32(i)),
-			ParentSchedulerNode: proto.Uint64(id),
-			WredProfileId:       proto.Uint64(0),
-			BufferProfileId:     proto.Uint64(0),
-			SchedulerProfileId:  proto.Uint64(0),
-			TamObject:           []uint64{},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		queues = append(queues, qResp.GetOid())
-	}
-
-	sgs := []uint64{}
-	for i := 0; i < numQueues; i++ {
-		sgResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.sg.CreateSchedulerGroup, &saipb.CreateSchedulerGroupRequest{
-			PortId:             proto.Uint64(id),
-			SchedulerProfileId: proto.Uint64(0),
-			ParentNode:         proto.Uint64(id),
-		})
-		if err != nil {
-			return nil, err
-		}
-		port.mgr.StoreAttributes(sgResp.GetOid(), &saipb.SchedulerGroupAttribute{
-			ChildCount: proto.Uint32(1),
-			ChildList:  []uint64{queues[i]},
-		})
-		sgs = append(sgs, sgResp.GetOid())
-	}
-	vId := uint32(DefaultVlanId)
-	if req.PortVlanId != nil {
-		vId = req.GetPortVlanId()
+	sgs, err := port.createSchedulerGroups(ctx, id, queues)
+	if err != nil {
+		return err
 	}
 	attrs := &saipb.PortAttribute{
 		QosNumberOfQueues:                proto.Uint32(uint32(len(queues))),
@@ -242,56 +241,62 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		AutoNegMode:                      proto.Bool(req.GetAutoNegMode()),
 		Mtu:                              proto.Uint32(1514),
 		HwLaneList:                       req.HwLaneList,
-		PortVlanId:                       proto.Uint32(vId),
+		PortVlanId:                       proto.Uint32(vlanID),
+		OperStatus:                       operStatus,
 	}
+	port.mgr.StoreAttributes(id, attrs)
+	if err := port.updatePortList(id); err != nil {
+		return err
+	}
+	return nil
+}
 
+// CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
+func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
+	id := port.mgr.NextID()
+	// Set the type early, otherwise the initial port notifs won't send.
+	port.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_PORT)
+	if len(req.HwLaneList) == 0 {
+		return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
+	}
+	dev := fmt.Sprintf("eth%v", req.HwLaneList[0])
 	fwdPort := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 		Port: &fwdpb.PortDesc{
 			PortId: &fwdpb.PortId{
 				ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
 			},
+			PortType: port.opts.PortType,
 		},
 	}
-
+	var operStatus *saipb.PortOperStatus
+	if req.GetAdminState() {
+		operStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
+	} else {
+		operStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
+	}
+	isDummyPort := false
 	switch port.opts.PortType {
 	case fwdpb.PortType_PORT_TYPE_KERNEL:
-		fwdPort.Port.Port = &fwdpb.PortDesc_Kernel{
-			Kernel: &fwdpb.KernelPortDesc{
-				DeviceName: dev,
-				AdminState: req.GetAdminState(),
-			},
-		}
 		if _, err := getInterface(dev); err != nil {
 			// Create a dummy port so we don't get errors for a nonexistent port.
-			fwdPort := &fwdpb.PortCreateRequest{
-				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-				Port: &fwdpb.PortDesc{
-					PortType: fwdpb.PortType_PORT_TYPE_DUMMY,
-					PortId: &fwdpb.PortId{
-						ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
-					},
-					Port: &fwdpb.PortDesc_Dummy{
-						Dummy: &fwdpb.DummyPortDesc{
-							DeviceName: dev,
-							AdminState: req.GetAdminState(),
-						},
-					},
+			fwdPort.Port.PortType = fwdpb.PortType_PORT_TYPE_DUMMY
+			fwdPort.Port.Port = &fwdpb.PortDesc_Dummy{
+				Dummy: &fwdpb.DummyPortDesc{
+					DeviceName: dev,
+					AdminState: req.GetAdminState(),
 				},
 			}
-			if _, err := port.dataplane.PortCreate(ctx, fwdPort); err != nil {
-				return nil, err
+			operStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
+			isDummyPort = true
+		} else {
+			fwdPort.Port.Port = &fwdpb.PortDesc_Kernel{
+				Kernel: &fwdpb.KernelPortDesc{
+					DeviceName: dev,
+					AdminState: req.GetAdminState(),
+				},
 			}
-			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
-			port.mgr.StoreAttributes(id, attrs)
-			if err := port.updatePortList(id); err != nil {
-				return nil, err
-			}
-			return &saipb.CreatePortResponse{
-				Oid: id,
-			}, nil
 		}
-
 	case fwdpb.PortType_PORT_TYPE_FAKE:
 		fwdPort.Port.Port = &fwdpb.PortDesc_Fake{
 			Fake: &fwdpb.FakePortDesc{
@@ -301,54 +306,43 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	default:
 		return nil, fmt.Errorf("unsupported port type: %v", port.opts.PortType)
 	}
-	fwdPort.Port.PortType = port.opts.PortType
-
 	slog.InfoContext(ctx, "created port", "port", id, "device", dev, "hwlane", req.GetHwLaneList())
-	_, err := port.dataplane.PortCreate(ctx, fwdPort)
+	reply, err := port.dataplane.PortCreate(ctx, fwdPort)
 	if err != nil {
 		return nil, err
 	}
-	update := &fwdpb.PortUpdateRequest{
-		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-		Update: &fwdpb.PortUpdateDesc{
-			Port: &fwdpb.PortUpdateDesc_Kernel{
-				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs:  getPreIngressPipeline(),
-					Outputs: nil,
+	vlanID := uint32(DefaultVlanId)
+	if req.PortVlanId != nil {
+		vlanID = req.GetPortVlanId()
+	}
+	if err := port.storeAttributes(ctx, req, id, vlanID, operStatus); err != nil {
+		return nil, err
+	}
+	if !isDummyPort {
+		if _, err := port.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+			Update: &fwdpb.PortUpdateDesc{
+				Port: &fwdpb.PortUpdateDesc_Kernel{
+					Kernel: &fwdpb.KernelPortUpdateDesc{
+						Inputs:  getPreIngressPipeline(),
+						Outputs: nil,
+					},
 				},
 			},
-		},
-	}
-	if _, err := port.dataplane.PortUpdate(ctx, update); err != nil {
-		return nil, err
-	}
-	if req.GetAdminState() {
-		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
-	} else {
-		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
-	}
-	port.mgr.StoreAttributes(id, attrs)
-	if err := port.updatePortList(id); err != nil {
-		return nil, err
-	}
-
-	nid, err := port.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
-		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(id)},
-	})
-	if err != nil {
-		slog.InfoContext(ctx, "Failed to find NID for port", "port", id, "err", err)
-		return nil, err
-	}
-	vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
-		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
-	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(attrs.GetPortVlanId()))).Build(),
-	}
-	if _, err := port.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
-		return nil, err
+		}); err != nil {
+			return nil, err
+		}
+		nid := reply.GetObjectIndex().GetIndex()
+		vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid)))).Build()
+		vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vlanID))).Build(),
+		}
+		if _, err := port.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
+			return nil, err
+		}
 	}
 	return &saipb.CreatePortResponse{
 		Oid: id,
@@ -370,7 +364,6 @@ func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest)
 
 func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 	id := port.mgr.NextID()
-
 	_, err := port.dataplane.PortCreate(ctx, &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 		Port: &fwdpb.PortDesc{
@@ -408,41 +401,13 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-
-	queues := []uint64{}
-	for i := 0; i < numCpuQueues; i++ {
-		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{
-			Type:                saipb.QueueType_QUEUE_TYPE_ALL.Enum(),
-			Port:                proto.Uint64(id),
-			Index:               proto.Uint32(uint32(i)),
-			ParentSchedulerNode: proto.Uint64(id),
-			WredProfileId:       proto.Uint64(0),
-			BufferProfileId:     proto.Uint64(0),
-			SchedulerProfileId:  proto.Uint64(0),
-			TamObject:           []uint64{},
-		})
-		if err != nil {
-			return 0, err
-		}
-
-		queues = append(queues, qResp.GetOid())
+	queues, err := port.createQueue(ctx, id, numCpuQueues)
+	if err != nil {
+		return 0, err
 	}
-
-	sgs := []uint64{}
-	for i := 0; i < numCpuQueues; i++ {
-		sgResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.sg.CreateSchedulerGroup, &saipb.CreateSchedulerGroupRequest{
-			PortId:             proto.Uint64(id),
-			SchedulerProfileId: proto.Uint64(0),
-			ParentNode:         proto.Uint64(id),
-		})
-		if err != nil {
-			return 0, err
-		}
-		port.mgr.StoreAttributes(sgResp.GetOid(), &saipb.SchedulerGroupAttribute{
-			ChildCount: proto.Uint32(1),
-			ChildList:  []uint64{queues[i]},
-		})
-		sgs = append(sgs, sgResp.GetOid())
+	sgs, err := port.createSchedulerGroups(ctx, id, queues)
+	if err != nil {
+		return 0, err
 	}
 	cpuPort := &saipb.PortAttribute{
 		Type:                             saipb.PortType_PORT_TYPE_CPU.Enum(),
