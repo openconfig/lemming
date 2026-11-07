@@ -253,6 +253,9 @@ type fakeSwitchDataplane struct {
 	flowQueryReplies         []*fwdpb.FlowCounterQueryReply
 	flowQueryRepliesIdx      int
 	ctx                      *fwdcontext.Context
+	addErrOnCall             int
+	addErrCount              int
+	addErr                   error
 }
 
 func (f *fakeSwitchDataplane) NotifySubscribe(_ *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error {
@@ -267,6 +270,14 @@ func (f *fakeSwitchDataplane) TableCreate(context.Context, *fwdpb.TableCreateReq
 }
 
 func (f *fakeSwitchDataplane) TableEntryAdd(_ context.Context, req *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
+	f.addErrCount++
+	if f.addErrOnCall != 0 && f.addErrCount == f.addErrOnCall {
+		err := f.addErr
+		if err == nil {
+			err = fmt.Errorf("injected TableEntryAdd error")
+		}
+		return nil, err
+	}
 	f.gotEntryAddReqs = append(f.gotEntryAddReqs, req)
 	return nil, nil
 }
