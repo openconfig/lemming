@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -360,25 +361,24 @@ func (port *port) createPort(ctx context.Context, req *saipb.CreatePortRequest) 
 }
 
 // CreatePorts creates multiple ports.
-func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest) (*saipb.CreatePortsResponse, error) {
-	resp := &saipb.CreatePortsResponse{
+func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest) (resp *saipb.CreatePortsResponse, retErr error) {
+	resp = &saipb.CreatePortsResponse{
 		Resps: make([]*saipb.CreatePortResponse, 0, len(re.GetReqs())),
 	}
 	oids := make([]uint64, 0, len(re.GetReqs()))
-	defer func() {
-		if err := port.updatePortList(oids...); err != nil {
-			slog.ErrorContextf(ctx, "failed to update port list: %v", err)
-		}
-	}()
 	for _, req := range re.GetReqs() {
 		res, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.createPort, req)
 		if err != nil {
-			return nil, err
+			resp, retErr = nil, err
+			break
 		}
 		resp.Resps = append(resp.Resps, res)
 		oids = append(oids, res.GetOid())
 	}
-	return resp, nil
+	if err := port.updatePortList(oids...); err != nil {
+		resp, retErr = nil, errors.Join(retErr, err)
+	}
+	return resp, retErr
 }
 
 func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
