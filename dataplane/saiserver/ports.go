@@ -365,6 +365,11 @@ func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest)
 		Resps: make([]*saipb.CreatePortResponse, 0, len(re.GetReqs())),
 	}
 	oids := make([]uint64, 0, len(re.GetReqs()))
+	defer func() {
+		if err := port.updatePortList(oids...); err != nil {
+			slog.ErrorContextf(ctx, "failed to update port list: %v", err)
+		}
+	}()
 	for _, req := range re.GetReqs() {
 		res, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.createPort, req)
 		if err != nil {
@@ -372,9 +377,6 @@ func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest)
 		}
 		resp.Resps = append(resp.Resps, res)
 		oids = append(oids, res.GetOid())
-	}
-	if err := port.updatePortList(oids...); err != nil {
-		return nil, err
 	}
 	return resp, nil
 }
