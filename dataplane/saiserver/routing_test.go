@@ -1568,6 +1568,12 @@ func TestRemoveRouterInterface(t *testing.T) {
 				},
 			}},
 		},
+	}, {
+		desc: "success loopback",
+		req: &saipb.RemoveRouterInterfaceRequest{
+			Oid: 12,
+		},
+		wantReq: nil,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -1584,16 +1590,29 @@ func TestRemoveRouterInterface(t *testing.T) {
 				OuterVlanId: proto.Uint32(100),
 				PortId:      proto.Uint64(5),
 			})
+			mgr.StoreAttributes(12, &saipb.RouterInterfaceAttribute{
+				Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK.Enum(),
+				VirtualRouterId: proto.Uint64(42),
+			})
 			defer stopFn()
 			_, gotErr := c.RemoveRouterInterface(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
-				t.Fatalf("CreateRouterInterface() unexpected err: %s", diff)
+				t.Fatalf("RemoveRouterInterface() unexpected err: %s", diff)
 			}
 			if gotErr != nil {
 				return
 			}
+			if tt.wantReq == nil {
+				if len(dplane.gotEntryRemoveReqs) != 0 {
+					t.Fatalf("RemoveRouterInterface() got %d remove requests, want 0", len(dplane.gotEntryRemoveReqs))
+				}
+				return
+			}
+			if len(dplane.gotEntryRemoveReqs) == 0 {
+				t.Fatalf("RemoveRouterInterface() got 0 remove requests, want 1")
+			}
 			if d := cmp.Diff(dplane.gotEntryRemoveReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
-				t.Errorf("CreateRouterInterface() failed: diff(-got,+want)\n:%s", d)
+				t.Errorf("RemoveRouterInterface() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}

@@ -356,8 +356,10 @@ func TestTunnelTermTableEntry(t *testing.T) {
 	tests := []struct {
 		desc           string
 		req            *saipb.CreateTunnelTermTableEntryRequest
+		setup          func(*attrmgr.AttrMgr)
 		wantAddReqs    []*fwdpb.TableEntryAddRequest
 		wantRemoveReqs []*fwdpb.TableEntryRemoveRequest
+		wantCode       codes.Code
 		wantErr        string
 	}{
 		{
@@ -505,12 +507,23 @@ func TestTunnelTermTableEntry(t *testing.T) {
 		{
 			desc: "gre mp2p ipv4",
 			req: &saipb.CreateTunnelTermTableEntryRequest{
-				TunnelType: saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE.Enum(),
-				Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2P.Enum(),
-				SrcIp:      []byte{10, 0, 0, 1},
-				DstIp:      []byte{20, 0, 0, 0},
-				DstIpMask:  []byte{255, 255, 255, 0},
-				VrId:       proto.Uint64(5),
+				TunnelType:     saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE.Enum(),
+				Type:           saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_MP2P.Enum(),
+				SrcIp:          []byte{10, 0, 0, 1},
+				DstIp:          []byte{20, 0, 0, 0},
+				DstIpMask:      []byte{255, 255, 255, 0},
+				VrId:           proto.Uint64(5),
+				ActionTunnelId: proto.Uint64(50),
+			},
+			setup: func(mgr *attrmgr.AttrMgr) {
+				mgr.StoreAttributes(60, &saipb.CreateRouterInterfaceRequest{
+					Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK.Enum(),
+					VirtualRouterId: proto.Uint64(42),
+				})
+				mgr.StoreAttributes(50, &saipb.CreateTunnelRequest{
+					Type:             saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE.Enum(),
+					OverlayInterface: proto.Uint64(60),
+				})
 			},
 			wantAddReqs: []*fwdpb.TableEntryAddRequest{{
 				ContextId: &fwdpb.ContextId{Id: "foo"},
@@ -529,7 +542,8 @@ func TestTunnelTermTableEntry(t *testing.T) {
 					},
 				}},
 				Actions: []*fwdpb.ActionDesc{
-					fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(5)).Build(),
+					fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(50)).Build(),
+					fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(42)).Build(),
 					{
 						ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
 						Action:     &fwdpb.ActionDesc_Decap{Decap: &fwdpb.DecapActionDesc{HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4}},
@@ -559,12 +573,19 @@ func TestTunnelTermTableEntry(t *testing.T) {
 			}},
 		},
 		{
-			desc: "gre p2p ipv4 nil vrid",
+			desc: "gre p2p ipv4 tunnel without overlay interface",
 			req: &saipb.CreateTunnelTermTableEntryRequest{
-				TunnelType: saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE.Enum(),
-				Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
-				SrcIp:      []byte{10, 0, 0, 1},
-				DstIp:      []byte{20, 0, 0, 2},
+				TunnelType:     saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE.Enum(),
+				Type:           saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
+				SrcIp:          []byte{10, 0, 0, 1},
+				DstIp:          []byte{20, 0, 0, 2},
+				VrId:           proto.Uint64(5),
+				ActionTunnelId: proto.Uint64(50),
+			},
+			setup: func(mgr *attrmgr.AttrMgr) {
+				mgr.StoreAttributes(50, &saipb.CreateTunnelRequest{
+					Type: saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE.Enum(),
+				})
 			},
 			wantAddReqs: []*fwdpb.TableEntryAddRequest{{
 				ContextId: &fwdpb.ContextId{Id: "foo"},
@@ -583,6 +604,7 @@ func TestTunnelTermTableEntry(t *testing.T) {
 					},
 				}},
 				Actions: []*fwdpb.ActionDesc{
+					fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(50)).Build(),
 					{
 						ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
 						Action:     &fwdpb.ActionDesc_Decap{Decap: &fwdpb.DecapActionDesc{HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4}},
@@ -614,11 +636,22 @@ func TestTunnelTermTableEntry(t *testing.T) {
 		{
 			desc: "ipinip p2p ipv4",
 			req: &saipb.CreateTunnelTermTableEntryRequest{
-				TunnelType: saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
-				Type:       saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
-				SrcIp:      []byte{192, 168, 1, 1},
-				DstIp:      []byte{192, 168, 1, 2},
-				VrId:       proto.Uint64(0),
+				TunnelType:     saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+				Type:           saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
+				SrcIp:          []byte{192, 168, 1, 1},
+				DstIp:          []byte{192, 168, 1, 2},
+				VrId:           proto.Uint64(0),
+				ActionTunnelId: proto.Uint64(70),
+			},
+			setup: func(mgr *attrmgr.AttrMgr) {
+				mgr.StoreAttributes(80, &saipb.CreateRouterInterfaceRequest{
+					Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK.Enum(),
+					VirtualRouterId: proto.Uint64(20),
+				})
+				mgr.StoreAttributes(70, &saipb.CreateTunnelRequest{
+					Type:             saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+					OverlayInterface: proto.Uint64(80),
+				})
 			},
 			wantAddReqs: []*fwdpb.TableEntryAddRequest{
 				{
@@ -638,7 +671,8 @@ func TestTunnelTermTableEntry(t *testing.T) {
 						},
 					}},
 					Actions: []*fwdpb.ActionDesc{
-						fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(0)).Build(),
+						fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(70)).Build(),
+						fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(20)).Build(),
 						{
 							ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
 							Action:     &fwdpb.ActionDesc_Decap{Decap: &fwdpb.DecapActionDesc{HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4}},
@@ -662,7 +696,8 @@ func TestTunnelTermTableEntry(t *testing.T) {
 						},
 					}},
 					Actions: []*fwdpb.ActionDesc{
-						fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(0)).Build(),
+						fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(70)).Build(),
+						fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(20)).Build(),
 						{
 							ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
 							Action:     &fwdpb.ActionDesc_Decap{Decap: &fwdpb.DecapActionDesc{HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4}},
@@ -706,6 +741,38 @@ func TestTunnelTermTableEntry(t *testing.T) {
 					}},
 				},
 			},
+		},
+		{
+			desc: "ipinip action tunnel not found",
+			req: &saipb.CreateTunnelTermTableEntryRequest{
+				TunnelType:     saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+				Type:           saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
+				SrcIp:          []byte{192, 168, 1, 1},
+				DstIp:          []byte{192, 168, 1, 2},
+				ActionTunnelId: proto.Uint64(999),
+			},
+			wantCode: codes.InvalidArgument,
+			wantErr:  "action tunnel 999 not found",
+		},
+		{
+			desc: "ipinip removed overlay interface",
+			req: &saipb.CreateTunnelTermTableEntryRequest{
+				TunnelType:     saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+				Type:           saipb.TunnelTermTableEntryType_TUNNEL_TERM_TABLE_ENTRY_TYPE_P2P.Enum(),
+				SrcIp:          []byte{192, 168, 1, 1},
+				DstIp:          []byte{192, 168, 1, 2},
+				ActionTunnelId: proto.Uint64(70),
+			},
+			setup: func(mgr *attrmgr.AttrMgr) {
+				mgr.StoreAttributes(70, &saipb.CreateTunnelRequest{
+					Type:             saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+					OverlayInterface: proto.Uint64(80),
+				})
+				// Overlay RIF 80 has an entry in idToType but no live attributes.
+				mgr.SetType("80", saipb.ObjectType_OBJECT_TYPE_ROUTER_INTERFACE)
+			},
+			wantCode: codes.InvalidArgument,
+			wantErr:  "overlay interface 80 not found",
 		},
 		{
 			desc: "ipv4 16-byte representation normalization",
@@ -827,10 +894,22 @@ func TestTunnelTermTableEntry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
-			c, _, stopFn := newTestTunnel(t, dplane)
+			c, mgr, stopFn := newTestTunnel(t, dplane)
 			defer stopFn()
 
+			if tt.setup != nil {
+				tt.setup(mgr)
+			}
+
 			resp, err := c.CreateTunnelTermTableEntry(context.TODO(), tt.req)
+			if tt.wantCode != codes.OK {
+				if status.Code(err) != tt.wantCode {
+					t.Fatalf("CreateTunnelTermTableEntry() got code %v, want %v (err: %v)", status.Code(err), tt.wantCode, err)
+				}
+				if len(dplane.gotEntryAddReqs) != 0 {
+					t.Fatalf("CreateTunnelTermTableEntry() on error added %d entries, want 0", len(dplane.gotEntryAddReqs))
+				}
+			}
 			if diff := errdiff.Check(err, tt.wantErr); diff != "" {
 				t.Fatalf("CreateTunnelTermTableEntry() unexpected err: %s", diff)
 			}
