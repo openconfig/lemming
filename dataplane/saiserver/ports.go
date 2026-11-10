@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -135,7 +136,7 @@ func (port *port) createQueue(ctx context.Context, id uint64, count int) ([]uint
 	return queues, nil
 }
 
-func (port *port) createSchedulerGroups(ctx context.Context, id uint64, queues []uint64) ([]uint64, error) {
+func (port *port) createSchedulerGroup(ctx context.Context, id uint64, queues []uint64) ([]uint64, error) {
 	var sgs []uint64
 	for i := 0; i < len(queues); i++ {
 		sgResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.sg.CreateSchedulerGroup, &saipb.CreateSchedulerGroupRequest{
@@ -155,21 +156,23 @@ func (port *port) createSchedulerGroups(ctx context.Context, id uint64, queues [
 	return sgs, nil
 }
 
-func (port *port) updatePortList(id uint64) error {
+func (port *port) updatePortList(ids ...uint64) error {
 	switchID, ok := port.mgr.GetSwitchID()
 	if !ok {
 		return fmt.Errorf("failed to get switch ID")
-	}
-	switchAttrs := &saipb.SwitchAttribute{}
-	if err := port.mgr.PopulateAllAttributes(switchID, switchAttrs); err != nil {
-		return fmt.Errorf("failed to get switch attributes: %v", err)
 	}
 	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
 	if err != nil {
 		return err
 	}
-	portList := switchAttrs.GetPortList()
-	portList = append(portList, id)
+	resp := &saipb.GetSwitchAttributeResponse{}
+	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
+		Oid:      uSwitchID,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_PORT_LIST},
+	}, resp); err != nil {
+		return fmt.Errorf("failed to get switch port list: %v", err)
+	}
+	portList := append(resp.GetAttr().GetPortList(), ids...)
 	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
 		PortList:            portList,
 		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
@@ -182,7 +185,7 @@ func (port *port) storeAttributes(ctx context.Context, req *saipb.CreatePortRequ
 	if err != nil {
 		return err
 	}
-	sgs, err := port.createSchedulerGroups(ctx, id, queues)
+	sgs, err := port.createSchedulerGroup(ctx, id, queues)
 	if err != nil {
 		return err
 	}
@@ -245,14 +248,22 @@ func (port *port) storeAttributes(ctx context.Context, req *saipb.CreatePortRequ
 		OperStatus:                       operStatus,
 	}
 	port.mgr.StoreAttributes(id, attrs)
-	if err := port.updatePortList(id); err != nil {
-		return err
-	}
 	return nil
 }
 
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
+	resp, err := port.createPort(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err := port.updatePortList(resp.GetOid()); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (port *port) createPort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
 	id := port.mgr.NextID()
 	// Set the type early, otherwise the initial port notifs won't send.
 	port.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_PORT)
@@ -350,16 +361,24 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 }
 
 // CreatePorts creates multiple ports.
-func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest) (*saipb.CreatePortsResponse, error) {
-	resp := &saipb.CreatePortsResponse{}
+func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest) (resp *saipb.CreatePortsResponse, retErr error) {
+	resp = &saipb.CreatePortsResponse{
+		Resps: make([]*saipb.CreatePortResponse, 0, len(re.GetReqs())),
+	}
+	oids := make([]uint64, 0, len(re.GetReqs()))
 	for _, req := range re.GetReqs() {
-		res, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.CreatePort, req)
+		res, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.createPort, req)
 		if err != nil {
-			return nil, err
+			resp, retErr = nil, err
+			break
 		}
 		resp.Resps = append(resp.Resps, res)
+		oids = append(oids, res.GetOid())
 	}
-	return resp, nil
+	if err := port.updatePortList(oids...); err != nil {
+		resp, retErr = nil, errors.Join(retErr, err)
+	}
+	return resp, retErr
 }
 
 func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
@@ -405,7 +424,7 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	sgs, err := port.createSchedulerGroups(ctx, id, queues)
+	sgs, err := port.createSchedulerGroup(ctx, id, queues)
 	if err != nil {
 		return 0, err
 	}
@@ -629,19 +648,21 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 	if !ok {
 		return nil, fmt.Errorf("failed to get switch ID")
 	}
-	switchAttrs := &saipb.SwitchAttribute{}
-	if err := port.mgr.PopulateAllAttributes(switchID, switchAttrs); err != nil {
-		return nil, fmt.Errorf("failed to get switch attributes: %v", err)
-	}
 	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	portList := switchAttrs.GetPortList()
-	portOid := req.GetOid()
-
-	if i := slices.Index(portList, portOid); i != -1 {
-		portList = slices.Delete(portList, i, i+1)
+	resp := &saipb.GetSwitchAttributeResponse{}
+	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
+		Oid:      uSwitchID,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_PORT_LIST},
+	}, resp); err != nil {
+		return nil, fmt.Errorf("failed to get switch port list: %v", err)
+	}
+	portList := resp.GetAttr().GetPortList()
+	if i := slices.Index(portList, req.GetOid()); i != -1 {
+		portList[i] = portList[len(portList)-1]
+		portList = portList[:len(portList)-1]
 	}
 	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
 		PortList:            portList,
