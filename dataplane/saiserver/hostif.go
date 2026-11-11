@@ -74,7 +74,6 @@ func (hostif *hostif) Reset() {
 }
 
 const (
-	switchID     = 1
 	familyPrefix = "genl_packet"
 )
 
@@ -127,6 +126,10 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 			},
 		}
 
+		switchID, err := hostif.mgr.GetUint64SwitchID()
+		if err != nil {
+			return nil, err
+		}
 		// For packets coming from a netdev hostif, send them out its corresponding port.
 		cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
 		resp := &saipb.GetSwitchAttributeResponse{}
@@ -390,6 +393,10 @@ const (
 )
 
 func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
+	switchID, err := hostif.mgr.GetUint64SwitchID()
+	if err != nil {
+		return nil, err
+	}
 	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 	if err := hostif.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
@@ -454,6 +461,10 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 	cpuPortID := ""
 	updateCPUPortID := func() {
 		if cpuPortID != "" {
+			return
+		}
+		switchID, err := hostif.mgr.GetUint64SwitchID()
+		if err != nil {
 			return
 		}
 		attrReq := &saipb.GetSwitchAttributeRequest{
