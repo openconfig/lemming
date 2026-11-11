@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -95,9 +96,11 @@ func TestCreateHostif(t *testing.T) {
 			dplane.ctx.SetCPUPortSink(func(po *pktiopb.PacketOut) error { return nil }, func() {})
 			c, mgr, stopFn := newTestHostif(t, dplane)
 			// Create switch and ports
-			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{
+			swID := mgr.NextID()
+			mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
+			mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			mgr.StoreAttributes(10, &saipb.PortAttribute{
 				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum(),
 			})
@@ -263,9 +266,11 @@ func TestCPUPacketStream(t *testing.T) {
 	}
 
 	c, mgr, stopFn := newTestHostif(t, dplane)
-	mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+	swID := mgr.NextID()
+	mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 		CpuPort: proto.Uint64(2),
 	})
+	mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 
 	defer stopFn()
 
