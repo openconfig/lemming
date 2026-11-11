@@ -264,6 +264,7 @@ func TestGetUint64SwitchID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			mgr := New()
+			mgr.SetType(tt.switchID, saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			got, gotErr := mgr.GetUint64SwitchID()
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("GetUint64SwitchID() unexpected err: %s", diff)
