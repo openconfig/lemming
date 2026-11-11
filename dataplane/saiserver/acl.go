@@ -542,7 +542,10 @@ func (a *acl) appendAclEntryActions(ctx context.Context, req *saipb.CreateAclEnt
 				WithFieldIDInstance(aclMeta).
 				WithValue(binary.BigEndian.AppendUint32(nil, uint32(req.GetActionSetAclMetaData().GetUint())))).Build())
 	}
-
+	switchID, err := a.mgr.GetUint64SwitchID()
+	if err != nil {
+		return err
+	}
 	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 	if err := a.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
@@ -831,6 +834,10 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {
 		return nil, err
 	}
+	switchID, err := m.mgr.GetUint64SwitchID()
+	if err != nil {
+		return nil, err
+	}
 	// Populate the switch attribute.
 	saReq := &saipb.GetSwitchAttributeRequest{
 		Oid: switchID,
@@ -867,7 +874,10 @@ func (m *myMac) RemoveMyMac(ctx context.Context, req *saipb.RemoveMyMacRequest) 
 	if _, err := m.dataplane.TableEntryRemove(ctx, mReq); err != nil {
 		return nil, err
 	}
-
+	switchID, err := m.mgr.GetUint64SwitchID()
+	if err != nil {
+		return nil, err
+	}
 	// Populate the switch attribute.
 	saReq := &saipb.GetSwitchAttributeRequest{
 		Oid: switchID,
