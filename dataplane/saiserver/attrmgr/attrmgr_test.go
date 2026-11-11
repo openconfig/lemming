@@ -241,3 +241,44 @@ func TestGetOIDsByType(t *testing.T) {
 		t.Fatalf("GetOIDsByType() unexpected diff (-got,+want):\n%s", d)
 	}
 }
+
+func TestGetUint64SwitchID(t *testing.T) {
+	tests := []struct {
+		desc     string
+		switchID string
+		setType  bool
+		want     uint64
+		wantErr  string
+	}{{
+		desc:    "unset switch ID",
+		wantErr: "invalid syntax",
+	}, {
+		desc:     "non-numeric switch ID",
+		switchID: "invalid",
+		setType:  true,
+		wantErr:  "invalid syntax",
+	}, {
+		desc:     "valid switch ID",
+		switchID: "42",
+		setType:  true,
+		want:     42,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			mgr := New()
+			if tt.setType {
+				mgr.SetType(tt.switchID, saipb.ObjectType_OBJECT_TYPE_SWITCH)
+			}
+			got, gotErr := mgr.GetUint64SwitchID()
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("GetUint64SwitchID() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetUint64SwitchID() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
