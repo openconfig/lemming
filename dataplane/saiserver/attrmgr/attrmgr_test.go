@@ -255,20 +255,15 @@ func TestGetUint64SwitchID(t *testing.T) {
 	}, {
 		desc:     "non-numeric switch ID",
 		switchID: "invalid",
-		setType:  true,
 		wantErr:  "invalid syntax",
 	}, {
 		desc:     "valid switch ID",
 		switchID: "42",
-		setType:  true,
 		want:     42,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			mgr := New()
-			if tt.setType {
-				mgr.SetType(tt.switchID, saipb.ObjectType_OBJECT_TYPE_SWITCH)
-			}
 			got, gotErr := mgr.GetUint64SwitchID()
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("GetUint64SwitchID() unexpected err: %s", diff)
