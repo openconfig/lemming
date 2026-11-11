@@ -246,7 +246,6 @@ func TestGetUint64SwitchID(t *testing.T) {
 	tests := []struct {
 		desc     string
 		switchID string
-		setType  bool
 		want     uint64
 		wantErr  string
 	}{{
