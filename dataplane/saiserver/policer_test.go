@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -76,9 +77,11 @@ func TestCreatePolicer(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, p, stopFn := newTestPolicer(t, dplane)
-			p.mgr.StoreAttributes(p.mgr.NextID(), &saipb.SwitchAttribute{
+			swID := p.mgr.NextID()
+			p.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
+			p.mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			defer stopFn()
 			_, gotErr := c.CreatePolicer(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
@@ -132,9 +135,11 @@ func TestRemovePolicer(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, a, stopFn := newTestPolicer(t, dplane)
-			a.mgr.StoreAttributes(a.mgr.NextID(), &saipb.SwitchAttribute{
+			swID := a.mgr.NextID()
+			a.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
+			a.mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			defer stopFn()
 			_, err := c.CreatePolicer(context.TODO(), &saipb.CreatePolicerRequest{
 				GreenPacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
