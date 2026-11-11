@@ -162,19 +162,43 @@ func createVirtualRouter(t testing.TB, dut *ondatra.DUTDevice) uint64 {
 	return resp.Oid
 }
 
-func createTunnelDecapEntry(t testing.TB, dut *ondatra.DUTDevice, underlayRIF, vrID uint64, tunType saipb.TunnelType, srcPrefix, dstPrefix string) {
+func createLoopbackRIF(t testing.TB, dut *ondatra.DUTDevice, vrID uint64) uint64 {
+	t.Helper()
+	conn := dataplaneConn(t, dut)
+	ric := saipb.NewRouterInterfaceClient(conn)
+	rifResp, err := ric.CreateRouterInterface(context.Background(), &saipb.CreateRouterInterfaceRequest{
+		Switch:          1,
+		Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK.Enum(),
+		VirtualRouterId: &vrID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if _, err := ric.RemoveRouterInterface(context.Background(), &saipb.RemoveRouterInterfaceRequest{Oid: rifResp.Oid}); err != nil {
+			t.Errorf("RemoveRouterInterface failed: %v", err)
+		}
+	})
+	return rifResp.Oid
+}
+
+func createTunnelDecapEntry(t testing.TB, dut *ondatra.DUTDevice, underlayRIF, overlayRIF, vrID uint64, tunType saipb.TunnelType, srcPrefix, dstPrefix string) {
 	t.Helper()
 	conn := dataplaneConn(t, dut)
 
 	tun := saipb.NewTunnelClient(conn)
-	tunResp, err := tun.CreateTunnel(context.Background(), &saipb.CreateTunnelRequest{
+	tunReq := &saipb.CreateTunnelRequest{
 		Switch:            1,
 		Type:              &tunType,
 		UnderlayInterface: &underlayRIF,
 		EncapEcnMode:      saipb.TunnelEncapEcnMode_TUNNEL_ENCAP_ECN_MODE_STANDARD.Enum(),
 		EncapDscpMode:     saipb.TunnelDscpMode_TUNNEL_DSCP_MODE_UNIFORM_MODEL.Enum(),
 		EncapTtlMode:      saipb.TunnelTtlMode_TUNNEL_TTL_MODE_UNIFORM_MODEL.Enum(),
-	})
+	}
+	if overlayRIF != 0 {
+		tunReq.OverlayInterface = &overlayRIF
+	}
+	tunResp, err := tun.CreateTunnel(context.Background(), tunReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -378,8 +402,69 @@ func TestTunnelEncapDecap(t *testing.T) {
 	dut2Rif2 := createRIF(t, dut2, "port2", dut2Port2.MAC, 0)
 
 	createEncapRoute(t, dut1, dut1Rif2, 0, saipb.TunnelType_TUNNEL_TYPE_IPINIP, fmt.Sprint(atePort2.IPv4, "/32"), "20.20.20.20")
-	createTunnelDecapEntry(t, dut2, dut2Rif2, 0, saipb.TunnelType_TUNNEL_TYPE_IPINIP, "", "20.20.20.20/32")
+	createTunnelDecapEntry(t, dut2, dut2Rif2, 0, 0, saipb.TunnelType_TUNNEL_TYPE_IPINIP, "", "20.20.20.20/32")
 	createConnectedRouteAndNeighbor(t, dut2, dut2Rif2, 0, fmt.Sprint(dut2Port2.IPv4, "/", dut2Port2.IPv4Len), atePort2.IPv4, atePort2.MAC)
+
+	testTraffic(t, ate, ateTop, atePort1, atePort2)
+}
+
+func TestIPInIPTunnelOverlayVRF(t *testing.T) {
+	ate := ondatra.ATE(t, "ate")
+	ateTop := configureATE(t, ate)
+	ate.OTG().PushConfig(t, ateTop)
+	ate.OTG().StartProtocols(t)
+
+	dut1 := ondatra.DUT(t, "dut1")
+	dut2 := ondatra.DUT(t, "dut2")
+
+	conn2 := dataplaneConn(t, dut2)
+
+	// dut1: port1 in default VRF 0, port2 in underlay VRF 0.
+	createRIF(t, dut1, "port1", dut1Port1.MAC, 0)
+	dut1Rif2 := createRIF(t, dut1, "port2", dut1Port2.MAC, 0)
+
+	// dut2: port1 in underlay VRF 0.
+	dut2Rif1 := createRIF(t, dut2, "port1", dut2Port1.MAC, 0)
+
+	// dut2: create non-default overlay VRF.
+	dut2OverlayVRF := createVirtualRouter(t, dut2)
+
+	// dut2: create loopback router interface in dut2OverlayVRF to serve as tunnel overlay interface.
+	dut2LoopbackRIF := createLoopbackRIF(t, dut2, dut2OverlayVRF)
+
+	// dut2: port2 in dut2OverlayVRF.
+	dut2Rif2 := createRIF(t, dut2, "port2", dut2Port2.MAC, dut2OverlayVRF)
+
+	// dut1: route to atePort2 encapsulated in IPinIP towards dut2 underlay IP (20.20.20.20).
+	createEncapRoute(t, dut1, dut1Rif2, 0, saipb.TunnelType_TUNNEL_TYPE_IPINIP, fmt.Sprint(atePort2.IPv4, "/32"), "20.20.20.20")
+
+	// dut2: IPinIP tunnel termination with UnderlayInterface = dut2Rif1 and OverlayInterface = dut2LoopbackRIF.
+	createTunnelDecapEntry(t, dut2, dut2Rif1, dut2LoopbackRIF, 0, saipb.TunnelType_TUNNEL_TYPE_IPINIP, "", "20.20.20.20/32")
+
+	// Connected route + neighbor for atePort2 in dut2OverlayVRF (NOT underlay VRF 0).
+	createConnectedRouteAndNeighbor(t, dut2, dut2Rif2, dut2OverlayVRF, fmt.Sprint(dut2Port2.IPv4, "/", dut2Port2.IPv4Len), atePort2.IPv4, atePort2.MAC)
+
+	// Explicit DROP route for atePort2 in underlay VRF 0 to prove packet VRF was switched to dut2OverlayVRF.
+	rc2 := saipb.NewRouteClient(conn2)
+	dropRouteReq := &saipb.CreateRouteEntryRequest{
+		Entry: &saipb.RouteEntry{
+			SwitchId: 1,
+			VrId:     0,
+			Destination: &saipb.IpPrefix{
+				Addr: net.ParseIP(atePort2.IPv4).To4(),
+				Mask: []byte{0xFF, 0xFF, 0xFF, 0xFF},
+			},
+		},
+		PacketAction: saipb.PacketAction_PACKET_ACTION_DROP.Enum(),
+	}
+	if _, err := rc2.CreateRouteEntry(context.Background(), dropRouteReq); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if _, err := rc2.RemoveRouteEntry(context.Background(), &saipb.RemoveRouteEntryRequest{Entry: dropRouteReq.Entry}); err != nil {
+			t.Errorf("RemoveRouteEntry failed: %v", err)
+		}
+	})
 
 	testTraffic(t, ate, ateTop, atePort1, atePort2)
 }

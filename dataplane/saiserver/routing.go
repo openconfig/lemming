@@ -1143,7 +1143,17 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 	resp := &saipb.GetRouterInterfaceAttributeResponse{}
 	err := ri.mgr.PopulateAttributes(&saipb.GetRouterInterfaceAttributeRequest{
 		Oid:      req.GetOid(),
-		AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_PORT_ID, saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_TYPE},
+		AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_TYPE},
+	}, resp)
+	if err != nil {
+		return nil, err
+	}
+	if resp.GetAttr().GetType() == saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK {
+		return &saipb.RemoveRouterInterfaceResponse{}, nil
+	}
+	err = ri.mgr.PopulateAttributes(&saipb.GetRouterInterfaceAttributeRequest{
+		Oid:      req.GetOid(),
+		AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_PORT_ID},
 	}, resp)
 	if err != nil {
 		return nil, err
