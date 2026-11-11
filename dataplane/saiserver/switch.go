@@ -256,14 +256,10 @@ func (sw *saiSwitch) RemoveSwitch(ctx context.Context, req *saipb.RemoveSwitchRe
 
 // CreateSwitch a creates a new switch and populates its default values.
 func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequest) (*saipb.CreateSwitchResponse, error) {
-	if id, ok := sw.mgr.GetSwitchID(); ok {
-		oid, err := strconv.ParseUint(id, 10, 64)
-		if err != nil {
-			return nil, err
-		}
+	if id, err := sw.mgr.GetUint64SwitchID(); err == nil {
 		slog.InfoContext(ctx, "Using existing switch id", "id", id)
 		return &saipb.CreateSwitchResponse{
-			Oid: oid,
+			Oid: id,
 		}, nil
 	}
 	swID := sw.mgr.NextID()
@@ -825,6 +821,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if err != nil {
 		return nil, err
 	}
+	sw.mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 	sw.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{DefaultStpInstId: &stpResp.Oid})
 
 	vlanResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vlan.CreateVlan, &saipb.CreateVlanRequest{
