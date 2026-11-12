@@ -43,7 +43,7 @@ const (
 	aclMeta = 1
 )
 
-// tableLocation indentifies the location of an acl table by the group, bank, member id.
+// tableLocation identifies the location of an acl table by the group, bank, member id.
 type tableLocation struct {
 	groupID  string
 	bank     int
