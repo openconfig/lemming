@@ -493,17 +493,6 @@ sai_object_type_t sai_object_type_query(_In_ sai_object_id_t object_id) {
 sai_status_t sai_query_attribute_capability(
     _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
     _In_ sai_attr_id_t attr_id, _Out_ sai_attr_capability_t *attr_capability) {
-  if (attr_capability == nullptr) {
-    return SAI_STATUS_INVALID_PARAMETER;
-  }
-  // TODO(hardikharti): Remove this temporary workaround once the Tam gRPC
-  // service is implemented in saiserver (currently UnimplementedTamServer)
-  // or attribute capabilities are queried dynamically. Reporting unsupported
-  // here allows SONiC orchagent to skip TAM_INT initialization.
-  if (object_type == SAI_OBJECT_TYPE_TAM_INT) {
-    *attr_capability = {false, false, false};
-    return SAI_STATUS_SUCCESS;
-  }
   *attr_capability = {true, true, true};
   return SAI_STATUS_SUCCESS;
 }
