@@ -43,6 +43,7 @@ func TestCreatePort(t *testing.T) {
 	}{{
 		desc: "non-existent interface",
 		req: &saipb.CreatePortRequest{
+			Switch:     1,
 			HwLaneList: []uint32{1},
 		},
 		getInterfaceErr: fmt.Errorf("no interface"),
@@ -110,6 +111,7 @@ func TestCreatePort(t *testing.T) {
 	}, {
 		desc: "existing interface",
 		req: &saipb.CreatePortRequest{
+			Switch:     1,
 			HwLaneList: []uint32{1},
 		},
 		want: &saipb.CreatePortResponse{
@@ -215,7 +217,7 @@ func TestCreatePorts(t *testing.T) {
 	}{{
 		desc: "success",
 		req: &saipb.CreatePortsRequest{
-			Reqs: []*saipb.CreatePortRequest{{HwLaneList: []uint32{1}}},
+			Reqs: []*saipb.CreatePortRequest{{Switch: 1, HwLaneList: []uint32{1}}},
 		},
 		want: &saipb.CreatePortsResponse{
 			Resps: []*saipb.CreatePortResponse{{Oid: 3}},
