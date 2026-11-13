@@ -546,7 +546,6 @@ func TestCreateAclEntry(t *testing.T) {
 			a.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
-			a.mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			a.mgr.StoreAttributes(2, &saipb.AclTableAttribute{
 				UserDefinedFieldGroupMin: map[uint64]uint64{
 					0: 15,
