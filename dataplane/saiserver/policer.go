@@ -44,16 +44,6 @@ func newPolicer(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serv
 // CreatePolicer creates a new policer, QOS is not actually supported. the GREEN action is always taken.
 func (p *policer) CreatePolicer(ctx context.Context, req *saipb.CreatePolicerRequest) (*saipb.CreatePolicerResponse, error) {
 	id := p.mgr.NextID()
-	switchID, err := p.mgr.GetUint64SwitchID()
-	if err != nil {
-		return nil, err
-	}
-	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
-	resp := &saipb.GetSwitchAttributeResponse{}
-	if err := p.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
-		return nil, err
-	}
-
 	action := computePacketAction(req.GetGreenPacketAction())
 
 	tReq := fwdconfig.TableEntryAddRequest(p.dataplane.ID(), policerTabler).
