@@ -172,20 +172,16 @@ func (nhg *nextHopGroup) CreateNextHopGroup(ctx context.Context, req *saipb.Crea
 		nhg.groups[id] = map[uint64]*groupMember{}
 
 		memReq := &saipb.CreateNextHopGroupMembersRequest{}
-		switchID, err := nhg.mgr.GetUint64SwitchID()
-		if err != nil {
-			return nil, err
-		}
 		for i, nh := range req.GetNextHopList() {
 			memReq.Reqs = append(memReq.Reqs, &saipb.CreateNextHopGroupMemberRequest{
-				Switch:         switchID,
+				Switch:         req.GetSwitch(),
 				NextHopGroupId: proto.Uint64(id),
 				NextHopId:      proto.Uint64(nh),
 				Weight:         proto.Uint32(req.GetNextHopMemberWeightList()[i]),
 			})
 		}
 
-		_, err = attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.CreateNextHopGroupMembers, memReq)
+		_, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.CreateNextHopGroupMembers, memReq)
 		if err != nil {
 			return nil, err
 		}
@@ -1357,11 +1353,7 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 	}
 	id := vlan.mgr.NextID()
 	vlan.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_VLAN)
-	switchID, err := vlan.mgr.GetUint64SwitchID()
-	if err != nil {
-		return nil, err
-	}
-	req := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
+	req := &saipb.GetSwitchAttributeRequest{Oid: r.GetSwitch(), AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 
 	if err := vlan.mgr.PopulateAttributes(req, resp); err != nil {
