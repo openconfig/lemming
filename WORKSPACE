@@ -43,16 +43,16 @@ http_archive(
 
 http_archive(
     name = "rules_cc",
-    sha256 = "6bcf1b46d9e629cbe4c96d7bfc56f61034c2193b7b16001201282ea50bef5d91",
-    strip_prefix = "rules_cc-0.2.27",
-    urls = ["https://github.com/bazelbuild/rules_cc/archive/refs/tags/0.2.27.tar.gz"],
+    sha256 = "0c51346fe5e7d2ee0b64a66623df0753bbb365877e6f85b8590e8de70448633e",
+    strip_prefix = "rules_cc-0.2.28",
+    urls = ["https://github.com/bazelbuild/rules_cc/archive/refs/tags/0.2.28.tar.gz"],
 )
 
 http_archive(
     name = "rules_python",
-    sha256 = "4765b9a4a9c6e0fb89f465aac5b5b0ac06589c9477144340859310777ad801a7",
-    strip_prefix = "rules_python-2.4.6",
-    url = "https://github.com/bazel-contrib/rules_python/releases/download/2.4.6/rules_python-2.4.6.tar.gz",
+    sha256 = "693759df31e7cd2efa44378207a7d487c40145d32a54878005af47dee27bef72",
+    strip_prefix = "rules_python-2.5.1",
+    url = "https://github.com/bazel-contrib/rules_python/releases/download/2.5.1/rules_python-2.5.1.tar.gz",
 )
 
 http_archive(
@@ -112,9 +112,9 @@ http_archive(
 
 http_archive(
     name = "rules_oci",
-    sha256 = "243eac87ec41d68d1d9e6d21884a50ec28e031f702b0b9fcdc7f97c3f3d5389a",
-    strip_prefix = "rules_oci-2.3.3",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v2.3.3/rules_oci-v2.3.3.tar.gz",
+    sha256 = "100b4fa90d9a7d341c3bf02c2354106c2a87ddaaaa8b91fef65c391877797a38",
+    strip_prefix = "rules_oci-2.3.5",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v2.3.5/rules_oci-v2.3.5.tar.gz",
 )
 
 http_archive(
@@ -128,18 +128,18 @@ http_archive(
 
 http_archive(
     name = "googleapis",
-    sha256 = "22358a4b9279ae96c72a165cd18bbfd1d337f524eace7f000c2a5e8af1809e32",
-    strip_prefix = "googleapis-4a5e0c5f4116f213ba5495c72c72fb2f1e6ad984",
+    sha256 = "0463284a56561c80579db9da4a350e63104eda6ccee8356c8f2fe7fd37b984bd",
+    strip_prefix = "googleapis-97f6460c3558c1435d7fd001a9251f8df058ae2f",
     urls = [
-        "https://github.com/googleapis/googleapis/archive/4a5e0c5f4116f213ba5495c72c72fb2f1e6ad984.zip",
+        "https://github.com/googleapis/googleapis/archive/97f6460c3558c1435d7fd001a9251f8df058ae2f.zip",
     ],
 )
 
 http_archive(
     name = "rules_distroless",
-    sha256 = "1d74bebf851385a92858337acd98f612bea446588d6b1ea7a46400bb13c9a50c",
-    strip_prefix = "rules_distroless-0.11.0",
-    url = "https://github.com/GoogleContainerTools/rules_distroless/releases/download/v0.11.0/rules_distroless-v0.11.0.tar.gz",
+    sha256 = "418d996ef937d7e069610830876981cfba1c72245f9b32d55ce20b6b5e600b43",
+    strip_prefix = "rules_distroless-0.11.1",
+    url = "https://github.com/GoogleContainerTools/rules_distroless/releases/download/v0.11.1/rules_distroless-v0.11.1.tar.gz",
 )
 
 http_archive(
@@ -152,9 +152,9 @@ http_archive(
 # The non-polyfill version of this is needed by rules_proto below.
 http_archive(
     name = "bazel_features",
-    sha256 = "790b660c9cb35adb91071a4f6e62d29988a7383cbb948b39aa7c0065eea1e035",
-    strip_prefix = "bazel_features-1.54.1",
-    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.54.1/bazel_features-v1.54.1.tar.gz",
+    sha256 = "2ed1fdce7e51ba2149dfab73eab6e402217c8e27d17e1d4a48d4d86bdd9eaef6",
+    strip_prefix = "bazel_features-1.55.0",
+    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.55.0/bazel_features-v1.55.0.tar.gz",
 )
 
 load("@bazel_features//:deps.bzl", "bazel_features_deps")
@@ -316,14 +316,14 @@ load("@rules_oci//oci:pull.bzl", "oci_pull")
 
 oci_pull(
     name = "debian_bookworm",
-    digest = "sha256:2dc419c6d7fe3dad0a2f9fd469c34cc90b0f9ba642d8fde837fe3d7d34a0e7f1",  # bookworm as of 06/20/24
+    digest = "sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6",  # bookworm as of 06/20/24
     image = "debian",
     platforms = ["linux/amd64"],
 )
 
 oci_pull(
     name = "distroless_static_debug_nonroot",
-    digest = "sha256:448810357cc8e67b7208988abdba0f5ec3d3aebee0a5b13eb624979792cffc0f",  # debug-nonroot as of 06/20/24
+    digest = "sha256:1a64f46364620465ef9e9a8f5413757dfdf22695e050bbfd7303eeaf17a59383",  # debug-nonroot as of 06/20/24
     image = "gcr.io/distroless/static",
     platforms = ["linux/amd64"],
 )
