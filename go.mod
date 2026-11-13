@@ -43,7 +43,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/vishvananda/netlink v1.3.1
-	go.opentelemetry.io/contrib/detectors/gcp v1.46.0
+	go.opentelemetry.io/contrib/detectors/gcp v1.47.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.72.0
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/exporters/stdout/stdoutlog v0.22.0
@@ -78,7 +78,6 @@ require (
 	cloud.google.com/go/iam v1.14.0 // indirect
 	cloud.google.com/go/longrunning v1.3.0 // indirect
 	cloud.google.com/go/pubsub/v2 v2.8.0 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.36.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.62.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/aristanetworks/arista-ceoslab-operator/v2 v2.1.2 // indirect
