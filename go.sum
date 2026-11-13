@@ -285,6 +285,7 @@ github.com/openconfig/ygnmi v0.16.0 h1:MC/q8GpBXiM+1uCfNwMlpQIDT8FLcmM8NyKdUVns6
 github.com/openconfig/ygnmi v0.16.0/go.mod h1:COooftumNKJimjY1AY8Zoem+pLtTj9lpDBz6s21GXCo=
 github.com/openconfig/ygot v0.36.0 h1:zYbl9rEFW7AmQSyCvgyKfrWWE/xxGdaO233falYLBys=
 github.com/openconfig/ygot v0.36.0/go.mod h1:bMjol0ooiK1suQZ8vG3OVj+I6D8yk9/aP6zXCf+V0kQ=
+github.com/osrg/gobgp/v4 v4.11.0/go.mod h1:5egCmsCa7GE6uMYr+AezWJrvYjPVbWb9Qt7IQ5rzHd0=
 github.com/p4lang/p4runtime v1.6.0 h1:d3QGxsU7i3oEqYrLHccdT318r6IX9Jw3fh4Qx0QEZcU=
 github.com/p4lang/p4runtime v1.6.0/go.mod h1:exHLJdkEhs+S2DLCkdvHnLbw9uyJoIbAzwMmHUeD37Y=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
