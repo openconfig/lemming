@@ -64,8 +64,9 @@ func TestCreateHostif(t *testing.T) {
 	}, {
 		desc: "success netdev",
 		req: &saipb.CreateHostifRequest{
-			Type:  saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
-			ObjId: proto.Uint64(2),
+			Switch: 1,
+			Type:   saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId:  proto.Uint64(2),
 		},
 		want: &saipb.CreateHostifResponse{
 			Oid: 3,
@@ -77,8 +78,9 @@ func TestCreateHostif(t *testing.T) {
 	}, {
 		desc: "success cpu port",
 		req: &saipb.CreateHostifRequest{
-			Type:  saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
-			ObjId: proto.Uint64(10),
+			Switch: 1,
+			Type:   saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId:  proto.Uint64(10),
 		},
 		want: &saipb.CreateHostifResponse{
 			Oid: 3,
@@ -100,7 +102,6 @@ func TestCreateHostif(t *testing.T) {
 			mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
-			mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			mgr.StoreAttributes(10, &saipb.PortAttribute{
 				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum(),
 			})
