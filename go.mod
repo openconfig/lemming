@@ -2,10 +2,10 @@ module github.com/openconfig/lemming
 
 go 1.26.3
 
-toolchain go1.27.3
+toolchain go1.27.4
 
 require (
-	cloud.google.com/go/cloudbuild v1.36.1
+	cloud.google.com/go/cloudbuild v1.37.0
 	cloud.google.com/go/logging v1.21.1
 	cloud.google.com/go/monitoring v1.32.1
 	cloud.google.com/go/trace v1.18.1
@@ -29,9 +29,9 @@ require (
 	github.com/openconfig/goyang v1.6.3
 	github.com/openconfig/gribi v1.10.0
 	github.com/openconfig/gribigo v0.3.0
-	github.com/openconfig/kne v0.3.4
+	github.com/openconfig/kne v0.3.5
 	github.com/openconfig/magna v0.0.0-20260408002632-b210de0f7ba8
-	github.com/openconfig/ondatra v0.14.9
+	github.com/openconfig/ondatra v0.15.0
 	github.com/openconfig/testt v0.0.0-20251119232631-fbbd49c39452
 	github.com/openconfig/ygnmi v0.16.0
 	github.com/openconfig/ygot v0.36.0
@@ -39,7 +39,7 @@ require (
 	github.com/p4lang/p4runtime v1.6.0
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	github.com/spf13/viper v1.21.0
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/vishvananda/netlink v1.3.1
@@ -53,11 +53,11 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
 	go.uber.org/mock v0.6.0
-	golang.org/x/oauth2 v0.37.0
-	golang.org/x/sys v0.49.0
-	google.golang.org/api v0.310.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20261026165753-2ffab32bce7e
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e
+	golang.org/x/oauth2 v0.38.0
+	golang.org/x/sys v0.50.0
+	google.golang.org/api v0.315.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20261110000943-09e21b237f2c
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c
 	google.golang.org/grpc v1.85.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.2
 	google.golang.org/protobuf v1.36.12
@@ -66,17 +66,17 @@ require (
 	k8s.io/client-go v0.37.2
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.140.0
-	modernc.org/cc/v4 v4.30.5
+	modernc.org/cc/v4 v4.34.0
 )
 
 require (
 	bitbucket.org/creachadair/stringset v0.0.14 // indirect
 	cloud.google.com/go v0.123.0 // indirect
 	cloud.google.com/go/auth v0.24.1-0.20261001053825-dbc26066f70a // indirect
-	cloud.google.com/go/auth/oauth2adapt v0.3.0 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.3.1 // indirect
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	cloud.google.com/go/iam v1.14.0 // indirect
-	cloud.google.com/go/longrunning v1.3.0 // indirect
+	cloud.google.com/go/longrunning v1.5.0 // indirect
 	cloud.google.com/go/pubsub/v2 v2.8.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.36.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.62.0 // indirect
@@ -115,7 +115,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/s2a-go v0.1.11 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.3.24 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.25 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -138,7 +138,7 @@ require (
 	github.com/openconfig/bootz v0.7.1 // indirect
 	github.com/openconfig/gnpsi v0.3.2 // indirect
 	github.com/openconfig/gocloser v0.0.0-20251119232641-34bca749fdb3 // indirect
-	github.com/openconfig/kne/third_party/meshnet v0.5.4 // indirect
+	github.com/openconfig/kne/third_party/meshnet v0.5.5 // indirect
 	github.com/openconfig/lemming/operator v0.2.9 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
@@ -171,8 +171,8 @@ require (
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/exp v0.0.0-20260908205506-85c1c2202aba // indirect
-	golang.org/x/net v0.61.0 // indirect
-	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
