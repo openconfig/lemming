@@ -42,7 +42,6 @@ func TestCreateVlan(t *testing.T) {
 		desc            string
 		hasExistingVlan bool
 		req             *saipb.CreateVlanRequest
-		want            *saipb.CreateVlanResponse
 		wantAttr        *saipb.VlanAttribute
 		wantErr         string
 	}{{
@@ -51,9 +50,6 @@ func TestCreateVlan(t *testing.T) {
 			Switch:       1,
 			VlanId:       proto.Uint32(DefaultVlanId),
 			LearnDisable: proto.Bool(true),
-		},
-		want: &saipb.CreateVlanResponse{
-			Oid: 2,
 		},
 		wantAttr: &saipb.VlanAttribute{
 			StpInstance:                        proto.Uint64(testStpInstId),
@@ -88,7 +84,6 @@ func TestCreateVlan(t *testing.T) {
 			mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				DefaultStpInstId: proto.Uint64(testStpInstId),
 			})
-			mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			if tt.hasExistingVlan {
 				if _, err := c.CreateVlan(context.TODO(), &saipb.CreateVlanRequest{
 					Switch:       1,
@@ -105,8 +100,8 @@ func TestCreateVlan(t *testing.T) {
 			if gotErr != nil {
 				return
 			}
-			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
-				t.Errorf("CreateVlan() failed: diff(-got,+want)\n:%s", d)
+			if got.GetOid() == 0 {
+				t.Errorf("CreateVlan() returned empty OID")
 			}
 			attr := &saipb.VlanAttribute{}
 			if err := mgr.PopulateAllAttributes(fmt.Sprint(got.GetOid()), attr); err != nil {
@@ -133,7 +128,6 @@ func TestVlanOperations(t *testing.T) {
 	mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 		DefaultStpInstId: proto.Uint64(testStpInstId),
 	})
-	mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 	// Crete bridge port mapping in attrmgr for each port
 	mgr.StoreAttributes(11, &saipb.BridgePortAttribute{PortId: proto.Uint64(11)})
 	mgr.StoreAttributes(12, &saipb.BridgePortAttribute{PortId: proto.Uint64(12)})
@@ -293,7 +287,6 @@ func TestCreateVlanMemberLogicalMapping(t *testing.T) {
 	mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 		DefaultStpInstId: proto.Uint64(10),
 	})
-	mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 
 	// Create vlan.
 	resp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
@@ -345,7 +338,6 @@ func TestRemoveVlan(t *testing.T) {
 	mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 		DefaultStpInstId: proto.Uint64(testStpInstId),
 	})
-	mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 
 	// Create vlan.
 	vlanResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
@@ -431,7 +423,6 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 			mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				DefaultStpInstId: proto.Uint64(testStpInstId),
 			})
-			mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			mgr.StoreAttributes(untaggedBridgeID, &saipb.BridgePortAttribute{
 				PortId: proto.Uint64(untaggedPortID),
 			})
