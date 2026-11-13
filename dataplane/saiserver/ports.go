@@ -64,6 +64,7 @@ var getInterface = net.InterfaceByName
 
 func getPreIngressPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),             // Classify incoming packets to VLAN.
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),       // Match packet to interface.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),       // Match interface to VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),          // Decap the packet if we have a tunnel.
@@ -102,7 +103,7 @@ func getL3Pipeline(skipIPValidation bool) []*fwdpb.ActionDesc {
 func getL2Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
-		fwdconfig.Action(fwdconfig.LookupAction(outputTable)).Build(),        // Take final decision on forward, drop, or trap.
+		fwdconfig.Action(fwdconfig.LookupAction(FloodTable)).Build(),         // Match VLAN tag or fallback to outputTable.
 		{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},
@@ -318,8 +319,7 @@ func (port *port) createPort(ctx context.Context, req *saipb.CreatePortRequest) 
 		return nil, fmt.Errorf("unsupported port type: %v", port.opts.PortType)
 	}
 	slog.InfoContext(ctx, "created port", "port", id, "device", dev, "hwlane", req.GetHwLaneList())
-	reply, err := port.dataplane.PortCreate(ctx, fwdPort)
-	if err != nil {
+	if _, err := port.dataplane.PortCreate(ctx, fwdPort); err != nil {
 		return nil, err
 	}
 	vlanID := uint32(DefaultVlanId)
@@ -342,16 +342,6 @@ func (port *port) createPort(ctx context.Context, req *saipb.CreatePortRequest) 
 				},
 			},
 		}); err != nil {
-			return nil, err
-		}
-		nid := reply.GetObjectIndex().GetIndex()
-		vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid)))).Build()
-		vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
-			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vlanID))).Build(),
-		}
-		if _, err := port.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
 			return nil, err
 		}
 	}
