@@ -255,7 +255,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionSetVrf: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 1,
 				},
@@ -306,7 +306,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionSetUserTrapId: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 1,
 				},
@@ -357,7 +357,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionPacketAction: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_PacketAction{
 					PacketAction: saipb.PacketAction_PACKET_ACTION_DROP,
 				},
@@ -405,7 +405,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionPacketAction: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_PacketAction{
 					PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD,
 				},
@@ -453,7 +453,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionCounter: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 10,
 				},
@@ -542,7 +542,8 @@ func TestCreateAclEntry(t *testing.T) {
 			}
 			dplane.ctx.Objects.Insert(&fwdobject.Base{}, &fwdpb.ObjectId{Id: "1"})
 			c, a, stopFn := newTestACL(t, dplane)
-			a.mgr.StoreAttributes(a.mgr.NextID(), &saipb.SwitchAttribute{
+			swID := a.mgr.NextID()
+			a.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
 			a.mgr.StoreAttributes(2, &saipb.AclTableAttribute{
@@ -629,7 +630,8 @@ func TestRemoveAclEntry(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, a, stopFn := newTestACL(t, dplane)
-			a.mgr.StoreAttributes(a.mgr.NextID(), &saipb.SwitchAttribute{
+			swID := a.mgr.NextID()
+			a.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
 			defer stopFn()

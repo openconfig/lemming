@@ -43,7 +43,7 @@ const (
 	aclMeta = 1
 )
 
-// tableLocation indentifies the location of an acl table by the group, bank, member id.
+// tableLocation identifies the location of an acl table by the group, bank, member id.
 type tableLocation struct {
 	groupID  string
 	bank     int
@@ -542,13 +542,6 @@ func (a *acl) appendAclEntryActions(ctx context.Context, req *saipb.CreateAclEnt
 				WithFieldIDInstance(aclMeta).
 				WithValue(binary.BigEndian.AppendUint32(nil, uint32(req.GetActionSetAclMetaData().GetUint())))).Build())
 	}
-
-	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
-	resp := &saipb.GetSwitchAttributeResponse{}
-	if err := a.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
-		return err
-	}
-
 	if req.ActionPacketAction != nil && req.ActionPacketAction.GetEnable() {
 		aReq.Actions = append(aReq.Actions, computePacketAction(req.GetActionPacketAction().GetPacketAction()))
 	}
@@ -833,7 +826,7 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 	}
 	// Populate the switch attribute.
 	saReq := &saipb.GetSwitchAttributeRequest{
-		Oid: switchID,
+		Oid: req.GetSwitch(),
 		AttrType: []saipb.SwitchAttr{
 			saipb.SwitchAttr_SWITCH_ATTR_MY_MAC_LIST,
 		},
@@ -843,7 +836,7 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 		return nil, fmt.Errorf("Failed to populate switch attributes: %v", err)
 	}
 	mml := append(saResp.GetAttr().MyMacList, id)
-	m.mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
+	m.mgr.StoreAttributes(req.GetSwitch(), &saipb.SwitchAttribute{
 		MyMacList: mml,
 	})
 	return &saipb.CreateMyMacResponse{Oid: id}, nil
@@ -867,7 +860,10 @@ func (m *myMac) RemoveMyMac(ctx context.Context, req *saipb.RemoveMyMacRequest) 
 	if _, err := m.dataplane.TableEntryRemove(ctx, mReq); err != nil {
 		return nil, err
 	}
-
+	switchID, err := m.mgr.GetUint64SwitchID()
+	if err != nil {
+		return nil, err
+	}
 	// Populate the switch attribute.
 	saReq := &saipb.GetSwitchAttributeRequest{
 		Oid: switchID,

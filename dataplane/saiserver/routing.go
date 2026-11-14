@@ -174,7 +174,7 @@ func (nhg *nextHopGroup) CreateNextHopGroup(ctx context.Context, req *saipb.Crea
 		memReq := &saipb.CreateNextHopGroupMembersRequest{}
 		for i, nh := range req.GetNextHopList() {
 			memReq.Reqs = append(memReq.Reqs, &saipb.CreateNextHopGroupMemberRequest{
-				Switch:         switchID,
+				Switch:         req.GetSwitch(),
 				NextHopGroupId: proto.Uint64(id),
 				NextHopId:      proto.Uint64(nh),
 				Weight:         proto.Uint32(req.GetNextHopMemberWeightList()[i]),
@@ -240,7 +240,11 @@ func (nhg *nextHopGroup) updateNextHopGroupMember(ctx context.Context, nhgid, mi
 	}
 
 	swAttr := &saipb.GetSwitchAttributeResponse{}
-	err := nhg.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
+	switchID, err := nhg.mgr.GetUint64SwitchID()
+	if err != nil {
+		return err
+	}
+	err = nhg.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
 		Oid:      switchID,
 		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_ECMP_HASH_IPV4, saipb.SwitchAttr_SWITCH_ATTR_ECMP_HASH_IPV6},
 	}, swAttr)
@@ -336,6 +340,10 @@ func (nhg *nextHopGroup) SetNextHopGroupAttribute(ctx context.Context, req *saip
 		attr.NextHopList = req.GetNextHopList()
 		attr.NextHopMemberWeightList = nil
 
+		switchID, err := nhg.mgr.GetUint64SwitchID()
+		if err != nil {
+			return nil, err
+		}
 		for mid := range nhg.groups[req.GetOid()] { // Create a copy of the keys since we are deleting them.
 			if _, err := nhg.RemoveNextHopGroupMember(ctx, &saipb.RemoveNextHopGroupMemberRequest{Oid: mid}); err != nil {
 				return nil, err
@@ -1345,7 +1353,7 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 	}
 	id := vlan.mgr.NextID()
 	vlan.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_VLAN)
-	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
+	req := &saipb.GetSwitchAttributeRequest{Oid: r.GetSwitch(), AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 
 	if err := vlan.mgr.PopulateAttributes(req, resp); err != nil {
