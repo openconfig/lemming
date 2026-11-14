@@ -47,7 +47,6 @@ func TestCreateVlan(t *testing.T) {
 	}{{
 		desc: "success",
 		req: &saipb.CreateVlanRequest{
-			Switch:       1,
 			VlanId:       proto.Uint32(DefaultVlanId),
 			LearnDisable: proto.Bool(true),
 		},
@@ -69,7 +68,6 @@ func TestCreateVlan(t *testing.T) {
 		desc:            "existing VLAN",
 		hasExistingVlan: true,
 		req: &saipb.CreateVlanRequest{
-			Switch:       1,
 			VlanId:       proto.Uint32(DefaultVlanId),
 			LearnDisable: proto.Bool(true),
 		},
@@ -86,13 +84,14 @@ func TestCreateVlan(t *testing.T) {
 			})
 			if tt.hasExistingVlan {
 				if _, err := c.CreateVlan(context.TODO(), &saipb.CreateVlanRequest{
-					Switch:       1,
+					Switch:       swID,
 					VlanId:       proto.Uint32(DefaultVlanId),
 					LearnDisable: proto.Bool(true),
 				}); err != nil {
 					t.Fatalf("failed to create VLAN")
 				}
 			}
+			tt.req.Switch = swID
 			got, gotErr := c.CreateVlan(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("CreateVlan() unexpected err: %s w/ error %v", diff, gotErr)
@@ -146,7 +145,7 @@ func TestVlanOperations(t *testing.T) {
 
 	// By default, the default VLAN has all the ports (port1 to port4).
 	resp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
-		Switch:       1,
+		Switch:       swID,
 		VlanId:       proto.Uint32(DefaultVlanId),
 		LearnDisable: proto.Bool(true),
 	})
@@ -157,19 +156,19 @@ func TestVlanOperations(t *testing.T) {
 	resps, err := c.CreateVlanMembers(ctx, &saipb.CreateVlanMembersRequest{
 		Reqs: []*saipb.CreateVlanMemberRequest{
 			{
-				Switch:       1,
+				Switch:       swID,
 				VlanId:       &vlanOID,
 				BridgePortId: &testPort1Id,
 			}, {
-				Switch:       1,
+				Switch:       swID,
 				VlanId:       &vlanOID,
 				BridgePortId: &testPort2Id,
 			}, {
-				Switch:       1,
+				Switch:       swID,
 				VlanId:       &vlanOID,
 				BridgePortId: &testPort3Id,
 			}, {
-				Switch:       1,
+				Switch:       swID,
 				VlanId:       &vlanOID,
 				BridgePortId: &testPort4Id,
 			},
@@ -194,7 +193,7 @@ func TestVlanOperations(t *testing.T) {
 	// Creates a non-default VLAN with two ports. These two ports are moved from
 	// the default VLAN to the new VLAN.
 	resp, err = c.CreateVlan(ctx, &saipb.CreateVlanRequest{
-		Switch:       1,
+		Switch:       swID,
 		VlanId:       proto.Uint32(testVlanId),
 		LearnDisable: proto.Bool(true),
 	})
@@ -205,11 +204,11 @@ func TestVlanOperations(t *testing.T) {
 	resps, err = c.CreateVlanMembers(ctx, &saipb.CreateVlanMembersRequest{
 		Reqs: []*saipb.CreateVlanMemberRequest{
 			{
-				Switch:       1,
+				Switch:       swID,
 				VlanId:       &testVlanOID,
 				BridgePortId: &testPort1Id,
 			}, {
-				Switch:       1,
+				Switch:       swID,
 				VlanId:       &testVlanOID,
 				BridgePortId: &testPort2Id,
 			},
@@ -290,7 +289,7 @@ func TestCreateVlanMemberLogicalMapping(t *testing.T) {
 
 	// Create vlan.
 	resp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
-		Switch: 1,
+		Switch: swID,
 		VlanId: proto.Uint32(10),
 	})
 	if err != nil {
@@ -307,7 +306,7 @@ func TestCreateVlanMemberLogicalMapping(t *testing.T) {
 
 	// Create vlan member using bridge port oid.
 	_, err = c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-		Switch:       1,
+		Switch:       swID,
 		VlanId:       &vlanOid,
 		BridgePortId: &bridgePortOid,
 	})
@@ -341,7 +340,7 @@ func TestRemoveVlan(t *testing.T) {
 
 	// Create vlan.
 	vlanResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
-		Switch: 1,
+		Switch: swID,
 		VlanId: proto.Uint32(10),
 	})
 	if err != nil {
@@ -358,7 +357,7 @@ func TestRemoveVlan(t *testing.T) {
 
 	// Create vlan member with bridge port.
 	memberResp, err := c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-		Switch:       1,
+		Switch:       swID,
 		VlanId:       &vlanOid,
 		BridgePortId: &bridgePortOid,
 	})
@@ -431,7 +430,7 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 			})
 
 			vlanResp, err := c.CreateVlan(ctx, &saipb.CreateVlanRequest{
-				Switch: 1,
+				Switch: swID,
 				VlanId: proto.Uint32(vlanID),
 			})
 			if err != nil {
@@ -439,7 +438,7 @@ func TestCreateVlanMemberTaggingMode(t *testing.T) {
 			}
 
 			_, err = c.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-				Switch:          1,
+				Switch:          swID,
 				VlanId:          proto.Uint64(vlanResp.GetOid()),
 				BridgePortId:    proto.Uint64(tt.bridgePort),
 				VlanTaggingMode: tt.taggingMode.Enum(),
