@@ -255,7 +255,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionSetVrf: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 1,
 				},
@@ -306,7 +306,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionSetUserTrapId: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 1,
 				},
@@ -357,7 +357,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionPacketAction: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_PacketAction{
 					PacketAction: saipb.PacketAction_PACKET_ACTION_DROP,
 				},
@@ -405,7 +405,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionPacketAction: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_PacketAction{
 					PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD,
 				},
@@ -453,7 +453,7 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 			ActionCounter: &saipb.AclActionData{
-				Enable:    true,
+				Enable: true,
 				Parameter: &saipb.AclActionData_Oid{
 					Oid: 10,
 				},
@@ -634,7 +634,6 @@ func TestRemoveAclEntry(t *testing.T) {
 			a.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
-			a.mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			defer stopFn()
 			a.tableToLocation[2] = tableLocation{
 				groupID: "2",
