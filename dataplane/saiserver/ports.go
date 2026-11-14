@@ -155,7 +155,11 @@ func (port *port) createSchedulerGroup(ctx context.Context, id uint64, queues []
 	return sgs, nil
 }
 
-func (port *port) updatePortList(switchID uint64, ids ...uint64) error {
+func (port *port) updatePortList(ids ...uint64) error {
+	switchID, err := port.mgr.GetUint64SwitchID()
+	if err != nil {
+		return err
+	}
 	resp := &saipb.GetSwitchAttributeResponse{}
 	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
 		Oid:      switchID,
@@ -248,7 +252,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	if err != nil {
 		return nil, err
 	}
-	if err := port.updatePortList(req.GetSwitch(), resp.GetOid()); err != nil {
+	if err := port.updatePortList(resp.GetOid()); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -366,10 +370,8 @@ func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest)
 		resp.Resps = append(resp.Resps, res)
 		oids = append(oids, res.GetOid())
 	}
-	if len(oids) > 0 {
-		if err := port.updatePortList(re.GetReqs()[0].GetSwitch(), oids...); err != nil {
-			resp, retErr = nil, errors.Join(retErr, err)
-		}
+	if err := port.updatePortList(oids...); err != nil {
+		resp, retErr = nil, errors.Join(retErr, err)
 	}
 	return resp, retErr
 }
