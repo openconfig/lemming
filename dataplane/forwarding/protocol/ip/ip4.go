@@ -47,6 +47,7 @@ const (
 	ip4DstBytes    = ip4AddrBytes // Number of bytes in the dest IP address
 	ip4DstPos      = 16           // Offset in bytes of the dest IP address
 	ip6to4Offset   = 2            // Offset in bytes of the encoded ip4 address
+	ip4HeaderBytes = 20           // Minimum number of bytes in an IP4 header
 )
 
 // Constants defined for various 6to4 tunnels
@@ -163,7 +164,7 @@ func (ip *IP4) SetPayload(id fwdpb.PacketHeaderId, length int64) {
 // newIP4 creates a new IPv4 header.
 func newIP4() header {
 	ip := &IP4{}
-	ip.header = make(frame.Header, 20)
+	ip.header = make(frame.Header, ip4HeaderBytes)
 	ip.header.Field(ip4DescPos, ip4DescBytes).SetValue(0x45)
 	return ip
 }
@@ -267,7 +268,11 @@ func makeIP4(frame *frame.Frame) (header, fwdpb.PacketHeaderId, error) {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("ip4: makeIP4 failed, err %v", err)
 	}
 	size := desc.BitField(ip4HeaderPos, ip4HeaderBits)
-	header, err := frame.ReadHeader(int(size.Value() << 2))
+	ihl := int(size.Value() << 2)
+	if ihl < ip4HeaderBytes {
+		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("ip4: makeIP4 failed, header length %d bytes is smaller than minimum %d bytes", ihl, ip4HeaderBytes)
+	}
+	header, err := frame.ReadHeader(ihl)
 	if err != nil {
 		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("ip4: makeIP4 failed, err %v", err)
 	}
