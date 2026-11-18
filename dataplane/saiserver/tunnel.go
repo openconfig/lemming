@@ -540,6 +540,38 @@ func canonicalFlowKey(priority uint32, fields []*fwdpb.PacketFieldMaskedBytes) s
 	return b.String()
 }
 
+// overlayVRFForTunnel resolves the post-decap VRF from the tunnel's SAI_TUNNEL_ATTR_OVERLAY_INTERFACE.
+// Returns (vrf, true, nil) when the tunnel has an overlay router interface configured,
+// (0, false, nil) when actionTunnelID == 0 or OverlayInterface is unset, or InvalidArgument
+// if a non-zero actionTunnelID or OverlayInterface does not reference a live SAI object.
+func (t *tunnel) overlayVRFForTunnel(actionTunnelID uint64) (uint64, bool, error) {
+	if actionTunnelID == 0 {
+		return 0, false, nil
+	}
+	tunID := fmt.Sprint(actionTunnelID)
+	if t.mgr.GetType(tunID) != saipb.ObjectType_OBJECT_TYPE_TUNNEL ||
+		t.mgr.GetAttribute(tunID, int32(saipb.TunnelAttr_TUNNEL_ATTR_TYPE)) == nil {
+		return 0, false, status.Errorf(codes.InvalidArgument, "action tunnel %d not found", actionTunnelID)
+	}
+	tunReq := &saipb.CreateTunnelRequest{}
+	if err := t.mgr.PopulateAllAttributes(tunID, tunReq); err != nil {
+		return 0, false, status.Errorf(codes.Internal, "failed to populate tunnel %d attributes: %v", actionTunnelID, err)
+	}
+	if tunReq.OverlayInterface == nil {
+		return 0, false, nil
+	}
+	rifID := fmt.Sprint(tunReq.GetOverlayInterface())
+	if t.mgr.GetType(rifID) != saipb.ObjectType_OBJECT_TYPE_ROUTER_INTERFACE ||
+		t.mgr.GetAttribute(rifID, int32(saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_TYPE)) == nil {
+		return 0, false, status.Errorf(codes.InvalidArgument, "overlay interface %d not found", tunReq.GetOverlayInterface())
+	}
+	rifReq := &saipb.CreateRouterInterfaceRequest{}
+	if err := t.mgr.PopulateAllAttributes(rifID, rifReq); err != nil {
+		return 0, false, status.Errorf(codes.Internal, "failed to populate router interface %d attributes: %v", tunReq.GetOverlayInterface(), err)
+	}
+	return rifReq.GetVirtualRouterId(), true, nil
+}
+
 // CreateTunnelTermTableEntry creates a tunnel termination table entry supporting IPinIP, GRE, and VXLAN tunnel types.
 func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.CreateTunnelTermTableEntryRequest) (*saipb.CreateTunnelTermTableEntryResponse, error) {
 	if req.GetTunnelType() == saipb.TunnelType_TUNNEL_TYPE_VXLAN && req.GetActionTunnelId() == 0 {
@@ -566,6 +598,17 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 		}
 	}
 
+	var (
+		overlayVRF    uint64
+		hasOverlayVRF bool
+	)
+	if req.GetTunnelType() == saipb.TunnelType_TUNNEL_TYPE_IPINIP || req.GetTunnelType() == saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE {
+		overlayVRF, hasOverlayVRF, err = t.overlayVRFForTunnel(req.GetActionTunnelId())
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	id := t.mgr.NextID()
 
 	var actions []*fwdpb.ActionDesc
@@ -575,13 +618,15 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 		)
 	}
 
+	// TODO: Match outer packet PACKET_FIELD_NUM_PACKET_VRF against req.VrId in tunTermTable.
+	if hasOverlayVRF {
+		actions = append(actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(overlayVRF)).Build(),
+		)
+	}
+
 	switch req.GetTunnelType() {
 	case saipb.TunnelType_TUNNEL_TYPE_IPINIP:
-		if req.VrId != nil {
-			actions = append(actions,
-				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVrId())).Build(),
-			)
-		}
 		actions = append(actions, &fwdpb.ActionDesc{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
 			Action: &fwdpb.ActionDesc_Decap{
@@ -591,11 +636,6 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 			},
 		})
 	case saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE:
-		if req.VrId != nil {
-			actions = append(actions,
-				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVrId())).Build(),
-			)
-		}
 		actions = append(actions, &fwdpb.ActionDesc{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
 			Action: &fwdpb.ActionDesc_Decap{
