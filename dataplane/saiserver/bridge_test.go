@@ -120,3 +120,24 @@ func newTestBridge(t testing.TB) (grpc.ClientConnInterface, *attrmgr.AttrMgr, fu
 	})
 	return conn, mgr, stopFn
 }
+
+func TestCreateAndRemoveFdbEntry(t *testing.T) {
+	var fdbSrv *fdb
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		fdbSrv, _ = newFdb(mgr, &fakeSwitchDataplane{}, srv)
+	})
+	defer stopFn()
+	c, notifCh := saipb.NewFdbClient(conn), make(chan *saipb.FdbEventNotificationResponse, 2)
+	defer fdbSrv.subscribe(notifCh)()
+	mgr.StoreAttributes(10, &saipb.BridgePortAttribute{PortId: proto.Uint64(1)})
+	entry := &saipb.FdbEntry{SwitchId: 1, MacAddress: []byte{0, 1, 2, 3, 4, 5}, BvId: 20}
+	if _, err := c.CreateFdbEntry(context.Background(), &saipb.CreateFdbEntryRequest{Entry: entry, BridgePortId: proto.Uint64(10)}); err != nil {
+		t.Fatalf("CreateFdbEntry() failed: %v", err)
+	}
+	if _, err := c.RemoveFdbEntry(context.Background(), &saipb.RemoveFdbEntryRequest{Entry: entry}); err != nil {
+		t.Fatalf("RemoveFdbEntry() failed: %v", err)
+	}
+	if got1, got2 := (<-notifCh).GetData()[0].GetEventType(), (<-notifCh).GetData()[0].GetEventType(); got1 != saipb.FdbEvent_FDB_EVENT_LEARNED || got2 != saipb.FdbEvent_FDB_EVENT_AGED {
+		t.Errorf("FDB events = (%v, %v), want (LEARNED, AGED)", got1, got2)
+	}
+}
