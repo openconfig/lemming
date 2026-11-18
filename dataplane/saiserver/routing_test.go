@@ -110,10 +110,12 @@ func TestCreateNextHopGroup(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
 			defer stopFn()
-			mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
+			swID := mgr.NextID()
+			mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 				EcmpHashIpv4: proto.Uint64(5),
 				EcmpHashIpv6: proto.Uint64(5),
 			})
+			mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			mgr.StoreAttributes(5, &saipb.HashAttribute{
 				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
 			})
@@ -121,7 +123,7 @@ func TestCreateNextHopGroup(t *testing.T) {
 				Ip: []byte{127, 0, 0, 1},
 			})
 
-			_, gotErr := c.CreateNextHopGroup(context.TODO(), tt.req)
+			got, gotErr := c.CreateNextHopGroup(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("CreateNextHopGroup() unexpected err: %s", diff)
 			}
@@ -129,7 +131,7 @@ func TestCreateNextHopGroup(t *testing.T) {
 				return
 			}
 			attr := &saipb.NextHopGroupAttribute{}
-			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
+			if err := mgr.PopulateAllAttributes(fmt.Sprint(got.GetOid()), attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
@@ -206,7 +208,9 @@ func TestSetNextHopGroupAttribute(t *testing.T) {
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
 			defer stopFn()
 
-			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(9)})
+			swID := mgr.NextID()
+			mgr.StoreAttributes(swID, &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(9)})
+			mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			mgr.StoreAttributes(3, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 1}})
 			mgr.StoreAttributes(4, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 2}})
 			mgr.StoreAttributes(10, &saipb.CreateHashRequest{
@@ -323,7 +327,9 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
 
-			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(9)})
+			swID := mgr.NextID()
+			mgr.StoreAttributes(swID, &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(9)})
+			mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			mgr.StoreAttributes(3, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 1}})
 			mgr.StoreAttributes(10, &saipb.CreateHashRequest{
 				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
@@ -437,7 +443,9 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
-			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(9), EcmpHashIpv6: proto.Uint64(10)})
+			swID := mgr.NextID()
+			mgr.StoreAttributes(swID, &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(9), EcmpHashIpv6: proto.Uint64(10)})
+			mgr.SetType(fmt.Sprint(swID), saipb.ObjectType_OBJECT_TYPE_SWITCH)
 			mgr.StoreAttributes(10, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 1}})
 			mgr.StoreAttributes(11, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 2}})
 			mgr.StoreAttributes(9, &saipb.CreateHashRequest{

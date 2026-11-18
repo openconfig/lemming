@@ -21,7 +21,6 @@ import (
 	"log/slog"
 	"net"
 	"slices"
-	"strconv"
 
 	"github.com/vishvananda/netlink"
 	"google.golang.org/grpc"
@@ -157,23 +156,19 @@ func (port *port) createSchedulerGroup(ctx context.Context, id uint64, queues []
 }
 
 func (port *port) updatePortList(ids ...uint64) error {
-	switchID, ok := port.mgr.GetSwitchID()
-	if !ok {
-		return fmt.Errorf("failed to get switch ID")
-	}
-	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
+	switchID, err := port.mgr.GetUint64SwitchID()
 	if err != nil {
 		return err
 	}
 	resp := &saipb.GetSwitchAttributeResponse{}
 	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
-		Oid:      uSwitchID,
+		Oid:      switchID,
 		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_PORT_LIST},
 	}, resp); err != nil {
 		return fmt.Errorf("failed to get switch port list: %v", err)
 	}
 	portList := append(resp.GetAttr().GetPortList(), ids...)
-	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
+	port.mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
 		PortList:            portList,
 		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
 	})
@@ -644,17 +639,13 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 	}
 
 	// Update the switch's port list.
-	switchID, ok := port.mgr.GetSwitchID()
-	if !ok {
-		return nil, fmt.Errorf("failed to get switch ID")
-	}
-	uSwitchID, err := strconv.ParseUint(switchID, 10, 64)
+	switchID, err := port.mgr.GetUint64SwitchID()
 	if err != nil {
 		return nil, err
 	}
 	resp := &saipb.GetSwitchAttributeResponse{}
 	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
-		Oid:      uSwitchID,
+		Oid:      switchID,
 		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_PORT_LIST},
 	}, resp); err != nil {
 		return nil, fmt.Errorf("failed to get switch port list: %v", err)
@@ -664,7 +655,7 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 		portList[i] = portList[len(portList)-1]
 		portList = portList[:len(portList)-1]
 	}
-	port.mgr.StoreAttributes(uSwitchID, &saipb.SwitchAttribute{
+	port.mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
 		PortList:            portList,
 		NumberOfActivePorts: proto.Uint32(uint32(len(portList))),
 	})

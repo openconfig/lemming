@@ -304,6 +304,17 @@ func (mgr *AttrMgr) GetSwitchID() (string, bool) {
 	return "", false
 }
 
+// GetUint64SwitchID returns the ID of the switch as a uint64.
+func (mgr *AttrMgr) GetUint64SwitchID() (uint64, error) {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
+	uSwitchID, err := strconv.ParseUint(mgr.switchID, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return uSwitchID, nil
+}
+
 // GetType returns the SAI type for the object.
 func (mgr *AttrMgr) SetType(id string, t saipb.ObjectType) {
 	mgr.mu.Lock()
