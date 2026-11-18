@@ -20,6 +20,7 @@
 #include <grpcpp/security/credentials.h>
 
 #include <fstream>
+#include <memory>
 
 #include "dataplane/proto/sai/acl.grpc.pb.h"
 #include "dataplane/proto/sai/bfd.grpc.pb.h"
@@ -184,7 +185,7 @@ sai_status_t sai_api_initialize(
   google::InitGoogleLogging("lucius");
   google::InstallFailureSignalHandler();
 
-  LOG(WARNING) << "iniitializing";
+  LOG(WARNING) << "initializing";
 
   auto chan =
       grpc::CreateChannel("10.0.2.2:50000", grpc::InsecureChannelCredentials());
