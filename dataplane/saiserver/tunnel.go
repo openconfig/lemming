@@ -67,6 +67,7 @@ type tunnel struct {
 	entryToMap map[uint64]uint64                                         // entryOID -> mapOID
 	mapTunnels map[uint64]map[uint64]struct{}                            // mapOID -> tunnelOID -> struct{}{}
 	termKeys   map[string]uint64                                         // canonical flow key -> termOID
+	tunnels    map[uint64]struct{}
 }
 
 func vniToBytes(vni uint32) []byte {
@@ -82,26 +83,50 @@ func newTunnel(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 		entryToMap: make(map[uint64]uint64),
 		mapTunnels: make(map[uint64]map[uint64]struct{}),
 		termKeys:   make(map[string]uint64),
+		tunnels:    make(map[uint64]struct{}),
 	}
 	saipb.RegisterTunnelServer(s, t)
 	return t
 }
 
-// CreateTunnel creates a new tunnel supporting IPinIP, GRE, and VXLAN tunnel types.
-func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelRequest) (*saipb.CreateTunnelResponse, error) {
+func (t *tunnel) Reset() {
+	if t == nil {
+		return
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.tunnelMaps = make(map[uint64]saipb.TunnelMapType)
+	t.mapEntries = make(map[uint64]map[uint64]*saipb.CreateTunnelMapEntryRequest)
+	t.entryToMap = make(map[uint64]uint64)
+	t.mapTunnels = make(map[uint64]map[uint64]struct{})
+	t.termKeys = make(map[string]uint64)
+	t.tunnels = make(map[uint64]struct{})
+}
+
+func validateTunnelParams(ttlVal *uint32, sport *uint32, sportMask *uint32) error {
+	if ttlVal != nil && *ttlVal > 255 {
+		return status.Errorf(codes.InvalidArgument, "encap_ttl_val %d exceeds 255", *ttlVal)
+	}
+	if sport != nil && *sport > 65535 {
+		return status.Errorf(codes.InvalidArgument, "vxlan_udp_sport %d exceeds 65535", *sport)
+	}
+	if sportMask != nil && *sportMask > 16 {
+		return status.Errorf(codes.InvalidArgument, "vxlan_udp_sport_mask %d exceeds 16", *sportMask)
+	}
+	return nil
+}
+
+func vxlanSportConfigFromReq(req *saipb.CreateTunnelRequest) uint32 {
+	switch req.GetVxlanUdpSportMode() {
+	case saipb.TunnelVxlanUdpSportMode_TUNNEL_VXLAN_UDP_SPORT_MODE_USER_DEFINED:
+		return vxlan.EncodeSportConfig(vxlan.SportModeUserDefined, uint8(req.GetVxlanUdpSportMask()), uint16(req.GetVxlanUdpSport()))
+	default:
+		return vxlan.EncodeSportConfig(vxlan.SportModeEphemeral, 0, 0)
+	}
+}
+
+func (t *tunnel) buildTunnelEncapEntry(id uint64, req *saipb.CreateTunnelRequest) *fwdpb.TableEntryAddRequest {
 	tunType := req.GetType()
-
-	supportedTypes := []saipb.TunnelType{
-		saipb.TunnelType_TUNNEL_TYPE_IPINIP,
-		saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE,
-		saipb.TunnelType_TUNNEL_TYPE_VXLAN,
-	}
-	if !slices.Contains(supportedTypes, tunType) {
-		return nil, status.Errorf(codes.InvalidArgument, "unsupported tunnel type: %v", tunType)
-	}
-
-	// TODO: Support SAI_TUNNEL_ATTR_DECAP_TTL_MODE, DECAP_DSCP_MODE, and RFC 6040 DECAP_ECN_MODE.
-
 	actions := []*fwdpb.ActionDesc{}
 
 	// TODO: Support parsing QOS into ECN and DSCP bits separately.
@@ -137,10 +162,38 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 	}
 
 	if tunType == saipb.TunnelType_TUNNEL_TYPE_VXLAN {
-		actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).WithUint64Value(vxlan.DefaultPort)).Build())
-		if req.GetVxlanUdpSport() != 0 {
-			actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC).WithUint64Value(uint64(req.GetVxlanUdpSport()))).Build())
-		}
+		cfg := vxlanSportConfigFromReq(req)
+		actions = append(actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
+				WithFieldIDInstance(vxlan.SportAttrInstance).
+				WithValue(binary.BigEndian.AppendUint32(nil, cfg))).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).WithUint64Value(vxlan.DefaultPort)).Build(),
+		)
+	}
+
+	under := req.GetUnderlayInterface()
+	entry := fwdconfig.TableEntryAddRequest(t.dataplane.ID(), TunnelEncap).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64(id))),
+		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(under),
+	).Build()
+	entry.Entries[0].Actions = append(entry.Entries[0].Actions, actions...)
+	return entry
+}
+
+// CreateTunnel creates a new tunnel supporting IPinIP, GRE, and VXLAN tunnel types.
+func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelRequest) (*saipb.CreateTunnelResponse, error) {
+	tunType := req.GetType()
+
+	supportedTypes := []saipb.TunnelType{
+		saipb.TunnelType_TUNNEL_TYPE_IPINIP,
+		saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE,
+		saipb.TunnelType_TUNNEL_TYPE_VXLAN,
+	}
+	if !slices.Contains(supportedTypes, tunType) {
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported tunnel type: %v", tunType)
+	}
+	if err := validateTunnelParams(req.EncapTtlVal, req.VxlanUdpSport, req.VxlanUdpSportMask); err != nil {
+		return nil, err
 	}
 
 	t.mu.Lock()
@@ -158,12 +211,7 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 
 	id := t.mgr.NextID()
 
-	under := req.GetUnderlayInterface()
-	entry := fwdconfig.TableEntryAddRequest(t.dataplane.ID(), TunnelEncap).AppendEntry(
-		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64(id))),
-		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(under),
-	).Build()
-	entry.Entries[0].Actions = append(entry.Entries[0].Actions, actions...)
+	entry := t.buildTunnelEncapEntry(id, req)
 	if _, err := t.dataplane.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}
@@ -225,6 +273,7 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 		t.mapTunnels[mapID][id] = struct{}{}
 	}
 
+	t.tunnels[id] = struct{}{}
 	t.mgr.StoreAttributes(id, req)
 
 	return &saipb.CreateTunnelResponse{
@@ -282,10 +331,52 @@ func (t *tunnel) RemoveTunnel(ctx context.Context, req *saipb.RemoveTunnelReques
 		}
 	}
 
+	delete(t.tunnels, tunID)
+
 	if err := errs.Err(); err != nil {
 		return nil, err
 	}
 	return &saipb.RemoveTunnelResponse{}, nil
+}
+
+func (t *tunnel) SetTunnelAttribute(ctx context.Context, req *saipb.SetTunnelAttributeRequest) (*saipb.SetTunnelAttributeResponse, error) {
+	if err := validateTunnelParams(req.EncapTtlVal, req.VxlanUdpSport, req.VxlanUdpSportMask); err != nil {
+		return nil, err
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	tunReq := &saipb.CreateTunnelRequest{}
+	if err := t.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), tunReq); err != nil {
+		return nil, err
+	}
+	if _, ok := t.tunnels[req.GetOid()]; !ok || tunReq.Type == nil {
+		return nil, status.Errorf(codes.NotFound, "tunnel %d not found", req.GetOid())
+	}
+
+	if req.EncapTtlMode != nil {
+		tunReq.EncapTtlMode = req.EncapTtlMode
+	}
+	if req.EncapTtlVal != nil {
+		tunReq.EncapTtlVal = req.EncapTtlVal
+	}
+	if req.VxlanUdpSportMode != nil {
+		tunReq.VxlanUdpSportMode = req.VxlanUdpSportMode
+	}
+	if req.VxlanUdpSport != nil {
+		tunReq.VxlanUdpSport = req.VxlanUdpSport
+	}
+	if req.VxlanUdpSportMask != nil {
+		tunReq.VxlanUdpSportMask = req.VxlanUdpSportMask
+	}
+
+	entry := t.buildTunnelEncapEntry(req.GetOid(), tunReq)
+	if _, err := t.dataplane.TableEntryAdd(ctx, entry); err != nil {
+		return nil, err
+	}
+	t.mgr.StoreAttributes(req.GetOid(), req)
+	return &saipb.SetTunnelAttributeResponse{}, nil
 }
 
 func (t *tunnel) CreateTunnels(ctx context.Context, req *saipb.CreateTunnelsRequest) (*saipb.CreateTunnelsResponse, error) {

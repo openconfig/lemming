@@ -65,6 +65,7 @@ go_test(
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/forwarding/infra/fwdpacket",
+        "//dataplane/forwarding/protocol/vxlan",
         "//dataplane/proto/packetio",
         "//dataplane/proto/sai",
         "//dataplane/saiserver/attrmgr",

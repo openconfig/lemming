@@ -27,6 +27,7 @@ import (
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/tcp"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
+	"github.com/openconfig/lemming/dataplane/forwarding/util/hash/crc16"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -208,6 +209,50 @@ func TestVXLANEntropyCalculation(t *testing.T) {
 	}
 	if got := ComputeEntropySourcePort(nil); got != 0 {
 		t.Errorf("ComputeEntropySourcePort(nil) = %d, want 0", got)
+	}
+}
+
+func TestVXLANSportConfigAndComputeSourcePort(t *testing.T) {
+	vxlanHdr := []byte{0x08, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x00}
+	innerEth := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x08, 0x00}
+	innerIPAndTCP := []byte{
+		0x45, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00, 0x40, 0x06, 0x00, 0x00,
+		10, 0, 0, 1,
+		10, 0, 0, 2,
+		0x1f, 0x90, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+		0x50, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+	pkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN, slices.Concat(vxlanHdr, innerEth, innerIPAndTCP))
+	if err != nil {
+		t.Fatalf("fwdpacket.New failed: %v", err)
+	}
+	desc := pkt.(*protocol.Packet).FirstDesc().PayloadDesc()
+
+	cfg := EncodeSportConfig(SportModeUserDefined, 10, 32768)
+	mode, mask, base := DecodeSportConfig(cfg)
+	if mode != SportModeUserDefined || mask != 10 || base != 32768 {
+		t.Fatalf("DecodeSportConfig(%#x) = (%d, %d, %d), want (2, 10, 32768)", cfg, mode, mask, base)
+	}
+
+	if got, ok := ComputeSourcePort(desc, EncodeSportConfig(SportModeEphemeral, 0, 0)); !ok || got < EphemeralPortBase {
+		t.Errorf("EPHEMERAL ComputeSourcePort = (%d, %v), want >= %d", got, ok, EphemeralPortBase)
+	}
+	if got, ok := ComputeSourcePort(desc, EncodeSportConfig(SportModeUserDefined, 0, 1234)); !ok || got != 1234 {
+		t.Errorf("USER_DEFINED static 1234 = (%d, %v), want (1234, true)", got, ok)
+	}
+	if got, ok := ComputeSourcePort(desc, EncodeSportConfig(SportModeUserDefined, 0, 0)); !ok || got != 0 {
+		t.Errorf("USER_DEFINED static 0 = (%d, %v), want (0, true)", got, ok)
+	}
+	gotMasked, ok := ComputeSourcePort(desc, EncodeSportConfig(SportModeUserDefined, 10, 32768))
+	wantMasked := uint16(32768) | (crc16.ChecksumANSI(InnerFlowKey(desc)) & 0x03FF)
+	if !ok || gotMasked != wantMasked {
+		t.Errorf("USER_DEFINED base=32768 mask=10 = (%d, %v), want exact (%d, true)", gotMasked, ok, wantMasked)
+	}
+	if gotEmpty, ok := ComputeSourcePort(nil, EncodeSportConfig(SportModeUserDefined, 10, 32768)); !ok || gotEmpty != 32768 {
+		t.Errorf("USER_DEFINED empty flow key = (%d, %v), want (32768, true)", gotEmpty, ok)
+	}
+	if gotUnset, ok := ComputeSourcePort(desc, 0); ok || gotUnset != 0 {
+		t.Errorf("SportModeUnset = (%d, %v), want (0, false)", gotUnset, ok)
 	}
 }
 

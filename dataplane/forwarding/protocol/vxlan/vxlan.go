@@ -40,6 +40,15 @@ const (
 	EphemeralPortBase = 0xC000
 	// EphemeralPortMask is the 14-bit mask for the dynamic port range (16383).
 	EphemeralPortMask = 0x3FFF
+
+	// SportAttrInstance is the PACKET_ATTRIBUTE_32 instance used to pass VXLAN UDP source port configuration.
+	SportAttrInstance = 254
+	// SportModeUnset leaves UDP source port behavior as default (preserve explicit L4_PORT_SRC or fallback to ephemeral).
+	SportModeUnset uint8 = 0
+	// SportModeEphemeral computes an RFC 7348 ephemeral source port in [49152, 65535].
+	SportModeEphemeral uint8 = 1
+	// SportModeUserDefined computes a user-defined source port from basePort and maskBits.
+	SportModeUserDefined uint8 = 2
 )
 
 // VXLAN represents a VXLAN header in the packet.
@@ -157,6 +166,44 @@ func ComputeEntropySourcePort(desc *protocol.Desc) uint16 {
 	}
 	hashVal := crc16.ChecksumANSI(key)
 	return uint16(EphemeralPortBase | (hashVal & EphemeralPortMask))
+}
+
+// EncodeSportConfig packs the VXLAN UDP source port mode, mask bit count, and base port
+// into a 32-bit metadata value stored in PACKET_ATTRIBUTE_32[SportAttrInstance].
+func EncodeSportConfig(mode, maskBits uint8, basePort uint16) uint32 {
+	return uint32(mode)<<24 | uint32(maskBits)<<16 | uint32(basePort)
+}
+
+// DecodeSportConfig unpacks a 32-bit metadata value encoded by EncodeSportConfig.
+func DecodeSportConfig(cfg uint32) (mode, maskBits uint8, basePort uint16) {
+	return uint8(cfg >> 24), uint8((cfg >> 16) & 0xFF), uint16(cfg & 0xFFFF)
+}
+
+// ComputeSourcePort computes the VXLAN UDP source port according to cfg (encoded by EncodeSportConfig).
+// The boolean return value indicates whether a source port was determined for cfg.
+func ComputeSourcePort(desc *protocol.Desc, cfg uint32) (uint16, bool) {
+	mode, maskBits, basePort := DecodeSportConfig(cfg)
+	switch mode {
+	case SportModeEphemeral:
+		port := ComputeEntropySourcePort(desc)
+		return port, port != 0
+	case SportModeUserDefined:
+		if maskBits == 0 {
+			return basePort, true
+		}
+		if maskBits > 16 {
+			maskBits = 16
+		}
+		lowMask := uint16((uint32(1) << maskBits) - 1)
+		key := InnerFlowKey(desc)
+		if len(key) == 0 {
+			return basePort, true
+		}
+		hashVal := crc16.ChecksumANSI(key)
+		return (basePort & ^lowMask) | (hashVal & lowMask), true
+	default:
+		return 0, false
+	}
 }
 
 // Parse parses a VXLAN header in the packet.

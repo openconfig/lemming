@@ -174,21 +174,31 @@ func TestUDPMethods(t *testing.T) {
 
 func createAndRebuildUDPPacket(t *testing.T, srcPort, dstPort uint16, payload []byte) (uint16, []byte) {
 	t.Helper()
-	udpHdr := make([]byte, udpBytes)
-	binary.BigEndian.PutUint16(udpHdr[srcOffset:], srcPort)
-	binary.BigEndian.PutUint16(udpHdr[dstOffset:], dstPort)
-	binary.BigEndian.PutUint16(udpHdr[lenOffset:], uint16(udpBytes+len(payload)))
-
-	raw := append(udpHdr, payload...)
-	pkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP, raw)
+	startHdr := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
+	if dstPort == vxlan.DefaultPort {
+		startHdr = fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN
+	}
+	pkt, err := fwdpacket.New(startHdr, payload)
 	if err != nil {
 		t.Fatalf("fwdpacket.New failed: %v", err)
 	}
+	if err := pkt.Encap(fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP); err != nil {
+		t.Fatalf("pkt.Encap(UDP) failed: %v", err)
+	}
 
 	srcFieldID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0)
-	// Dirty the UDP header so Rebuild is executed during Frame().
-	if err := pkt.Update(srcFieldID, fwdpacket.OpSet, udpHdr[srcOffset:srcOffset+portBytes]); err != nil {
-		t.Fatalf("pkt.Update srcPort failed: %v", err)
+	dstFieldID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0)
+	if srcPort != 0 {
+		b := make([]byte, portBytes)
+		binary.BigEndian.PutUint16(b, srcPort)
+		if err := pkt.Update(srcFieldID, fwdpacket.OpSet, b); err != nil {
+			t.Fatalf("pkt.Update srcPort failed: %v", err)
+		}
+	}
+	d := make([]byte, portBytes)
+	binary.BigEndian.PutUint16(d, dstPort)
+	if err := pkt.Update(dstFieldID, fwdpacket.OpSet, d); err != nil {
+		t.Fatalf("pkt.Update dstPort failed: %v", err)
 	}
 
 	rebuiltFrame := pkt.Frame()
@@ -273,5 +283,117 @@ func TestUDPHeaderRebuild(t *testing.T) {
 			t.Errorf("Rebuild with empty payload: got srcPort %d, want 0", got)
 		}
 	})
+}
+
+func TestUDPTransitGuard(t *testing.T) {
+	// Outer Ethernet (IPv6) + IPv6 (next=17 UDP, hop=64) + UDP (sport=0, dport=4789) + VXLAN + inner Eth+IPv4+TCP.
+	outerEth := []byte{
+		0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+		0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		0x86, 0xdd, // IPv6
+	}
+	vxlanPayload := slices.Concat(
+		[]byte{0x08, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x00},
+		[]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x08, 0x00},
+		[]byte{
+			0x45, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x40, 0x06, 0x00, 0x00,
+			10, 0, 0, 1, 10, 0, 0, 2,
+			0x1f, 0x90, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+			0x50, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
+		},
+	)
+	udpLen := uint16(udpBytes + len(vxlanPayload))
+	udpHdr := make([]byte, udpBytes)
+	binary.BigEndian.PutUint16(udpHdr[srcOffset:], 0) // Transit srcPort=0 must NOT be overwritten
+	binary.BigEndian.PutUint16(udpHdr[dstOffset:], vxlan.DefaultPort)
+	binary.BigEndian.PutUint16(udpHdr[lenOffset:], udpLen)
+
+	ip6Hdr := make([]byte, 40)
+	ip6Hdr[0] = 0x60 // v6
+	binary.BigEndian.PutUint16(ip6Hdr[4:6], udpLen)
+	ip6Hdr[6] = protoUDP
+	ip6Hdr[7] = 64 // Hop limit
+	copy(ip6Hdr[8:24], []byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
+	copy(ip6Hdr[24:40], []byte{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2})
+
+	raw := slices.Concat(outerEth, ip6Hdr, udpHdr, vxlanPayload)
+	pkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, raw)
+	if err != nil {
+		t.Fatalf("fwdpacket.New failed: %v", err)
+	}
+	// Update outer IPv6 hop limit with OpSet so e.Dirty() is true and UDP.Rebuild()
+	// executes updateVXLANSourcePort() and recomputes the IPv6 UDP checksum.
+	if err := pkt.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0), fwdpacket.OpSet, []byte{63}); err != nil {
+		t.Fatalf("pkt.Update(IP_HOP) failed: %v", err)
+	}
+	rebuilt := pkt.Frame()
+	gotSrcPortBytes, err := pkt.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0))
+	if err != nil {
+		t.Fatalf("pkt.Field(L4_PORT_SRC) failed: %v", err)
+	}
+	if got := binary.BigEndian.Uint16(gotSrcPortBytes); got != 0 {
+		t.Fatalf("transit UDP/4789 srcPort mutated from 0 to %d", got)
+	}
+	udpBase := len(outerEth) + len(ip6Hdr)
+	if frameSport := binary.BigEndian.Uint16(rebuilt[udpBase+srcOffset : udpBase+srcOffset+portBytes]); frameSport != 0 {
+		t.Fatalf("transit frame UDP/4789 srcPort = %d, want 0", frameSport)
+	}
+	if gotCsum := binary.BigEndian.Uint16(rebuilt[udpBase+csumOffset : udpBase+csumOffset+csumBytes]); gotCsum == 0 {
+		t.Fatalf("expected non-zero recomputed IPv6 UDP checksum after OpSet on outer IPv6, got 0")
+	}
+}
+
+func TestUDPEncapSportModes(t *testing.T) {
+	vxlanPayload := slices.Concat(
+		[]byte{0x08, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x00},
+		[]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x08, 0x00},
+		[]byte{
+			0x45, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x40, 0x06, 0x00, 0x00,
+			10, 0, 0, 1, 10, 0, 0, 2,
+			0x1f, 0x90, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+			0x50, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
+		},
+	)
+
+	runCase := func(cfg uint32) uint16 {
+		pkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_VXLAN, vxlanPayload)
+		if err != nil {
+			t.Fatalf("fwdpacket.New failed: %v", err)
+		}
+		if err := pkt.Encap(fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP); err != nil {
+			t.Fatalf("Encap(UDP) failed: %v", err)
+		}
+		if err := pkt.Update(
+			fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, vxlan.SportAttrInstance),
+			fwdpacket.OpSet,
+			binary.BigEndian.AppendUint32(nil, cfg),
+		); err != nil {
+			t.Fatalf("Update(PACKET_ATTRIBUTE_32) failed: %v", err)
+		}
+		if err := pkt.Update(
+			fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0),
+			fwdpacket.OpSet,
+			binary.BigEndian.AppendUint16(nil, vxlan.DefaultPort),
+		); err != nil {
+			t.Fatalf("Update(L4_PORT_DST) failed: %v", err)
+		}
+		frame := pkt.Frame()
+		return binary.BigEndian.Uint16(frame[srcOffset : srcOffset+portBytes])
+	}
+
+	ephemPort := runCase(vxlan.EncodeSportConfig(vxlan.SportModeEphemeral, 0, 0))
+	if ephemPort < vxlan.EphemeralPortBase {
+		t.Errorf("EPHEMERAL srcPort = %d, want >= %d", ephemPort, vxlan.EphemeralPortBase)
+	}
+	if got := runCase(vxlan.EncodeSportConfig(vxlan.SportModeUserDefined, 0, 1234)); got != 1234 {
+		t.Errorf("USER_DEFINED static 1234 = %d, want 1234", got)
+	}
+	if got := runCase(vxlan.EncodeSportConfig(vxlan.SportModeUserDefined, 0, 0)); got != 0 {
+		t.Errorf("USER_DEFINED static 0 = %d, want 0", got)
+	}
+	wantMasked := uint16(32768) | (ephemPort & 0x03FF)
+	if got := runCase(vxlan.EncodeSportConfig(vxlan.SportModeUserDefined, 10, 32768)); got != wantMasked {
+		t.Errorf("USER_DEFINED base=32768 mask=10 = %d, want exact %d", got, wantMasked)
+	}
 }
 
