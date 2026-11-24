@@ -61,6 +61,7 @@ func RegisterPort(port uint16, id fwdpb.PacketHeaderId) {
 type UDP struct {
 	header frame.Header
 	desc   *protocol.Desc
+	encap  bool
 }
 
 // Header returns the UDP header.
@@ -95,15 +96,39 @@ func (udp *UDP) field(id fwdpacket.FieldID) frame.Field {
 	}
 }
 
-// updateVXLANSourcePort populates the UDP source port with an RFC 7348
-// inner-flow entropy port when encapsulating VXLAN and no source port is set.
+// vxlanSportConfig reads the VXLAN UDP source port configuration stored in the
+// outermost METADATA header's PACKET_ATTRIBUTE_32[vxlan.SportAttrInstance], if present.
+func (udp *UDP) vxlanSportConfig() uint32 {
+	fieldID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, vxlan.SportAttrInstance)
+	for d := udp.desc; d != nil; d = d.EnvelopeDesc() {
+		if d.EnvelopeID() == fwdpb.PacketHeaderId_PACKET_HEADER_ID_METADATA {
+			if val, err := d.EnvelopeField(fieldID); err == nil && len(val) == 4 {
+				return binary.BigEndian.Uint32(val)
+			}
+			return 0
+		}
+	}
+	return 0
+}
+
+// updateVXLANSourcePort populates the UDP source port when encapsulating VXLAN.
+// Wire-parsed transit packets (encap == false) are never modified.
 func (udp *UDP) updateVXLANSourcePort() {
-	if udp.desc == nil || len(udp.header) < udpBytes {
+	if !udp.encap || udp.desc == nil || len(udp.header) < udpBytes {
 		return
 	}
 	dstPort := uint16(udp.header.Field(dstOffset, portBytes).Value())
+	if dstPort != vxlan.DefaultPort {
+		return
+	}
 	srcPort := udp.header.Field(srcOffset, portBytes)
-	if dstPort != vxlan.DefaultPort || srcPort.Value() != 0 {
+	if cfg := udp.vxlanSportConfig(); cfg != 0 {
+		if port, ok := vxlan.ComputeSourcePort(udp.desc, cfg); ok {
+			srcPort.SetValue(uint(port))
+		}
+		return
+	}
+	if srcPort.Value() != 0 {
 		return
 	}
 	if entropyPort := vxlan.ComputeEntropySourcePort(udp.desc); entropyPort != 0 {
@@ -201,6 +226,7 @@ func add(_ fwdpb.PacketHeaderId, desc *protocol.Desc) (protocol.Handler, error) 
 	return &UDP{
 		header: make([]byte, udpBytes),
 		desc:   desc,
+		encap:  true,
 	}, nil
 }
 

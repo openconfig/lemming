@@ -27,6 +27,7 @@ go_test(
         "//dataplane/forwarding/protocol/opaque",
         "//dataplane/forwarding/protocol/tcp",
         "//dataplane/forwarding/util/frame",
+        "//dataplane/forwarding/util/hash/crc16",
         "//proto/forwarding",
         "@com_github_google_go_cmp//cmp",
     ],

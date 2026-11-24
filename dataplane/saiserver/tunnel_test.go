@@ -16,19 +16,30 @@ package saiserver
 
 import (
 	"context"
+	"encoding/binary"
+	"fmt"
+	"io"
 	"math"
 	"net"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/openconfig/gnmi/errdiff"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/vxlan"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -158,8 +169,8 @@ func TestCreateTunnel(t *testing.T) {
 						Update: &fwdpb.UpdateActionDesc{
 							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
 							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
-							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
-							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xb5},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, Instance: vxlan.SportAttrInstance}},
+							Value:   binary.BigEndian.AppendUint32(nil, vxlan.EncodeSportConfig(vxlan.SportModeEphemeral, 0, 0)),
 						},
 					},
 				}, {
@@ -168,8 +179,8 @@ func TestCreateTunnel(t *testing.T) {
 						Update: &fwdpb.UpdateActionDesc{
 							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
 							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
-							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
-							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xd2},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+							Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xb5},
 						},
 					},
 				}},
@@ -217,6 +228,16 @@ func TestCreateTunnel(t *testing.T) {
 							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP}},
 							Value:   []byte{32},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, Instance: vxlan.SportAttrInstance}},
+							Value:   binary.BigEndian.AppendUint32(nil, vxlan.EncodeSportConfig(vxlan.SportModeEphemeral, 0, 0)),
 						},
 					},
 				}, {
@@ -273,6 +294,16 @@ func TestCreateTunnel(t *testing.T) {
 							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP}},
 							Value:   []byte{defaultEncapTTL},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, Instance: vxlan.SportAttrInstance}},
+							Value:   binary.BigEndian.AppendUint32(nil, vxlan.EncodeSportConfig(vxlan.SportModeEphemeral, 0, 0)),
 						},
 					},
 				}, {
@@ -1423,6 +1454,326 @@ func TestTunnelMapAndEntry(t *testing.T) {
 			t.Errorf("RemoveTunnelMapEntry for failed entry expected NotFound, got %v", err)
 		}
 	})
+}
+
+type capturingFakePort struct {
+	txCh chan []byte
+	done chan struct{}
+	once sync.Once
+}
+
+func (p *capturingFakePort) ReadPacketData() ([]byte, gopacket.CaptureInfo, error) {
+	<-p.done
+	return nil, gopacket.CaptureInfo{}, io.EOF
+}
+
+func (p *capturingFakePort) WritePacketData(data []byte) error {
+	cp := append([]byte(nil), data...)
+	select {
+	case p.txCh <- cp:
+	case <-p.done:
+	}
+	return nil
+}
+
+func (p *capturingFakePort) Close() {
+	p.once.Do(func() { close(p.done) })
+}
+
+type capturingFakePortMgr struct {
+	mu    sync.Mutex
+	ports map[string]*capturingFakePort
+}
+
+func (m *capturingFakePortMgr) CreatePort(name string) (fwdcontext.Port, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.ports == nil {
+		m.ports = make(map[string]*capturingFakePort)
+	}
+	p := &capturingFakePort{
+		txCh: make(chan []byte, 16),
+		done: make(chan struct{}),
+	}
+	m.ports[name] = p
+	return p, nil
+}
+
+func (m *capturingFakePortMgr) Close() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, p := range m.ports {
+		p.Close()
+	}
+}
+
+func TestVXLANUDPSportModesAndSetTunnelAttribute(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	c, _, stopFn := newTestTunnel(t, dplane)
+	defer stopFn()
+
+	// Validation checks on CreateTunnel.
+	if _, err := c.CreateTunnel(context.Background(), &saipb.CreateTunnelRequest{
+		Type:              saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+		UnderlayInterface: proto.Uint64(10),
+		VxlanUdpSport:     proto.Uint32(65536),
+	}); errdiff.Check(err, "InvalidArgument") != "" {
+		t.Fatalf("CreateTunnel(sport=65536) got err %v, want InvalidArgument", err)
+	}
+	if _, err := c.CreateTunnel(context.Background(), &saipb.CreateTunnelRequest{
+		Type:              saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+		UnderlayInterface: proto.Uint64(10),
+		VxlanUdpSportMask: proto.Uint32(17),
+	}); errdiff.Check(err, "InvalidArgument") != "" {
+		t.Fatalf("CreateTunnel(mask=17) got err %v, want InvalidArgument", err)
+	}
+	if _, err := c.SetTunnelAttribute(context.Background(), &saipb.SetTunnelAttributeRequest{
+		Oid:           99999,
+		VxlanUdpSport: proto.Uint32(100),
+	}); errdiff.Check(err, "NotFound") != "" {
+		t.Fatalf("SetTunnelAttribute(missing) got err %v, want NotFound", err)
+	}
+
+	// I-2: SetTunnelAttribute on a removed tunnel must return NotFound and NOT re-add TunnelEncap.
+	tmpTun, err := c.CreateTunnel(context.Background(), &saipb.CreateTunnelRequest{
+		Type:              saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+		UnderlayInterface: proto.Uint64(10),
+	})
+	if err != nil {
+		t.Fatalf("CreateTunnel(tmp) failed: %v", err)
+	}
+	if _, err := c.RemoveTunnel(context.Background(), &saipb.RemoveTunnelRequest{Oid: tmpTun.Oid}); err != nil {
+		t.Fatalf("RemoveTunnel(tmp) failed: %v", err)
+	}
+	addsBeforeDead := len(dplane.gotEntryAddReqs)
+	if _, err := c.SetTunnelAttribute(context.Background(), &saipb.SetTunnelAttributeRequest{
+		Oid:           tmpTun.Oid,
+		VxlanUdpSport: proto.Uint32(1234),
+	}); errdiff.Check(err, "NotFound") != "" {
+		t.Fatalf("SetTunnelAttribute(removed) got err %v, want NotFound", err)
+	}
+	if len(dplane.gotEntryAddReqs) != addsBeforeDead {
+		t.Fatalf("SetTunnelAttribute(removed) re-added %d TunnelEncap entries, want 0", len(dplane.gotEntryAddReqs)-addsBeforeDead)
+	}
+
+	// End-to-end packet test with SetTunnelAttribute live updates.
+	ctx := context.Background()
+	mgr := attrmgr.New()
+	grpcSrv := grpc.NewServer(grpc.UnaryInterceptor(mgr.Interceptor))
+	srv, err := New(ctx, mgr, grpcSrv, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_FAKE})
+	if err != nil {
+		t.Fatalf("saiserver.New() failed: %v", err)
+	}
+	fwdCtx, err := srv.FindContext(&fwdpb.ContextId{Id: srv.ID()})
+	if err != nil {
+		t.Fatalf("FindContext() failed: %v", err)
+	}
+	portMgr := &capturingFakePortMgr{}
+	fwdCtx.FakePortManager = portMgr
+	t.Cleanup(portMgr.Close)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("net.Listen() failed: %v", err)
+	}
+	go func() {
+		_ = grpcSrv.Serve(lis)
+	}()
+	t.Cleanup(grpcSrv.Stop)
+
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("grpc.NewClient() failed: %v", err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+
+	swClient := saipb.NewSwitchClient(conn)
+	portClient := saipb.NewPortClient(conn)
+	rifClient := saipb.NewRouterInterfaceClient(conn)
+	tunClient := saipb.NewTunnelClient(conn)
+	nhClient := saipb.NewNextHopClient(conn)
+	routeClient := saipb.NewRouteClient(conn)
+	neighClient := saipb.NewNeighborClient(conn)
+
+	p1MAC := net.HardwareAddr{0x02, 0x00, 0x01, 0x01, 0x01, 0x01}
+	p2MAC := net.HardwareAddr{0x02, 0x00, 0x02, 0x02, 0x02, 0x02}
+	ateMAC := net.HardwareAddr{0x02, 0x00, 0xaa, 0x00, 0x00, 0x01}
+	nhMAC := net.HardwareAddr{0x02, 0x00, 0xbb, 0x00, 0x00, 0x02}
+	tunMAC := net.HardwareAddr{0x02, 0x00, 0xaa, 0xbb, 0xcc, 0xdd}
+
+	swResp, err := swClient.CreateSwitch(ctx, &saipb.CreateSwitchRequest{InitSwitch: proto.Bool(true)})
+	if err != nil {
+		t.Fatalf("CreateSwitch() failed: %v", err)
+	}
+	if _, err := srv.TableEntryAdd(ctx, &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: srv.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Flow{
+				Flow: &fwdpb.FlowEntryDesc{
+					Bank:     0,
+					Priority: 1,
+					Fields: []*fwdpb.PacketFieldMaskedBytes{
+						fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
+							WithBytes(p1MAC, net.HardwareAddr{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}).Build(),
+					},
+				},
+			},
+		},
+		Actions: getL3Pipeline(false),
+	}); err != nil {
+		t.Fatalf("TableEntryAdd(MyMacTable) failed: %v", err)
+	}
+	swAttr, err := swClient.GetSwitchAttribute(ctx, &saipb.GetSwitchAttributeRequest{
+		Oid:      swResp.Oid,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VIRTUAL_ROUTER_ID},
+	})
+	if err != nil {
+		t.Fatalf("GetSwitchAttribute() failed: %v", err)
+	}
+	defaultVR := swAttr.GetAttr().GetDefaultVirtualRouterId()
+
+	p1Resp, err := portClient.CreatePort(ctx, &saipb.CreatePortRequest{Switch: swResp.Oid, HwLaneList: []uint32{1}, AdminState: proto.Bool(true)})
+	if err != nil {
+		t.Fatalf("CreatePort(1) failed: %v", err)
+	}
+	p2Resp, err := portClient.CreatePort(ctx, &saipb.CreatePortRequest{Switch: swResp.Oid, HwLaneList: []uint32{2}, AdminState: proto.Bool(true)})
+	if err != nil {
+		t.Fatalf("CreatePort(2) failed: %v", err)
+	}
+	if _, err := rifClient.CreateRouterInterface(ctx, &saipb.CreateRouterInterfaceRequest{
+		Switch: swResp.Oid, Type: saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
+		PortId: proto.Uint64(p1Resp.Oid), VirtualRouterId: proto.Uint64(defaultVR), SrcMacAddress: p1MAC,
+	}); err != nil {
+		t.Fatalf("CreateRouterInterface(p1) failed: %v", err)
+	}
+	p2RifResp, err := rifClient.CreateRouterInterface(ctx, &saipb.CreateRouterInterfaceRequest{
+		Switch: swResp.Oid, Type: saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
+		PortId: proto.Uint64(p2Resp.Oid), VirtualRouterId: proto.Uint64(defaultVR), SrcMacAddress: p2MAC,
+	})
+	if err != nil {
+		t.Fatalf("CreateRouterInterface(p2) failed: %v", err)
+	}
+	if _, err := neighClient.CreateNeighborEntry(ctx, &saipb.CreateNeighborEntryRequest{
+		Entry:         &saipb.NeighborEntry{SwitchId: swResp.Oid, RifId: p2RifResp.Oid, IpAddress: net.ParseIP("20.20.20.2").To4()},
+		DstMacAddress: nhMAC,
+	}); err != nil {
+		t.Fatalf("CreateNeighborEntry() failed: %v", err)
+	}
+
+	// Start in EPHEMERAL mode with stale VxlanUdpSport=1234 which must be ignored.
+	tunResp, err := tunClient.CreateTunnel(ctx, &saipb.CreateTunnelRequest{
+		Switch:            swResp.Oid,
+		Type:              saipb.TunnelType_TUNNEL_TYPE_VXLAN.Enum(),
+		UnderlayInterface: proto.Uint64(p2RifResp.Oid),
+		EncapSrcIp:        net.ParseIP("10.10.10.1").To4(),
+		VxlanUdpSportMode: saipb.TunnelVxlanUdpSportMode_TUNNEL_VXLAN_UDP_SPORT_MODE_EPHEMERAL.Enum(),
+		VxlanUdpSport:     proto.Uint32(1234),
+	})
+	if err != nil {
+		t.Fatalf("CreateTunnel() failed: %v", err)
+	}
+	nhResp, err := nhClient.CreateNextHop(ctx, &saipb.CreateNextHopRequest{
+		Switch: swResp.Oid, Type: saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP.Enum(),
+		TunnelId: proto.Uint64(tunResp.Oid), Ip: net.ParseIP("20.20.20.2").To4(),
+		TunnelVni: proto.Uint32(5000), TunnelMac: tunMAC,
+	})
+	if err != nil {
+		t.Fatalf("CreateNextHop() failed: %v", err)
+	}
+	if _, err := routeClient.CreateRouteEntry(ctx, &saipb.CreateRouteEntryRequest{
+		Entry: &saipb.RouteEntry{
+			SwitchId:    swResp.Oid,
+			VrId:        defaultVR,
+			Destination: &saipb.IpPrefix{Addr: net.ParseIP("198.51.100.2").To4(), Mask: []byte{0xff, 0xff, 0xff, 0xff}},
+		},
+		PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+		NextHopId:    proto.Uint64(nhResp.Oid),
+	}); err != nil {
+		t.Fatalf("CreateRouteEntry() failed: %v", err)
+	}
+
+	port2 := portMgr.ports["2"]
+	sendAndGetSport := func() uint16 {
+		buf := gopacket.NewSerializeBuffer()
+		opts := gopacket.SerializeOptions{FixLengths: true, ComputeChecksums: true}
+		ipL := &layers.IPv4{Version: 4, TTL: 64, Protocol: layers.IPProtocolUDP, SrcIP: net.ParseIP("192.0.2.2").To4(), DstIP: net.ParseIP("198.51.100.2").To4()}
+		udpL := &layers.UDP{SrcPort: 12345, DstPort: 54321}
+		if err := udpL.SetNetworkLayerForChecksum(ipL); err != nil {
+			t.Fatalf("SetNetworkLayerForChecksum() failed: %v", err)
+		}
+		if err := gopacket.SerializeLayers(buf, opts,
+			&layers.Ethernet{SrcMAC: ateMAC, DstMAC: p1MAC, EthernetType: layers.EthernetTypeIPv4},
+			ipL, udpL, gopacket.Payload([]byte("sport-test")),
+		); err != nil {
+			t.Fatalf("SerializeLayers() failed: %v", err)
+		}
+		if err := srv.InjectPacket(
+			&fwdpb.ContextId{Id: srv.ID()},
+			&fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(p1Resp.Oid)}},
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+			buf.Bytes(), nil, false, fwdpb.PortAction_PORT_ACTION_INPUT,
+		); err != nil {
+			t.Fatalf("InjectPacket() failed: %v", err)
+		}
+		select {
+		case frame := <-port2.txCh:
+			pkt := gopacket.NewPacket(frame, layers.LayerTypeEthernet, gopacket.Default)
+			outerUDP, ok := pkt.Layer(layers.LayerTypeUDP).(*layers.UDP)
+			if !ok {
+				t.Fatalf("missing outer UDP layer")
+			}
+			return uint16(outerUDP.SrcPort)
+		case <-time.After(2 * time.Second):
+			t.Fatalf("timed out waiting for VXLAN packet")
+			return 0
+		}
+	}
+
+	ephemSport := sendAndGetSport()
+	if ephemSport < vxlan.EphemeralPortBase {
+		t.Fatalf("EPHEMERAL mode srcPort = %d, want >= %d", ephemSport, vxlan.EphemeralPortBase)
+	}
+
+	// Switch to USER_DEFINED static port 0 (mask=0, sport=0) -> literal 0!
+	if _, err := tunClient.SetTunnelAttribute(ctx, &saipb.SetTunnelAttributeRequest{
+		Oid:               tunResp.Oid,
+		VxlanUdpSportMode: saipb.TunnelVxlanUdpSportMode_TUNNEL_VXLAN_UDP_SPORT_MODE_USER_DEFINED.Enum(),
+		VxlanUdpSport:     proto.Uint32(0),
+		VxlanUdpSportMask: proto.Uint32(0),
+	}); err != nil {
+		t.Fatalf("SetTunnelAttribute(static 0) failed: %v", err)
+	}
+	if got := sendAndGetSport(); got != 0 {
+		t.Fatalf("USER_DEFINED static 0 srcPort = %d, want 0", got)
+	}
+
+	// Switch to USER_DEFINED range base=32768, mask=10 -> exact crc16 match.
+	if _, err := tunClient.SetTunnelAttribute(ctx, &saipb.SetTunnelAttributeRequest{
+		Oid:               tunResp.Oid,
+		VxlanUdpSportMode: saipb.TunnelVxlanUdpSportMode_TUNNEL_VXLAN_UDP_SPORT_MODE_USER_DEFINED.Enum(),
+		VxlanUdpSport:     proto.Uint32(32768),
+		VxlanUdpSportMask: proto.Uint32(10),
+	}); err != nil {
+		t.Fatalf("SetTunnelAttribute(masked) failed: %v", err)
+	}
+	wantMasked := uint16(32768) | (ephemSport & 0x03FF)
+	if got := sendAndGetSport(); got != wantMasked {
+		t.Fatalf("USER_DEFINED base=32768 mask=10 srcPort = %d, want exact %d", got, wantMasked)
+	}
+
+	// Switch to USER_DEFINED static 1234 (mask=0, sport=1234).
+	if _, err := tunClient.SetTunnelAttribute(ctx, &saipb.SetTunnelAttributeRequest{
+		Oid:               tunResp.Oid,
+		VxlanUdpSportMode: saipb.TunnelVxlanUdpSportMode_TUNNEL_VXLAN_UDP_SPORT_MODE_USER_DEFINED.Enum(),
+		VxlanUdpSport:     proto.Uint32(1234),
+		VxlanUdpSportMask: proto.Uint32(0),
+	}); err != nil {
+		t.Fatalf("SetTunnelAttribute(static 1234) failed: %v", err)
+	}
+	if got := sendAndGetSport(); got != 1234 {
+		t.Fatalf("USER_DEFINED static 1234 srcPort = %d, want 1234", got)
+	}
 }
 
 func newTestTunnel(t testing.TB, api switchDataplaneAPI) (saipb.TunnelClient, *attrmgr.AttrMgr, func()) {
